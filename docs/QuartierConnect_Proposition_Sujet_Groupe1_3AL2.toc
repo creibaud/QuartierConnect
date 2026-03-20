@@ -1,0 +1,32 @@
+\xpg@aux {}{french}
+\contentsline {section}{Résumé exécutif}{2}{Doc-Start}%
+\contentsline {section}{\numberline {1}Présentation du projet}{3}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Contexte}{3}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Objectifs}{3}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Public cible}{3}{subsection.1.3}%
+\contentsline {section}{\numberline {2}Description fonctionnelle de l'application}{4}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Vue d'ensemble}{4}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Fonctionnalités principales}{4}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}Modélisation géographique du quartier}{4}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}Services entre voisins}{4}{subsubsection.2.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.3}Signature numérique sécurisée}{5}{subsubsection.2.2.3}%
+\contentsline {subsubsection}{\numberline {2.2.4}Événements et recommandations Neo4j}{5}{subsubsection.2.2.4}%
+\contentsline {subsubsection}{\numberline {2.2.5}Messagerie multimédia}{5}{subsubsection.2.2.5}%
+\contentsline {subsubsection}{\numberline {2.2.6}Votes}{5}{subsubsection.2.2.6}%
+\contentsline {subsubsection}{\numberline {2.2.7}Sécurité et RGPD}{6}{subsubsection.2.2.7}%
+\contentsline {subsubsection}{\numberline {2.2.8}Multilingue}{6}{subsubsection.2.2.8}%
+\contentsline {subsubsection}{\numberline {2.2.9}Application Java Desktop}{6}{subsubsection.2.2.9}%
+\contentsline {subsection}{\numberline {2.3}Parcours utilisateur}{7}{subsection.2.3}%
+\contentsline {section}{\numberline {3}Architecture et infrastructure technique}{8}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Architecture générale}{8}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Technologies utilisées}{9}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Gestion des données}{10}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Mécanisme de synchronisation \textit {Offline-First}}{12}{subsection.3.4}%
+\contentsline {section}{\numberline {4}Organisation du projet}{13}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Gestion du code source}{13}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Gestion de projet}{13}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Répartition des rôles}{14}{subsection.4.3}%
+\contentsline {section}{\numberline {5}Identité du projet}{16}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Nom du projet}{16}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Logo et identité visuelle}{16}{subsection.5.2}%
+\contentsline {section}{Conclusion}{17}{subsection.5.2}%

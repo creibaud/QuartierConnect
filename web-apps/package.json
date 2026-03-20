@@ -1,0 +1,25 @@
+{
+    "name": "web-apps",
+    "version": "0.0.1",
+    "private": true,
+    "scripts": {
+        "build": "turbo build",
+        "dev": "turbo dev",
+        "dev:editor": "turbo dev:editor",
+        "lint": "turbo lint",
+        "format": "turbo format -- --write && pnpm format:root && turbo lint -- --fix",
+        "format:root": "prettier --write \"*.{json,md,js,ts}\" --ignore-unknown",
+        "typecheck": "turbo typecheck"
+    },
+    "devDependencies": {
+        "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
+        "prettier": "^3.8.1",
+        "prettier-plugin-tailwindcss": "^0.7.2",
+        "turbo": "^2.8.20",
+        "typescript": "5.9.3"
+    },
+    "packageManager": "pnpm@9.15.9",
+    "engines": {
+        "node": ">=20"
+    }
+}

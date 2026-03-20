@@ -1,0 +1,21 @@
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+RUN npm install -g pnpm
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/back-office/package.json ./apps/back-office/
+COPY packages/ui/package.json ./packages/ui/
+RUN pnpm install --no-frozen-lockfile
+
+COPY apps/back-office/ ./apps/back-office/
+COPY packages/ui/ ./packages/ui/
+RUN pnpm --filter back-office build
+
+
+FROM caddy:2-alpine
+
+COPY --from=builder /app/apps/back-office/dist /srv
+RUN printf ':80 {\n    root * /srv\n    try_files {path} /index.html\n    file_server\n}\n' > /etc/caddy/Caddyfile
+
+EXPOSE 80

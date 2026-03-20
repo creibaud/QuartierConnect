@@ -1,0 +1,18 @@
+# QuartierConnect - Caddy Reverse Proxy
+#
+# Routing:
+#   localhost        -> client (React app)
+#   admin.localhost  -> back-office (React app)
+#   api.localhost    -> NestJS API
+
+localhost {
+    reverse_proxy client:80
+}
+
+admin.localhost {
+    reverse_proxy back-office:80
+}
+
+api.localhost {
+    reverse_proxy api:3000
+}
