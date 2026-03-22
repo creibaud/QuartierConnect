@@ -48,13 +48,38 @@ export const refreshTokens = pgTable("refresh_tokens", {
         .defaultNow(),
 });
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const totpSecrets = pgTable("totp_secrets", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" })
+        .unique(),
+    secret: varchar("secret", { length: 255 }).notNull(),
+    backupCodes: text("backup_codes").array().notNull().default([]),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+        .notNull()
+        .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+        .notNull()
+        .defaultNow(),
+});
+
+export const usersRelations = relations(users, ({ many, one }) => ({
     refreshTokens: many(refreshTokens),
+    totpSecret: one(totpSecrets),
 }));
 
 export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
     user: one(users, {
         fields: [refreshTokens.userId],
+        references: [users.id],
+    }),
+}));
+
+export const totpSecretsRelations = relations(totpSecrets, ({ one }) => ({
+    user: one(users, {
+        fields: [totpSecrets.userId],
         references: [users.id],
     }),
 }));
@@ -65,3 +90,5 @@ export type UserRole = (typeof userRoleEnum.enumValues)[number];
 
 export type RefreshToken = typeof refreshTokens.$inferSelect;
 export type NewRefreshToken = typeof refreshTokens.$inferInsert;
+
+export type TotpSecret = typeof totpSecrets.$inferSelect;

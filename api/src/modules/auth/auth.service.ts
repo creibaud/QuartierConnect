@@ -17,10 +17,17 @@ import { LoginDto } from "src/modules/auth/dto/login.dto";
 import { LogoutDto } from "src/modules/auth/dto/logout.dto";
 import { RefreshDto } from "src/modules/auth/dto/refresh.dto";
 import { RegisterDto } from "src/modules/auth/dto/register.dto";
+import { TotpValidateDto } from "src/modules/auth/dto/totp.dto";
 import {
     JwtExpiresIn,
     JwtPayload,
 } from "src/modules/auth/strategies/jwt.strategy";
+import { TotpService } from "src/modules/auth/totp.service";
+
+interface TotpPendingPayload {
+    sub: string;
+    type: "totp-pending";
+}
 
 @Injectable()
 export class AuthService {
@@ -31,6 +38,7 @@ export class AuthService {
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
         private readonly mailerService: MailerService,
+        private readonly totpService: TotpService,
     ) {}
 
     async register(dto: RegisterDto) {
@@ -95,6 +103,14 @@ export class AuthService {
             throw new UnauthorizedException("Account is deactivated");
         }
 
+        const isTotpEnabled = await this.totpService.isTotpEnabled(user.id);
+
+        if (isTotpEnabled) {
+            const totpToken = this.generateTotpPendingToken(user.id);
+            this.logger.log(`TOTP required for user: ${user.email}`);
+            return { requiresTotp: true, totpToken };
+        }
+
         const tokens = await this.generateTokens(
             user.id,
             user.email,
@@ -102,6 +118,57 @@ export class AuthService {
         );
 
         this.logger.log(`User logged in: ${user.email}`);
+
+        return {
+            user: this.sanitizeUser(user),
+            ...tokens,
+        };
+    }
+
+    async completeTotpLogin(dto: TotpValidateDto) {
+        let payload: TotpPendingPayload;
+
+        try {
+            const totpSecret =
+                this.configService.getOrThrow<string>("JWT_ACCESS_SECRET");
+            payload = this.jwtService.verify<TotpPendingPayload>(
+                dto.totpToken,
+                { secret: totpSecret },
+            );
+        } catch {
+            throw new UnauthorizedException("Invalid or expired TOTP token");
+        }
+
+        if (payload.type !== "totp-pending") {
+            throw new UnauthorizedException("Invalid token type");
+        }
+
+        const isValid = await this.totpService.validateCode(
+            payload.sub,
+            dto.code,
+        );
+
+        if (!isValid) {
+            throw new UnauthorizedException("Invalid TOTP code");
+        }
+
+        const [user] = await this.db
+            .select()
+            .from(users)
+            .where(eq(users.id, payload.sub))
+            .limit(1);
+
+        if (!user?.isActive) {
+            throw new UnauthorizedException("User not found or deactivated");
+        }
+
+        const tokens = await this.generateTokens(
+            user.id,
+            user.email,
+            user.role,
+        );
+
+        this.logger.log(`TOTP login completed for user: ${user.email}`);
 
         return {
             user: this.sanitizeUser(user),
@@ -205,6 +272,16 @@ export class AuthService {
         }
 
         return this.sanitizeUser(user);
+    }
+
+    private generateTotpPendingToken(userId: string): string {
+        const secret =
+            this.configService.getOrThrow<string>("JWT_ACCESS_SECRET");
+        const payload: TotpPendingPayload = {
+            sub: userId,
+            type: "totp-pending",
+        };
+        return this.jwtService.sign(payload, { expiresIn: "5m", secret });
     }
 
     private async generateTokens(userId: string, email: string, role: string) {

@@ -71,13 +71,13 @@ describe("UserService", () => {
     });
 
     describe("updateRole", () => {
-        it("throws ForbiddenException when target is super_admin", async () => {
+        it("throws ForbiddenException when target is admin", async () => {
             (db.select as jest.Mock).mockReturnValueOnce(
-                createSelectChain([{ ...baseUser, role: "super_admin" }]),
+                createSelectChain([{ ...baseUser, role: "admin" }]),
             );
 
             await expect(
-                service.updateRole(baseUser.id as UUID, { role: "admin" }),
+                service.updateRole(baseUser.id as UUID, { role: "moderator" }),
             ).rejects.toBeInstanceOf(ForbiddenException);
         });
 
@@ -105,9 +105,9 @@ describe("UserService", () => {
     });
 
     describe("updateStatus", () => {
-        it("throws ForbiddenException when target is super_admin", async () => {
+        it("throws ForbiddenException when target is admin", async () => {
             (db.select as jest.Mock).mockReturnValueOnce(
-                createSelectChain([{ ...baseUser, role: "super_admin" }]),
+                createSelectChain([{ ...baseUser, role: "admin" }]),
             );
 
             await expect(

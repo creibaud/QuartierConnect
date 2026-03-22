@@ -8,11 +8,11 @@ export const DrizzleProvider = {
     inject: [ConfigService],
     useFactory: (configService: ConfigService) => {
         const pool = new Pool({
-            host: configService.get<string>("POSTGRES_DB_HOST"),
-            port: configService.get<number>("POSTGRES_DB_PORT"),
-            user: configService.get<string>("POSTGRES_DB_USER"),
-            password: configService.get<string>("POSTGRES_DB_PASSWORD"),
-            database: configService.get<string>("POSTGRES_DB_NAME"),
+            host: configService.get<string>("POSTGRES_HOST"),
+            port: configService.get<number>("POSTGRES_PORT"),
+            user: configService.get<string>("POSTGRES_USER"),
+            password: configService.get<string>("POSTGRES_PASSWORD"),
+            database: configService.get<string>("POSTGRES_DB"),
         });
         return drizzle(pool, { schema });
     },

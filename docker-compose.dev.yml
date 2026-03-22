@@ -83,11 +83,11 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3000
-      POSTGRES_DB_HOST: postgres
-      POSTGRES_DB_PORT: 5432
-      POSTGRES_DB_USER: ${POSTGRES_USER:-quartierconnect}
-      POSTGRES_DB_PASSWORD: ${POSTGRES_PASSWORD:-password}
-      POSTGRES_DB_NAME: ${POSTGRES_DB:-quartierconnect}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-quartierconnect}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-quartierconnect}
       MONGO_HOST: mongodb
       MONGO_PORT: 27017
       MONGO_USER: ${MONGO_USER:-root}
@@ -131,11 +131,11 @@ services:
       - ./api/drizzle.config.ts:/app/drizzle.config.ts:ro
       - ./api/tsconfig.json:/app/tsconfig.json:ro
     environment:
-      POSTGRES_DB_HOST: postgres
-      POSTGRES_DB_PORT: 5432
-      POSTGRES_DB_USER: ${POSTGRES_USER:-quartierconnect}
-      POSTGRES_DB_PASSWORD: ${POSTGRES_PASSWORD:-password}
-      POSTGRES_DB_NAME: ${POSTGRES_DB:-quartierconnect}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-quartierconnect}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-quartierconnect}
     depends_on:
       postgres:
         condition: service_healthy

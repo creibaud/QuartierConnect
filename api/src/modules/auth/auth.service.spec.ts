@@ -7,9 +7,10 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import bcrypt from "bcryptjs";
-import type { DrizzleDB } from "../drizzle/drizzle.type";
-import { refreshTokens, users, type User } from "../drizzle/schema";
-import { AuthService } from "./auth.service";
+import type { DrizzleDB } from "src/database/drizzle/drizzle.type";
+import { refreshTokens, users, type User } from "src/database/drizzle/schema";
+import { AuthService } from "src/modules/auth/auth.service";
+import { TotpService } from "src/modules/auth/totp.service";
 
 describe("AuthService", () => {
     let service: AuthService;
@@ -23,6 +24,7 @@ describe("AuthService", () => {
 
     const jwtService = {
         sign: jest.fn(),
+        verify: jest.fn(),
     } as unknown as JwtService;
 
     const configService = {
@@ -36,13 +38,18 @@ describe("AuthService", () => {
         sendMail: sendMailMock,
     } as unknown as MailerService;
 
+    const totpService = {
+        isTotpEnabled: jest.fn().mockResolvedValue(false),
+        validateCode: jest.fn(),
+    } as unknown as TotpService;
+
     const baseUser: User = {
         id: "6fce8b71-2d1a-4d4a-9c12-44d4624e8f81",
         email: "john.doe@example.com",
         password: "hashed-password",
         firstName: "John",
         lastName: "Doe",
-        role: "client",
+        role: "resident",
         isActive: true,
         balance: "0.00",
         createdAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -60,7 +67,13 @@ describe("AuthService", () => {
     beforeEach(() => {
         jest.clearAllMocks();
 
-        service = new AuthService(db, jwtService, configService, mailerService);
+        service = new AuthService(
+            db,
+            jwtService,
+            configService,
+            mailerService,
+            totpService,
+        );
 
         (configService.get as jest.Mock).mockImplementation((key: string) => {
             if (key === "SALT_ROUNDS") {
@@ -215,6 +228,9 @@ describe("AuthService", () => {
             password: "P@ssw0rd!",
         });
 
+        expect("user" in result).toBe(true);
+        if (!("user" in result)) return;
+
         expect(result.user.email).toBe(baseUser.email);
         expect(result.user).not.toHaveProperty("password");
         expect(result.accessToken).toBe("access-token");
@@ -359,5 +375,97 @@ describe("AuthService", () => {
             }),
         );
         expect(result).not.toHaveProperty("password");
+    });
+
+    it("login returns totpToken when TOTP is enabled", async () => {
+        (totpService.isTotpEnabled as jest.Mock).mockResolvedValueOnce(true);
+        (db.select as jest.Mock).mockReturnValueOnce(
+            createSelectChain([baseUser]),
+        );
+        jest.spyOn(bcrypt, "compare").mockResolvedValue(true as never);
+
+        const result = await service.login({
+            email: baseUser.email,
+            password: "P@ssw0rd!",
+        });
+
+        expect("requiresTotp" in result).toBe(true);
+        if (!("requiresTotp" in result)) return;
+        expect(result.requiresTotp).toBe(true);
+        expect(typeof result.totpToken).toBe("string");
+    });
+
+    it("completeTotpLogin throws UnauthorizedException on invalid token", async () => {
+        (jwtService.verify as jest.Mock).mockImplementation(() => {
+            throw new Error("invalid token");
+        });
+
+        await expect(
+            service.completeTotpLogin({ totpToken: "bad", code: "123456" }),
+        ).rejects.toBeInstanceOf(UnauthorizedException);
+    });
+
+    it("completeTotpLogin throws UnauthorizedException on wrong token type", async () => {
+        (jwtService.verify as jest.Mock).mockReturnValue({
+            sub: baseUser.id,
+            type: "access",
+        });
+
+        await expect(
+            service.completeTotpLogin({ totpToken: "bad-type", code: "123456" }),
+        ).rejects.toBeInstanceOf(UnauthorizedException);
+    });
+
+    it("completeTotpLogin throws UnauthorizedException on invalid TOTP code", async () => {
+        (jwtService.verify as jest.Mock).mockReturnValue({
+            sub: baseUser.id,
+            type: "totp-pending",
+        });
+        (totpService.validateCode as jest.Mock).mockResolvedValue(false);
+
+        await expect(
+            service.completeTotpLogin({ totpToken: "valid", code: "000000" }),
+        ).rejects.toBeInstanceOf(UnauthorizedException);
+    });
+
+    it("completeTotpLogin throws UnauthorizedException for deactivated user", async () => {
+        (jwtService.verify as jest.Mock).mockReturnValue({
+            sub: baseUser.id,
+            type: "totp-pending",
+        });
+        (totpService.validateCode as jest.Mock).mockResolvedValue(true);
+        (db.select as jest.Mock).mockReturnValueOnce(
+            createSelectChain([{ ...baseUser, isActive: false }]),
+        );
+
+        await expect(
+            service.completeTotpLogin({ totpToken: "valid", code: "123456" }),
+        ).rejects.toBeInstanceOf(UnauthorizedException);
+    });
+
+    it("completeTotpLogin returns tokens on valid TOTP code", async () => {
+        (jwtService.verify as jest.Mock).mockReturnValue({
+            sub: baseUser.id,
+            type: "totp-pending",
+        });
+        (totpService.validateCode as jest.Mock).mockResolvedValue(true);
+        (db.select as jest.Mock).mockReturnValueOnce(
+            createSelectChain([baseUser]),
+        );
+        (db.insert as jest.Mock).mockImplementationOnce((table: unknown) => {
+            expect(table).toBe(refreshTokens);
+            return { values: jest.fn().mockResolvedValueOnce(undefined) };
+        });
+
+        const result = await service.completeTotpLogin({
+            totpToken: "valid",
+            code: "123456",
+        });
+
+        expect("user" in result).toBe(true);
+        if (!("user" in result)) return;
+        expect(result.user.email).toBe(baseUser.email);
+        expect(result.accessToken).toBe("access-token");
+        expect(result.refreshToken).toBe("refresh-token");
     });
 });

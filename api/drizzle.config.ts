@@ -5,11 +5,11 @@ export default defineConfig({
     out: "./src/database/drizzle/migrations",
     dialect: "postgresql",
     dbCredentials: {
-        host: process.env.POSTGRES_DB_HOST!,
-        port: Number(process.env.POSTGRES_DB_PORT),
-        user: process.env.POSTGRES_DB_USER!,
-        password: process.env.POSTGRES_DB_PASSWORD!,
-        database: process.env.POSTGRES_DB_NAME!,
+        host: process.env.POSTGRES_HOST!,
+        port: Number(process.env.POSTGRES_PORT),
+        user: process.env.POSTGRES_USER!,
+        password: process.env.POSTGRES_PASSWORD!,
+        database: process.env.POSTGRES_DB!,
         ssl: false,
     },
 });

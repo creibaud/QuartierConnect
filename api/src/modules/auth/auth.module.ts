@@ -9,6 +9,7 @@ import {
     JwtExpiresIn,
     JwtStrategy,
 } from "src/modules/auth/strategies/jwt.strategy";
+import { TotpService } from "src/modules/auth/totp.service";
 
 @Module({
     imports: [
@@ -29,7 +30,7 @@ import {
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy],
+    providers: [AuthService, JwtStrategy, TotpService],
     exports: [AuthService],
 })
 export class AuthModule {}

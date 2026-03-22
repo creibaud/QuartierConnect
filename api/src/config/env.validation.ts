@@ -16,20 +16,20 @@ class EnvironmentVariables {
     PORT: number;
 
     @IsString()
-    POSTGRES_DB_HOST: string;
+    POSTGRES_HOST: string;
 
     @IsNumber()
     @Min(1)
-    POSTGRES_DB_PORT: number;
+    POSTGRES_PORT: number;
 
     @IsString()
-    POSTGRES_DB_USER: string;
+    POSTGRES_USER: string;
 
     @IsString()
-    POSTGRES_DB_PASSWORD: string;
+    POSTGRES_PASSWORD: string;
 
     @IsString()
-    POSTGRES_DB_NAME: string;
+    POSTGRES_DB: string;
 
     @IsString()
     MONGO_HOST: string;

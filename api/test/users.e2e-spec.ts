@@ -12,7 +12,7 @@ import * as packageJson from "../package.json";
 import { AppModule } from "../src/app.module";
 import { JwtAuthGuard } from "../src/common/guards/jwt-auth.guard";
 import { RolesGuard } from "../src/common/guards/roles.guard";
-import { UserService } from "../src/users/user.service";
+import { UserService } from "../src/modules/users/user.service";
 
 describe("UsersController (e2e)", () => {
     let app: INestApplication<App>;
@@ -55,6 +55,10 @@ describe("UsersController (e2e)", () => {
         })
             .overrideProvider("DRIZZLE")
             .useValue({ execute: jest.fn().mockResolvedValue([{ result: 1 }]) })
+            .overrideProvider("MONGODB")
+            .useValue({ command: jest.fn().mockResolvedValue({}) })
+            .overrideProvider("NEO4J")
+            .useValue({ verifyConnectivity: jest.fn().mockResolvedValue(undefined) })
             .overrideProvider(UserService)
             .useValue(userServiceMock)
             .compile();

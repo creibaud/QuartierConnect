@@ -7,6 +7,11 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install
 
+# Copy configuration files
+COPY drizzle.config.ts .
+COPY tsconfig.json tsconfig.build.json ./
+COPY nest-cli.json .
+
 EXPOSE 3000
 
 CMD ["pnpm", "start:dev"]

@@ -9,7 +9,7 @@ import request from "supertest";
 import { App } from "supertest/types";
 import * as packageJson from "../package.json";
 import { AppModule } from "../src/app.module";
-import { AuthService } from "../src/auth/auth.service";
+import { AuthService } from "../src/modules/auth/auth.service";
 import { JwtAuthGuard } from "../src/common/guards/jwt-auth.guard";
 
 describe("AuthController (e2e)", () => {
@@ -34,9 +34,11 @@ describe("AuthController (e2e)", () => {
             imports: [AppModule],
         })
             .overrideProvider("DRIZZLE")
-            .useValue({
-                execute: jest.fn().mockResolvedValue([{ result: 1 }]),
-            })
+            .useValue({ execute: jest.fn().mockResolvedValue([{ result: 1 }]) })
+            .overrideProvider("MONGODB")
+            .useValue({ command: jest.fn().mockResolvedValue({}) })
+            .overrideProvider("NEO4J")
+            .useValue({ verifyConnectivity: jest.fn().mockResolvedValue(undefined) })
             .overrideProvider(AuthService)
             .useValue(authServiceMock)
             .compile();

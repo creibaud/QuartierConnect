@@ -7,7 +7,7 @@ import { AppModule } from "../src/app.module";
 
 type HealthResponse = {
     status: string;
-    database: string;
+    databases: { postgres: boolean; mongodb: boolean; neo4j: boolean };
     app: string;
     timestamp: string;
 };
@@ -24,6 +24,12 @@ describe("AppController (e2e)", () => {
             .useValue({
                 execute: jest.fn().mockResolvedValue([{ result: 1 }]),
             })
+            .overrideProvider("MONGODB")
+            .useValue({ command: jest.fn().mockResolvedValue({}) })
+            .overrideProvider("NEO4J")
+            .useValue({
+                verifyConnectivity: jest.fn().mockResolvedValue(undefined),
+            })
             .compile();
 
         app = moduleFixture.createNestApplication();
@@ -34,13 +40,19 @@ describe("AppController (e2e)", () => {
         await app.init();
     });
 
+    afterEach(async () => {
+        await app.close();
+    });
+
     it(`/v${majorVersion}/health (GET)`, () => {
         return request(app.getHttpServer())
             .get(`/v${majorVersion}/health`)
             .expect(200)
             .expect(({ body }: { body: HealthResponse }) => {
                 expect(body.status).toBe("ok");
-                expect(body.database).toBe("connected");
+                expect(body.databases.postgres).toBe(true);
+                expect(body.databases.mongodb).toBe(true);
+                expect(body.databases.neo4j).toBe(true);
                 expect(body.app).toBe("running");
                 expect(typeof body.timestamp).toBe("string");
             });
