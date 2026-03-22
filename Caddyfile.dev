@@ -1,0 +1,49 @@
+# QuartierConnect - Caddy Dev Reverse Proxy
+#
+# Routing:
+#   localhost         -> client Vite dev server (:5174)
+#   client.localhost  -> client Vite dev server (:5174)
+#   admin.localhost   -> back-office Vite dev server (:5173)
+#   api.localhost     -> NestJS API (:3000)
+#   drizzle.localhost -> Drizzle Studio (:4983)
+#   mongo.localhost   -> Mongo Express (:8081)
+#   neo4j.localhost   -> Neo4j Browser (:7474)
+#   mail.localhost    -> Mailpit UI (:8025)
+
+localhost {
+    reverse_proxy client:5174 {
+        header_up Host localhost:5174
+    }
+}
+
+client.localhost {
+    reverse_proxy client:5174 {
+        header_up Host localhost:5174
+    }
+}
+
+admin.localhost {
+    reverse_proxy back-office:5173 {
+        header_up Host localhost:5173
+    }
+}
+
+api.localhost {
+    reverse_proxy api:3000
+}
+
+drizzle.localhost {
+    redir https://local.drizzle.studio/?host=localhost&port=4983 302
+}
+
+mongo.localhost {
+    reverse_proxy mongo-interface:8081
+}
+
+neo4j.localhost {
+    reverse_proxy neo4j:7474
+}
+
+mail.localhost {
+    reverse_proxy mailpit:8025
+}

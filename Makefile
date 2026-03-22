@@ -5,8 +5,14 @@
 up: ## Start all services
 	docker compose up -d
 
+up-dev: ## Start all services with development configuration
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+
 down: ## Stop all services
 	docker compose down
+
+down-dev: ## Stop all services and remove volumes (development)
+	docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
 
 build: ## Build all Docker images
 	docker compose build
