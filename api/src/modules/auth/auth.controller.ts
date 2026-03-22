@@ -5,6 +5,9 @@ import {
     HttpCode,
     HttpStatus,
     Post,
+    Req,
+    Res,
+    UnauthorizedException,
     UseGuards,
 } from "@nestjs/common";
 import {
@@ -13,14 +16,13 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
+import type { Request, Response } from "express";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { Public } from "src/common/decorators/public.decorator";
 import { JwtAuthGuard } from "src/common/guards/jwt-auth.guard";
 import type { User } from "src/database/drizzle/schema";
 import { AuthService } from "src/modules/auth/auth.service";
 import { LoginDto } from "src/modules/auth/dto/login.dto";
-import { LogoutDto } from "src/modules/auth/dto/logout.dto";
-import { RefreshDto } from "src/modules/auth/dto/refresh.dto";
 import { RegisterDto } from "src/modules/auth/dto/register.dto";
 import { TotpCodeDto, TotpValidateDto } from "src/modules/auth/dto/totp.dto";
 import { TotpService } from "src/modules/auth/totp.service";
@@ -38,8 +40,13 @@ export class AuthController {
     @ApiOperation({ summary: "Register a new client account" })
     @ApiResponse({ status: 201, description: "User registered successfully" })
     @ApiResponse({ status: 409, description: "Email already in use" })
-    async register(@Body() dto: RegisterDto) {
-        return this.authService.register(dto);
+    async register(
+        @Body() dto: RegisterDto,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        const result = await this.authService.register(dto);
+        this.setRefreshCookie(res, result.refreshToken);
+        return { accessToken: result.accessToken, user: result.user };
     }
 
     @Public()
@@ -48,8 +55,18 @@ export class AuthController {
     @ApiOperation({ summary: "Login" })
     @ApiResponse({ status: 200, description: "Login successful" })
     @ApiResponse({ status: 401, description: "Invalid credentials" })
-    async login(@Body() dto: LoginDto) {
-        return this.authService.login(dto);
+    async login(
+        @Body() dto: LoginDto,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        const result = await this.authService.login(dto);
+
+        if ("requiresTotp" in result) {
+            return result;
+        }
+
+        this.setRefreshCookie(res, result.refreshToken);
+        return { accessToken: result.accessToken, user: result.user };
     }
 
     @Public()
@@ -58,18 +75,40 @@ export class AuthController {
     @ApiOperation({ summary: "Complete login with TOTP code" })
     @ApiResponse({ status: 200, description: "Login completed successfully" })
     @ApiResponse({ status: 401, description: "Invalid TOTP code or token" })
-    async completeTotpLogin(@Body() dto: TotpValidateDto) {
-        return this.authService.completeTotpLogin(dto);
+    async completeTotpLogin(
+        @Body() dto: TotpValidateDto,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        const result = await this.authService.completeTotpLogin(dto);
+        this.setRefreshCookie(res, result.refreshToken);
+        return { accessToken: result.accessToken, user: result.user };
     }
 
     @Public()
     @Post("refresh")
     @HttpCode(HttpStatus.OK)
-    @ApiOperation({ summary: "Refresh access token" })
+    @ApiOperation({ summary: "Refresh access token using httpOnly cookie" })
     @ApiResponse({ status: 200, description: "Token refreshed successfully" })
-    @ApiResponse({ status: 401, description: "Invalid refresh token" })
-    async refresh(@Body() dto: RefreshDto) {
-        return this.authService.refresh(dto);
+    @ApiResponse({
+        status: 401,
+        description: "Invalid or missing refresh token",
+    })
+    async refresh(
+        @Req() req: Request,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        const { name } = this.authService.getRefreshCookieConfig();
+        const refreshToken = (
+            req.cookies as Record<string, string> | undefined
+        )?.[name];
+
+        if (!refreshToken) {
+            throw new UnauthorizedException("No refresh token provided");
+        }
+
+        const result = await this.authService.refresh({ refreshToken });
+        this.setRefreshCookie(res, result.refreshToken);
+        return { accessToken: result.accessToken, user: result.user };
     }
 
     @Post("logout")
@@ -79,8 +118,14 @@ export class AuthController {
     @ApiOperation({ summary: "Logout" })
     @ApiResponse({ status: 200, description: "Logout successful" })
     @ApiResponse({ status: 401, description: "Unauthorized" })
-    async logout(@Body() dto: LogoutDto) {
-        return this.authService.logout(dto);
+    async logout(
+        @CurrentUser() user: User,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        await this.authService.logout({ userId: user.id });
+        const { name, path } = this.authService.getRefreshCookieConfig();
+        res.clearCookie(name, { path });
+        return { message: "Logged out successfully" };
     }
 
     @Post("totp/setup")
@@ -115,5 +160,19 @@ export class AuthController {
     @ApiResponse({ status: 401, description: "Invalid TOTP code" })
     async totpDisable(@CurrentUser() user: User, @Body() dto: TotpCodeDto) {
         return this.totpService.disable(user.id, dto.code);
+    }
+
+    private setRefreshCookie(res: Response, token: string) {
+        const { name, path, maxAge } =
+            this.authService.getRefreshCookieConfig();
+        const isProduction = process.env.NODE_ENV === "production";
+        const sameSite = isProduction ? "strict" : "none";
+        res.cookie(name, token, {
+            httpOnly: true,
+            secure: true,
+            sameSite,
+            path,
+            maxAge,
+        });
     }
 }

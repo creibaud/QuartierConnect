@@ -4,13 +4,12 @@ import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { completeTotpLogin, login } from "@workspace/auth/api";
 import { LoginForm } from "@workspace/auth/components/login-form";
 import { TotpForm } from "@workspace/auth/components/totp-form";
-import { isPendingTotp, type AuthTokens } from "@workspace/auth/types";
+import { useAuth } from "@workspace/auth/context";
+import { isPendingTotp } from "@workspace/auth/types";
 
 export const Route = createFileRoute("/$locale/login")({
-    beforeLoad: ({ params }) => {
-        const token = localStorage.getItem("accessToken");
-        const role = localStorage.getItem("userRole");
-        if (token && role === "admin") {
+    beforeLoad: ({ context, params }) => {
+        if (context.auth.accessToken && context.auth.user?.role === "admin") {
             throw redirect({
                 to: "/$locale",
                 params: { locale: params.locale },
@@ -22,15 +21,10 @@ export const Route = createFileRoute("/$locale/login")({
 
 type LoginStep = "credentials" | "totp";
 
-function saveSession(tokens: AuthTokens) {
-    localStorage.setItem("accessToken", tokens.accessToken);
-    localStorage.setItem("refreshToken", tokens.refreshToken);
-    localStorage.setItem("userRole", tokens.user.role);
-}
-
 function LoginPage() {
     const navigate = useNavigate();
     const { locale } = Route.useParams();
+    const auth = useAuth();
     const [step, setStep] = useState<LoginStep>("credentials");
     const [pendingTotpToken, setPendingTotpToken] = useState<string | null>(
         null,
@@ -50,7 +44,7 @@ function LoginPage() {
                 setStep("totp");
                 return;
             }
-            saveSession(result);
+            auth.setSession(result.accessToken, result.user);
             void navigate({ to: "/$locale", params: { locale } });
         },
     });
@@ -61,7 +55,7 @@ function LoginPage() {
             return completeTotpLogin(pendingTotpToken, code);
         },
         onSuccess: (result) => {
-            saveSession(result);
+            auth.setSession(result.accessToken, result.user);
             void navigate({ to: "/$locale", params: { locale } });
         },
     });

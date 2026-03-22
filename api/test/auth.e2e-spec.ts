@@ -4,7 +4,9 @@ import {
     UnauthorizedException,
     VersioningType,
 } from "@nestjs/common";
+import type { ExecutionContext } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
+import type { NextFunction, Request, Response } from "express";
 import request from "supertest";
 import { App } from "supertest/types";
 import * as packageJson from "../package.json";
@@ -23,12 +25,25 @@ describe("AuthController (e2e)", () => {
         login: jest.fn(),
         refresh: jest.fn(),
         logout: jest.fn(),
+        getRefreshCookieConfig: jest.fn(),
+    };
+
+    const fakeUser = {
+        id: "6fce8b71-2d1a-4d4a-9c12-44d4624e8f81",
+        email: "john.doe@example.com",
+        role: "resident",
     };
 
     beforeAll(async () => {
         jwtGuardCanActivateSpy = jest
             .spyOn(JwtAuthGuard.prototype, "canActivate")
-            .mockReturnValue(true);
+            .mockImplementation((ctx: ExecutionContext) => {
+                const req = ctx
+                    .switchToHttp()
+                    .getRequest<{ user: typeof fakeUser }>();
+                req.user = fakeUser;
+                return true;
+            });
 
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [AppModule],
@@ -46,6 +61,33 @@ describe("AuthController (e2e)", () => {
             .compile();
 
         app = moduleFixture.createNestApplication();
+        app.use(
+            (
+                req: Request & { cookies?: Record<string, string> },
+                _res: Response,
+                next: NextFunction,
+            ) => {
+                const rawCookieHeader = req.headers.cookie;
+                const parsed: Record<string, string> = {};
+
+                const rawCookie = Array.isArray(rawCookieHeader)
+                    ? rawCookieHeader.join(";")
+                    : rawCookieHeader;
+
+                if (typeof rawCookie === "string") {
+                    for (const pair of rawCookie.split(";")) {
+                        const [name, ...rest] = pair.trim().split("=");
+                        if (!name || rest.length === 0) {
+                            continue;
+                        }
+                        parsed[name] = decodeURIComponent(rest.join("="));
+                    }
+                }
+
+                req.cookies = parsed;
+                next();
+            },
+        );
         app.enableVersioning({
             type: VersioningType.URI,
             defaultVersion: majorVersion,
@@ -55,7 +97,18 @@ describe("AuthController (e2e)", () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        jwtGuardCanActivateSpy.mockReturnValue(true);
+        jwtGuardCanActivateSpy.mockImplementation((ctx: ExecutionContext) => {
+            const req = ctx
+                .switchToHttp()
+                .getRequest<{ user: typeof fakeUser }>();
+            req.user = fakeUser;
+            return true;
+        });
+        authServiceMock.getRefreshCookieConfig.mockReturnValue({
+            name: "refresh_token",
+            path: "/v1/auth/refresh",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
     });
 
     afterAll(async () => {
@@ -74,10 +127,14 @@ describe("AuthController (e2e)", () => {
         const expected = {
             user: { id: "user-id", email: payload.email },
             accessToken: "access-token",
+        };
+
+        const serviceResult = {
+            ...expected,
             refreshToken: "refresh-token",
         };
 
-        authServiceMock.register.mockResolvedValue(expected);
+        authServiceMock.register.mockResolvedValue(serviceResult);
 
         await request(app.getHttpServer())
             .post(`/v${majorVersion}/auth/register`)
@@ -99,10 +156,14 @@ describe("AuthController (e2e)", () => {
         const expected = {
             user: { id: "user-id", email: payload.email },
             accessToken: "access-token",
+        };
+
+        const serviceResult = {
+            ...expected,
             refreshToken: "refresh-token",
         };
 
-        authServiceMock.login.mockResolvedValue(expected);
+        authServiceMock.login.mockResolvedValue(serviceResult);
 
         await request(app.getHttpServer())
             .post(`/v${majorVersion}/auth/login`)
@@ -116,26 +177,29 @@ describe("AuthController (e2e)", () => {
     });
 
     it(`/v${majorVersion}/auth/refresh (POST) returns 200`, async () => {
-        const payload = {
-            refreshToken: "valid-refresh-token",
-        };
-
         const expected = {
             accessToken: "new-access-token",
+            user: { id: "user-id", email: "john.doe@example.com" },
+        };
+
+        const serviceResult = {
+            ...expected,
             refreshToken: "new-refresh-token",
         };
 
-        authServiceMock.refresh.mockResolvedValue(expected);
+        authServiceMock.refresh.mockResolvedValue(serviceResult);
 
         await request(app.getHttpServer())
             .post(`/v${majorVersion}/auth/refresh`)
-            .send(payload)
+            .set("Cookie", ["refresh_token=valid-refresh-token"])
             .expect(200)
             .expect(({ body }) => {
                 expect(body).toEqual(expected);
             });
 
-        expect(authServiceMock.refresh).toHaveBeenCalledWith(payload);
+        expect(authServiceMock.refresh).toHaveBeenCalledWith({
+            refreshToken: "valid-refresh-token",
+        });
     });
 
     it(`/v${majorVersion}/auth/refresh (POST) returns 401 on invalid token`, async () => {
@@ -145,7 +209,7 @@ describe("AuthController (e2e)", () => {
 
         await request(app.getHttpServer())
             .post(`/v${majorVersion}/auth/refresh`)
-            .send({ refreshToken: "invalid-token" })
+            .set("Cookie", ["refresh_token=invalid-token"])
             .expect(401);
     });
 
@@ -158,7 +222,7 @@ describe("AuthController (e2e)", () => {
 
         await request(app.getHttpServer())
             .post(`/v${majorVersion}/auth/refresh`)
-            .send({ refreshToken: "revoked-token" })
+            .set("Cookie", ["refresh_token=revoked-token"])
             .expect(403);
     });
 
@@ -174,19 +238,19 @@ describe("AuthController (e2e)", () => {
     });
 
     it(`/v${majorVersion}/auth/logout (POST) returns 200 when authenticated`, async () => {
-        const payload = { userId: "6fce8b71-2d1a-4d4a-9c12-44d4624e8f81" };
         const expected = { message: "Logged out successfully" };
 
         authServiceMock.logout.mockResolvedValue(expected);
 
         await request(app.getHttpServer())
             .post(`/v${majorVersion}/auth/logout`)
-            .send(payload)
             .expect(200)
             .expect(({ body }) => {
                 expect(body).toEqual(expected);
             });
 
-        expect(authServiceMock.logout).toHaveBeenCalledWith(payload);
+        expect(authServiceMock.logout).toHaveBeenCalledWith({
+            userId: fakeUser.id,
+        });
     });
 });

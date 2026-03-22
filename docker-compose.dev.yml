@@ -102,9 +102,12 @@ services:
       JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-15m}
       JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-7d}
       SALT_ROUNDS: ${SALT_ROUNDS:-10}
+      REFRESH_COOKIE_NAME: ${REFRESH_COOKIE_NAME:-refresh_token}
+      REFRESH_COOKIE_PATH: ${REFRESH_COOKIE_PATH:-/v1/auth/refresh}
       MAIL_HOST: ${MAIL_HOST:-mailpit}
       MAIL_PORT: ${MAIL_PORT:-1025}
-      MAIL_USER: ${MAIL_USER:-test}
+      MAIL_USER: ${MAIL_USER:-test@example.com}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@quartierconnect.local}
       MAIL_PASS: ${MAIL_PASS:-test}
     depends_on:
       postgres:

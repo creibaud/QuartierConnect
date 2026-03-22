@@ -6,9 +6,8 @@ export interface AuthUser {
     role: string;
 }
 
-export interface AuthTokens {
+export interface AuthSession {
     accessToken: string;
-    refreshToken: string;
     user: AuthUser;
 }
 
@@ -17,7 +16,7 @@ export interface LoginPendingTotp {
     totpToken: string;
 }
 
-export type LoginResult = AuthTokens | LoginPendingTotp;
+export type LoginResult = AuthSession | LoginPendingTotp;
 
 export function isPendingTotp(result: LoginResult): result is LoginPendingTotp {
     return "requiresTotp" in result && result.requiresTotp === true;

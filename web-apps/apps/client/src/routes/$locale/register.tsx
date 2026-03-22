@@ -2,11 +2,11 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { register } from "@workspace/auth/api";
 import { RegisterForm } from "@workspace/auth/components/register-form";
-import type { AuthTokens } from "@workspace/auth/types";
+import { useAuth } from "@workspace/auth/context";
 
 export const Route = createFileRoute("/$locale/register")({
-    beforeLoad: ({ params }) => {
-        if (localStorage.getItem("accessToken")) {
+    beforeLoad: ({ context, params }) => {
+        if (context.auth.accessToken) {
             throw redirect({
                 to: "/$locale",
                 params: { locale: params.locale },
@@ -16,15 +16,10 @@ export const Route = createFileRoute("/$locale/register")({
     component: RegisterPage,
 });
 
-function saveSession(tokens: AuthTokens) {
-    localStorage.setItem("accessToken", tokens.accessToken);
-    localStorage.setItem("refreshToken", tokens.refreshToken);
-    localStorage.setItem("userRole", tokens.user.role);
-}
-
 function RegisterPage() {
     const navigate = useNavigate();
     const { locale } = Route.useParams();
+    const auth = useAuth();
 
     const registerMutation = useMutation({
         mutationFn: (values: {
@@ -40,7 +35,7 @@ function RegisterPage() {
                 values.lastName,
             ),
         onSuccess: (result) => {
-            saveSession(result);
+            auth.setSession(result.accessToken, result.user);
             void navigate({ to: "/$locale", params: { locale } });
         },
     });

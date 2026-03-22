@@ -85,7 +85,8 @@ services:
       SALT_ROUNDS: ${SALT_ROUNDS:-10}
       MAIL_HOST: ${MAIL_HOST:-localhost}
       MAIL_PORT: ${MAIL_PORT:-1025}
-      MAIL_USER: ${MAIL_USER:-test}
+      MAIL_USER: ${MAIL_USER:-test@example.com}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@quartierconnect.local}
       MAIL_PASS: ${MAIL_PASS:-test}
     depends_on:
       postgres:

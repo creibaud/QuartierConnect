@@ -31,7 +31,7 @@ import { UsersModule } from "src/modules/users/users.module";
                 },
                 defaults: {
                     from: `"QuartierConnect" <${configService.getOrThrow<string>(
-                        "MAIL_USER",
+                        "MAIL_FROM",
                     )}>`,
                 },
             }),

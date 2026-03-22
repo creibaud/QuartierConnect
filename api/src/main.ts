@@ -2,6 +2,7 @@ import { ValidationPipe, VersioningType } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import type { NextFunction, Request, Response } from "express";
 import { HttpExceptionFilter } from "src/common/filters/http-exception.filter";
 import { JsonLogger } from "src/common/logger/json.logger";
 import * as packageJson from "../package.json";
@@ -19,6 +20,34 @@ async function bootstrap() {
         type: VersioningType.URI,
         defaultVersion: majorVersion,
     });
+
+    app.use(
+        (
+            req: Request & { cookies?: Record<string, string> },
+            _res: Response,
+            next: NextFunction,
+        ) => {
+            const rawCookieHeader = req.headers.cookie;
+            const parsed: Record<string, string> = {};
+
+            const rawCookie = Array.isArray(rawCookieHeader)
+                ? rawCookieHeader.join(";")
+                : rawCookieHeader;
+
+            if (typeof rawCookie === "string") {
+                for (const pair of rawCookie.split(";")) {
+                    const [name, ...rest] = pair.trim().split("=");
+                    if (!name || rest.length === 0) {
+                        continue;
+                    }
+                    parsed[name] = decodeURIComponent(rest.join("="));
+                }
+            }
+
+            req.cookies = parsed;
+            next();
+        },
+    );
 
     app.useGlobalPipes(
         new ValidationPipe({

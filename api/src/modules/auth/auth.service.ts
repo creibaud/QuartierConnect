@@ -260,6 +260,23 @@ export class AuthService {
         return { message: "Logged out successfully" };
     }
 
+    getRefreshCookieConfig(): {
+        name: string;
+        path: string;
+        maxAge: number;
+    } {
+        const name = this.configService.getOrThrow<string>(
+            "REFRESH_COOKIE_NAME",
+        );
+        const path = this.configService.getOrThrow<string>(
+            "REFRESH_COOKIE_PATH",
+        );
+        const expiration = this.configService.getOrThrow<string>(
+            "JWT_REFRESH_EXPIRATION",
+        );
+        return { name, path, maxAge: this.expirationToMs(expiration) };
+    }
+
     async validateUserById(userId: string) {
         const [user] = await this.db
             .select()
@@ -337,6 +354,14 @@ export class AuthService {
         });
 
         return { accessToken, refreshToken };
+    }
+
+    private expirationToMs(expiration: string): number {
+        const value = Number.parseInt(expiration);
+        if (expiration.endsWith("d")) return value * 24 * 60 * 60 * 1000;
+        if (expiration.endsWith("h")) return value * 60 * 60 * 1000;
+        if (expiration.endsWith("m")) return value * 60 * 1000;
+        return value * 1000;
     }
 
     private sanitizeUser(user: User) {

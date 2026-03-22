@@ -1,5 +1,12 @@
 import { plainToInstance } from "class-transformer";
-import { IsEnum, IsNumber, IsString, Min, validateSync } from "class-validator";
+import {
+    IsEmail,
+    IsEnum,
+    IsNumber,
+    IsString,
+    Min,
+    validateSync,
+} from "class-validator";
 
 enum Environment {
     Development = "development",
@@ -72,6 +79,12 @@ class EnvironmentVariables {
     @IsString()
     JWT_REFRESH_EXPIRATION: string;
 
+    @IsString()
+    REFRESH_COOKIE_NAME: string;
+
+    @IsString()
+    REFRESH_COOKIE_PATH: string;
+
     @IsNumber()
     @Min(1)
     SALT_ROUNDS: number;
@@ -85,6 +98,9 @@ class EnvironmentVariables {
 
     @IsString()
     MAIL_USER: string;
+
+    @IsEmail()
+    MAIL_FROM: string;
 
     @IsString()
     MAIL_PASS: string;

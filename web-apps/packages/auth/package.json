@@ -23,6 +23,7 @@
         "./types": "./src/types.ts",
         "./api": "./src/api.ts",
         "./schemas": "./src/schemas.ts",
+        "./context": "./src/context.tsx",
         "./components/*": "./src/components/*.tsx"
     }
 }
