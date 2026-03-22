@@ -3,4 +3,9 @@ dist
 .env
 .env.*
 !.env.example
+coverage
+test/coverage
 *.log
+*.tsbuildinfo
+.git
+.gitignore
