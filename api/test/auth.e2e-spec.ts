@@ -9,8 +9,8 @@ import request from "supertest";
 import { App } from "supertest/types";
 import * as packageJson from "../package.json";
 import { AppModule } from "../src/app.module";
-import { AuthService } from "../src/modules/auth/auth.service";
 import { JwtAuthGuard } from "../src/common/guards/jwt-auth.guard";
+import { AuthService } from "../src/modules/auth/auth.service";
 
 describe("AuthController (e2e)", () => {
     let app: INestApplication<App>;
@@ -38,7 +38,9 @@ describe("AuthController (e2e)", () => {
             .overrideProvider("MONGODB")
             .useValue({ command: jest.fn().mockResolvedValue({}) })
             .overrideProvider("NEO4J")
-            .useValue({ verifyConnectivity: jest.fn().mockResolvedValue(undefined) })
+            .useValue({
+                verifyConnectivity: jest.fn().mockResolvedValue(undefined),
+            })
             .overrideProvider(AuthService)
             .useValue(authServiceMock)
             .compile();

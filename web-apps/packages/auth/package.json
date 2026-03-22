@@ -1,0 +1,28 @@
+{
+    "name": "@workspace/auth",
+    "version": "0.0.0",
+    "type": "module",
+    "private": true,
+    "dependencies": {
+        "@workspace/ui": "workspace:*",
+        "zod": "^3.25.76"
+    },
+    "peerDependencies": {
+        "@tanstack/react-form": "^1",
+        "@tanstack/react-query": "^5",
+        "intlayer": "^8",
+        "react": "^19",
+        "react-intlayer": "^8"
+    },
+    "devDependencies": {
+        "@types/react": "^19.2.10",
+        "typescript": "^5.9.3",
+        "vite": "^7.2.4"
+    },
+    "exports": {
+        "./types": "./src/types.ts",
+        "./api": "./src/api.ts",
+        "./schemas": "./src/schemas.ts",
+        "./components/*": "./src/components/*.tsx"
+    }
+}

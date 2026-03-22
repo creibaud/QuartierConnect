@@ -8,6 +8,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/client/package.json ./apps/client/
 COPY apps/back-office/package.json ./apps/back-office/
 COPY packages/ui/package.json ./packages/ui/
+COPY packages/auth/package.json ./packages/auth/
 
 RUN pnpm install
 

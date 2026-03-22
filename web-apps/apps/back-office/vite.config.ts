@@ -17,9 +17,27 @@ export default defineConfig({
         tailwindcss(),
     ],
     resolve: {
-        alias: {
-            "@": path.resolve(__dirname, "./src"),
-        },
+        alias: [
+            {
+                find: /^@workspace\/auth\/(.*)/,
+                replacement:
+                    path.resolve(__dirname, "../../packages/auth/src") + "/$1",
+            },
+            {
+                find: /^@workspace\/ui\/(.*)/,
+                replacement:
+                    path.resolve(__dirname, "../../packages/ui/src") + "/$1",
+            },
+            { find: "@", replacement: path.resolve(__dirname, "./src") },
+        ],
+        dedupe: [
+            "react",
+            "react-dom",
+            "react-intlayer",
+            "intlayer",
+            "@tanstack/react-form",
+            "@tanstack/react-query",
+        ],
     },
     server: {
         port: 5173,

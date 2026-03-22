@@ -51,6 +51,15 @@ async function bootstrap() {
         },
     });
 
+    app.enableCors({
+        origin: [
+            "https://localhost",
+            "https://client.localhost",
+            "https://admin.localhost",
+        ],
+        credentials: true,
+    });
+
     const port = config.get<number>("PORT") ?? 3000;
     await app.listen(port);
     console.log(`QuartierConnect API → http://localhost:${port}/v1`);

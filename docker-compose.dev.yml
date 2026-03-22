@@ -153,12 +153,17 @@ services:
       context: ./web-apps
       dockerfile: Dockerfile.dev
     command: pnpm --filter client dev --host 0.0.0.0 --port 5174
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: https://api.localhost/v1
     volumes:
+      - ./web-apps/apps/client/intlayer.config.ts:/app/apps/client/intlayer.config.ts:ro
       - ./web-apps/apps/client/index.html:/app/apps/client/index.html:ro
       - ./web-apps/apps/client/vite.config.ts:/app/apps/client/vite.config.ts:ro
       - ./web-apps/apps/client/src:/app/apps/client/src
       - ./web-apps/apps/client/public:/app/apps/client/public
       - ./web-apps/packages/ui/src:/app/packages/ui/src
+      - ./web-apps/packages/auth/src:/app/packages/auth/src
     ports:
       - "5174:5174"
     restart: unless-stopped
@@ -172,12 +177,17 @@ services:
       context: ./web-apps
       dockerfile: Dockerfile.dev
     command: pnpm --filter back-office dev --host 0.0.0.0 --port 5173
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: https://api.localhost/v1
     volumes:
+      - ./web-apps/apps/back-office/intlayer.config.ts:/app/apps/back-office/intlayer.config.ts:ro
       - ./web-apps/apps/back-office/index.html:/app/apps/back-office/index.html:ro
       - ./web-apps/apps/back-office/vite.config.ts:/app/apps/back-office/vite.config.ts:ro
       - ./web-apps/apps/back-office/src:/app/apps/back-office/src
       - ./web-apps/apps/back-office/public:/app/apps/back-office/public
       - ./web-apps/packages/ui/src:/app/packages/ui/src
+      - ./web-apps/packages/auth/src:/app/packages/auth/src
     ports:
       - "5173:5173"
     restart: unless-stopped

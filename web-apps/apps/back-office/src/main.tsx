@@ -1,7 +1,7 @@
 import ReactDOM from "react-dom/client";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { routeTree } from "@/routeTree.gen";
-import "@workspace/ui/globals.css";
+import "@workspace/ui/styles/globals.css";
 import { IntlayerProvider } from "react-intlayer";
 
 const router = createRouter({

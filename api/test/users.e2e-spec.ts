@@ -58,7 +58,9 @@ describe("UsersController (e2e)", () => {
             .overrideProvider("MONGODB")
             .useValue({ command: jest.fn().mockResolvedValue({}) })
             .overrideProvider("NEO4J")
-            .useValue({ verifyConnectivity: jest.fn().mockResolvedValue(undefined) })
+            .useValue({
+                verifyConnectivity: jest.fn().mockResolvedValue(undefined),
+            })
             .overrideProvider(UserService)
             .useValue(userServiceMock)
             .compile();

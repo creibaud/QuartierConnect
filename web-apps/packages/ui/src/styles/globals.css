@@ -7,6 +7,7 @@
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../../../components/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
+@source "../../../auth/src/**/*.{ts,tsx}";
 
 @theme inline {
     --font-heading: var(--font-sans);

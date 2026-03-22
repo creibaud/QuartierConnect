@@ -75,11 +75,17 @@ describe("AuthController", () => {
 
     it("completeTotpLogin delegates to AuthService", async () => {
         const dto = { totpToken: "pending-token", code: "123456" };
-        const expected = { user: fakeUser, accessToken: "access-token", refreshToken: "refresh-token" };
+        const expected = {
+            user: fakeUser,
+            accessToken: "access-token",
+            refreshToken: "refresh-token",
+        };
 
         authServiceMock.completeTotpLogin.mockResolvedValue(expected as never);
 
-        await expect(controller.completeTotpLogin(dto)).resolves.toEqual(expected);
+        await expect(controller.completeTotpLogin(dto)).resolves.toEqual(
+            expected,
+        );
         expect(authServiceMock.completeTotpLogin).toHaveBeenCalledWith(dto);
     });
 
@@ -104,7 +110,10 @@ describe("AuthController", () => {
     });
 
     it("totpSetup delegates to TotpService", async () => {
-        const expected = { otpauthUrl: "otpauth://...", backupCodes: ["A1B2-C3D4"] };
+        const expected = {
+            otpauthUrl: "otpauth://...",
+            backupCodes: ["A1B2-C3D4"],
+        };
 
         totpServiceMock.generateSetup.mockResolvedValue(expected as never);
 
@@ -117,8 +126,13 @@ describe("AuthController", () => {
 
         totpServiceMock.verifySetup.mockResolvedValue(expected as never);
 
-        await expect(controller.totpVerify(fakeUser, { code: "123456" })).resolves.toEqual(expected);
-        expect(totpServiceMock.verifySetup).toHaveBeenCalledWith(fakeUser.id, "123456");
+        await expect(
+            controller.totpVerify(fakeUser, { code: "123456" }),
+        ).resolves.toEqual(expected);
+        expect(totpServiceMock.verifySetup).toHaveBeenCalledWith(
+            fakeUser.id,
+            "123456",
+        );
     });
 
     it("totpDisable delegates to TotpService", async () => {
@@ -126,7 +140,12 @@ describe("AuthController", () => {
 
         totpServiceMock.disable.mockResolvedValue(expected as never);
 
-        await expect(controller.totpDisable(fakeUser, { code: "123456" })).resolves.toEqual(expected);
-        expect(totpServiceMock.disable).toHaveBeenCalledWith(fakeUser.id, "123456");
+        await expect(
+            controller.totpDisable(fakeUser, { code: "123456" }),
+        ).resolves.toEqual(expected);
+        expect(totpServiceMock.disable).toHaveBeenCalledWith(
+            fakeUser.id,
+            "123456",
+        );
     });
 });

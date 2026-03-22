@@ -1,14 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Hero } from "@/components/hero";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+
+const DEFAULT_LOCALE = "fr";
 
 export const Route = createFileRoute("/")({
-    component: RouteComponent,
+    beforeLoad: () => {
+        throw redirect({
+            to: "/$locale",
+            params: { locale: DEFAULT_LOCALE },
+        });
+    },
 });
-
-function RouteComponent() {
-    return (
-        <div>
-            <Hero />
-        </div>
-    );
-}

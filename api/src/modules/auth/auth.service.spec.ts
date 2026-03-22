@@ -412,7 +412,10 @@ describe("AuthService", () => {
         });
 
         await expect(
-            service.completeTotpLogin({ totpToken: "bad-type", code: "123456" }),
+            service.completeTotpLogin({
+                totpToken: "bad-type",
+                code: "123456",
+            }),
         ).rejects.toBeInstanceOf(UnauthorizedException);
     });
 
