@@ -1,1 +1,6 @@
 .env
+*.aux
+*.log
+*.out
+*.toc
+*.gz
