@@ -18,7 +18,9 @@ function inferSchemaFromExample(value: unknown): OpenApiSchema {
     }
 
     if (Array.isArray(value)) {
-        const firstDefined = value.find((item) => item !== undefined);
+        const firstDefined = (value as unknown[]).find(
+            (item: unknown) => item !== undefined,
+        );
         return {
             type: "array",
             items:
@@ -72,7 +74,7 @@ function hasStructuralSchema(schema: OpenApiSchema): boolean {
     );
 }
 
-function addMissingResponseSchemasFromExamples(document: OpenAPIObject): void {
+function enrichResponseSchemasFromExamples(document: OpenAPIObject): void {
     for (const pathItem of Object.values(document.paths)) {
         if (!pathItem) {
             continue;
@@ -222,7 +224,7 @@ async function bootstrap() {
         .build();
 
     const document = SwaggerModule.createDocument(app, swaggerConfig);
-    addMissingResponseSchemasFromExamples(document);
+    enrichResponseSchemasFromExamples(document);
 
     app.use(
         "/docs",
