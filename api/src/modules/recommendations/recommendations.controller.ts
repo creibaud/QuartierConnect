@@ -28,12 +28,12 @@ export class RecommendationsController {
             example: {
                 data: [
                     {
-                        id: "507f1f77bcf86cd799439011",
+                        eventId: "507f1f77bcf86cd799439011",
                         title: "Barbecue de printemps",
                         score: 3,
                     },
                     {
-                        id: "507f1f77bcf86cd799439012",
+                        eventId: "507f1f77bcf86cd799439012",
                         title: "Atelier jardinage",
                         score: 2,
                     },
@@ -57,12 +57,12 @@ export class RecommendationsController {
             example: {
                 data: [
                     {
-                        id: "507f1f77bcf86cd799439013",
+                        serviceId: "507f1f77bcf86cd799439013",
                         title: "Cours de jardinage",
                         score: 2,
                     },
                     {
-                        id: "507f1f77bcf86cd799439014",
+                        serviceId: "507f1f77bcf86cd799439014",
                         title: "Livraison de courses",
                         score: 1,
                     },

@@ -14,8 +14,8 @@ export class RecommendationsService {
                 `MATCH (me:User {id: $userId})-[r:INTERESTED_IN_CATEGORY]->(c:Category)
                  MATCH (e:Event)-[:IN_CATEGORY]->(c)
                  WHERE NOT (me)-[:PARTICIPATED_IN]->(e)
-                   AND NOT (me)-[:INTERESTED_IN {liked: false}]->(e)
-                 RETURN e.id AS eventId, sum(r.score) AS score
+                                     AND NOT (me)-[:INTERESTED_IN]->(e)
+                 RETURN e.id AS eventId, e.title AS title, sum(r.score) AS score
                  ORDER BY score DESC LIMIT 10`,
                 { userId },
             );
@@ -24,6 +24,7 @@ export class RecommendationsService {
 
             return result.records.map((record) => ({
                 eventId: record.get("eventId") as string,
+                title: record.get("title") as string,
                 score: (
                     record.get("score") as { toNumber: () => number }
                 ).toNumber(),
@@ -37,10 +38,11 @@ export class RecommendationsService {
         const session = this.neo4j.session();
         try {
             const result = await session.run(
-                `MATCH (me:User {id: $userId})-[:COMPLETED_SERVICE_WITH]->(neighbor:User)
-                 MATCH (s:Service)-[:CREATED_SERVICE]->(neighbor)
-                 WHERE NOT (me)-[:CREATED_SERVICE]->(s)
-                 RETURN s.id AS serviceId, count(neighbor) AS score
+                `MATCH (me:User {id: $userId})-[:COMPLETED_SERVICE_WITH]-(neighbor:User)
+                 MATCH (neighbor)-[:CREATED_SERVICE]->(s:Service)
+                 WHERE s.status = 'open'
+                   AND NOT (me)-[:CREATED_SERVICE]->(s)
+                                 RETURN s.id AS serviceId, s.title AS title, count(neighbor) AS score
                  ORDER BY score DESC LIMIT 10`,
                 { userId },
             );
@@ -51,6 +53,7 @@ export class RecommendationsService {
 
             return result.records.map((record) => ({
                 serviceId: record.get("serviceId") as string,
+                title: record.get("title") as string,
                 score: (
                     record.get("score") as { toNumber: () => number }
                 ).toNumber(),
