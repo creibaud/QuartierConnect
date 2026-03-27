@@ -288,7 +288,7 @@ describe("EventsController (e2e)", () => {
                 .patch(`/v${majorVersion}/events/${fakeEventId}`)
                 .send({ title: "Updated Cleanup" })
                 .expect(200)
-                .expect(({ body }) => {
+                .expect(({ body }: { body: { title: string } }) => {
                     expect(body.title).toBe("Updated Cleanup");
                 });
 

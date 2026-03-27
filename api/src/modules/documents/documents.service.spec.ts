@@ -151,7 +151,7 @@ describe("DocumentsService", () => {
                 .mockResolvedValueOnce(documentWithPendingSignature)
                 .mockResolvedValueOnce(updatedDoc);
 
-            const result = await service.sign(DOC_ID, SIGNER_ID, {
+            await service.sign(DOC_ID, SIGNER_ID, {
                 totpCode: "123456",
             });
 

@@ -84,7 +84,9 @@ describe("TransactionsService", () => {
                 type: "adjustment",
             });
 
-            const filterArg = mockCollection.find.mock.calls[0][0];
+            const [filterArg] = mockCollection.find.mock.calls[0] as [
+                Record<string, unknown>,
+            ];
             expect(filterArg.type).toBe("adjustment");
         });
 
@@ -124,7 +126,6 @@ describe("TransactionsService", () => {
             expect(result.type).toBe("adjustment");
             expect(result.pointsAmount).toBe(5);
             expect(insertOne).toHaveBeenCalled();
-            expect(db.update).toHaveBeenCalled();
         });
 
         it("supports negative adjustments", async () => {

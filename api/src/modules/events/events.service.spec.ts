@@ -6,11 +6,12 @@ import {
 } from "@nestjs/common";
 import { ObjectId } from "mongodb";
 import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
-import type { Neo4jDriver } from "src/database/neo4j/neo4j.type";
 import { CreateEventDto } from "src/modules/events/dto/create-event.dto";
 import { SwipeEventDto } from "src/modules/events/dto/swipe-event.dto";
 import { UpdateEventDto } from "src/modules/events/dto/update-event.dto";
 import { EventsService } from "src/modules/events/events.service";
+import { OUTBOX_EVENT_TYPES } from "src/modules/outbox/outbox-event-types";
+import type { OutboxService } from "src/modules/outbox/outbox.service";
 
 const makeObjectId = () => new ObjectId();
 
@@ -43,18 +44,13 @@ const buildCollectionMock = () => ({
 describe("EventsService", () => {
     let service: EventsService;
     let collectionMocks: Record<string, ReturnType<typeof buildCollectionMock>>;
-    let sessionRunMock: jest.Mock;
-    let sessionCloseMock: jest.Mock;
     let mongo: MongoDatabase;
-    let neo4j: Neo4jDriver;
+    let outbox: { publish: jest.Mock };
 
     beforeEach(() => {
         jest.clearAllMocks();
 
         collectionMocks = {};
-
-        sessionRunMock = jest.fn().mockResolvedValue({});
-        sessionCloseMock = jest.fn().mockResolvedValue(undefined);
 
         mongo = {
             collection: jest.fn().mockImplementation((name: string) => {
@@ -65,14 +61,9 @@ describe("EventsService", () => {
             }),
         } as unknown as MongoDatabase;
 
-        neo4j = {
-            session: jest.fn().mockReturnValue({
-                run: sessionRunMock,
-                close: sessionCloseMock,
-            }),
-        } as unknown as Neo4jDriver;
+        outbox = { publish: jest.fn().mockResolvedValue(undefined) };
 
-        service = new EventsService(mongo, neo4j);
+        service = new EventsService(mongo, outbox as unknown as OutboxService);
     });
 
     describe("create", () => {
@@ -83,7 +74,7 @@ describe("EventsService", () => {
             quartierId: "quartier-uuid",
         };
 
-        it("inserts a document into MongoDB and creates Neo4j nodes", async () => {
+        it("inserts a document into MongoDB and publishes outbox event", async () => {
             const insertedId = makeObjectId();
             const eventsCollection = buildCollectionMock();
             eventsCollection.insertOne.mockResolvedValue({ insertedId });
@@ -100,18 +91,14 @@ describe("EventsService", () => {
                 }),
             );
 
-            expect(sessionRunMock).toHaveBeenCalledWith(
-                expect.stringContaining("CREATE (e:Event"),
-                expect.objectContaining({ id: insertedId.toString() }),
-            );
-
-            expect(sessionRunMock).toHaveBeenCalledWith(
-                expect.stringContaining("CREATED_EVENT"),
-                expect.objectContaining({ creatorId: "creator-user-id" }),
+            expect(outbox.publish).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    eventType: OUTBOX_EVENT_TYPES.eventCreated,
+                    aggregateId: insertedId.toString(),
+                }),
             );
 
             expect(result.id).toBe(insertedId.toString());
-            expect(sessionCloseMock).toHaveBeenCalled();
         });
     });
 
@@ -140,7 +127,7 @@ describe("EventsService", () => {
     });
 
     describe("register", () => {
-        it("registers a user and creates Neo4j relationships", async () => {
+        it("registers a user and publishes outbox event", async () => {
             const eventId = makeObjectId().toString();
             const eventDoc = buildEventDocument({ _id: new ObjectId(eventId) });
 
@@ -178,14 +165,10 @@ describe("EventsService", () => {
                 { $inc: { registrationCount: 1 } },
             );
 
-            expect(sessionRunMock).toHaveBeenCalledWith(
-                expect.stringContaining("PARTICIPATED_IN"),
-                expect.objectContaining({ userId: "user-id", eventId }),
-            );
-
-            expect(sessionRunMock).toHaveBeenCalledWith(
-                expect.stringContaining("KNOWS"),
-                expect.objectContaining({ eventId, userId: "user-id" }),
+            expect(outbox.publish).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    eventType: OUTBOX_EVENT_TYPES.eventRegistrationCreated,
+                }),
             );
         });
 
@@ -248,7 +231,7 @@ describe("EventsService", () => {
     });
 
     describe("swipe", () => {
-        it("creates Neo4j INTERESTED_IN relationships when liked is true", async () => {
+        it("publishes outbox event when liked is true", async () => {
             const dto: SwipeEventDto = {
                 eventId: makeObjectId().toString(),
                 liked: true,
@@ -265,24 +248,14 @@ describe("EventsService", () => {
                 { upsert: true },
             );
 
-            expect(sessionRunMock).toHaveBeenCalledWith(
-                expect.stringContaining("INTERESTED_IN"),
+            expect(outbox.publish).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    userId: "user-id",
-                    eventId: dto.eventId,
-                }),
-            );
-
-            expect(sessionRunMock).toHaveBeenCalledWith(
-                expect.stringContaining("INTERESTED_IN_CATEGORY"),
-                expect.objectContaining({
-                    userId: "user-id",
-                    eventId: dto.eventId,
+                    eventType: OUTBOX_EVENT_TYPES.eventSwipeLiked,
                 }),
             );
         });
 
-        it("does not create Neo4j relationships when liked is false", async () => {
+        it("does not publish outbox like event when liked is false", async () => {
             const dto: SwipeEventDto = {
                 eventId: makeObjectId().toString(),
                 liked: false,
@@ -294,12 +267,12 @@ describe("EventsService", () => {
             await service.swipe("user-id", dto);
 
             expect(swipesCollection.updateOne).toHaveBeenCalled();
-            expect(sessionRunMock).not.toHaveBeenCalled();
+            expect(outbox.publish).not.toHaveBeenCalled();
         });
     });
 
     describe("cancelRegistration", () => {
-        it("updates registration status and removes Neo4j relationship", async () => {
+        it("updates registration status and publishes outbox event", async () => {
             const eventId = makeObjectId().toString();
 
             (mongo.collection as jest.Mock).mockImplementation(
@@ -325,9 +298,10 @@ describe("EventsService", () => {
                 { $inc: { registrationCount: -1 } },
             );
 
-            expect(sessionRunMock).toHaveBeenCalledWith(
-                expect.stringContaining("DELETE r"),
-                expect.objectContaining({ userId: "user-id", eventId }),
+            expect(outbox.publish).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    eventType: OUTBOX_EVENT_TYPES.eventRegistrationCancelled,
+                }),
             );
         });
     });

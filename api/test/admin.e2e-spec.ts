@@ -1,6 +1,5 @@
 import { MailerService } from "@nestjs-modules/mailer";
 import {
-    ForbiddenException,
     INestApplication,
     UnauthorizedException,
     VersioningType,

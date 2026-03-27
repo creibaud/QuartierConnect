@@ -11,6 +11,7 @@ import type { DrizzleDB } from "src/database/drizzle/drizzle.type";
 import { refreshTokens, users, type User } from "src/database/drizzle/schema";
 import { AuthService } from "src/modules/auth/auth.service";
 import { TotpService } from "src/modules/auth/totp.service";
+import type { OutboxService } from "src/modules/outbox/outbox.service";
 
 describe("AuthService", () => {
     let service: AuthService;
@@ -21,6 +22,10 @@ describe("AuthService", () => {
         delete: jest.fn(),
         update: jest.fn(),
     } as unknown as DrizzleDB;
+
+    const outbox = {
+        publish: jest.fn().mockResolvedValue(undefined),
+    } as unknown as OutboxService;
 
     const jwtService = {
         sign: jest.fn(),
@@ -69,6 +74,7 @@ describe("AuthService", () => {
 
         service = new AuthService(
             db,
+            outbox,
             jwtService,
             configService,
             mailerService,

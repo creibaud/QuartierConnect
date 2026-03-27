@@ -5,7 +5,6 @@ import {
 } from "@nestjs/common";
 import { ObjectId } from "mongodb";
 import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
-import { MessagesGateway } from "src/modules/messages/messages.gateway";
 import { MessagesService } from "src/modules/messages/messages.service";
 
 const USER_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
@@ -30,14 +29,10 @@ const baseMessage = {
     updatedAt: new Date(),
 };
 
-function buildCollection(methods: Record<string, jest.Mock>) {
-    return jest.fn().mockReturnValue(methods);
-}
-
 describe("MessagesService", () => {
     let service: MessagesService;
     let mongo: jest.Mocked<MongoDatabase>;
-    let gateway: jest.Mocked<MessagesGateway>;
+    let gateway: { broadcastMessage: jest.Mock };
 
     beforeEach(() => {
         mongo = {
@@ -46,7 +41,7 @@ describe("MessagesService", () => {
 
         gateway = {
             broadcastMessage: jest.fn(),
-        } as unknown as jest.Mocked<MessagesGateway>;
+        };
 
         service = new MessagesService(mongo, gateway);
     });

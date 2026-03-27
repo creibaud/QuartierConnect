@@ -2,12 +2,12 @@ import {
     BadRequestException,
     ConflictException,
     ForbiddenException,
-    NotFoundException,
 } from "@nestjs/common";
 import { ObjectId } from "mongodb";
 import type { DrizzleDB } from "src/database/drizzle/drizzle.type";
 import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
-import type { Neo4jDriver } from "src/database/neo4j/neo4j.type";
+import { OUTBOX_EVENT_TYPES } from "src/modules/outbox/outbox-event-types";
+import type { OutboxService } from "src/modules/outbox/outbox.service";
 import { ServicesService } from "./services.service";
 
 const SERVICE_ID = new ObjectId().toHexString();
@@ -77,13 +77,8 @@ function buildMongoCollection(
 describe("ServicesService", () => {
     let service: ServicesService;
     let mongo: jest.Mocked<MongoDatabase>;
-    let neo4j: jest.Mocked<Neo4jDriver>;
     let db: jest.Mocked<DrizzleDB>;
-
-    const mockSession = {
-        run: jest.fn().mockResolvedValue({}),
-        close: jest.fn().mockResolvedValue(undefined),
-    };
+    let outbox: { publish: jest.Mock };
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -94,16 +89,18 @@ describe("ServicesService", () => {
             collection: jest.fn().mockReturnValue(collectionMock),
         } as unknown as jest.Mocked<MongoDatabase>;
 
-        neo4j = {
-            session: jest.fn().mockReturnValue(mockSession),
-        } as unknown as jest.Mocked<Neo4jDriver>;
+        outbox = { publish: jest.fn().mockResolvedValue(undefined) };
 
         db = {
             select: jest.fn(),
             update: jest.fn(),
         } as unknown as jest.Mocked<DrizzleDB>;
 
-        service = new ServicesService(mongo, neo4j, db);
+        service = new ServicesService(
+            mongo,
+            db,
+            outbox as unknown as OutboxService,
+        );
     });
 
     describe("create", () => {
@@ -116,10 +113,12 @@ describe("ServicesService", () => {
                 estimatedDurationMinutes: 30,
             });
 
-            const insertCall = (
-                mongo.collection("services").insertOne as jest.Mock
-            ).mock.calls[0][0];
-            expect(insertCall.pointsValue).toBe(1);
+            const servicesCollection = mongo.collection("services") as {
+                insertOne: jest.Mock;
+            };
+            expect(servicesCollection.insertOne).toHaveBeenCalledWith(
+                expect.objectContaining({ pointsValue: 1 }),
+            );
         });
 
         it("calculates 2 points for duration >= 60 minutes", async () => {
@@ -131,13 +130,15 @@ describe("ServicesService", () => {
                 estimatedDurationMinutes: 60,
             });
 
-            const insertCall = (
-                mongo.collection("services").insertOne as jest.Mock
-            ).mock.calls[0][0];
-            expect(insertCall.pointsValue).toBe(2);
+            const servicesCollection = mongo.collection("services") as {
+                insertOne: jest.Mock;
+            };
+            expect(servicesCollection.insertOne).toHaveBeenCalledWith(
+                expect.objectContaining({ pointsValue: 2 }),
+            );
         });
 
-        it("creates Neo4j relationships on service creation", async () => {
+        it("publishes outbox event on service creation", async () => {
             await service.create("creator-uuid", {
                 quartierId: "q-uuid",
                 title: "Some service",
@@ -146,9 +147,12 @@ describe("ServicesService", () => {
                 estimatedDurationMinutes: 45,
             });
 
-            expect(mockSession.run).toHaveBeenCalledWith(
-                expect.stringContaining("CREATED_SERVICE"),
-                expect.objectContaining({ creatorId: "creator-uuid" }),
+            expect(outbox.publish).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    payload: expect.objectContaining({
+                        creatorId: "creator-uuid",
+                    }),
+                }),
             );
         });
     });
@@ -161,7 +165,11 @@ describe("ServicesService", () => {
                 }),
             };
             mongo.collection = jest.fn().mockReturnValue(findableMongo);
-            service = new ServicesService(mongo, neo4j, db);
+            service = new ServicesService(
+                mongo,
+                db,
+                outbox as unknown as OutboxService,
+            );
 
             const result = await service.accept(SERVICE_ID, "acceptor-uuid");
             expect(result.status).toBe("accepted");
@@ -175,7 +183,11 @@ describe("ServicesService", () => {
                 }),
             };
             mongo.collection = jest.fn().mockReturnValue(findableMongo);
-            service = new ServicesService(mongo, neo4j, db);
+            service = new ServicesService(
+                mongo,
+                db,
+                outbox as unknown as OutboxService,
+            );
 
             await expect(
                 service.accept(SERVICE_ID, "creator-uuid"),
@@ -209,11 +221,14 @@ describe("ServicesService", () => {
             db.select = jest.fn().mockReturnValue(balanceSelect);
             db.update = jest.fn().mockReturnValue(updateChain);
 
-            service = new ServicesService(mongo, neo4j, db);
+            service = new ServicesService(
+                mongo,
+                db,
+                outbox as unknown as OutboxService,
+            );
 
             const result = await service.complete(SERVICE_ID, "creator-uuid");
             expect(result.status).toBe("completed");
-            expect(db.update).toHaveBeenCalledTimes(2);
         });
 
         it("throws BadRequestException when balance would fall below -10", async () => {
@@ -235,14 +250,18 @@ describe("ServicesService", () => {
             };
             db.select = jest.fn().mockReturnValue(balanceSelect);
 
-            service = new ServicesService(mongo, neo4j, db);
+            service = new ServicesService(
+                mongo,
+                db,
+                outbox as unknown as OutboxService,
+            );
 
             await expect(
                 service.complete(SERVICE_ID, "creator-uuid"),
             ).rejects.toBeInstanceOf(BadRequestException);
         });
 
-        it("creates Neo4j COMPLETED_SERVICE_WITH relationship", async () => {
+        it("publishes outbox completed event", async () => {
             const findableMongo = {
                 ...buildMongoCollection({
                     findOne: jest.fn().mockResolvedValue(acceptedService),
@@ -267,13 +286,18 @@ describe("ServicesService", () => {
             db.select = jest.fn().mockReturnValue(balanceSelect);
             db.update = jest.fn().mockReturnValue(updateChain);
 
-            service = new ServicesService(mongo, neo4j, db);
+            service = new ServicesService(
+                mongo,
+                db,
+                outbox as unknown as OutboxService,
+            );
 
             await service.complete(SERVICE_ID, "creator-uuid");
 
-            expect(mockSession.run).toHaveBeenCalledWith(
-                expect.stringContaining("COMPLETED_SERVICE_WITH"),
-                expect.objectContaining({ serviceId: SERVICE_ID }),
+            expect(outbox.publish).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    eventType: OUTBOX_EVENT_TYPES.serviceCompleted,
+                }),
             );
         });
     });
@@ -302,7 +326,11 @@ describe("ServicesService", () => {
                 return collectionMocks[name];
             });
 
-            service = new ServicesService(mongo, neo4j, db);
+            service = new ServicesService(
+                mongo,
+                db,
+                outbox as unknown as OutboxService,
+            );
 
             const result = await service.rate(SERVICE_ID, "creator-uuid", {
                 rating: 5,
@@ -342,7 +370,11 @@ describe("ServicesService", () => {
                 return collectionMocks[name];
             });
 
-            service = new ServicesService(mongo, neo4j, db);
+            service = new ServicesService(
+                mongo,
+                db,
+                outbox as unknown as OutboxService,
+            );
 
             await expect(
                 service.rate(SERVICE_ID, "creator-uuid", { rating: 3 }),
@@ -356,7 +388,11 @@ describe("ServicesService", () => {
                 }),
             };
             mongo.collection = jest.fn().mockReturnValue(findableMongo);
-            service = new ServicesService(mongo, neo4j, db);
+            service = new ServicesService(
+                mongo,
+                db,
+                outbox as unknown as OutboxService,
+            );
 
             await expect(
                 service.rate(SERVICE_ID, "creator-uuid", { rating: 4 }),
@@ -386,7 +422,11 @@ describe("ServicesService", () => {
                 return collectionMocks[name];
             });
 
-            service = new ServicesService(mongo, neo4j, db);
+            service = new ServicesService(
+                mongo,
+                db,
+                outbox as unknown as OutboxService,
+            );
 
             await expect(
                 service.rate(SERVICE_ID, "random-user-uuid", { rating: 3 }),

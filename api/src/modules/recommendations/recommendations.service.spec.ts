@@ -36,8 +36,16 @@ describe("RecommendationsService", () => {
     describe("getEventRecommendations", () => {
         it("runs the correct Cypher query and maps results", async () => {
             const records = [
-                buildRecord({ eventId: "event-1", score: 5 }),
-                buildRecord({ eventId: "event-2", score: 3 }),
+                buildRecord({
+                    eventId: "event-1",
+                    title: "Event one",
+                    score: 5,
+                }),
+                buildRecord({
+                    eventId: "event-2",
+                    title: "Event two",
+                    score: 3,
+                }),
             ];
             sessionRunMock.mockResolvedValue({ records });
 
@@ -54,8 +62,8 @@ describe("RecommendationsService", () => {
             );
 
             expect(result).toEqual([
-                { eventId: "event-1", score: 5 },
-                { eventId: "event-2", score: 3 },
+                { eventId: "event-1", title: "Event one", score: 5 },
+                { eventId: "event-2", title: "Event two", score: 3 },
             ]);
 
             expect(sessionCloseMock).toHaveBeenCalled();
@@ -72,7 +80,13 @@ describe("RecommendationsService", () => {
 
     describe("getServiceRecommendations", () => {
         it("runs the correct Cypher query and maps results", async () => {
-            const records = [buildRecord({ serviceId: "service-1", score: 4 })];
+            const records = [
+                buildRecord({
+                    serviceId: "service-1",
+                    title: "Service one",
+                    score: 4,
+                }),
+            ];
             sessionRunMock.mockResolvedValue({ records });
 
             const result = await service.getServiceRecommendations("user-id");
@@ -87,7 +101,9 @@ describe("RecommendationsService", () => {
                 { userId: "user-id" },
             );
 
-            expect(result).toEqual([{ serviceId: "service-1", score: 4 }]);
+            expect(result).toEqual([
+                { serviceId: "service-1", title: "Service one", score: 4 },
+            ]);
             expect(sessionCloseMock).toHaveBeenCalled();
         });
 

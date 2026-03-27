@@ -41,16 +41,6 @@ const binaryVote = {
     createdAt: new Date(),
 };
 
-const singleChoiceVote = {
-    ...binaryVote,
-    _id: new ObjectId(VOTE_ID),
-    type: "single_choice" as const,
-    options: [
-        { id: "opt-a", label: "Option A", votesCount: 0 },
-        { id: "opt-b", label: "Option B", votesCount: 0 },
-    ] as VoteOption[],
-};
-
 const hiddenResultsVote = {
     ...binaryVote,
     showResults: false,
@@ -61,16 +51,6 @@ const expiredVote = {
     ...binaryVote,
     endsAt: pastDate,
 };
-
-function buildMongoCursor(data: unknown[]) {
-    return {
-        sort: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        toArray: jest.fn().mockResolvedValue(data),
-        find: jest.fn().mockReturnThis(),
-    };
-}
 
 describe("VotesService", () => {
     let service: VotesService;
@@ -170,7 +150,6 @@ describe("VotesService", () => {
 
     describe("respond", () => {
         it("successfully records a vote response", async () => {
-            const collectionMocks: Record<string, unknown> = {};
             mongo.collection = jest.fn().mockImplementation((name: string) => {
                 if (name === "votes") {
                     return {

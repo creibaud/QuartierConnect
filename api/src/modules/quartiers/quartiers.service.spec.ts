@@ -5,6 +5,7 @@ import {
 } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import type { GeoJsonPolygon } from "src/database/mongodb/models";
+import { OutboxService } from "src/modules/outbox/outbox.service";
 import { QuartiersService } from "src/modules/quartiers/quartiers.service";
 
 const QUARTIER_ID = "quartier-uuid-1";
@@ -32,6 +33,15 @@ const mockQuartier = {
     adminUserId: USER_ID,
     createdAt: new Date(),
     updatedAt: new Date(),
+};
+
+const mockMember = {
+    id: USER_ID,
+    email: "user@test.local",
+    firstName: "Test",
+    lastName: "User",
+    role: "resident",
+    isActive: true,
 };
 
 const buildDrizzleMock = () => {
@@ -64,30 +74,27 @@ const buildMongoMock = () => ({
     }),
 });
 
-const buildNeo4jMock = () => ({
-    session: jest.fn().mockReturnValue({
-        run: jest.fn().mockResolvedValue({}),
-        close: jest.fn().mockResolvedValue(undefined),
-    }),
+const buildOutboxMock = () => ({
+    publish: jest.fn().mockResolvedValue(undefined),
 });
 
 describe("QuartiersService", () => {
     let service: QuartiersService;
     let drizzleMock: ReturnType<typeof buildDrizzleMock>;
     let mongoMock: ReturnType<typeof buildMongoMock>;
-    let neo4jMock: ReturnType<typeof buildNeo4jMock>;
+    let outboxMock: ReturnType<typeof buildOutboxMock>;
 
     beforeEach(async () => {
         drizzleMock = buildDrizzleMock();
         mongoMock = buildMongoMock();
-        neo4jMock = buildNeo4jMock();
+        outboxMock = buildOutboxMock();
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 QuartiersService,
                 { provide: "DRIZZLE", useValue: drizzleMock },
                 { provide: "MONGODB", useValue: mongoMock },
-                { provide: "NEO4J", useValue: neo4jMock },
+                { provide: OutboxService, useValue: outboxMock },
             ],
         }).compile();
 
@@ -153,7 +160,7 @@ describe("QuartiersService", () => {
 
     describe("addMember", () => {
         it("adds a member successfully", async () => {
-            drizzleMock.limit.mockResolvedValue([mockQuartier]);
+            drizzleMock.limit.mockResolvedValue([mockMember]);
             drizzleMock.returning.mockResolvedValue([]);
 
             jest.spyOn(service, "findOne").mockResolvedValue({
@@ -171,6 +178,7 @@ describe("QuartiersService", () => {
         });
 
         it("throws ConflictException when user is already assigned", async () => {
+            drizzleMock.limit.mockResolvedValue([mockMember]);
             jest.spyOn(service, "findOne").mockResolvedValue({
                 ...mockQuartier,
                 geojson: mockGeoJson,
@@ -182,6 +190,19 @@ describe("QuartiersService", () => {
             await expect(
                 service.addMember(QUARTIER_ID, { userId: USER_ID }),
             ).rejects.toThrow(ConflictException);
+        });
+
+        it("throws NotFoundException when user does not exist", async () => {
+            drizzleMock.limit.mockResolvedValue([]);
+
+            jest.spyOn(service, "findOne").mockResolvedValue({
+                ...mockQuartier,
+                geojson: mockGeoJson,
+            });
+
+            await expect(
+                service.addMember(QUARTIER_ID, { userId: USER_ID }),
+            ).rejects.toThrow(NotFoundException);
         });
     });
 
