@@ -41,7 +41,7 @@ export class SyncService {
         for (const mutation of mutations) {
             if (mutation.entityType !== "incident") {
                 this.logger.warn(
-                    `Unsupported entity type: ${mutation.entityType}`,
+                    `Unsupported entity type: ${String(mutation.entityType)}`,
                 );
                 skipped++;
                 continue;

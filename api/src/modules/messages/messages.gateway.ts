@@ -33,7 +33,7 @@ export class MessagesGateway
         @ConnectedSocket() client: Socket,
         @MessageBody() data: { chatId: string },
     ) {
-        client.join(data.chatId);
+        void client.join(data.chatId);
         this.logger.log(`Client ${client.id} joined chat ${data.chatId}`);
     }
 
@@ -42,7 +42,7 @@ export class MessagesGateway
         @ConnectedSocket() client: Socket,
         @MessageBody() data: { chatId: string },
     ) {
-        client.leave(data.chatId);
+        void client.leave(data.chatId);
         this.logger.log(`Client ${client.id} left chat ${data.chatId}`);
     }
 

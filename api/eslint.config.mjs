@@ -12,6 +12,7 @@ export default defineConfig(
             "dist",
             "coverage/**",
             "test/coverage/**",
+            "test/uuid-cjs.js",
         ],
     },
     eslint.configs.recommended,

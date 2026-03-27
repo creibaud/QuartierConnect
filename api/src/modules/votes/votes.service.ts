@@ -166,7 +166,8 @@ export class VotesService {
         return response;
     }
 
-    async getResults(voteId: string, userId: string) {
+    async getResults(voteId: string, _userId: string) {
+        void _userId;
         const vote = await this.findOne(voteId);
 
         if (!vote.showResults && new Date() < vote.endsAt) {

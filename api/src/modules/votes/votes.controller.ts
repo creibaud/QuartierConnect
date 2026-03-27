@@ -188,7 +188,9 @@ export class VotesController {
     @ApiResponse({
         status: 200,
         description: "Vote closed",
-        schema: { example: { ...VOTE_EXAMPLE, endsAt: "2026-03-27T10:00:00.000Z" } },
+        schema: {
+            example: { ...VOTE_EXAMPLE, endsAt: "2026-03-27T10:00:00.000Z" },
+        },
     })
     @ApiResponse({
         status: 403,

@@ -105,7 +105,7 @@ export class DocumentsService {
         ]);
 
         return {
-            data: documents.map(this.toResponse),
+            data: documents.map((document) => this.toResponse(document)),
             meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
         };
     }

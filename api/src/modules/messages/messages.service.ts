@@ -37,7 +37,7 @@ export class MessagesService {
             .sort({ lastMessageAt: -1 })
             .toArray();
 
-        return chats.map(this.toChatResponse);
+        return chats.map((chat) => this.toChatResponse(chat));
     }
 
     async createChat(userId: string, dto: CreateChatDto) {
@@ -69,7 +69,8 @@ export class MessagesService {
             .collection<ChatDocument>(CHATS_COLLECTION)
             .insertOne(doc);
 
-        this.logger.log(`Chat created: ${result.insertedId} by user ${userId}`);
+        const chatId = result.insertedId.toHexString();
+        this.logger.log(`Chat created: ${chatId} by user ${userId}`);
 
         return this.toChatResponse({ ...doc, _id: result.insertedId });
     }
@@ -118,7 +119,7 @@ export class MessagesService {
         ]);
 
         return {
-            data: messages.map(this.toMessageResponse),
+            data: messages.map((message) => this.toMessageResponse(message)),
             meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
         };
     }
