@@ -15,6 +15,7 @@ import { EventsModule } from "src/modules/events/events.module";
 import { HealthModule } from "src/modules/health/health.module";
 import { IncidentsModule } from "src/modules/incidents/incidents.module";
 import { MessagesModule } from "src/modules/messages/messages.module";
+import { OutboxModule } from "src/modules/outbox/outbox.module";
 import { QuartiersModule } from "src/modules/quartiers/quartiers.module";
 import { RecommendationsModule } from "src/modules/recommendations/recommendations.module";
 import { ServicesModule } from "src/modules/services/services.module";
@@ -51,6 +52,7 @@ import { VotesModule } from "src/modules/votes/votes.module";
         DrizzleModule,
         MongodbModule,
         Neo4jModule,
+        OutboxModule,
         AuthModule,
         HealthModule,
         UsersModule,

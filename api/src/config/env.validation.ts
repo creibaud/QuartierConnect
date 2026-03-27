@@ -3,6 +3,7 @@ import {
     IsEmail,
     IsEnum,
     IsNumber,
+    IsOptional,
     IsString,
     Min,
     validateSync,
@@ -104,6 +105,35 @@ class EnvironmentVariables {
 
     @IsString()
     MAIL_PASS: string;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(1)
+    OUTBOX_MAX_ATTEMPTS?: number;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(1)
+    OUTBOX_RETRY_DELAY_MS?: number;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(1)
+    OUTBOX_RETRY_MAX_DELAY_MS?: number;
+
+    @IsOptional()
+    @IsString()
+    OUTBOX_CONTINUOUS_ENABLED?: string;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(1)
+    OUTBOX_POLL_INTERVAL_MS?: number;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(1)
+    OUTBOX_BATCH_LIMIT?: number;
 }
 
 export function validateEnv(config: Record<string, unknown>) {

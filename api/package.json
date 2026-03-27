@@ -23,7 +23,11 @@
         "db:studio": "dotenv -- drizzle-kit studio",
         "db:push": "dotenv -- drizzle-kit push",
         "db:drop": "dotenv -- drizzle-kit drop",
-        "db:seed": "dotenv -- ts-node --transpile-only -r tsconfig-paths/register src/database/drizzle/seed.ts"
+        "db:seed": "dotenv -- ts-node --transpile-only -r tsconfig-paths/register scripts/seed.ts",
+        "db:seed:reset": "dotenv -- ts-node --transpile-only -r tsconfig-paths/register scripts/reset-seed.ts --force",
+        "db:neo4j:sync-users": "dotenv -- ts-node --transpile-only -r tsconfig-paths/register scripts/sync-neo4j-users.ts",
+        "outbox:process": "dotenv -- ts-node --transpile-only -r tsconfig-paths/register scripts/process-outbox.ts",
+        "outbox:requeue": "dotenv -- ts-node --transpile-only -r tsconfig-paths/register scripts/requeue-dead-letter.ts"
     },
     "dependencies": {
         "@nestjs-modules/mailer": "^2.3.0",
