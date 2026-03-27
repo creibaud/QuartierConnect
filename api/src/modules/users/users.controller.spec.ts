@@ -21,7 +21,7 @@ describe("UsersController", () => {
         email: "john.doe@example.com",
         firstName: "John",
         lastName: "Doe",
-        role: "client",
+        role: "resident",
         isActive: true,
         balance: "0.00",
         createdAt: new Date("2026-01-01T00:00:00.000Z"),

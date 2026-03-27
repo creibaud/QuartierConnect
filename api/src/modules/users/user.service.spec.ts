@@ -2,6 +2,8 @@ import type { UUID } from "node:crypto";
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import type { DrizzleDB } from "src/database/drizzle/drizzle.type";
 import { type User } from "src/database/drizzle/schema";
+import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
+import type { Neo4jDriver } from "src/database/neo4j/neo4j.type";
 import { UserService } from "./user.service";
 
 describe("UserService", () => {
@@ -10,7 +12,18 @@ describe("UserService", () => {
     const db = {
         select: jest.fn(),
         update: jest.fn(),
+        insert: jest.fn(),
+        delete: jest.fn(),
     } as unknown as DrizzleDB;
+
+    const mongo = {} as unknown as MongoDatabase;
+
+    const neo4j = {
+        session: jest.fn().mockReturnValue({
+            run: jest.fn().mockResolvedValue({}),
+            close: jest.fn().mockResolvedValue({}),
+        }),
+    } as unknown as Neo4jDriver;
 
     const baseUser: User = {
         id: "6fce8b71-2d1a-4d4a-9c12-44d4624e8f81" as UUID,
@@ -46,7 +59,7 @@ describe("UserService", () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        service = new UserService(db);
+        service = new UserService(db, mongo, neo4j);
     });
 
     describe("findOne", () => {

@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
     IsBoolean,
     IsEnum,
@@ -26,13 +26,16 @@ export class UpdateUserDto {
 }
 
 export class UpdateUserRoleDto {
-    @ApiPropertyOptional({ enum: userRoleEnum.enumValues })
+    @ApiProperty({
+        enum: userRoleEnum.enumValues,
+        description: "New role to assign to the user",
+    })
     @IsEnum(userRoleEnum.enumValues)
     role: UserRole;
 }
 
 export class UpdateUserStatusDto {
-    @ApiPropertyOptional()
+    @ApiProperty({ description: "Active status of the user", example: true })
     @IsBoolean()
     isActive: boolean;
 }

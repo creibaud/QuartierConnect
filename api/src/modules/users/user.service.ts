@@ -14,7 +14,14 @@ import {
     resolvePagination,
 } from "src/common/query/query.helper";
 import { type DrizzleDB } from "src/database/drizzle/drizzle.type";
-import { User, users } from "src/database/drizzle/schema";
+import {
+    refreshTokens,
+    User,
+    userQuartiers,
+    users,
+} from "src/database/drizzle/schema";
+import { type MongoDatabase } from "src/database/mongodb/mongodb.type";
+import { type Neo4jDriver } from "src/database/neo4j/neo4j.type";
 import {
     UpdateUserDto,
     UpdateUserRoleDto,
@@ -37,7 +44,11 @@ const USER_COLUMN_MAP: ColumnMap = {
 export class UserService {
     private readonly logger = new Logger(UserService.name);
 
-    constructor(@Inject("DRIZZLE") private readonly db: DrizzleDB) {}
+    constructor(
+        @Inject("DRIZZLE") private readonly db: DrizzleDB,
+        @Inject("MONGODB") private readonly mongo: MongoDatabase,
+        @Inject("NEO4J") private readonly neo4j: Neo4jDriver,
+    ) {}
 
     async findAll(query: UserQueryDto) {
         const { page = 1, limit = 10 } = query;
@@ -163,6 +174,81 @@ export class UserService {
         );
 
         return this.sanitizeUser(updated);
+    }
+
+    async getBalance(userId: UUID) {
+        const [user] = await this.db
+            .select({ id: users.id, balance: users.balance })
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+
+        if (!user) {
+            throw new NotFoundException("User not found");
+        }
+
+        return { userId: user.id, balance: user.balance };
+    }
+
+    async exportMyData(userId: UUID) {
+        const [user] = await this.db
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+
+        if (!user) {
+            throw new NotFoundException("User not found");
+        }
+
+        const [quartierAssignment] = await this.db
+            .select()
+            .from(userQuartiers)
+            .where(eq(userQuartiers.userId, userId))
+            .limit(1);
+
+        this.logger.log(`RGPD data export requested by user: ${userId}`);
+
+        return {
+            exportedAt: new Date(),
+            profile: this.sanitizeUser(user),
+            quartierAssignment: quartierAssignment ?? null,
+        };
+    }
+
+    async deleteMyAccount(userId: UUID) {
+        const anonymizedEmail = `deleted_${userId}@deleted.com`;
+
+        await this.db
+            .update(users)
+            .set({
+                isActive: false,
+                firstName: "Deleted",
+                lastName: "Deleted",
+                email: anonymizedEmail,
+                updatedAt: new Date(),
+            })
+            .where(eq(users.id, userId));
+
+        await this.db
+            .update(refreshTokens)
+            .set({ revoked: true })
+            .where(eq(refreshTokens.userId, userId));
+
+        const session = this.neo4j.session();
+        try {
+            await session.run(
+                `MATCH (u:User {id: $userId})
+                 SET u.firstName = '[deleted]', u.lastName = '[deleted]', u.email = '[deleted]'`,
+                { userId },
+            );
+        } finally {
+            await session.close();
+        }
+
+        this.logger.log(`Account deleted (anonymized) for user: ${userId}`);
+
+        return { message: "Account deleted" };
     }
 
     private sanitizeUser(user: User) {

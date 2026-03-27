@@ -1,5 +1,6 @@
 import { ConfigService } from "@nestjs/config";
 import { MongoClient } from "mongodb";
+import { QUARTIERS_GEO_COLLECTION } from "./models/quartier-geo.model";
 
 export const MongodbProvider = {
     provide: "MONGODB",
@@ -16,6 +17,15 @@ export const MongodbProvider = {
 
         await client.connect();
 
-        return client.db(db);
+        const database = client.db(db);
+
+        await database
+            .collection(QUARTIERS_GEO_COLLECTION)
+            .createIndex(
+                { geojson: "2dsphere" },
+                { name: "quartiers_geo_geojson_2dsphere" },
+            );
+
+        return database;
     },
 };
