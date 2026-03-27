@@ -12,9 +12,13 @@ import {
 } from "@nestjs/common";
 import {
     ApiBearerAuth,
+    ApiCreatedResponse,
+    ApiExtraModels,
+    ApiOkResponse,
     ApiOperation,
     ApiResponse,
     ApiTags,
+    getSchemaPath,
 } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
@@ -26,6 +30,12 @@ import { LoginDto } from "src/modules/auth/dto/login.dto";
 import { RegisterDto } from "src/modules/auth/dto/register.dto";
 import { TotpCodeDto, TotpValidateDto } from "src/modules/auth/dto/totp.dto";
 import { TotpService } from "src/modules/auth/totp.service";
+import {
+    AuthTokenResponseDto,
+    MessageResponseDto,
+    TotpLoginChallengeResponseDto,
+    TotpSetupResponseDto,
+} from "./dto/auth-response.dto";
 
 @ApiTags("Auth")
 @Controller("auth")
@@ -38,8 +48,21 @@ export class AuthController {
     @Public()
     @Post("register")
     @ApiOperation({ summary: "Register a new client account" })
-    @ApiResponse({ status: 201, description: "User registered successfully" })
-    @ApiResponse({ status: 409, description: "Email already in use" })
+    @ApiCreatedResponse({
+        description: "User registered successfully",
+        type: AuthTokenResponseDto,
+    })
+    @ApiResponse({
+        status: 409,
+        description: "Email already in use",
+        schema: {
+            example: {
+                statusCode: 409,
+                message: "Email already in use",
+                error: "Conflict",
+            },
+        },
+    })
     async register(
         @Body() dto: RegisterDto,
         @Res({ passthrough: true }) res: Response,
@@ -53,8 +76,27 @@ export class AuthController {
     @Post("login")
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: "Login" })
-    @ApiResponse({ status: 200, description: "Login successful" })
-    @ApiResponse({ status: 401, description: "Invalid credentials" })
+    @ApiExtraModels(AuthTokenResponseDto, TotpLoginChallengeResponseDto)
+    @ApiOkResponse({
+        description: "Login successful",
+        schema: {
+            oneOf: [
+                { $ref: getSchemaPath(AuthTokenResponseDto) },
+                { $ref: getSchemaPath(TotpLoginChallengeResponseDto) },
+            ],
+        },
+    })
+    @ApiResponse({
+        status: 401,
+        description: "Invalid credentials",
+        schema: {
+            example: {
+                statusCode: 401,
+                message: "Invalid credentials",
+                error: "Unauthorized",
+            },
+        },
+    })
     async login(
         @Body() dto: LoginDto,
         @Res({ passthrough: true }) res: Response,
@@ -73,8 +115,21 @@ export class AuthController {
     @Post("totp/login")
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: "Complete login with TOTP code" })
-    @ApiResponse({ status: 200, description: "Login completed successfully" })
-    @ApiResponse({ status: 401, description: "Invalid TOTP code or token" })
+    @ApiOkResponse({
+        description: "Login completed successfully",
+        type: AuthTokenResponseDto,
+    })
+    @ApiResponse({
+        status: 401,
+        description: "Invalid TOTP code or token",
+        schema: {
+            example: {
+                statusCode: 401,
+                message: "Invalid TOTP code or token",
+                error: "Unauthorized",
+            },
+        },
+    })
     async completeTotpLogin(
         @Body() dto: TotpValidateDto,
         @Res({ passthrough: true }) res: Response,
@@ -88,10 +143,20 @@ export class AuthController {
     @Post("refresh")
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: "Refresh access token using httpOnly cookie" })
-    @ApiResponse({ status: 200, description: "Token refreshed successfully" })
+    @ApiOkResponse({
+        description: "Token refreshed successfully",
+        type: AuthTokenResponseDto,
+    })
     @ApiResponse({
         status: 401,
         description: "Invalid or missing refresh token",
+        schema: {
+            example: {
+                statusCode: 401,
+                message: "Invalid or missing refresh token",
+                error: "Unauthorized",
+            },
+        },
     })
     async refresh(
         @Req() req: Request,
@@ -116,8 +181,21 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth("access-token")
     @ApiOperation({ summary: "Logout" })
-    @ApiResponse({ status: 200, description: "Logout successful" })
-    @ApiResponse({ status: 401, description: "Unauthorized" })
+    @ApiOkResponse({
+        description: "Logout successful",
+        type: MessageResponseDto,
+    })
+    @ApiResponse({
+        status: 401,
+        description: "Unauthorized",
+        schema: {
+            example: {
+                statusCode: 401,
+                message: "Unauthorized",
+                error: "Unauthorized",
+            },
+        },
+    })
     async logout(
         @CurrentUser() user: User,
         @Res({ passthrough: true }) res: Response,
@@ -134,8 +212,21 @@ export class AuthController {
     @ApiOperation({
         summary: "Generate TOTP setup (secret + QR URL + backup codes)",
     })
-    @ApiResponse({ status: 201, description: "TOTP setup generated" })
-    @ApiResponse({ status: 409, description: "TOTP already configured" })
+    @ApiCreatedResponse({
+        description: "TOTP setup generated",
+        type: TotpSetupResponseDto,
+    })
+    @ApiResponse({
+        status: 409,
+        description: "TOTP already configured",
+        schema: {
+            example: {
+                statusCode: 409,
+                message: "TOTP already configured",
+                error: "Conflict",
+            },
+        },
+    })
     async totpSetup(@CurrentUser() user: User) {
         return this.totpService.generateSetup(user.id);
     }
@@ -145,8 +236,21 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth("access-token")
     @ApiOperation({ summary: "Verify TOTP setup with first code" })
-    @ApiResponse({ status: 200, description: "TOTP enabled successfully" })
-    @ApiResponse({ status: 401, description: "Invalid TOTP code" })
+    @ApiOkResponse({
+        description: "TOTP enabled successfully",
+        type: MessageResponseDto,
+    })
+    @ApiResponse({
+        status: 401,
+        description: "Invalid TOTP code",
+        schema: {
+            example: {
+                statusCode: 401,
+                message: "Invalid TOTP code",
+                error: "Unauthorized",
+            },
+        },
+    })
     async totpVerify(@CurrentUser() user: User, @Body() dto: TotpCodeDto) {
         return this.totpService.verifySetup(user.id, dto.code);
     }
@@ -156,8 +260,21 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth("access-token")
     @ApiOperation({ summary: "Disable TOTP (requires valid TOTP code)" })
-    @ApiResponse({ status: 200, description: "TOTP disabled successfully" })
-    @ApiResponse({ status: 401, description: "Invalid TOTP code" })
+    @ApiOkResponse({
+        description: "TOTP disabled successfully",
+        type: MessageResponseDto,
+    })
+    @ApiResponse({
+        status: 401,
+        description: "Invalid TOTP code",
+        schema: {
+            example: {
+                statusCode: 401,
+                message: "Invalid TOTP code",
+                error: "Unauthorized",
+            },
+        },
+    })
     async totpDisable(@CurrentUser() user: User, @Body() dto: TotpCodeDto) {
         return this.totpService.disable(user.id, dto.code);
     }
