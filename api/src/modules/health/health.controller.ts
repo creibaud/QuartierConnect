@@ -1,5 +1,5 @@
 import { Controller, Get, Inject } from "@nestjs/common";
-import { ApiTags } from "@nestjs/swagger";
+import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { sql } from "drizzle-orm";
 import { Public } from "src/common/decorators/public.decorator";
 import type { DrizzleDB } from "src/database/drizzle/drizzle.type";
@@ -17,6 +17,23 @@ export class HealthController {
 
     @Public()
     @Get()
+    @ApiOperation({ summary: "Check API and database health" })
+    @ApiResponse({
+        status: 200,
+        description: "Health status for API, PostgreSQL, MongoDB and Neo4j",
+        schema: {
+            example: {
+                status: "ok",
+                databases: {
+                    postgres: true,
+                    mongodb: true,
+                    neo4j: true,
+                },
+                app: "running",
+                timestamp: "2026-03-27T10:00:00.000Z",
+            },
+        },
+    })
     async check() {
         const [postgres, mongodb, neo4j] = await Promise.all([
             this.checkPostgres(),

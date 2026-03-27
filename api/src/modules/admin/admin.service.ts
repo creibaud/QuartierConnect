@@ -11,6 +11,22 @@ import {
 } from "src/database/mongodb/models/vote.model";
 import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
 
+type GroupCountRow = {
+    _id: string | null;
+    count: number;
+};
+
+type RegistrationStatsRow = {
+    _id: null;
+    totalRegistrations: number;
+    avgRegistrations: number;
+};
+
+type DayCountRow = {
+    _id: string;
+    count: number;
+};
+
 @Injectable()
 export class AdminService {
     private readonly logger = new Logger(AdminService.name);
@@ -69,7 +85,7 @@ export class AdminService {
 
         const byCategory = await this.mongo
             .collection(EVENTS_COLLECTION)
-            .aggregate([
+            .aggregate<GroupCountRow>([
                 { $match: dateFilter },
                 { $group: { _id: "$category", count: { $sum: 1 } } },
                 { $sort: { count: -1 } },
@@ -78,7 +94,7 @@ export class AdminService {
 
         const byRegistrations = await this.mongo
             .collection(EVENTS_COLLECTION)
-            .aggregate([
+            .aggregate<RegistrationStatsRow>([
                 { $match: dateFilter },
                 {
                     $group: {
@@ -92,7 +108,7 @@ export class AdminService {
 
         return {
             byCategory: byCategory.map((b) => ({
-                category: b._id,
+                category: b._id ?? "unknown",
                 count: b.count,
             })),
             registrationStats: byRegistrations[0] ?? {
@@ -106,28 +122,38 @@ export class AdminService {
         const [byCategory, byType, byStatus] = await Promise.all([
             this.mongo
                 .collection(SERVICES_COLLECTION)
-                .aggregate([
+                .aggregate<GroupCountRow>([
                     { $group: { _id: "$category", count: { $sum: 1 } } },
                     { $sort: { count: -1 } },
                 ])
                 .toArray(),
             this.mongo
                 .collection(SERVICES_COLLECTION)
-                .aggregate([{ $group: { _id: "$type", count: { $sum: 1 } } }])
+                .aggregate<GroupCountRow>([
+                    { $group: { _id: "$type", count: { $sum: 1 } } },
+                ])
                 .toArray(),
             this.mongo
                 .collection(SERVICES_COLLECTION)
-                .aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }])
+                .aggregate<GroupCountRow>([
+                    { $group: { _id: "$status", count: { $sum: 1 } } },
+                ])
                 .toArray(),
         ]);
 
         return {
             byCategory: byCategory.map((b) => ({
-                category: b._id,
+                category: b._id ?? "unknown",
                 count: b.count,
             })),
-            byType: byType.map((b) => ({ type: b._id, count: b.count })),
-            byStatus: byStatus.map((b) => ({ status: b._id, count: b.count })),
+            byType: byType.map((b) => ({
+                type: b._id ?? "unknown",
+                count: b.count,
+            })),
+            byStatus: byStatus.map((b) => ({
+                status: b._id ?? "unknown",
+                count: b.count,
+            })),
         };
     }
 
@@ -139,7 +165,7 @@ export class AdminService {
             this.mongo.collection(MESSAGES_COLLECTION).countDocuments(),
             this.mongo
                 .collection(MESSAGES_COLLECTION)
-                .aggregate([
+                .aggregate<DayCountRow>([
                     { $match: { createdAt: { $gte: sevenDaysAgo } } },
                     {
                         $group: {
@@ -167,13 +193,18 @@ export class AdminService {
         const [byType, totalResponses] = await Promise.all([
             this.mongo
                 .collection(VOTES_COLLECTION)
-                .aggregate([{ $group: { _id: "$type", count: { $sum: 1 } } }])
+                .aggregate<GroupCountRow>([
+                    { $group: { _id: "$type", count: { $sum: 1 } } },
+                ])
                 .toArray(),
             this.mongo.collection(VOTE_RESPONSES_COLLECTION).countDocuments(),
         ]);
 
         return {
-            byType: byType.map((b) => ({ type: b._id, count: b.count })),
+            byType: byType.map((b) => ({
+                type: b._id ?? "unknown",
+                count: b.count,
+            })),
             totalResponses,
         };
     }
