@@ -20,7 +20,8 @@ import {
     type QuartierGeoDocument,
 } from "src/database/mongodb/models/quartier-geo.model";
 import { type MongoDatabase } from "src/database/mongodb/mongodb.type";
-import { type Neo4jDriver } from "src/database/neo4j/neo4j.type";
+import { OUTBOX_EVENT_TYPES } from "src/modules/outbox/outbox-event-types";
+import { OutboxService } from "src/modules/outbox/outbox.service";
 import { AddMemberDto } from "src/modules/quartiers/dto/add-member.dto";
 import { CreateQuartierDto } from "src/modules/quartiers/dto/create-quartier.dto";
 import { QuartierQueryDto } from "src/modules/quartiers/dto/quartier-query.dto";
@@ -33,7 +34,7 @@ export class QuartiersService {
     constructor(
         @Inject("DRIZZLE") private readonly db: DrizzleDB,
         @Inject("MONGODB") private readonly mongo: MongoDatabase,
-        @Inject("NEO4J") private readonly neo4j: Neo4jDriver,
+        private readonly outbox: OutboxService,
     ) {}
 
     async create(adminUserId: string, dto: CreateQuartierDto) {
@@ -69,15 +70,16 @@ export class QuartiersService {
             .where(eq(quartiers.id, quartier.id))
             .returning();
 
-        const session = this.neo4j.session();
-        try {
-            await session.run("CREATE (:Quartier {id: $id, name: $name})", {
+        await this.outbox.publish({
+            aggregateType: "quartier",
+            aggregateId: quartier.id,
+            eventType: OUTBOX_EVENT_TYPES.quartierCreated,
+            payload: {
                 id: quartier.id,
                 name: dto.name,
-            });
-        } finally {
-            await session.close();
-        }
+                createdAt: updated.createdAt,
+            },
+        });
 
         this.logger.log(`Quartier created: ${quartier.id}`);
 
@@ -170,15 +172,16 @@ export class QuartiersService {
         }
 
         if (dto.name) {
-            const session = this.neo4j.session();
-            try {
-                await session.run(
-                    "MATCH (q:Quartier {id: $id}) SET q.name = $name",
-                    { id, name: dto.name },
-                );
-            } finally {
-                await session.close();
-            }
+            await this.outbox.publish({
+                aggregateType: "quartier",
+                aggregateId: id,
+                eventType: OUTBOX_EVENT_TYPES.quartierNameUpdated,
+                payload: {
+                    id,
+                    name: dto.name,
+                    updatedAt: new Date(),
+                },
+            });
         }
 
         this.logger.log(`Quartier updated: ${id}`);
@@ -216,20 +219,38 @@ export class QuartiersService {
                 .deleteOne({ _id: new ObjectId(quartier.mongoGeoId) });
         }
 
-        const session = this.neo4j.session();
-        try {
-            await session.run("MATCH (q:Quartier {id: $id}) DETACH DELETE q", {
+        await this.outbox.publish({
+            aggregateType: "quartier",
+            aggregateId: id,
+            eventType: OUTBOX_EVENT_TYPES.quartierDeleted,
+            payload: {
                 id,
-            });
-        } finally {
-            await session.close();
-        }
+                deletedAt: new Date(),
+            },
+        });
 
         this.logger.log(`Quartier deleted: ${id}`);
     }
 
     async addMember(quartierId: string, dto: AddMemberDto) {
         await this.findOne(quartierId);
+
+        const [member] = await this.db
+            .select({
+                id: users.id,
+                email: users.email,
+                firstName: users.firstName,
+                lastName: users.lastName,
+                role: users.role,
+                isActive: users.isActive,
+            })
+            .from(users)
+            .where(eq(users.id, dto.userId))
+            .limit(1);
+
+        if (!member) {
+            throw new NotFoundException("User not found");
+        }
 
         try {
             await this.db.insert(userQuartiers).values({
@@ -242,15 +263,21 @@ export class QuartiersService {
             );
         }
 
-        const session = this.neo4j.session();
-        try {
-            await session.run(
-                "MERGE (u:User {id: $userId})-[:LIVES_IN]->(q:Quartier {id: $quartierId})",
-                { userId: dto.userId, quartierId },
-            );
-        } finally {
-            await session.close();
-        }
+        await this.outbox.publish({
+            aggregateType: "quartier",
+            aggregateId: quartierId,
+            eventType: OUTBOX_EVENT_TYPES.quartierMemberAdded,
+            payload: {
+                quartierId,
+                userId: member.id,
+                email: member.email,
+                firstName: member.firstName,
+                lastName: member.lastName,
+                role: member.role,
+                isActive: member.isActive,
+                updatedAt: new Date(),
+            },
+        });
 
         this.logger.log(`User ${dto.userId} added to quartier ${quartierId}`);
     }
@@ -265,15 +292,16 @@ export class QuartiersService {
                 ),
             );
 
-        const session = this.neo4j.session();
-        try {
-            await session.run(
-                "MATCH (u:User {id: $userId})-[r:LIVES_IN]->(q:Quartier {id: $quartierId}) DELETE r",
-                { userId, quartierId },
-            );
-        } finally {
-            await session.close();
-        }
+        await this.outbox.publish({
+            aggregateType: "quartier",
+            aggregateId: quartierId,
+            eventType: OUTBOX_EVENT_TYPES.quartierMemberRemoved,
+            payload: {
+                quartierId,
+                userId,
+                removedAt: new Date(),
+            },
+        });
 
         this.logger.log(`User ${userId} removed from quartier ${quartierId}`);
     }

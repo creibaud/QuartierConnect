@@ -24,12 +24,12 @@ import type {
 import { TRANSACTIONS_COLLECTION } from "src/database/mongodb/models/transaction.model";
 import type { TransactionDocument } from "src/database/mongodb/models/transaction.model";
 import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
-import type { Neo4jDriver } from "src/database/neo4j/neo4j.type";
+import { OUTBOX_EVENT_TYPES } from "src/modules/outbox/outbox-event-types";
+import { OutboxService } from "src/modules/outbox/outbox.service";
 import type { CreateServiceDto } from "src/modules/services/dto/create-service.dto";
 import type { RateServiceDto } from "src/modules/services/dto/rate-service.dto";
 import type { ServiceQueryDto } from "src/modules/services/dto/service-query.dto";
 import type { UpdateServiceDto } from "src/modules/services/dto/update-service.dto";
-import { v4 as uuid } from "uuid";
 
 const MINIMUM_BALANCE = -10;
 
@@ -39,8 +39,8 @@ export class ServicesService {
 
     constructor(
         @Inject("MONGODB") private readonly mongo: MongoDatabase,
-        @Inject("NEO4J") private readonly neo4j: Neo4jDriver,
         @Inject("DRIZZLE") private readonly db: DrizzleDB,
+        private readonly outbox: OutboxService,
     ) {}
 
     async create(creatorId: string, dto: CreateServiceDto) {
@@ -67,23 +67,20 @@ export class ServicesService {
 
         const serviceId = result.insertedId.toHexString();
 
-        const session = this.neo4j.session();
-        try {
-            await session.run(
-                `MERGE (u:User {id: $creatorId})
-                 CREATE (s:Service {id: $id, title: $title, category: $category, status: 'open', createdAt: $date})
-                 CREATE (u)-[:CREATED_SERVICE]->(s)`,
-                {
-                    creatorId,
-                    id: serviceId,
-                    title: dto.title,
-                    category: dto.category,
-                    date: now.toISOString(),
-                },
-            );
-        } finally {
-            await session.close();
-        }
+        await this.outbox.publish({
+            aggregateType: "service",
+            aggregateId: serviceId,
+            eventType: OUTBOX_EVENT_TYPES.serviceCreated,
+            payload: {
+                id: serviceId,
+                creatorId,
+                quartierId: dto.quartierId,
+                title: dto.title,
+                category: dto.category,
+                type: dto.type,
+                createdAt: now,
+            },
+        });
 
         this.logger.log(`Service created: ${serviceId} by user ${creatorId}`);
 
@@ -188,6 +185,19 @@ export class ServicesService {
                 { $set: { ...dto, updatedAt: now } },
             );
 
+        await this.outbox.publish({
+            aggregateType: "service",
+            aggregateId: id,
+            eventType: OUTBOX_EVENT_TYPES.serviceUpdated,
+            payload: {
+                id,
+                updatedBy: userId,
+                title: dto.title,
+                category: dto.category,
+                updatedAt: now,
+            },
+        });
+
         this.logger.log(`Service updated: ${id}`);
 
         return { ...service, ...dto, updatedAt: now };
@@ -210,14 +220,16 @@ export class ServicesService {
             .collection<ServiceDocument>(SERVICES_COLLECTION)
             .deleteOne({ _id: new ObjectId(id) });
 
-        const session = this.neo4j.session();
-        try {
-            await session.run(`MATCH (s:Service {id: $id}) DETACH DELETE s`, {
+        await this.outbox.publish({
+            aggregateType: "service",
+            aggregateId: id,
+            eventType: OUTBOX_EVENT_TYPES.serviceDeleted,
+            payload: {
                 id,
-            });
-        } finally {
-            await session.close();
-        }
+                deletedBy: userId,
+                deletedAt: new Date(),
+            },
+        });
 
         this.logger.log(`Service deleted: ${id}`);
     }
@@ -241,15 +253,16 @@ export class ServicesService {
                 { $set: { status: "accepted", acceptorId, updatedAt: now } },
             );
 
-        const session = this.neo4j.session();
-        try {
-            await session.run(
-                `MATCH (s:Service {id: $id}) SET s.status = 'accepted'`,
-                { id: serviceId },
-            );
-        } finally {
-            await session.close();
-        }
+        await this.outbox.publish({
+            aggregateType: "service",
+            aggregateId: serviceId,
+            eventType: OUTBOX_EVENT_TYPES.serviceAccepted,
+            payload: {
+                serviceId,
+                acceptorId,
+                acceptedAt: now,
+            },
+        });
 
         this.logger.log(`Service accepted: ${serviceId} by user ${acceptorId}`);
 
@@ -359,28 +372,19 @@ export class ServicesService {
                 },
             );
 
-        const session = this.neo4j.session();
-        try {
-            await session.run(
-                `MATCH (creator:User {id: $creatorId}), (acceptor:User {id: $acceptorId})
-                 MERGE (creator)-[r:COMPLETED_SERVICE_WITH {serviceId: $serviceId, points: $points, completedAt: $date}]->(acceptor)
-                 MERGE (creator)-[k:KNOWS]->(acceptor)
-                 ON MATCH SET k.weight = k.weight + 1
-                 ON CREATE SET k.weight = 1, k.since = $date
-                 WITH creator
-                 MATCH (s:Service {id: $serviceId})
-                 SET s.status = 'completed'`,
-                {
-                    creatorId: service.creatorId,
-                    acceptorId: service.acceptorId,
-                    serviceId,
-                    points: service.pointsValue,
-                    date: now.toISOString(),
-                },
-            );
-        } finally {
-            await session.close();
-        }
+        await this.outbox.publish({
+            aggregateType: "service",
+            aggregateId: serviceId,
+            eventType: OUTBOX_EVENT_TYPES.serviceCompleted,
+            payload: {
+                serviceId,
+                requesterId,
+                creatorId: service.creatorId,
+                acceptorId: service.acceptorId,
+                points: service.pointsValue,
+                completedAt: now,
+            },
+        });
 
         this.logger.log(`Service completed: ${serviceId}`);
 
@@ -418,6 +422,17 @@ export class ServicesService {
                 { $set: { status: "cancelled", updatedAt: now } },
             );
 
+        await this.outbox.publish({
+            aggregateType: "service",
+            aggregateId: serviceId,
+            eventType: OUTBOX_EVENT_TYPES.serviceCancelled,
+            payload: {
+                serviceId,
+                requesterId,
+                cancelledAt: now,
+            },
+        });
+
         this.logger.log(`Service cancelled: ${serviceId}`);
 
         return { ...service, status: "cancelled" as const, updatedAt: now };
@@ -449,12 +464,13 @@ export class ServicesService {
             throw new ConflictException("You have already rated this service");
         }
 
+        const now = new Date();
         const rating: Omit<ServiceRatingDocument, "_id"> = {
             serviceId,
             raterUserId,
             rating: dto.rating,
             comment: dto.comment,
-            createdAt: new Date(),
+            createdAt: now,
         };
 
         await this.mongo
@@ -462,6 +478,18 @@ export class ServicesService {
             .insertOne({ ...rating });
 
         this.logger.log(`Service rated: ${serviceId} by user ${raterUserId}`);
+
+        await this.outbox.publish({
+            aggregateType: "service_rating",
+            aggregateId: `${serviceId}:${raterUserId}`,
+            eventType: "service.rated",
+            payload: {
+                serviceId,
+                raterUserId,
+                rating: dto.rating,
+                ratedAt: now,
+            },
+        });
 
         return rating;
     }

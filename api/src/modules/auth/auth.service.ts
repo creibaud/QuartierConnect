@@ -23,6 +23,8 @@ import {
     JwtPayload,
 } from "src/modules/auth/strategies/jwt.strategy";
 import { TotpService } from "src/modules/auth/totp.service";
+import { OUTBOX_EVENT_TYPES } from "src/modules/outbox/outbox-event-types";
+import { OutboxService } from "src/modules/outbox/outbox.service";
 
 interface TotpPendingPayload {
     sub: string;
@@ -35,6 +37,7 @@ export class AuthService {
 
     constructor(
         @Inject("DRIZZLE") private readonly db: DrizzleDB,
+        private readonly outbox: OutboxService,
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
         private readonly mailerService: MailerService,
@@ -64,6 +67,22 @@ export class AuthService {
                 lastName: dto.lastName,
             })
             .returning();
+
+        await this.outbox.publish({
+            aggregateType: "user",
+            aggregateId: newUser.id,
+            eventType: OUTBOX_EVENT_TYPES.userRegistered,
+            payload: {
+                id: newUser.id,
+                email: newUser.email,
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
+                role: newUser.role,
+                isActive: newUser.isActive,
+                createdAt: newUser.createdAt,
+                updatedAt: newUser.updatedAt,
+            },
+        });
 
         const tokens = await this.generateTokens(
             newUser.id,

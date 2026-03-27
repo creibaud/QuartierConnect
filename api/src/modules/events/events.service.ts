@@ -18,11 +18,12 @@ import {
     type EventSwipeDocument,
 } from "src/database/mongodb/models/event.model";
 import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
-import type { Neo4jDriver } from "src/database/neo4j/neo4j.type";
 import { CreateEventDto } from "src/modules/events/dto/create-event.dto";
 import { EventQueryDto } from "src/modules/events/dto/event-query.dto";
 import { SwipeEventDto } from "src/modules/events/dto/swipe-event.dto";
 import { UpdateEventDto } from "src/modules/events/dto/update-event.dto";
+import { OUTBOX_EVENT_TYPES } from "src/modules/outbox/outbox-event-types";
+import { OutboxService } from "src/modules/outbox/outbox.service";
 
 @Injectable()
 export class EventsService {
@@ -30,7 +31,7 @@ export class EventsService {
 
     constructor(
         @Inject("MONGODB") private readonly mongo: MongoDatabase,
-        @Inject("NEO4J") private readonly neo4j: Neo4jDriver,
+        private readonly outbox: OutboxService,
     ) {}
 
     async create(creatorId: string, dto: CreateEventDto) {
@@ -58,34 +59,28 @@ export class EventsService {
 
         const id = result.insertedId.toString();
 
-        const session = this.neo4j.session();
-        try {
-            await session.run(
-                `CREATE (e:Event {id: $id, title: $title, category: $category, startDate: $startDate, createdAt: $createdAt})`,
-                {
-                    id,
-                    title: dto.title,
-                    category: dto.category,
-                    startDate: now.toISOString(),
-                    createdAt: now.toISOString(),
-                },
-            );
-
-            await session.run(
-                `MATCH (u:User {id: $creatorId}), (e:Event {id: $id})
-                 CREATE (u)-[:CREATED_EVENT]->(e)`,
-                { creatorId, id },
-            );
-        } finally {
-            await session.close();
-        }
+        await this.outbox.publish({
+            aggregateType: "event",
+            aggregateId: id,
+            eventType: OUTBOX_EVENT_TYPES.eventCreated,
+            payload: {
+                id,
+                creatorId,
+                quartierId: dto.quartierId,
+                title: dto.title,
+                category: dto.category,
+                startDate: document.startDate,
+                createdAt: now,
+            },
+        });
 
         this.logger.log(`Event created: ${id} by user ${creatorId}`);
 
         return { id, ...document };
     }
 
-    async findAll(query: EventQueryDto, _userId: string) {
+    async findAll(query: EventQueryDto, userId: string) {
+        void userId;
         const { page = 1, limit = 10 } = query;
         const skip = (page - 1) * limit;
 
@@ -116,7 +111,7 @@ export class EventsService {
         ]);
 
         return {
-            data: events.map(this.toEventResponse),
+            data: events.map((event) => this.toEventResponse(event)),
             meta: {
                 total,
                 page,
@@ -167,17 +162,19 @@ export class EventsService {
             },
         );
 
-        if (dto.title) {
-            const session = this.neo4j.session();
-            try {
-                await session.run(
-                    `MATCH (e:Event {id: $id}) SET e.title = $title`,
-                    { id, title: dto.title },
-                );
-            } finally {
-                await session.close();
-            }
-        }
+        await this.outbox.publish({
+            aggregateType: "event",
+            aggregateId: id,
+            eventType: OUTBOX_EVENT_TYPES.eventUpdated,
+            payload: {
+                id,
+                updatedBy: userId,
+                title: dto.title,
+                category: dto.category,
+                startDate: dto.startDate,
+                updatedAt: now,
+            },
+        });
 
         this.logger.log(`Event updated: ${id} by user ${userId}`);
 
@@ -198,14 +195,16 @@ export class EventsService {
             .collection<EventDocument>(EVENTS_COLLECTION)
             .deleteOne({ _id: new ObjectId(id) });
 
-        const session = this.neo4j.session();
-        try {
-            await session.run(`MATCH (e:Event {id: $id}) DETACH DELETE e`, {
+        await this.outbox.publish({
+            aggregateType: "event",
+            aggregateId: id,
+            eventType: OUTBOX_EVENT_TYPES.eventDeleted,
+            payload: {
                 id,
-            });
-        } finally {
-            await session.close();
-        }
+                deletedBy: userId,
+                deletedAt: new Date(),
+            },
+        });
 
         this.logger.log(`Event deleted: ${id} by user ${userId}`);
     }
@@ -253,23 +252,16 @@ export class EventsService {
                 { $inc: { registrationCount: 1 } },
             );
 
-        const session = this.neo4j.session();
-        try {
-            await session.run(
-                `MERGE (u:User {id: $userId})-[r:PARTICIPATED_IN {registeredAt: $date}]->(e:Event {id: $eventId})`,
-                { userId, eventId, date: now.toISOString() },
-            );
-
-            await session.run(
-                `MATCH (creator:User)-[:CREATED_EVENT]->(e:Event {id: $eventId}), (participant:User {id: $userId})
-                 MERGE (creator)-[k:KNOWS]->(participant)
-                 ON CREATE SET k.weight = 1, k.since = $date
-                 ON MATCH SET k.weight = k.weight + 0.5`,
-                { eventId, userId, date: now.toISOString() },
-            );
-        } finally {
-            await session.close();
-        }
+        await this.outbox.publish({
+            aggregateType: "event_registration",
+            aggregateId: `${eventId}:${userId}`,
+            eventType: OUTBOX_EVENT_TYPES.eventRegistrationCreated,
+            payload: {
+                eventId,
+                userId,
+                createdAt: now,
+            },
+        });
 
         this.logger.log(`User ${userId} registered for event ${eventId}`);
     }
@@ -291,15 +283,16 @@ export class EventsService {
                 { $inc: { registrationCount: -1 } },
             );
 
-        const session = this.neo4j.session();
-        try {
-            await session.run(
-                `MATCH (u:User {id: $userId})-[r:PARTICIPATED_IN]->(e:Event {id: $eventId}) DELETE r`,
-                { userId, eventId },
-            );
-        } finally {
-            await session.close();
-        }
+        await this.outbox.publish({
+            aggregateType: "event_registration",
+            aggregateId: `${eventId}:${userId}`,
+            eventType: OUTBOX_EVENT_TYPES.eventRegistrationCancelled,
+            payload: {
+                eventId,
+                userId,
+                cancelledAt: new Date(),
+            },
+        });
 
         this.logger.log(
             `User ${userId} cancelled registration for event ${eventId}`,
@@ -350,25 +343,17 @@ export class EventsService {
             return;
         }
 
-        const session = this.neo4j.session();
-        try {
-            await session.run(
-                `MERGE (u:User {id: $userId})-[r:INTERESTED_IN]->(e:Event {id: $eventId})
-                 ON CREATE SET r.score = 1, r.updatedAt = $date
-                 ON MATCH SET r.score = r.score + 1, r.updatedAt = $date`,
-                { userId, eventId: dto.eventId, date: now.toISOString() },
-            );
-
-            await session.run(
-                `MATCH (e:Event {id: $eventId})
-                 MERGE (u:User {id: $userId})-[r:INTERESTED_IN_CATEGORY]->(c:Category {name: e.category})
-                 ON CREATE SET r.score = 1, r.updatedAt = $date
-                 ON MATCH SET r.score = r.score + 1, r.updatedAt = $date`,
-                { userId, eventId: dto.eventId, date: now.toISOString() },
-            );
-        } finally {
-            await session.close();
-        }
+        await this.outbox.publish({
+            aggregateType: "event_swipe",
+            aggregateId: `${dto.eventId}:${userId}`,
+            eventType: OUTBOX_EVENT_TYPES.eventSwipeLiked,
+            payload: {
+                eventId: dto.eventId,
+                userId,
+                liked: true,
+                swipedAt: now,
+            },
+        });
 
         this.logger.log(`User ${userId} liked event ${dto.eventId}`);
     }

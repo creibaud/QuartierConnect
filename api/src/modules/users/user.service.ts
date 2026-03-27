@@ -21,7 +21,8 @@ import {
     users,
 } from "src/database/drizzle/schema";
 import { type MongoDatabase } from "src/database/mongodb/mongodb.type";
-import { type Neo4jDriver } from "src/database/neo4j/neo4j.type";
+import { OUTBOX_EVENT_TYPES } from "src/modules/outbox/outbox-event-types";
+import { OutboxService } from "src/modules/outbox/outbox.service";
 import {
     UpdateUserDto,
     UpdateUserRoleDto,
@@ -47,7 +48,7 @@ export class UserService {
     constructor(
         @Inject("DRIZZLE") private readonly db: DrizzleDB,
         @Inject("MONGODB") private readonly mongo: MongoDatabase,
-        @Inject("NEO4J") private readonly neo4j: Neo4jDriver,
+        private readonly outbox: OutboxService,
     ) {}
 
     async findAll(query: UserQueryDto) {
@@ -133,6 +134,21 @@ export class UserService {
             throw new NotFoundException("User not found");
         }
 
+        await this.outbox.publish({
+            aggregateType: "user",
+            aggregateId: updated.id,
+            eventType: OUTBOX_EVENT_TYPES.userUpdated,
+            payload: {
+                id: updated.id,
+                email: updated.email,
+                firstName: updated.firstName,
+                lastName: updated.lastName,
+                role: updated.role,
+                isActive: updated.isActive,
+                updatedAt: updated.updatedAt,
+            },
+        });
+
         this.logger.log(`User profile updated: ${userId}`);
 
         return this.sanitizeUser(updated);
@@ -151,6 +167,21 @@ export class UserService {
             .where(eq(users.id, id))
             .returning();
 
+        await this.outbox.publish({
+            aggregateType: "user",
+            aggregateId: updated.id,
+            eventType: OUTBOX_EVENT_TYPES.userUpdated,
+            payload: {
+                id: updated.id,
+                email: updated.email,
+                firstName: updated.firstName,
+                lastName: updated.lastName,
+                role: updated.role,
+                isActive: updated.isActive,
+                updatedAt: updated.updatedAt,
+            },
+        });
+
         this.logger.log(`User role updated: ${id} → ${dto.role}`);
 
         return this.sanitizeUser(updated);
@@ -168,6 +199,21 @@ export class UserService {
             .set({ isActive: dto.isActive, updatedAt: new Date() })
             .where(eq(users.id, id))
             .returning();
+
+        await this.outbox.publish({
+            aggregateType: "user",
+            aggregateId: updated.id,
+            eventType: OUTBOX_EVENT_TYPES.userUpdated,
+            payload: {
+                id: updated.id,
+                email: updated.email,
+                firstName: updated.firstName,
+                lastName: updated.lastName,
+                role: updated.role,
+                isActive: updated.isActive,
+                updatedAt: updated.updatedAt,
+            },
+        });
 
         this.logger.log(
             `User status updated: ${id} → ${dto.isActive ? "active" : "inactive"}`,
@@ -235,16 +281,15 @@ export class UserService {
             .set({ revoked: true })
             .where(eq(refreshTokens.userId, userId));
 
-        const session = this.neo4j.session();
-        try {
-            await session.run(
-                `MATCH (u:User {id: $userId})
-                 SET u.firstName = '[deleted]', u.lastName = '[deleted]', u.email = '[deleted]'`,
-                { userId },
-            );
-        } finally {
-            await session.close();
-        }
+        await this.outbox.publish({
+            aggregateType: "user",
+            aggregateId: userId,
+            eventType: OUTBOX_EVENT_TYPES.userAnonymized,
+            payload: {
+                userId,
+                anonymizedAt: new Date(),
+            },
+        });
 
         this.logger.log(`Account deleted (anonymized) for user: ${userId}`);
 
