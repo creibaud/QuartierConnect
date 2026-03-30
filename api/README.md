@@ -63,18 +63,20 @@ L'API est accessible sur `http://localhost:3000`.
 
 ## Scripts disponibles
 
-| Commande           | Description                      |
-| ------------------ | -------------------------------- |
-| `pnpm start`       | Démarrer l'API                   |
-| `pnpm start:dev`   | Démarrer en mode watch           |
-| `pnpm start:debug` | Démarrer en mode debug + watch   |
-| `pnpm start:prod`  | Démarrer depuis le build compilé |
-| `pnpm build`       | Compiler le projet               |
-| `pnpm test`        | Lancer les tests unitaires       |
-| `pnpm test:cov`    | Tests unitaires avec couverture  |
-| `pnpm test:e2e`    | Tests end-to-end                 |
-| `pnpm format`      | Formater et linter le code       |
-| `pnpm lint`        | Linter le code                   |
+| Commande                        | Description                      |
+| ------------------------------- | -------------------------------- |
+| `pnpm start`                    | Démarrer l'API                   |
+| `pnpm start:dev`                | Démarrer en mode watch           |
+| `pnpm start:debug`              | Démarrer en mode debug + watch   |
+| `pnpm start:prod`               | Démarrer depuis le build compilé |
+| `pnpm build`                    | Compiler le projet               |
+| `pnpm test`                     | Lancer les tests unitaires       |
+| `pnpm test:cov`                 | Tests unitaires avec couverture  |
+| `pnpm test:e2e`                 | Tests end-to-end                 |
+| `pnpm format`                   | Formater et linter le code       |
+| `pnpm lint`                     | Linter le code                   |
+| `pnpm outbox:process`           | Traiter un batch Outbox          |
+| `pnpm outbox:requeue <eventId>` | Rejouer un dead-letter           |
 
 ## Docker
 
@@ -86,3 +88,20 @@ make build    # Construire l'image
 make up       # Démarrer tous les services
 make logs-api # Suivre les logs de l'API
 ```
+
+## Runbook Outbox
+
+Le runbook de replay Outbox est disponible dans [docs/OUTBOX_REPLAY_RUNBOOK.md](../docs/OUTBOX_REPLAY_RUNBOOK.md).
+
+Le worker Outbox continu est active par defaut dans l'API et traite periodiquement les evenements pending/failed.
+
+Endpoint admin manuel:
+
+- `POST /v1/admin/outbox/run`
+- `POST /v1/admin/outbox/run?limit=10`
+
+Variables de configuration associees:
+
+- `OUTBOX_CONTINUOUS_ENABLED` (`true`/`false`)
+- `OUTBOX_POLL_INTERVAL_MS` (par defaut: `5000`)
+- `OUTBOX_BATCH_LIMIT` (par defaut: `50`)

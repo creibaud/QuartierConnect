@@ -211,16 +211,109 @@ async function bootstrap() {
 
     const swaggerConfig = new DocumentBuilder()
         .setTitle("QuartierConnect API")
-        .setDescription("QuartierConnect API documentation")
+        .setDescription(
+            `## Plateforme collaborative de quartier — *Le lien qui rapproche votre quartier*
+
+QuartierConnect est une API REST sécurisée qui alimente le site web React et l'application desktop Java administrateur.
+Elle expose l'intégralité des fonctionnalités collaboratives du quartier :
+échange de services entre voisins, signature numérique sécurisée (SHA-256 + MFA TOTP),
+événements communautaires avec moteur de recommandations Neo4j, messagerie temps réel WebSocket,
+votes paramétrables, gestion des incidents et synchronisation offline-first pour le client Java.
+
+---
+
+### Authentification
+
+Toutes les routes (sauf \`/auth/register\`, \`/auth/login\`, \`/auth/refresh\` et \`/health\`) requièrent un **Bearer token JWT**.
+
+1. Appelez \`POST /auth/login\` → recevez un \`accessToken\` (15 min) et un cookie \`refreshToken\` HttpOnly (7 jours).
+2. Si le compte a TOTP activé, un \`totpToken\` temporaire est renvoyé → complétez via \`POST /auth/totp/login\`.
+3. Ajoutez \`Authorization: Bearer <accessToken>\` à chaque requête protégée.
+4. Renouvelez silencieusement via \`POST /auth/refresh\` (cookie automatique).
+
+---
+
+### Rôles
+
+| Rôle | Accès |
+|------|-------|
+| \`resident\` | Toutes les fonctionnalités utilisateur (services, événements, messagerie, votes, documents) |
+| \`moderator\` | Idem + suppression de tout contenu inapproprié |
+| \`admin\` | Accès complet + back-office (quartiers, utilisateurs, statistiques, outbox, sync) |
+
+---
+
+### Codes de réponse globaux
+
+| Code | Signification |
+|------|---------------|
+| \`200\` | Succès |
+| \`201\` | Ressource créée |
+| \`204\` | Suppression réussie (pas de corps) |
+| \`400\` | Validation échouée |
+| \`401\` | Non authentifié / token invalide |
+| \`403\` | Accès interdit (rôle insuffisant) |
+| \`404\` | Ressource introuvable |
+| \`409\` | Conflit (doublon, chevauchement géographique…) |
+
+---
+
+### Pagination
+
+Les endpoints de liste acceptent les paramètres suivants :
+
+| Paramètre | Type | Défaut | Description |
+|-----------|------|--------|-------------|
+| \`page\` | integer | \`1\` | Numéro de page |
+| \`limit\` | integer | \`10\` | Éléments par page |
+| \`sortBy\` | string | \`createdAt\` | Champ de tri |
+| \`sortOrder\` | \`asc\`/\`desc\` | \`desc\` | Ordre de tri |
+
+La réponse inclut un objet \`meta\` : \`{ total, page, limit, totalPages }\`.
+
+---
+
+### Bases de données
+
+| Base | Usage |
+|------|-------|
+| **PostgreSQL** | Utilisateurs, quartiers, incidents, sessions, transactions |
+| **MongoDB** | Documents, événements, messages, services, votes, GeoJSON |
+| **Neo4j** | Graphe social (interactions, affinités), moteur de recommandations |`,
+        )
         .setVersion(packageJson.version)
+        .setContact(
+            "Équipe QuartierConnect",
+            "https://github.com/ESGI-QuartierConnect",
+            "contact@quartierconnect.local",
+        )
+        .setLicense("MIT", "https://opensource.org/licenses/MIT")
+        .addServer(`http://localhost:3000`, "Développement local")
+        .addServer(`https://api.localhost`, "Production (Docker Caddy)")
         .addBearerAuth(
             {
                 type: "http",
                 scheme: "bearer",
                 bearerFormat: "JWT",
+                description:
+                    "Access token JWT obtenu via POST /auth/login ou POST /auth/totp/login. Durée de vie : 15 minutes.",
             },
             "access-token",
         )
+        .addTag("Auth", "Inscription, connexion, gestion MFA TOTP et tokens JWT")
+        .addTag("Users", "Profil utilisateur, solde de points, export RGPD et administration")
+        .addTag("Quartiers", "Gestion des quartiers géographiques (GeoJSON) et de leurs membres")
+        .addTag("Events", "Événements communautaires avec interface swipe et inscriptions")
+        .addTag("Services", "Annonces de services entre voisins et système de points")
+        .addTag("Transactions", "Historique des transferts de points et ajustements administrateurs")
+        .addTag("Messages", "Chats 1-à-1 et de groupe avec messagerie temps réel")
+        .addTag("Documents", "Signature numérique sécurisée de documents PDF avec TOTP et audit")
+        .addTag("Votes", "Système de vote paramétrable (binaire, choix unique/multiple, pondéré)")
+        .addTag("Incidents", "Signalement et suivi d'incidents dans le quartier")
+        .addTag("Recommendations", "Suggestions personnalisées via le graphe social Neo4j")
+        .addTag("Admin", "Statistiques et administration de la plateforme")
+        .addTag("Sync", "Synchronisation delta offline-first pour l'application Java desktop")
+        .addTag("Health", "Vérification de l'état des services et bases de données")
         .build();
 
     const document = SwaggerModule.createDocument(app, swaggerConfig);
@@ -232,6 +325,15 @@ async function bootstrap() {
             content: document,
             theme: "kepler",
             title: "QuartierConnect API Reference",
+            layout: "modern",
+            defaultHttpClient: {
+                targetKey: "js",
+                clientKey: "fetch",
+            },
+            customCss: `
+                .scalar-app { --scalar-color-1: #1a1a2e; }
+                .darklight-reference-promo { display: none; }
+            `,
         }),
     );
 
