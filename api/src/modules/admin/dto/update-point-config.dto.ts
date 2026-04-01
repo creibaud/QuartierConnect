@@ -3,8 +3,7 @@ import { IsNumber, Max, Min } from "class-validator";
 
 export class UpdatePointConfigDto {
     @ApiProperty({
-        description:
-            "Points awarded per full hour of service. Default: 2.",
+        description: "Points awarded per full hour of service. Default: 2.",
         minimum: 0.5,
         maximum: 20,
         example: 2.0,

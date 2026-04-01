@@ -2,12 +2,11 @@ import type { Collection } from "mongodb";
 import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
 
 export interface IVotesRepository {
-    // TODO: Ajouter les méthodes spécifiques à ce module
-    // Exemples:
-    // find(filter: Filter): Promise<T[]>;
-    // findById(id: string): Promise<T | null>;
-    // create(data: T): Promise<T>;
-    // update(id: string, data: Partial<T>): Promise<T | null>;
+    // findAll(): Promise<void>;
+    // find(filter: Filter): Promise<void>;
+    // findById(id: string): Promise<void>;
+    // create(data: unknown): Promise<void>;
+    // update(id: string, data: unknown): Promise<void>;
 }
 
 export class VotesRepository implements IVotesRepository {

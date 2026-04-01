@@ -5,9 +5,9 @@ import {
     NotFoundException,
 } from "@nestjs/common";
 import { ObjectId } from "mongodb";
-import type { IServicesRepository } from "src/modules/services/service.repository";
 import { OUTBOX_EVENT_TYPES } from "src/modules/outbox/outbox-event-types";
 import type { OutboxService } from "src/modules/outbox/outbox.service";
+import type { IServicesRepository } from "src/modules/services/service.repository";
 import { ServicesService } from "./services.service";
 
 const SERVICE_ID = new ObjectId().toHexString();
@@ -159,7 +159,9 @@ describe("ServicesService", () => {
             expect(outbox.publish).toHaveBeenCalledWith(
                 expect.objectContaining({
                     eventType: OUTBOX_EVENT_TYPES.serviceCreated,
-                    payload: expect.objectContaining({ creatorId: "creator-uuid" }),
+                    payload: expect.objectContaining({
+                        creatorId: "creator-uuid",
+                    }),
                 }),
             );
         });
@@ -178,7 +180,10 @@ describe("ServicesService", () => {
 
             expect(repository.updateService).toHaveBeenCalledWith(
                 SERVICE_ID,
-                expect.objectContaining({ status: "accepted", acceptorId: "acceptor-uuid" }),
+                expect.objectContaining({
+                    status: "accepted",
+                    acceptorId: "acceptor-uuid",
+                }),
             );
             expect(result.status).toBe("accepted");
             expect(result.acceptorId).toBe("acceptor-uuid");

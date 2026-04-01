@@ -35,7 +35,14 @@ const mockComment = {
 
 const mockPaginatedResult = {
     data: [mockIncident],
-    meta: { total: 1, page: 1, limit: 10, pages: 1, hasNextPage: false, hasPrevPage: false },
+    meta: {
+        total: 1,
+        page: 1,
+        limit: 10,
+        pages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+    },
 };
 
 describe("IncidentsService", () => {
@@ -52,7 +59,14 @@ describe("IncidentsService", () => {
             createComment: jest.fn().mockResolvedValue(mockComment),
             findComments: jest.fn().mockResolvedValue({
                 data: [mockComment],
-                meta: { total: 1, page: 1, limit: 10, pages: 1, hasNextPage: false, hasPrevPage: false },
+                meta: {
+                    total: 1,
+                    page: 1,
+                    limit: 10,
+                    pages: 1,
+                    hasNextPage: false,
+                    hasPrevPage: false,
+                },
             }),
         };
 

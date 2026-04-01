@@ -39,9 +39,7 @@ describe("MessagesService", () => {
         repository = {
             findUserChats: jest.fn().mockResolvedValue([baseChat]),
             findDirectChat: jest.fn().mockResolvedValue(null),
-            createChat: jest
-                .fn()
-                .mockResolvedValue(new ObjectId(CHAT_ID)),
+            createChat: jest.fn().mockResolvedValue(new ObjectId(CHAT_ID)),
             findChatById: jest.fn().mockResolvedValue(baseChat),
             updateChatLastMessageAt: jest.fn().mockResolvedValue(undefined),
             createMessage: jest
@@ -168,13 +166,18 @@ describe("MessagesService", () => {
             );
 
             expect(repository.pushMessageReport).toHaveBeenCalled();
-            expect(result).toHaveProperty("message", "Report submitted successfully");
+            expect(result).toHaveProperty(
+                "message",
+                "Report submitted successfully",
+            );
         });
 
         it("throws BadRequestException when user already reported the message", async () => {
             repository.findMessageInChat.mockResolvedValue({
                 ...baseMessage,
-                reports: [{ reportedBy: OTHER_USER_ID, reportedAt: new Date() }],
+                reports: [
+                    { reportedBy: OTHER_USER_ID, reportedAt: new Date() },
+                ],
             });
 
             await expect(

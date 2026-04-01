@@ -29,10 +29,7 @@ export interface IMessagesRepository {
         messageId: string,
         chatId: string,
     ): Promise<MessageDocument | null>;
-    pushMessageReport(
-        messageId: string,
-        report: MessageReport,
-    ): Promise<void>;
+    pushMessageReport(messageId: string, report: MessageReport): Promise<void>;
     deleteMessage(id: string): Promise<void>;
 }
 

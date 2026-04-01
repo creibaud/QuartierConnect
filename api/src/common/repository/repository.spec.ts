@@ -68,14 +68,12 @@ describe("Repositories - Query Building & Data Access (Mock Tests)", () => {
                 select: jest.fn().mockReturnThis(),
                 from: jest.fn().mockReturnThis(),
                 where: jest.fn().mockReturnThis(),
-                limit: jest
-                    .fn()
-                    .mockResolvedValue([
-                        {
-                            id: "event-1",
-                            location: { coordinates: [2.35, 48.85] },
-                        },
-                    ]),
+                limit: jest.fn().mockResolvedValue([
+                    {
+                        id: "event-1",
+                        location: { coordinates: [2.35, 48.85] },
+                    },
+                ]),
             };
 
             const result = await mockDb

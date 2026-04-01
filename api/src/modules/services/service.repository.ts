@@ -1,6 +1,6 @@
 import type { UUID } from "node:crypto";
-import { ObjectId, type Collection } from "mongodb";
 import { eq, sql } from "drizzle-orm";
+import { ObjectId, type Collection } from "mongodb";
 import type { DrizzleDB } from "src/database/drizzle/drizzle.type";
 import { pointConfig, users } from "src/database/drizzle/schema";
 import type { ServiceCategory } from "src/database/drizzle/schema";
@@ -33,10 +33,7 @@ export interface IServicesRepository {
     ): Promise<ServiceDocument[]>;
     countServices(filter: Record<string, unknown>): Promise<number>;
     findServiceById(id: string): Promise<ServiceDocument | null>;
-    updateService(
-        id: string,
-        data: Partial<ServiceDocument>,
-    ): Promise<void>;
+    updateService(id: string, data: Partial<ServiceDocument>): Promise<void>;
     deleteService(id: string): Promise<void>;
     findRating(
         serviceId: string,
@@ -48,11 +45,7 @@ export interface IServicesRepository {
         category: ServiceCategory,
     ): Promise<{ basePointsPerHour: number; multiplier: number }>;
     getUserBalance(userId: string): Promise<number | null>;
-    deductUserBalance(
-        userId: string,
-        amount: number,
-        at: Date,
-    ): Promise<void>;
+    deductUserBalance(userId: string, amount: number, at: Date): Promise<void>;
     addUserBalance(userId: string, amount: number, at: Date): Promise<void>;
 }
 
@@ -66,10 +59,12 @@ export class ServicesRepository implements IServicesRepository {
         private readonly db: DrizzleDB,
     ) {
         this.services = mongo.collection<ServiceDocument>(SERVICES_COLLECTION);
-        this.ratings =
-            mongo.collection<ServiceRatingDocument>(SERVICE_RATINGS_COLLECTION);
-        this.transactions =
-            mongo.collection<TransactionDocument>(TRANSACTIONS_COLLECTION);
+        this.ratings = mongo.collection<ServiceRatingDocument>(
+            SERVICE_RATINGS_COLLECTION,
+        );
+        this.transactions = mongo.collection<TransactionDocument>(
+            TRANSACTIONS_COLLECTION,
+        );
     }
 
     async insertService(doc: ServiceDocument): Promise<ObjectId> {

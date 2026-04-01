@@ -12,17 +12,21 @@ export class RecommendationsService {
 
     async getEventRecommendations(userId: string) {
         this.logger.log(`Event recommendations fetched for user ${userId}`);
-        return this.recommendationsRepository.getEventRecommendations(userId);
+        return await this.recommendationsRepository.getEventRecommendations(
+            userId,
+        );
     }
 
     async getServiceRecommendations(userId: string) {
         this.logger.log(`Service recommendations fetched for user ${userId}`);
-        return this.recommendationsRepository.getServiceRecommendations(userId);
+        return await this.recommendationsRepository.getServiceRecommendations(
+            userId,
+        );
     }
 
     async getNeighborRecommendations(userId: string) {
         this.logger.log(`Neighbor recommendations fetched for user ${userId}`);
-        return this.recommendationsRepository.getNeighborRecommendations(
+        return await this.recommendationsRepository.getNeighborRecommendations(
             userId,
         );
     }

@@ -156,7 +156,10 @@ describe("AuthService", () => {
             authRepository.findByEmail.mockResolvedValue(null);
 
             await expect(
-                service.login({ email: "missing@example.com", password: "P@ssw0rd!" }),
+                service.login({
+                    email: "missing@example.com",
+                    password: "P@ssw0rd!",
+                }),
             ).rejects.toBeInstanceOf(UnauthorizedException);
         });
 
@@ -249,7 +252,10 @@ describe("AuthService", () => {
             (totpService.validateCode as jest.Mock).mockResolvedValue(false);
 
             await expect(
-                service.completeTotpLogin({ totpToken: "valid", code: "000000" }),
+                service.completeTotpLogin({
+                    totpToken: "valid",
+                    code: "000000",
+                }),
             ).rejects.toBeInstanceOf(UnauthorizedException);
         });
 
@@ -265,7 +271,10 @@ describe("AuthService", () => {
             });
 
             await expect(
-                service.completeTotpLogin({ totpToken: "valid", code: "123456" }),
+                service.completeTotpLogin({
+                    totpToken: "valid",
+                    code: "123456",
+                }),
             ).rejects.toBeInstanceOf(UnauthorizedException);
         });
 

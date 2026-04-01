@@ -165,7 +165,10 @@ export class MessagesController {
         status: 200,
         description: "Report submitted",
         schema: {
-            example: { message: "Report submitted successfully", reportCount: 2 },
+            example: {
+                message: "Report submitted successfully",
+                reportCount: 2,
+            },
         },
     })
     @ApiResponse({
@@ -188,7 +191,11 @@ export class MessagesController {
         status: 404,
         description: "Message not found",
         schema: {
-            example: { statusCode: 404, message: "Message not found", error: "Not Found" },
+            example: {
+                statusCode: 404,
+                message: "Message not found",
+                error: "Not Found",
+            },
         },
     })
     reportMessage(

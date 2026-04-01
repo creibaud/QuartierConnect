@@ -12,8 +12,7 @@ export class SsoLoginDto {
 
     @ApiPropertyOptional({
         example: "123456",
-        description:
-            "TOTP code (required if TOTP is enabled on this account)",
+        description: "TOTP code (required if TOTP is enabled on this account)",
     })
     @IsOptional()
     @IsString()
@@ -24,7 +23,7 @@ export class SsoTokenResponseDto {
     @ApiProperty({
         description:
             "Long-lived JWT access token (24 h) for the Java desktop application. " +
-            "Contains aud: [\"desktop\"] claim to identify the client type.",
+            'Contains aud: ["desktop"] claim to identify the client type.',
     })
     accessToken: string;
 

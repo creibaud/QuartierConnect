@@ -1,4 +1,10 @@
-import { numeric, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+    numeric,
+    pgTable,
+    timestamp,
+    uuid,
+    varchar,
+} from "drizzle-orm/pg-core";
 import { users } from "./users.schema";
 
 export const SERVICE_CATEGORIES = [

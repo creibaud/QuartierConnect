@@ -263,7 +263,7 @@ export class AuthController {
         summary: "SSO login for the Java desktop application",
         description:
             "Authenticates an administrator and returns a long-lived access token (24 h) " +
-            "with `aud: [\"desktop\"]` claim. " +
+            'with `aud: ["desktop"]` claim. ' +
             "The same JWT secret is shared with the web app, enabling seamless SSO. " +
             "TOTP code is required if the account has TOTP enabled.",
     })

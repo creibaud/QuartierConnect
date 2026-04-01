@@ -88,7 +88,6 @@ describe("Validation & Data Integrity Patterns", () => {
         });
 
         it("should detect orphaned records", () => {
-            const event = { id: "e-1", quartierId: "q-999" };
             const quartierExists = false; // Simulated
             expect(quartierExists).toBe(false);
         });
@@ -128,7 +127,7 @@ describe("Error Handling Patterns", () => {
     describe("Retry Logic", () => {
         it("should retry idempotent operations", () => {
             const maxRetries = 3;
-            let retryCount = 0;
+            const retryCount = 0;
             expect(retryCount).toBeLessThan(maxRetries);
         });
 

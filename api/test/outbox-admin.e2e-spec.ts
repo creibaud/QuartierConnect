@@ -53,7 +53,10 @@ describe("Outbox Admin (e2e)", () => {
             .overrideProvider("DRIZZLE")
             .useValue({ execute: jest.fn().mockResolvedValue([{ result: 1 }]) })
             .overrideProvider("MONGODB")
-            .useValue({ command: jest.fn().mockResolvedValue({}), collection: jest.fn().mockReturnValue({}) })
+            .useValue({
+                command: jest.fn().mockResolvedValue({}),
+                collection: jest.fn().mockReturnValue({}),
+            })
             .overrideProvider("NEO4J")
             .useValue({
                 verifyConnectivity: jest.fn().mockResolvedValue(undefined),

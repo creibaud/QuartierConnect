@@ -1,11 +1,4 @@
-import {
-    Body,
-    Controller,
-    Get,
-    Param,
-    Put,
-    Query,
-} from "@nestjs/common";
+import { Body, Controller, Get, Param, Put, Query } from "@nestjs/common";
 import {
     ApiBearerAuth,
     ApiOperation,
@@ -17,7 +10,10 @@ import {
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { Roles } from "src/common/decorators/roles.decorator";
 import type { User } from "src/database/drizzle/schema";
-import { SERVICE_CATEGORIES, type ServiceCategory } from "src/database/drizzle/schema";
+import {
+    SERVICE_CATEGORIES,
+    type ServiceCategory,
+} from "src/database/drizzle/schema";
 import { AdminService } from "src/modules/admin/admin.service";
 import { UpdatePointConfigDto } from "src/modules/admin/dto/update-point-config.dto";
 

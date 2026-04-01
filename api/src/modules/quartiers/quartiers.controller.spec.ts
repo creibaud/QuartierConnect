@@ -74,7 +74,7 @@ describe("QuartiersController", () => {
         }).compile();
 
         controller = module.get<QuartiersController>(QuartiersController);
-        service = module.get(QuartiersService) as jest.Mocked<QuartiersService>;
+        service = module.get(QuartiersService);
     });
 
     describe("create", () => {

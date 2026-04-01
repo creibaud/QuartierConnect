@@ -7,13 +7,13 @@ import {
     Logger,
     NotFoundException,
 } from "@nestjs/common";
-import type { IMessagesRepository } from "src/modules/messages/message.repository";
 import type { MessageReport } from "src/database/mongodb/models/message.model";
 import { REPORT_AUTO_DELETE_THRESHOLD } from "src/database/mongodb/models/message.model";
 import { CreateChatDto } from "src/modules/messages/dto/create-chat.dto";
 import { MessageQueryDto } from "src/modules/messages/dto/message-query.dto";
 import { ReportMessageDto } from "src/modules/messages/dto/report-message.dto";
 import { SendMessageDto } from "src/modules/messages/dto/send-message.dto";
+import type { IMessagesRepository } from "src/modules/messages/message.repository";
 import { MessagesGateway } from "src/modules/messages/messages.gateway";
 
 @Injectable()
@@ -35,9 +35,8 @@ export class MessagesService {
         const participantIds = [userId, ...dto.participantIds];
 
         if (participantIds.length === 2) {
-            const existing = await this.messagesRepository.findDirectChat(
-                participantIds,
-            );
+            const existing =
+                await this.messagesRepository.findDirectChat(participantIds);
 
             if (existing) {
                 throw new ConflictException(
@@ -176,7 +175,8 @@ export class MessagesService {
 
         await this.messagesRepository.pushMessageReport(messageId, report);
 
-        const updated = await this.messagesRepository.findMessageById(messageId);
+        const updated =
+            await this.messagesRepository.findMessageById(messageId);
         const reportCount = updated?.reports?.length ?? 0;
 
         if (reportCount >= REPORT_AUTO_DELETE_THRESHOLD) {
@@ -214,14 +214,17 @@ export class MessagesService {
 
     private toChatResponse(chat: { _id?: unknown; [key: string]: unknown }) {
         const { _id, ...rest } = chat;
-        return { id: (_id as { toString(): string } | undefined)?.toString(), ...rest };
+        return {
+            id: (_id as { toString(): string } | undefined)?.toString(),
+            ...rest,
+        };
     }
 
-    private toMessageResponse(msg: {
-        _id?: unknown;
-        [key: string]: unknown;
-    }) {
+    private toMessageResponse(msg: { _id?: unknown; [key: string]: unknown }) {
         const { _id, ...rest } = msg;
-        return { id: (_id as { toString(): string } | undefined)?.toString(), ...rest };
+        return {
+            id: (_id as { toString(): string } | undefined)?.toString(),
+            ...rest,
+        };
     }
 }

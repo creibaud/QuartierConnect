@@ -56,10 +56,7 @@ export class AuthRepository implements IAuthRepository {
         firstName: string;
         lastName: string;
     }): Promise<User> {
-        const [user] = await this.db
-            .insert(users)
-            .values(data)
-            .returning();
+        const [user] = await this.db.insert(users).values(data).returning();
 
         return user;
     }

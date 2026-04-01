@@ -300,20 +300,59 @@ La réponse inclut un objet \`meta\` : \`{ total, page, limit, totalPages }\`.
             },
             "access-token",
         )
-        .addTag("Auth", "Inscription, connexion, gestion MFA TOTP et tokens JWT")
-        .addTag("Users", "Profil utilisateur, solde de points, export RGPD et administration")
-        .addTag("Quartiers", "Gestion des quartiers géographiques (GeoJSON) et de leurs membres")
-        .addTag("Events", "Événements communautaires avec interface swipe et inscriptions")
-        .addTag("Services", "Annonces de services entre voisins et système de points")
-        .addTag("Transactions", "Historique des transferts de points et ajustements administrateurs")
-        .addTag("Messages", "Chats 1-à-1 et de groupe avec messagerie temps réel")
-        .addTag("Documents", "Signature numérique sécurisée de documents PDF avec TOTP et audit")
-        .addTag("Votes", "Système de vote paramétrable (binaire, choix unique/multiple, pondéré)")
-        .addTag("Incidents", "Signalement et suivi d'incidents dans le quartier")
-        .addTag("Recommendations", "Suggestions personnalisées via le graphe social Neo4j")
+        .addTag(
+            "Auth",
+            "Inscription, connexion, gestion MFA TOTP et tokens JWT",
+        )
+        .addTag(
+            "Users",
+            "Profil utilisateur, solde de points, export RGPD et administration",
+        )
+        .addTag(
+            "Quartiers",
+            "Gestion des quartiers géographiques (GeoJSON) et de leurs membres",
+        )
+        .addTag(
+            "Events",
+            "Événements communautaires avec interface swipe et inscriptions",
+        )
+        .addTag(
+            "Services",
+            "Annonces de services entre voisins et système de points",
+        )
+        .addTag(
+            "Transactions",
+            "Historique des transferts de points et ajustements administrateurs",
+        )
+        .addTag(
+            "Messages",
+            "Chats 1-à-1 et de groupe avec messagerie temps réel",
+        )
+        .addTag(
+            "Documents",
+            "Signature numérique sécurisée de documents PDF avec TOTP et audit",
+        )
+        .addTag(
+            "Votes",
+            "Système de vote paramétrable (binaire, choix unique/multiple, pondéré)",
+        )
+        .addTag(
+            "Incidents",
+            "Signalement et suivi d'incidents dans le quartier",
+        )
+        .addTag(
+            "Recommendations",
+            "Suggestions personnalisées via le graphe social Neo4j",
+        )
         .addTag("Admin", "Statistiques et administration de la plateforme")
-        .addTag("Sync", "Synchronisation delta offline-first pour l'application Java desktop")
-        .addTag("Health", "Vérification de l'état des services et bases de données")
+        .addTag(
+            "Sync",
+            "Synchronisation delta offline-first pour l'application Java desktop",
+        )
+        .addTag(
+            "Health",
+            "Vérification de l'état des services et bases de données",
+        )
         .build();
 
     const document = SwaggerModule.createDocument(app, swaggerConfig);

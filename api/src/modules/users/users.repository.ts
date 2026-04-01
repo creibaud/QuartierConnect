@@ -41,7 +41,7 @@ export interface IUserRepository {
     update(id: UUID, data: Partial<User>): Promise<User | null>;
     delete(id: UUID): Promise<boolean>;
     getBalance(userId: UUID): Promise<{ userId: UUID; balance: number } | null>;
-    getQuartierAssignment(userId: UUID): Promise<any | null>;
+    getQuartierAssignment(userId: UUID): Promise<unknown | null>;
     revokeRefreshTokens(userId: UUID): Promise<number>;
     updateStatus(id: UUID, isActive: boolean): Promise<User | null>;
     updateRole(id: UUID, role: string): Promise<User | null>;
@@ -182,7 +182,7 @@ export class UserRepository implements IUserRepository {
         return user ? { userId: user.id, balance: user.balance } : null;
     }
 
-    async getQuartierAssignment(userId: UUID): Promise<any | null> {
+    async getQuartierAssignment(userId: UUID): Promise<unknown | null> {
         const [assignment] = await this.db
             .select()
             .from(userQuartiers)

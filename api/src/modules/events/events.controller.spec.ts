@@ -73,7 +73,7 @@ describe("EventsController", () => {
         }).compile();
 
         controller = module.get<EventsController>(EventsController);
-        service = module.get(EventsService) as jest.Mocked<EventsService>;
+        service = module.get(EventsService);
     });
 
     describe("create", () => {

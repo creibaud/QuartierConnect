@@ -8,7 +8,7 @@ describe("UserRepository", () => {
     let mockDb: Partial<DrizzleDB>;
 
     const mockUser = {
-        id: randomUUID() as UUID,
+        id: randomUUID(),
         email: "test@example.com",
         firstName: "John",
         lastName: "Doe",
@@ -86,7 +86,7 @@ describe("UserRepository", () => {
                 }),
             });
 
-            const result = await repository.findOne(randomUUID() as UUID);
+            const result = await repository.findOne(randomUUID());
 
             expect(result).toBeNull();
         });
@@ -134,7 +134,7 @@ describe("UserRepository", () => {
                 }),
             });
 
-            const result = await repository.update(randomUUID() as UUID, {});
+            const result = await repository.update(randomUUID(), {});
 
             expect(result).toBeNull();
         });
@@ -153,7 +153,7 @@ describe("UserRepository", () => {
                 where: jest.fn().mockResolvedValue({ rowCount: 0 }),
             });
 
-            const result = await repository.delete(randomUUID() as UUID);
+            const result = await repository.delete(randomUUID());
 
             expect(result).toBe(false);
         });
@@ -184,7 +184,7 @@ describe("UserRepository", () => {
                 }),
             });
 
-            const result = await repository.getBalance(randomUUID() as UUID);
+            const result = await repository.getBalance(randomUUID());
 
             expect(result).toBeNull();
         });
@@ -218,9 +218,7 @@ describe("UserRepository", () => {
                 }),
             });
 
-            const result = await repository.getQuartierAssignment(
-                randomUUID() as UUID,
-            );
+            const result = await repository.getQuartierAssignment(randomUUID());
 
             expect(result).toBeNull();
         });

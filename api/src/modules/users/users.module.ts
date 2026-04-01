@@ -18,8 +18,10 @@ import {
         },
         {
             provide: UserService,
-            useFactory: (userRepository: IUserRepository, outbox: OutboxService) =>
-                new UserService(userRepository, outbox),
+            useFactory: (
+                userRepository: IUserRepository,
+                outbox: OutboxService,
+            ) => new UserService(userRepository, outbox),
             inject: ["IUserRepository", OutboxService],
         },
     ],

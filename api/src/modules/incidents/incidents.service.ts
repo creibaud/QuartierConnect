@@ -6,11 +6,11 @@ import {
     NotFoundException,
 } from "@nestjs/common";
 import { PaginationQueryDto } from "src/common/dto/pagination-query.dto";
-import type { IIncidentsRepository } from "src/modules/incidents/incident.repository";
 import { AddCommentDto } from "src/modules/incidents/dto/add-comment.dto";
 import { CreateIncidentDto } from "src/modules/incidents/dto/create-incident.dto";
 import { IncidentQueryDto } from "src/modules/incidents/dto/incident-query.dto";
 import { UpdateIncidentDto } from "src/modules/incidents/dto/update-incident.dto";
+import type { IIncidentsRepository } from "src/modules/incidents/incident.repository";
 
 @Injectable()
 export class IncidentsService {

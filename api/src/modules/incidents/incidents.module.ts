@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
-import type { DrizzleDB } from "src/database/drizzle/drizzle.type";
 import { DrizzleModule } from "src/database/drizzle/drizzle.module";
+import type { DrizzleDB } from "src/database/drizzle/drizzle.type";
 import {
     IncidentsRepository,
     type IIncidentsRepository,

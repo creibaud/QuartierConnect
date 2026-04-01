@@ -1,4 +1,3 @@
-import type { UUID } from "node:crypto";
 import {
     BadRequestException,
     ConflictException,
@@ -14,11 +13,11 @@ import type { ServiceCategory } from "src/database/drizzle/schema";
 import type { ServiceDocument } from "src/database/mongodb/models/service.model";
 import { OUTBOX_EVENT_TYPES } from "src/modules/outbox/outbox-event-types";
 import { OutboxService } from "src/modules/outbox/outbox.service";
-import type { IServicesRepository } from "src/modules/services/service.repository";
 import type { CreateServiceDto } from "src/modules/services/dto/create-service.dto";
 import type { RateServiceDto } from "src/modules/services/dto/rate-service.dto";
 import type { ServiceQueryDto } from "src/modules/services/dto/service-query.dto";
 import type { UpdateServiceDto } from "src/modules/services/dto/update-service.dto";
+import type { IServicesRepository } from "src/modules/services/service.repository";
 
 const MINIMUM_BALANCE = -10;
 
@@ -53,7 +52,8 @@ export class ServicesService {
             updatedAt: now,
         };
 
-        const insertedId = await this.servicesRepository.insertService(document);
+        const insertedId =
+            await this.servicesRepository.insertService(document);
         const serviceId = insertedId.toHexString();
 
         await this.outbox.publish({
@@ -219,9 +219,7 @@ export class ServicesService {
             },
         });
 
-        this.logger.log(
-            `Service accepted: ${serviceId} by user ${acceptorId}`,
-        );
+        this.logger.log(`Service accepted: ${serviceId} by user ${acceptorId}`);
 
         return {
             ...service,

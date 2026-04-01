@@ -265,7 +265,7 @@ describe("Transactions & Points System - Details", () => {
         });
 
         it("should prevent negative balance", () => {
-            let balance = 50;
+            const balance = 50;
             const withdrawal = 100;
             const newBalance = Math.max(0, balance - withdrawal);
             expect(newBalance).toBe(0);

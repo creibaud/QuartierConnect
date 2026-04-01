@@ -12,7 +12,7 @@ describe("UserService", () => {
     let mockOutboxService: Partial<OutboxService>;
 
     const mockUser = {
-        id: randomUUID() as UUID,
+        id: randomUUID(),
         email: "test@example.com",
         firstName: "John",
         lastName: "Doe",
@@ -59,7 +59,7 @@ describe("UserService", () => {
         it("should throw NotFoundException when user not found", async () => {
             mockUserRepository.findOne.mockResolvedValue(null);
 
-            await expect(service.findOne(randomUUID() as UUID)).rejects.toThrow(
+            await expect(service.findOne(randomUUID())).rejects.toThrow(
                 NotFoundException,
             );
         });
@@ -111,9 +111,9 @@ describe("UserService", () => {
         it("should throw NotFoundException when user not found", async () => {
             mockUserRepository.getBalance.mockResolvedValue(null);
 
-            await expect(
-                service.getBalance(randomUUID() as UUID),
-            ).rejects.toThrow(NotFoundException);
+            await expect(service.getBalance(randomUUID())).rejects.toThrow(
+                NotFoundException,
+            );
         });
     });
 
@@ -141,7 +141,7 @@ describe("UserService", () => {
             mockUserRepository.update.mockResolvedValue(null);
 
             await expect(
-                service.updateMyProfile(randomUUID() as UUID, {}),
+                service.updateMyProfile(randomUUID(), {}),
             ).rejects.toThrow(NotFoundException);
         });
     });
