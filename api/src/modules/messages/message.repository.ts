@@ -109,14 +109,14 @@ export class MessagesRepository implements IMessagesRepository {
     }
 
     async findMessageById(id: string): Promise<MessageDocument | null> {
-        return this.messages.findOne({ _id: new ObjectId(id) });
+        return await this.messages.findOne({ _id: new ObjectId(id) });
     }
 
     async findMessageInChat(
         messageId: string,
         chatId: string,
     ): Promise<MessageDocument | null> {
-        return this.messages.findOne({
+        return await this.messages.findOne({
             _id: new ObjectId(messageId),
             chatId,
         });

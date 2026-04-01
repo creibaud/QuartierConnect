@@ -10,7 +10,6 @@ import { and, eq, ilike, sql } from "drizzle-orm";
 import { ObjectId } from "mongodb";
 import { PaginationQueryDto } from "src/common/dto/pagination-query.dto";
 import { PaginationHelper } from "src/common/helpers/pagination.helper";
-import { PermissionHelper } from "src/common/helpers/permission.helper";
 import { type DrizzleDB } from "src/database/drizzle/drizzle.type";
 import { quartiers, userQuartiers, users } from "src/database/drizzle/schema";
 import {

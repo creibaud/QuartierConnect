@@ -2,10 +2,7 @@ import { Module } from "@nestjs/common";
 import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
 import { EventRegistrationService } from "src/modules/events/event-registration.service";
 import { EventSwipeService } from "src/modules/events/event-swipe.service";
-import {
-    EventRepository,
-    type IEventsRepository,
-} from "src/modules/events/event.repository";
+import { EventRepository } from "src/modules/events/event.repository";
 import { EventsController } from "src/modules/events/events.controller";
 import { EventsService } from "src/modules/events/events.service";
 

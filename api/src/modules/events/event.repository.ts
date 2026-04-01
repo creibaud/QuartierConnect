@@ -1,4 +1,4 @@
-import type { ObjectId } from "mongodb";
+import { ObjectId } from "mongodb";
 import type {
     EventDocument,
     EventRegistrationDocument,
@@ -76,7 +76,7 @@ export class EventRepository implements IEventsRepository {
         eventData: Omit<EventDocument, "_id" | "createdAt" | "updatedAt">,
     ): Promise<EventDocument> {
         const document: EventDocument = {
-            _id: new (require("mongodb").ObjectId)(),
+            _id: new ObjectId(),
             ...eventData,
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -86,7 +86,6 @@ export class EventRepository implements IEventsRepository {
     }
 
     async findById(id: ObjectId | string): Promise<EventDocument | null> {
-        const { ObjectId } = require("mongodb");
         const objectId = typeof id === "string" ? new ObjectId(id) : id;
         return this.mongo
             .collection(this.collection)
@@ -141,7 +140,6 @@ export class EventRepository implements IEventsRepository {
         id: ObjectId | string,
         eventData: Partial<EventDocument>,
     ): Promise<EventDocument | null> {
-        const { ObjectId } = require("mongodb");
         const objectId = typeof id === "string" ? new ObjectId(id) : id;
         const result = await this.mongo
             .collection(this.collection)
@@ -159,7 +157,6 @@ export class EventRepository implements IEventsRepository {
     }
 
     async delete(id: ObjectId | string): Promise<boolean> {
-        const { ObjectId } = require("mongodb");
         const objectId = typeof id === "string" ? new ObjectId(id) : id;
         const result = await this.mongo
             .collection(this.collection)
@@ -171,7 +168,6 @@ export class EventRepository implements IEventsRepository {
         eventId: ObjectId | string,
         userId: string,
     ): Promise<EventRegistrationDocument> {
-        const { ObjectId } = require("mongodb");
         const eventObjectId =
             typeof eventId === "string" ? new ObjectId(eventId) : eventId;
 
@@ -193,7 +189,6 @@ export class EventRepository implements IEventsRepository {
         eventId: ObjectId | string,
         userId: string,
     ): Promise<boolean> {
-        const { ObjectId } = require("mongodb");
         const eventObjectId =
             typeof eventId === "string" ? new ObjectId(eventId) : eventId;
 
@@ -212,7 +207,6 @@ export class EventRepository implements IEventsRepository {
         page: number,
         limit: number,
     ): Promise<{ data: EventRegistrationDocument[]; total: number }> {
-        const { ObjectId } = require("mongodb");
         const eventObjectId =
             typeof eventId === "string" ? new ObjectId(eventId) : eventId;
         const offset = (page - 1) * limit;
@@ -234,7 +228,6 @@ export class EventRepository implements IEventsRepository {
     }
 
     async getRegistrationCount(eventId: ObjectId | string): Promise<number> {
-        const { ObjectId } = require("mongodb");
         const eventObjectId =
             typeof eventId === "string" ? new ObjectId(eventId) : eventId;
         return this.mongo
@@ -252,7 +245,7 @@ export class EventRepository implements IEventsRepository {
             .project({ eventId: 1 })
             .toArray();
         const swipedEventIds = swipedEvents.map(
-            (doc) => new (require("mongodb").ObjectId)(doc.eventId),
+            (doc) => new ObjectId(doc.eventId),
         );
 
         return collection
@@ -269,7 +262,6 @@ export class EventRepository implements IEventsRepository {
         userId: string,
         action: "like" | "pass",
     ): Promise<EventSwipeDocument> {
-        const { ObjectId } = require("mongodb");
         const eventObjectId =
             typeof eventId === "string" ? new ObjectId(eventId) : eventId;
 
@@ -289,7 +281,6 @@ export class EventRepository implements IEventsRepository {
         eventId: ObjectId | string,
         userId: string,
     ): Promise<boolean> {
-        const { ObjectId } = require("mongodb");
         const eventObjectId =
             typeof eventId === "string" ? new ObjectId(eventId) : eventId;
 

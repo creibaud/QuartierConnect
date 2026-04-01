@@ -1,7 +1,4 @@
-import {
-    BadRequestException,
-    InternalServerErrorException,
-} from "@nestjs/common";
+import { BadRequestException } from "@nestjs/common";
 
 /**
  * DTO pour les requêtes paginées standardisées

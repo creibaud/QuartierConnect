@@ -2,11 +2,7 @@ import type { Collection } from "mongodb";
 import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
 
 export interface IVotesRepository {
-    // findAll(): Promise<void>;
-    // find(filter: Filter): Promise<void>;
-    // findById(id: string): Promise<void>;
-    // create(data: unknown): Promise<void>;
-    // update(id: string, data: unknown): Promise<void>;
+    [index: string]: unknown;
 }
 
 export class VotesRepository implements IVotesRepository {

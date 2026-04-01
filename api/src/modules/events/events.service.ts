@@ -1,6 +1,4 @@
 import {
-    BadRequestException,
-    ConflictException,
     ForbiddenException,
     Inject,
     Injectable,
@@ -8,7 +6,6 @@ import {
     NotFoundException,
 } from "@nestjs/common";
 import { PaginationQueryDto } from "src/common/dto/pagination-query.dto";
-import { buildPaginatedResult } from "src/common/query/query.helper";
 import { CreateEventDto } from "src/modules/events/dto/create-event.dto";
 import { EventQueryDto } from "src/modules/events/dto/event-query.dto";
 import { SwipeEventDto } from "src/modules/events/dto/swipe-event.dto";
@@ -71,7 +68,6 @@ export class EventsService {
     async findAll(query: EventQueryDto, userId: string) {
         void userId;
         const { page = 1, limit = 10 } = query;
-        const skip = (page - 1) * limit;
 
         const filter: Record<string, unknown> = {};
 

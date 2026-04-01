@@ -49,7 +49,7 @@ export class EventSwipeService {
         this.logger.log(`User ${userId} liked event ${dto.eventId}`);
     }
 
-    async getNextSwipe(userId: string, quartierId: string) {
+    async getNextSwipe(userId: string, _quartierId: string) {
         return this.eventRepository.getNextSwipe(userId, 1);
     }
 

@@ -1,9 +1,6 @@
 import { Module } from "@nestjs/common";
 import type { DrizzleDB } from "src/database/drizzle/drizzle.type";
-import {
-    QuartiersRepository,
-    type IQuartiersRepository,
-} from "src/modules/quartiers/quartier.repository";
+import { QuartiersRepository } from "src/modules/quartiers/quartier.repository";
 import { QuartiersController } from "src/modules/quartiers/quartiers.controller";
 import { QuartiersService } from "src/modules/quartiers/quartiers.service";
 import { GeoService } from "src/modules/quartiers/services";

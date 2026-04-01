@@ -256,7 +256,7 @@ export class DocumentSignatureService {
     private generateSignatureData(
         documentId: string,
         signerId: string,
-        image: string,
+        _image: string,
     ): string {
         return `${documentId}:${signerId}:${Date.now()}`;
     }
