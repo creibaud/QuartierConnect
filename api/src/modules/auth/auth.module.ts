@@ -3,7 +3,12 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
 import { DrizzleModule } from "src/database/drizzle/drizzle.module";
+import type { DrizzleDB } from "src/database/drizzle/drizzle.type";
 import { AuthController } from "src/modules/auth/auth.controller";
+import {
+    AuthRepository,
+    type IAuthRepository,
+} from "src/modules/auth/auth.repository";
 import { AuthService } from "src/modules/auth/auth.service";
 import {
     JwtExpiresIn,
@@ -30,7 +35,17 @@ import { TotpService } from "src/modules/auth/totp.service";
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy, TotpService],
+    providers: [
+        {
+            provide: "IAuthRepository",
+            useFactory: (db: DrizzleDB): IAuthRepository =>
+                new AuthRepository(db),
+            inject: ["DRIZZLE"],
+        },
+        AuthService,
+        JwtStrategy,
+        TotpService,
+    ],
     exports: [AuthService],
 })
 export class AuthModule {}

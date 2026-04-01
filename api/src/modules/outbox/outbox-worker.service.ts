@@ -78,10 +78,13 @@ export class OutboxWorkerService
                 this.batchLimit,
             );
         } catch (error) {
+            const message =
+                error instanceof Error ? error.message : "Unknown error";
             this.logger.error(
-                "Outbox continuous worker iteration failed",
+                `Outbox continuous worker iteration failed: ${message}`,
                 error,
             );
+            // Log will be picked up by monitoring; system continues polling
         } finally {
             this.isRunning = false;
         }

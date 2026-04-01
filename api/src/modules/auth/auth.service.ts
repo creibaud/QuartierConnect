@@ -10,14 +10,14 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import bcrypt from "bcryptjs";
-import { and, eq, gt } from "drizzle-orm";
-import type { DrizzleDB } from "src/database/drizzle/drizzle.type";
-import { refreshTokens, User, users } from "src/database/drizzle/schema";
+import type { User } from "src/database/drizzle/schema";
 import { LoginDto } from "src/modules/auth/dto/login.dto";
 import { LogoutDto } from "src/modules/auth/dto/logout.dto";
 import { RefreshDto } from "src/modules/auth/dto/refresh.dto";
 import { RegisterDto } from "src/modules/auth/dto/register.dto";
+import type { SsoLoginDto } from "src/modules/auth/dto/sso.dto";
 import { TotpValidateDto } from "src/modules/auth/dto/totp.dto";
+import type { IAuthRepository } from "src/modules/auth/auth.repository";
 import {
     JwtExpiresIn,
     JwtPayload,
@@ -36,7 +36,8 @@ export class AuthService {
     private readonly logger = new Logger(AuthService.name);
 
     constructor(
-        @Inject("DRIZZLE") private readonly db: DrizzleDB,
+        @Inject("IAuthRepository")
+        private readonly authRepository: IAuthRepository,
         private readonly outbox: OutboxService,
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
@@ -45,28 +46,21 @@ export class AuthService {
     ) {}
 
     async register(dto: RegisterDto) {
-        const [existingUser] = await this.db
-            .select()
-            .from(users)
-            .where(eq(users.email, dto.email))
-            .limit(1);
+        const existing = await this.authRepository.findByEmail(dto.email);
 
-        if (existingUser) {
+        if (existing) {
             throw new ConflictException("Email already in use");
         }
 
         const saltRounds = this.configService.get<number>("SALT_ROUNDS") ?? 10;
         const hashedPassword = await bcrypt.hash(dto.password, saltRounds);
 
-        const [newUser] = await this.db
-            .insert(users)
-            .values({
-                email: dto.email,
-                password: hashedPassword,
-                firstName: dto.firstName,
-                lastName: dto.lastName,
-            })
-            .returning();
+        const newUser = await this.authRepository.createUser({
+            email: dto.email,
+            password: hashedPassword,
+            firstName: dto.firstName,
+            lastName: dto.lastName,
+        });
 
         await this.outbox.publish({
             aggregateType: "user",
@@ -99,11 +93,7 @@ export class AuthService {
     }
 
     async login(dto: LoginDto) {
-        const [user] = await this.db
-            .select()
-            .from(users)
-            .where(eq(users.email, dto.email))
-            .limit(1);
+        const user = await this.authRepository.findByEmail(dto.email);
 
         if (!user) {
             throw new UnauthorizedException("Invalid credentials");
@@ -148,11 +138,11 @@ export class AuthService {
         let payload: TotpPendingPayload;
 
         try {
-            const totpSecret =
+            const secret =
                 this.configService.getOrThrow<string>("JWT_ACCESS_SECRET");
             payload = this.jwtService.verify<TotpPendingPayload>(
                 dto.totpToken,
-                { secret: totpSecret },
+                { secret },
             );
         } catch {
             throw new UnauthorizedException("Invalid or expired TOTP token");
@@ -171,11 +161,7 @@ export class AuthService {
             throw new UnauthorizedException("Invalid TOTP code");
         }
 
-        const [user] = await this.db
-            .select()
-            .from(users)
-            .where(eq(users.id, payload.sub))
-            .limit(1);
+        const user = await this.authRepository.findById(payload.sub);
 
         if (!user?.isActive) {
             throw new UnauthorizedException("User not found or deactivated");
@@ -196,31 +182,18 @@ export class AuthService {
     }
 
     async refresh(dto: RefreshDto) {
-        const [stored] = await this.db
-            .select()
-            .from(refreshTokens)
-            .where(
-                and(
-                    eq(refreshTokens.token, dto.refreshToken),
-                    gt(refreshTokens.expiresAt, new Date()),
-                ),
-            )
-            .limit(1);
+        const stored = await this.authRepository.findActiveRefreshToken(
+            dto.refreshToken,
+        );
 
         if (!stored) {
             throw new UnauthorizedException("Invalid refresh token");
         }
 
-        const [user] = await this.db
-            .select()
-            .from(users)
-            .where(eq(users.id, stored.userId))
-            .limit(1);
+        const user = await this.authRepository.findById(stored.userId);
 
         if (stored.revoked) {
-            await this.db
-                .delete(refreshTokens)
-                .where(eq(refreshTokens.userId, stored.userId));
+            await this.authRepository.deleteAllUserRefreshTokens(stored.userId);
 
             this.logger.warn(
                 `Revoked refresh token reuse detected for user: ${stored.userId}`,
@@ -251,10 +224,7 @@ export class AuthService {
             throw new UnauthorizedException("User not found or deactivated");
         }
 
-        await this.db
-            .update(refreshTokens)
-            .set({ revoked: true })
-            .where(eq(refreshTokens.id, stored.id));
+        await this.authRepository.revokeRefreshToken(stored.id);
 
         const tokens = await this.generateTokens(
             user.id,
@@ -268,11 +238,68 @@ export class AuthService {
         };
     }
 
+    async ssoLogin(dto: SsoLoginDto) {
+        const user = await this.authRepository.findByEmail(dto.email);
+
+        if (!user) {
+            throw new UnauthorizedException("Invalid credentials");
+        }
+
+        const isPasswordValid = await bcrypt.compare(
+            dto.password,
+            user.password,
+        );
+        if (!isPasswordValid) {
+            throw new UnauthorizedException("Invalid credentials");
+        }
+
+        if (!user.isActive) {
+            throw new UnauthorizedException("Account is deactivated");
+        }
+
+        if (user.role !== "admin") {
+            throw new ForbiddenException(
+                "Only administrators can use the desktop SSO",
+            );
+        }
+
+        const isTotpEnabled = await this.totpService.isTotpEnabled(user.id);
+
+        if (isTotpEnabled) {
+            if (!dto.totpCode) {
+                throw new UnauthorizedException(
+                    "TOTP code required for this account",
+                );
+            }
+
+            const isValid = await this.totpService.validateCode(
+                user.id,
+                dto.totpCode,
+            );
+
+            if (!isValid) {
+                throw new UnauthorizedException("Invalid TOTP code");
+            }
+        }
+
+        const accessToken = this.generateDesktopAccessToken(
+            user.id,
+            user.email,
+            user.role,
+        );
+
+        this.logger.log(`SSO desktop login for admin: ${user.email}`);
+
+        return {
+            accessToken,
+            tokenType: "Bearer",
+            expiresIn: 86400,
+            user: { id: user.id, email: user.email, role: user.role },
+        };
+    }
+
     async logout(dto: LogoutDto) {
-        await this.db
-            .update(refreshTokens)
-            .set({ revoked: true })
-            .where(eq(refreshTokens.userId, dto.userId));
+        await this.authRepository.revokeAllUserRefreshTokens(dto.userId);
 
         this.logger.log(`User logged out: ${dto.userId}`);
 
@@ -297,17 +324,34 @@ export class AuthService {
     }
 
     async validateUserById(userId: string) {
-        const [user] = await this.db
-            .select()
-            .from(users)
-            .where(eq(users.id, userId))
-            .limit(1);
+        const user = await this.authRepository.findById(userId);
 
         if (!user?.isActive) {
             return null;
         }
 
         return this.sanitizeUser(user);
+    }
+
+    private generateDesktopAccessToken(
+        userId: string,
+        email: string,
+        role: string,
+    ): string {
+        const payload: JwtPayload & { aud: string[] } = {
+            sub: userId,
+            email,
+            role,
+            aud: ["desktop"],
+        };
+
+        const accessSecret =
+            this.configService.getOrThrow<string>("JWT_ACCESS_SECRET");
+
+        return this.jwtService.sign(payload, {
+            expiresIn: "24h",
+            secret: accessSecret,
+        });
     }
 
     private generateTotpPendingToken(userId: string): string {
@@ -326,7 +370,6 @@ export class AuthService {
         const accessExpiration = this.configService.getOrThrow<JwtExpiresIn>(
             "JWT_ACCESS_EXPIRATION",
         );
-
         const accessSecret =
             this.configService.getOrThrow<string>("JWT_ACCESS_SECRET");
 
@@ -346,33 +389,31 @@ export class AuthService {
             secret: refreshSecret,
         });
 
-        const expirationDate = new Date();
-        if (typeof refreshExpiration === "number") {
-            expirationDate.setSeconds(
-                expirationDate.getSeconds() + refreshExpiration,
-            );
-        } else if (refreshExpiration.endsWith("d")) {
-            expirationDate.setDate(
-                expirationDate.getDate() + Number.parseInt(refreshExpiration),
-            );
-        } else if (refreshExpiration.endsWith("h")) {
-            expirationDate.setHours(
-                expirationDate.getHours() + Number.parseInt(refreshExpiration),
-            );
-        } else if (refreshExpiration.endsWith("m")) {
-            expirationDate.setMinutes(
-                expirationDate.getMinutes() +
-                    Number.parseInt(refreshExpiration),
-            );
-        }
+        const expiresAt = this.computeExpirationDate(refreshExpiration);
 
-        await this.db.insert(refreshTokens).values({
+        await this.authRepository.createRefreshToken({
             userId,
             token: refreshToken,
-            expiresAt: expirationDate,
+            expiresAt,
         });
 
         return { accessToken, refreshToken };
+    }
+
+    private computeExpirationDate(expiration: JwtExpiresIn): Date {
+        const date = new Date();
+
+        if (typeof expiration === "number") {
+            date.setSeconds(date.getSeconds() + expiration);
+        } else if (expiration.endsWith("d")) {
+            date.setDate(date.getDate() + Number.parseInt(expiration));
+        } else if (expiration.endsWith("h")) {
+            date.setHours(date.getHours() + Number.parseInt(expiration));
+        } else if (expiration.endsWith("m")) {
+            date.setMinutes(date.getMinutes() + Number.parseInt(expiration));
+        }
+
+        return date;
     }
 
     private expirationToMs(expiration: string): number {

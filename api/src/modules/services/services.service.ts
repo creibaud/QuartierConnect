@@ -1,3 +1,4 @@
+import type { UUID } from "node:crypto";
 import {
     BadRequestException,
     ConflictException,
@@ -7,25 +8,13 @@ import {
     Logger,
     NotFoundException,
 } from "@nestjs/common";
-import { eq, sql } from "drizzle-orm";
-import { ObjectId } from "mongodb";
 import type { PaginationQueryDto } from "src/common/dto/pagination-query.dto";
 import { buildPaginatedResult } from "src/common/query/query.helper";
-import type { DrizzleDB } from "src/database/drizzle/drizzle.type";
-import { users } from "src/database/drizzle/schema";
-import {
-    SERVICE_RATINGS_COLLECTION,
-    SERVICES_COLLECTION,
-} from "src/database/mongodb/models/service.model";
-import type {
-    ServiceDocument,
-    ServiceRatingDocument,
-} from "src/database/mongodb/models/service.model";
-import { TRANSACTIONS_COLLECTION } from "src/database/mongodb/models/transaction.model";
-import type { TransactionDocument } from "src/database/mongodb/models/transaction.model";
-import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
+import type { ServiceCategory } from "src/database/drizzle/schema";
+import type { ServiceDocument } from "src/database/mongodb/models/service.model";
 import { OUTBOX_EVENT_TYPES } from "src/modules/outbox/outbox-event-types";
 import { OutboxService } from "src/modules/outbox/outbox.service";
+import type { IServicesRepository } from "src/modules/services/service.repository";
 import type { CreateServiceDto } from "src/modules/services/dto/create-service.dto";
 import type { RateServiceDto } from "src/modules/services/dto/rate-service.dto";
 import type { ServiceQueryDto } from "src/modules/services/dto/service-query.dto";
@@ -38,13 +27,16 @@ export class ServicesService {
     private readonly logger = new Logger(ServicesService.name);
 
     constructor(
-        @Inject("MONGODB") private readonly mongo: MongoDatabase,
-        @Inject("DRIZZLE") private readonly db: DrizzleDB,
+        @Inject("IServicesRepository")
+        private readonly servicesRepository: IServicesRepository,
         private readonly outbox: OutboxService,
     ) {}
 
     async create(creatorId: string, dto: CreateServiceDto) {
-        const pointsValue = this.calculatePoints(dto.estimatedDurationMinutes);
+        const pointsValue = await this.calculatePoints(
+            dto.estimatedDurationMinutes,
+            dto.category,
+        );
         const now = new Date();
 
         const document: ServiceDocument = {
@@ -61,11 +53,8 @@ export class ServicesService {
             updatedAt: now,
         };
 
-        const result = await this.mongo
-            .collection<ServiceDocument>(SERVICES_COLLECTION)
-            .insertOne(document);
-
-        const serviceId = result.insertedId.toHexString();
+        const insertedId = await this.servicesRepository.insertService(document);
+        const serviceId = insertedId.toHexString();
 
         await this.outbox.publish({
             aggregateType: "service",
@@ -89,31 +78,12 @@ export class ServicesService {
 
     async findAll(query: ServiceQueryDto) {
         const { page = 1, limit = 10 } = query;
-        const filter: Record<string, unknown> = {};
-
-        if (query.category) filter.category = query.category;
-        if (query.type) filter.type = query.type;
-        if (query.status) filter.status = query.status;
-        if (query.quartierId) filter.quartierId = query.quartierId;
-        if (query.search) {
-            filter.$or = [
-                { title: { $regex: query.search, $options: "i" } },
-                { description: { $regex: query.search, $options: "i" } },
-            ];
-        }
-
-        const collection =
-            this.mongo.collection<ServiceDocument>(SERVICES_COLLECTION);
+        const filter = this.buildServiceFilter(query);
         const skip = (page - 1) * limit;
 
         const [documents, total] = await Promise.all([
-            collection
-                .find(filter)
-                .sort({ createdAt: -1 })
-                .skip(skip)
-                .limit(limit)
-                .toArray(),
-            collection.countDocuments(filter),
+            this.servicesRepository.findServices(filter, skip, limit),
+            this.servicesRepository.countServices(filter),
         ]);
 
         return buildPaginatedResult(
@@ -129,19 +99,11 @@ export class ServicesService {
         const filter = {
             $or: [{ creatorId: userId }, { acceptorId: userId }],
         };
-
-        const collection =
-            this.mongo.collection<ServiceDocument>(SERVICES_COLLECTION);
         const skip = (page - 1) * limit;
 
         const [documents, total] = await Promise.all([
-            collection
-                .find(filter)
-                .sort({ createdAt: -1 })
-                .skip(skip)
-                .limit(limit)
-                .toArray(),
-            collection.countDocuments(filter),
+            this.servicesRepository.findServices(filter, skip, limit),
+            this.servicesRepository.countServices(filter),
         ]);
 
         return buildPaginatedResult(
@@ -153,9 +115,7 @@ export class ServicesService {
     }
 
     async findOne(id: string) {
-        const document = await this.mongo
-            .collection<ServiceDocument>(SERVICES_COLLECTION)
-            .findOne({ _id: new ObjectId(id) });
+        const document = await this.servicesRepository.findServiceById(id);
 
         if (!document) {
             throw new NotFoundException("Service not found");
@@ -178,12 +138,10 @@ export class ServicesService {
         }
 
         const now = new Date();
-        await this.mongo
-            .collection<ServiceDocument>(SERVICES_COLLECTION)
-            .updateOne(
-                { _id: new ObjectId(id) },
-                { $set: { ...dto, updatedAt: now } },
-            );
+        await this.servicesRepository.updateService(id, {
+            ...dto,
+            updatedAt: now,
+        });
 
         await this.outbox.publish({
             aggregateType: "service",
@@ -216,9 +174,7 @@ export class ServicesService {
             throw new BadRequestException("Only open services can be deleted");
         }
 
-        await this.mongo
-            .collection<ServiceDocument>(SERVICES_COLLECTION)
-            .deleteOne({ _id: new ObjectId(id) });
+        await this.servicesRepository.deleteService(id);
 
         await this.outbox.publish({
             aggregateType: "service",
@@ -246,12 +202,11 @@ export class ServicesService {
         }
 
         const now = new Date();
-        await this.mongo
-            .collection<ServiceDocument>(SERVICES_COLLECTION)
-            .updateOne(
-                { _id: new ObjectId(serviceId) },
-                { $set: { status: "accepted", acceptorId, updatedAt: now } },
-            );
+        await this.servicesRepository.updateService(serviceId, {
+            status: "accepted",
+            acceptorId,
+            updatedAt: now,
+        });
 
         await this.outbox.publish({
             aggregateType: "service",
@@ -264,7 +219,9 @@ export class ServicesService {
             },
         });
 
-        this.logger.log(`Service accepted: ${serviceId} by user ${acceptorId}`);
+        this.logger.log(
+            `Service accepted: ${serviceId} by user ${acceptorId}`,
+        );
 
         return {
             ...service,
@@ -295,82 +252,14 @@ export class ServicesService {
         const now = new Date();
 
         if (service.type === "paid") {
-            const [creator] = await this.db
-                .select({ balance: users.balance })
-                .from(users)
-                .where(
-                    eq(
-                        users.id,
-                        service.creatorId as `${string}-${string}-${string}-${string}-${string}`,
-                    ),
-                )
-                .limit(1);
-
-            if (!creator) {
-                throw new NotFoundException("Service creator not found");
-            }
-
-            const currentBalance = Number(creator.balance);
-            if (currentBalance - service.pointsValue < MINIMUM_BALANCE) {
-                throw new BadRequestException(
-                    "Insufficient balance to complete this paid service",
-                );
-            }
-
-            const transactionBase: Omit<TransactionDocument, "_id"> = {
-                fromUserId: service.creatorId,
-                toUserId: service.acceptorId!,
-                serviceId,
-                type: "service_exchange",
-                pointsAmount: service.pointsValue,
-                description: `Payment for service: ${service.title}`,
-                createdAt: now,
-            };
-
-            await this.mongo
-                .collection<TransactionDocument>(TRANSACTIONS_COLLECTION)
-                .insertOne({ ...transactionBase });
-
-            await Promise.all([
-                this.db
-                    .update(users)
-                    .set({
-                        balance: sql`${users.balance} - ${service.pointsValue}`,
-                        updatedAt: now,
-                    })
-                    .where(
-                        eq(
-                            users.id,
-                            service.creatorId as `${string}-${string}-${string}-${string}-${string}`,
-                        ),
-                    ),
-                this.db
-                    .update(users)
-                    .set({
-                        balance: sql`${users.balance} + ${service.pointsValue}`,
-                        updatedAt: now,
-                    })
-                    .where(
-                        eq(
-                            users.id,
-                            service.acceptorId! as `${string}-${string}-${string}-${string}-${string}`,
-                        ),
-                    ),
-            ]);
+            await this.processPayment(service, now);
         }
 
-        await this.mongo
-            .collection<ServiceDocument>(SERVICES_COLLECTION)
-            .updateOne(
-                { _id: new ObjectId(serviceId) },
-                {
-                    $set: {
-                        status: "completed",
-                        completedAt: now,
-                        updatedAt: now,
-                    },
-                },
-            );
+        await this.servicesRepository.updateService(serviceId, {
+            status: "completed",
+            completedAt: now,
+            updatedAt: now,
+        });
 
         await this.outbox.publish({
             aggregateType: "service",
@@ -415,12 +304,10 @@ export class ServicesService {
         }
 
         const now = new Date();
-        await this.mongo
-            .collection<ServiceDocument>(SERVICES_COLLECTION)
-            .updateOne(
-                { _id: new ObjectId(serviceId) },
-                { $set: { status: "cancelled", updatedAt: now } },
-            );
+        await this.servicesRepository.updateService(serviceId, {
+            status: "cancelled",
+            updatedAt: now,
+        });
 
         await this.outbox.publish({
             aggregateType: "service",
@@ -456,16 +343,17 @@ export class ServicesService {
             );
         }
 
-        const existingRating = await this.mongo
-            .collection<ServiceRatingDocument>(SERVICE_RATINGS_COLLECTION)
-            .findOne({ serviceId, raterUserId });
+        const existingRating = await this.servicesRepository.findRating(
+            serviceId,
+            raterUserId,
+        );
 
         if (existingRating) {
             throw new ConflictException("You have already rated this service");
         }
 
         const now = new Date();
-        const rating: Omit<ServiceRatingDocument, "_id"> = {
+        const rating = {
             serviceId,
             raterUserId,
             rating: dto.rating,
@@ -473,11 +361,7 @@ export class ServicesService {
             createdAt: now,
         };
 
-        await this.mongo
-            .collection<ServiceRatingDocument>(SERVICE_RATINGS_COLLECTION)
-            .insertOne({ ...rating });
-
-        this.logger.log(`Service rated: ${serviceId} by user ${raterUserId}`);
+        await this.servicesRepository.insertRating(rating);
 
         await this.outbox.publish({
             aggregateType: "service_rating",
@@ -490,6 +374,8 @@ export class ServicesService {
                 ratedAt: now,
             },
         });
+
+        this.logger.log(`Service rated: ${serviceId} by user ${raterUserId}`);
 
         return rating;
     }
@@ -515,15 +401,87 @@ export class ServicesService {
         };
     }
 
-    private calculatePoints(durationMinutes: number): number {
-        if (durationMinutes >= 60) {
-            return 2;
+    private async processPayment(
+        service: ReturnType<typeof this.mapToResponse>,
+        at: Date,
+    ): Promise<void> {
+        const balance = await this.servicesRepository.getUserBalance(
+            service.creatorId,
+        );
+
+        if (balance === null) {
+            throw new NotFoundException("Service creator not found");
         }
-        return 1;
+
+        if (balance - service.pointsValue < MINIMUM_BALANCE) {
+            throw new BadRequestException(
+                "Insufficient balance to complete this paid service",
+            );
+        }
+
+        await this.servicesRepository.insertTransaction({
+            fromUserId: service.creatorId,
+            toUserId: service.acceptorId!,
+            serviceId: service.id,
+            type: "service_exchange",
+            pointsAmount: service.pointsValue,
+            description: `Payment for service: ${service.title}`,
+            createdAt: at,
+        });
+
+        await Promise.all([
+            this.servicesRepository.deductUserBalance(
+                service.creatorId,
+                service.pointsValue,
+                at,
+            ),
+            this.servicesRepository.addUserBalance(
+                service.acceptorId!,
+                service.pointsValue,
+                at,
+            ),
+        ]);
+    }
+
+    private buildServiceFilter(
+        query: ServiceQueryDto,
+    ): Record<string, unknown> {
+        const filter: Record<string, unknown> = {};
+
+        if (query.category) filter.category = query.category;
+        if (query.type) filter.type = query.type;
+        if (query.status) filter.status = query.status;
+        if (query.quartierId) filter.quartierId = query.quartierId;
+        if (query.search) {
+            filter.$or = [
+                { title: { $regex: query.search, $options: "i" } },
+                { description: { $regex: query.search, $options: "i" } },
+            ];
+        }
+
+        return filter;
+    }
+
+    private async calculatePoints(
+        durationMinutes: number,
+        category: ServiceCategory,
+    ): Promise<number> {
+        const config =
+            await this.servicesRepository.getPointConfigForCategory(category);
+
+        if (durationMinutes < 30) {
+            return Math.max(1, Math.round(config.multiplier));
+        }
+
+        const hours = Math.ceil(durationMinutes / 60);
+        return Math.max(
+            1,
+            Math.round(hours * config.basePointsPerHour * config.multiplier),
+        );
     }
 
     private readonly mapToResponse = (
-        document: ServiceDocument & { _id?: ObjectId },
+        document: ServiceDocument & { _id?: { toHexString(): string } },
     ) => {
         const { _id, ...rest } = document;
         return { ...rest, id: _id?.toHexString() ?? "" };

@@ -9,7 +9,7 @@ import {
     MaxLength,
     MinLength,
 } from "class-validator";
-import { incidentPriorityEnum } from "src/database/drizzle/schema";
+import { incidentPriorityEnum, incidentTypeEnum } from "src/database/drizzle/schema";
 
 export class CreateIncidentDto {
     @ApiProperty({
@@ -26,6 +26,15 @@ export class CreateIncidentDto {
     @IsOptional()
     @IsString()
     description?: string;
+
+    @ApiPropertyOptional({
+        enum: incidentTypeEnum.enumValues,
+        default: "other",
+        description: "Type of incident",
+    })
+    @IsOptional()
+    @IsEnum(incidentTypeEnum.enumValues)
+    type?: "infrastructure" | "noise" | "vandalism" | "safety" | "cleanliness" | "other";
 
     @ApiPropertyOptional({
         enum: incidentPriorityEnum.enumValues,

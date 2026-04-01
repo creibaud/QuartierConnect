@@ -1,10 +1,11 @@
 import {
+    BadRequestException,
     ConflictException,
     ForbiddenException,
     NotFoundException,
 } from "@nestjs/common";
 import { ObjectId } from "mongodb";
-import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
+import type { IMessagesRepository } from "src/modules/messages/message.repository";
 import { MessagesService } from "src/modules/messages/messages.service";
 
 const USER_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
@@ -31,31 +32,39 @@ const baseMessage = {
 
 describe("MessagesService", () => {
     let service: MessagesService;
-    let mongo: jest.Mocked<MongoDatabase>;
+    let repository: jest.Mocked<IMessagesRepository>;
     let gateway: { broadcastMessage: jest.Mock };
 
     beforeEach(() => {
-        mongo = {
-            collection: jest.fn(),
-        } as unknown as jest.Mocked<MongoDatabase>;
-
-        gateway = {
-            broadcastMessage: jest.fn(),
+        repository = {
+            findUserChats: jest.fn().mockResolvedValue([baseChat]),
+            findDirectChat: jest.fn().mockResolvedValue(null),
+            createChat: jest
+                .fn()
+                .mockResolvedValue(new ObjectId(CHAT_ID)),
+            findChatById: jest.fn().mockResolvedValue(baseChat),
+            updateChatLastMessageAt: jest.fn().mockResolvedValue(undefined),
+            createMessage: jest
+                .fn()
+                .mockResolvedValue(new ObjectId(MESSAGE_ID)),
+            findMessages: jest.fn().mockResolvedValue([baseMessage]),
+            countMessages: jest.fn().mockResolvedValue(1),
+            findMessageById: jest.fn().mockResolvedValue(baseMessage),
+            findMessageInChat: jest.fn().mockResolvedValue(baseMessage),
+            pushMessageReport: jest.fn().mockResolvedValue(undefined),
+            deleteMessage: jest.fn().mockResolvedValue(undefined),
         };
 
-        service = new MessagesService(mongo, gateway);
+        gateway = { broadcastMessage: jest.fn() };
+
+        service = new MessagesService(repository, gateway);
     });
 
     describe("findMyChats", () => {
-        it("returns chats for the user sorted by lastMessageAt", async () => {
-            const toArray = jest.fn().mockResolvedValue([baseChat]);
-            const sort = jest.fn().mockReturnValue({ toArray });
-            const find = jest.fn().mockReturnValue({ sort });
-
-            (mongo.collection as jest.Mock).mockReturnValue({ find });
-
+        it("returns chats for the user", async () => {
             const result = await service.findMyChats(USER_ID);
 
+            expect(repository.findUserChats).toHaveBeenCalledWith(USER_ID);
             expect(result).toHaveLength(1);
             expect(result[0].id).toBe(CHAT_ID);
         });
@@ -63,28 +72,19 @@ describe("MessagesService", () => {
 
     describe("createChat", () => {
         it("creates a new 1-to-1 chat when none exists", async () => {
-            const findOne = jest.fn().mockResolvedValue(null);
-            const insertOne = jest
-                .fn()
-                .mockResolvedValue({ insertedId: new ObjectId(CHAT_ID) });
-
-            (mongo.collection as jest.Mock).mockReturnValue({
-                findOne,
-                insertOne,
-            });
+            repository.findDirectChat.mockResolvedValue(null);
 
             const result = await service.createChat(USER_ID, {
                 participantIds: [OTHER_USER_ID],
             });
 
+            expect(repository.createChat).toHaveBeenCalled();
             expect(result.participantIds).toContain(USER_ID);
             expect(result.participantIds).toContain(OTHER_USER_ID);
         });
 
         it("throws ConflictException when 1-to-1 chat already exists", async () => {
-            const findOne = jest.fn().mockResolvedValue(baseChat);
-
-            (mongo.collection as jest.Mock).mockReturnValue({ findOne });
+            repository.findDirectChat.mockResolvedValue(baseChat);
 
             await expect(
                 service.createChat(USER_ID, {
@@ -92,94 +92,161 @@ describe("MessagesService", () => {
                 }),
             ).rejects.toBeInstanceOf(ConflictException);
         });
+
+        it("allows creating group chats without duplicate check", async () => {
+            await service.createChat(USER_ID, {
+                participantIds: [OTHER_USER_ID, "third-user"],
+            });
+
+            expect(repository.findDirectChat).not.toHaveBeenCalled();
+            expect(repository.createChat).toHaveBeenCalled();
+        });
+    });
+
+    describe("getChat", () => {
+        it("returns chat when user is a participant", async () => {
+            const result = await service.getChat(CHAT_ID, USER_ID);
+            expect(result.id).toBe(CHAT_ID);
+        });
+
+        it("throws NotFoundException when chat does not exist", async () => {
+            repository.findChatById.mockResolvedValue(null);
+
+            await expect(
+                service.getChat(CHAT_ID, USER_ID),
+            ).rejects.toBeInstanceOf(NotFoundException);
+        });
+
+        it("throws ForbiddenException when user is not a participant", async () => {
+            await expect(
+                service.getChat(CHAT_ID, "non-participant"),
+            ).rejects.toBeInstanceOf(ForbiddenException);
+        });
     });
 
     describe("sendMessage", () => {
-        it("sends a message successfully and broadcasts", async () => {
-            const findOne = jest.fn().mockResolvedValue(baseChat);
-            const insertOne = jest
-                .fn()
-                .mockResolvedValue({ insertedId: new ObjectId(MESSAGE_ID) });
-            const updateOne = jest.fn().mockResolvedValue({});
-
-            (mongo.collection as jest.Mock).mockImplementation(
-                (collection: string) => {
-                    if (collection === "chats") return { findOne, updateOne };
-                    return { insertOne };
-                },
-            );
-
+        it("sends a message and broadcasts it", async () => {
             const result = await service.sendMessage(CHAT_ID, USER_ID, {
                 content: "Hello",
             });
 
-            expect(result.content).toBe("Hello");
+            expect(repository.createMessage).toHaveBeenCalled();
+            expect(repository.updateChatLastMessageAt).toHaveBeenCalledWith(
+                CHAT_ID,
+                expect.any(Date),
+            );
             expect(gateway.broadcastMessage).toHaveBeenCalledWith(
                 CHAT_ID,
                 expect.objectContaining({ content: "Hello" }),
             );
+            expect(result.content).toBe("Hello");
         });
 
         it("throws ForbiddenException when user is not a participant", async () => {
-            const findOne = jest.fn().mockResolvedValue(baseChat);
-
-            (mongo.collection as jest.Mock).mockReturnValue({ findOne });
+            repository.findChatById.mockResolvedValue(baseChat);
 
             await expect(
-                service.sendMessage(CHAT_ID, "non-participant-id", {
+                service.sendMessage(CHAT_ID, "non-participant", {
                     content: "Hi",
                 }),
             ).rejects.toBeInstanceOf(ForbiddenException);
         });
     });
 
-    describe("deleteMessage", () => {
-        it("allows message author to delete their message", async () => {
-            const findOne = jest.fn().mockResolvedValue(baseMessage);
-            const deleteOne = jest.fn().mockResolvedValue({});
-
-            (mongo.collection as jest.Mock).mockReturnValue({
-                findOne,
-                deleteOne,
+    describe("reportMessage", () => {
+        it("submits a report successfully", async () => {
+            repository.findMessageById.mockResolvedValue({
+                ...baseMessage,
+                reports: [],
             });
 
+            const result = await service.reportMessage(
+                CHAT_ID,
+                MESSAGE_ID,
+                OTHER_USER_ID,
+                { reason: "Spam" },
+            );
+
+            expect(repository.pushMessageReport).toHaveBeenCalled();
+            expect(result).toHaveProperty("message", "Report submitted successfully");
+        });
+
+        it("throws BadRequestException when user already reported the message", async () => {
+            repository.findMessageInChat.mockResolvedValue({
+                ...baseMessage,
+                reports: [{ reportedBy: OTHER_USER_ID, reportedAt: new Date() }],
+            });
+
+            await expect(
+                service.reportMessage(CHAT_ID, MESSAGE_ID, OTHER_USER_ID, {}),
+            ).rejects.toBeInstanceOf(BadRequestException);
+        });
+
+        it("auto-deletes message when report threshold is reached", async () => {
+            repository.findMessageInChat.mockResolvedValue({
+                ...baseMessage,
+                reports: [],
+            });
+            repository.findMessageById.mockResolvedValue({
+                ...baseMessage,
+                reports: Array(5).fill({
+                    reportedBy: "user",
+                    reportedAt: new Date(),
+                }),
+            });
+
+            const result = await service.reportMessage(
+                CHAT_ID,
+                MESSAGE_ID,
+                OTHER_USER_ID,
+                {},
+            );
+
+            expect(repository.deleteMessage).toHaveBeenCalledWith(MESSAGE_ID);
+            expect(result).toHaveProperty(
+                "message",
+                "Message removed due to excessive reports",
+            );
+        });
+
+        it("throws NotFoundException when message does not exist in chat", async () => {
+            repository.findMessageInChat.mockResolvedValue(null);
+
+            await expect(
+                service.reportMessage(CHAT_ID, MESSAGE_ID, USER_ID, {}),
+            ).rejects.toBeInstanceOf(NotFoundException);
+        });
+    });
+
+    describe("deleteMessage", () => {
+        it("allows message author to delete their message", async () => {
             await expect(
                 service.deleteMessage(MESSAGE_ID, USER_ID, "resident"),
             ).resolves.toBeUndefined();
+
+            expect(repository.deleteMessage).toHaveBeenCalledWith(MESSAGE_ID);
         });
 
         it("allows a moderator to delete any message", async () => {
-            const findOne = jest.fn().mockResolvedValue(baseMessage);
-            const deleteOne = jest.fn().mockResolvedValue({});
-
-            (mongo.collection as jest.Mock).mockReturnValue({
-                findOne,
-                deleteOne,
-            });
-
             await expect(
-                service.deleteMessage(
-                    MESSAGE_ID,
-                    "moderator-user-id",
-                    "moderator",
-                ),
+                service.deleteMessage(MESSAGE_ID, "moderator-id", "moderator"),
             ).resolves.toBeUndefined();
         });
 
-        it("throws ForbiddenException when non-author non-moderator tries to delete", async () => {
-            const findOne = jest.fn().mockResolvedValue(baseMessage);
-
-            (mongo.collection as jest.Mock).mockReturnValue({ findOne });
-
+        it("allows an admin to delete any message", async () => {
             await expect(
-                service.deleteMessage(MESSAGE_ID, "other-user-id", "resident"),
+                service.deleteMessage(MESSAGE_ID, "admin-id", "admin"),
+            ).resolves.toBeUndefined();
+        });
+
+        it("throws ForbiddenException when non-author non-privileged tries to delete", async () => {
+            await expect(
+                service.deleteMessage(MESSAGE_ID, "other-user", "resident"),
             ).rejects.toBeInstanceOf(ForbiddenException);
         });
 
         it("throws NotFoundException when message does not exist", async () => {
-            const findOne = jest.fn().mockResolvedValue(null);
-
-            (mongo.collection as jest.Mock).mockReturnValue({ findOne });
+            repository.findMessageById.mockResolvedValue(null);
 
             await expect(
                 service.deleteMessage(MESSAGE_ID, USER_ID, "resident"),

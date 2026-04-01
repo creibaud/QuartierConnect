@@ -1,117 +1,54 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
-import { sql } from "drizzle-orm";
-import type { DrizzleDB } from "src/database/drizzle/drizzle.type";
-import { incidents, quartiers, users } from "src/database/drizzle/schema";
-import { EVENTS_COLLECTION } from "src/database/mongodb/models/event.model";
-import { MESSAGES_COLLECTION } from "src/database/mongodb/models/message.model";
-import { SERVICES_COLLECTION } from "src/database/mongodb/models/service.model";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import {
-    VOTE_RESPONSES_COLLECTION,
-    VOTES_COLLECTION,
-} from "src/database/mongodb/models/vote.model";
-import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
-
-type GroupCountRow = {
-    _id: string | null;
-    count: number;
-};
-
-type RegistrationStatsRow = {
-    _id: null;
-    totalRegistrations: number;
-    avgRegistrations: number;
-};
-
-type DayCountRow = {
-    _id: string;
-    count: number;
-};
+    SERVICE_CATEGORIES,
+    type ServiceCategory,
+} from "src/database/drizzle/schema";
+import type { UpdatePointConfigDto } from "src/modules/admin/dto/update-point-config.dto";
+import {
+    AdminEventStatsRepository,
+    AdminGlobalRepository,
+    AdminMessageVoteStatsRepository,
+    AdminPointConfigRepository,
+    AdminServiceStatsRepository,
+} from "src/modules/admin/repositories";
 
 @Injectable()
 export class AdminService {
     private readonly logger = new Logger(AdminService.name);
 
     constructor(
-        @Inject("DRIZZLE") private readonly db: DrizzleDB,
-        @Inject("MONGODB") private readonly mongo: MongoDatabase,
+        private readonly globalRepository: AdminGlobalRepository,
+        private readonly pointConfigRepository: AdminPointConfigRepository,
+        private readonly eventStatsRepository: AdminEventStatsRepository,
+        private readonly serviceStatsRepository: AdminServiceStatsRepository,
+        private readonly messageVoteStatsRepository: AdminMessageVoteStatsRepository,
     ) {}
 
     async getGlobalStats() {
-        const [
-            [{ userCount }],
-            [{ quartierCount }],
-            [{ incidentCount }],
-            eventCount,
-            serviceCount,
-            messageCount,
-            voteCount,
-        ] = await Promise.all([
-            this.db.select({ userCount: sql<number>`count(*)` }).from(users),
-            this.db
-                .select({ quartierCount: sql<number>`count(*)` })
-                .from(quartiers),
-            this.db
-                .select({ incidentCount: sql<number>`count(*)` })
-                .from(incidents),
-            this.mongo.collection(EVENTS_COLLECTION).countDocuments(),
-            this.mongo.collection(SERVICES_COLLECTION).countDocuments(),
-            this.mongo.collection(MESSAGES_COLLECTION).countDocuments(),
-            this.mongo.collection(VOTES_COLLECTION).countDocuments(),
+        return this.globalRepository.getGlobalCounts();
+    }
+
+    async getUserStats() {
+        const [byRole, byStatus] = await Promise.all([
+            this.globalRepository.getUsersByRole(),
+            this.globalRepository.getUsersByStatus(),
         ]);
 
-        return {
-            users: Number(userCount),
-            quartiers: Number(quartierCount),
-            incidents: Number(incidentCount),
-            events: eventCount,
-            services: serviceCount,
-            messages: messageCount,
-            votes: voteCount,
-        };
+        return { byRole, byStatus };
     }
 
     async getEventStats(period?: "week" | "month" | "year") {
-        const now = new Date();
-        const dateFilter: Record<string, unknown> = {};
+        const dateFilter = this.buildDateFilter(period);
 
-        if (period) {
-            const from = new Date(now);
-            if (period === "week") from.setDate(from.getDate() - 7);
-            else if (period === "month") from.setMonth(from.getMonth() - 1);
-            else if (period === "year")
-                from.setFullYear(from.getFullYear() - 1);
-            dateFilter.createdAt = { $gte: from };
-        }
-
-        const byCategory = await this.mongo
-            .collection(EVENTS_COLLECTION)
-            .aggregate<GroupCountRow>([
-                { $match: dateFilter },
-                { $group: { _id: "$category", count: { $sum: 1 } } },
-                { $sort: { count: -1 } },
-            ])
-            .toArray();
-
-        const byRegistrations = await this.mongo
-            .collection(EVENTS_COLLECTION)
-            .aggregate<RegistrationStatsRow>([
-                { $match: dateFilter },
-                {
-                    $group: {
-                        _id: null,
-                        totalRegistrations: { $sum: "$registrationCount" },
-                        avgRegistrations: { $avg: "$registrationCount" },
-                    },
-                },
-            ])
-            .toArray();
+        const [byCategory, registrationStats] = await Promise.all([
+            this.eventStatsRepository.getByCategory(dateFilter),
+            this.eventStatsRepository.getRegistrationStats(dateFilter),
+        ]);
 
         return {
-            byCategory: byCategory.map((b) => ({
-                category: b._id ?? "unknown",
-                count: b.count,
-            })),
-            registrationStats: byRegistrations[0] ?? {
+            byCategory,
+            registrationStats: registrationStats ?? {
+                _id: null,
                 totalRegistrations: 0,
                 avgRegistrations: 0,
             },
@@ -120,119 +57,159 @@ export class AdminService {
 
     async getServiceStats() {
         const [byCategory, byType, byStatus] = await Promise.all([
-            this.mongo
-                .collection(SERVICES_COLLECTION)
-                .aggregate<GroupCountRow>([
-                    { $group: { _id: "$category", count: { $sum: 1 } } },
-                    { $sort: { count: -1 } },
-                ])
-                .toArray(),
-            this.mongo
-                .collection(SERVICES_COLLECTION)
-                .aggregate<GroupCountRow>([
-                    { $group: { _id: "$type", count: { $sum: 1 } } },
-                ])
-                .toArray(),
-            this.mongo
-                .collection(SERVICES_COLLECTION)
-                .aggregate<GroupCountRow>([
-                    { $group: { _id: "$status", count: { $sum: 1 } } },
-                ])
-                .toArray(),
+            this.serviceStatsRepository.getByCategory(),
+            this.serviceStatsRepository.getByType(),
+            this.serviceStatsRepository.getByStatus(),
         ]);
 
-        return {
-            byCategory: byCategory.map((b) => ({
-                category: b._id ?? "unknown",
-                count: b.count,
-            })),
-            byType: byType.map((b) => ({
-                type: b._id ?? "unknown",
-                count: b.count,
-            })),
-            byStatus: byStatus.map((b) => ({
-                status: b._id ?? "unknown",
-                count: b.count,
-            })),
-        };
+        return { byCategory, byType, byStatus };
     }
 
     async getMessageStats() {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-        const [total, byDay] = await Promise.all([
-            this.mongo.collection(MESSAGES_COLLECTION).countDocuments(),
-            this.mongo
-                .collection(MESSAGES_COLLECTION)
-                .aggregate<DayCountRow>([
-                    { $match: { createdAt: { $gte: sevenDaysAgo } } },
-                    {
-                        $group: {
-                            _id: {
-                                $dateToString: {
-                                    format: "%Y-%m-%d",
-                                    date: "$createdAt",
-                                },
-                            },
-                            count: { $sum: 1 },
-                        },
-                    },
-                    { $sort: { _id: 1 } },
-                ])
-                .toArray(),
+        const [total, last7Days] = await Promise.all([
+            this.messageVoteStatsRepository.getTotalMessages(),
+            this.messageVoteStatsRepository.getMessagesByDay(sevenDaysAgo),
         ]);
 
-        return {
-            total,
-            last7Days: byDay.map((d) => ({ date: d._id, count: d.count })),
-        };
+        return { total, last7Days };
     }
 
     async getVoteStats() {
         const [byType, totalResponses] = await Promise.all([
-            this.mongo
-                .collection(VOTES_COLLECTION)
-                .aggregate<GroupCountRow>([
-                    { $group: { _id: "$type", count: { $sum: 1 } } },
-                ])
-                .toArray(),
-            this.mongo.collection(VOTE_RESPONSES_COLLECTION).countDocuments(),
+            this.messageVoteStatsRepository.getVotesByType(),
+            this.messageVoteStatsRepository.countVoteResponses(),
         ]);
 
+        return { byType, totalResponses };
+    }
+
+    async getPointConfig() {
+        const rows = await this.pointConfigRepository.findAll();
+
+        const configMap = Object.fromEntries(
+            rows.map((r) => [
+                r.category,
+                {
+                    basePointsPerHour: Number(r.basePointsPerHour),
+                    multiplier: Number(r.multiplier),
+                    updatedAt: r.updatedAt,
+                    updatedBy: r.updatedBy,
+                },
+            ]),
+        );
+
+        for (const category of SERVICE_CATEGORIES) {
+            if (!configMap[category]) {
+                configMap[category] = {
+                    basePointsPerHour: 2,
+                    multiplier: 1,
+                    updatedAt: new Date(),
+                    updatedBy: null,
+                };
+            }
+        }
+
+        return configMap;
+    }
+
+    async updatePointConfig(
+        category: ServiceCategory,
+        dto: UpdatePointConfigDto,
+        adminId: string,
+    ) {
+        const existing =
+            await this.pointConfigRepository.findByCategory(category);
+
+        if (!existing) {
+            const created = await this.pointConfigRepository.create(
+                category,
+                dto.basePointsPerHour.toString(),
+                dto.multiplier.toString(),
+                adminId,
+            );
+
+            this.logger.log(
+                `Point config created for category ${category} by admin ${adminId}`,
+            );
+
+            return {
+                category: created.category,
+                basePointsPerHour: Number(created.basePointsPerHour),
+                multiplier: Number(created.multiplier),
+                updatedAt: created.updatedAt,
+                updatedBy: created.updatedBy,
+            };
+        }
+
+        const updated = await this.pointConfigRepository.update(
+            category,
+            dto.basePointsPerHour.toString(),
+            dto.multiplier.toString(),
+            adminId,
+        );
+
+        this.logger.log(
+            `Point config updated for category ${category} by admin ${adminId}`,
+        );
+
+        if (!updated) {
+            throw new NotFoundException(
+                `Point config for category "${category}" not found`,
+            );
+        }
+
         return {
-            byType: byType.map((b) => ({
-                type: b._id ?? "unknown",
-                count: b.count,
-            })),
-            totalResponses,
+            category: updated.category,
+            basePointsPerHour: Number(updated.basePointsPerHour),
+            multiplier: Number(updated.multiplier),
+            updatedAt: updated.updatedAt,
+            updatedBy: updated.updatedBy,
         };
     }
 
-    async getUserStats() {
-        const [byRole, byStatus] = await Promise.all([
-            this.db
-                .select({ role: users.role, count: sql<number>`count(*)` })
-                .from(users)
-                .groupBy(users.role),
-            this.db
-                .select({
-                    isActive: users.isActive,
-                    count: sql<number>`count(*)`,
-                })
-                .from(users)
-                .groupBy(users.isActive),
-        ]);
+    async getReportedMessages(minReports = 1) {
+        const messages =
+            await this.messageVoteStatsRepository.findReportedMessages(
+                minReports,
+            );
 
-        return {
-            byRole: byRole.map((r) => ({
-                role: r.role,
-                count: Number(r.count),
-            })),
-            byStatus: byStatus.map((s) => ({
-                isActive: s.isActive,
-                count: Number(s.count),
-            })),
-        };
+        return messages.map((msg) => {
+            const { _id, ...rest } = msg;
+            return {
+                id: _id?.toString(),
+                ...rest,
+            };
+        });
+    }
+
+    async deleteReportedMessage(messageId: string) {
+        const message =
+            await this.messageVoteStatsRepository.findMessageById(messageId);
+
+        if (!message) {
+            throw new NotFoundException("Message not found");
+        }
+
+        await this.messageVoteStatsRepository.deleteMessage(messageId);
+
+        this.logger.log(`Reported message ${messageId} deleted by admin`);
+
+        return { message: "Message deleted successfully" };
+    }
+
+    private buildDateFilter(
+        period?: "week" | "month" | "year",
+    ): Record<string, unknown> {
+        if (!period) return {};
+
+        const from = new Date();
+        if (period === "week") from.setDate(from.getDate() - 7);
+        else if (period === "month") from.setMonth(from.getMonth() - 1);
+        else from.setFullYear(from.getFullYear() - 1);
+
+        return { createdAt: { $gte: from } };
     }
 }

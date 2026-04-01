@@ -19,6 +19,8 @@ describe("AuthController", () => {
     const verifyTotpSetupMock = jest.fn();
     const disableTotpMock = jest.fn();
 
+    const ssoLoginMock = jest.fn();
+
     const authServiceMock = {
         register: registerMock,
         login: loginMock,
@@ -26,6 +28,7 @@ describe("AuthController", () => {
         refresh: refreshMock,
         logout: logoutMock,
         getRefreshCookieConfig: getRefreshCookieConfigMock,
+        ssoLogin: ssoLoginMock,
     } as unknown as jest.Mocked<AuthService>;
 
     const totpServiceMock = {
@@ -215,5 +218,70 @@ describe("AuthController", () => {
             controller.totpDisable(fakeUser, { code: "123456" }),
         ).resolves.toEqual(expected);
         expect(disableTotpMock).toHaveBeenCalledWith(fakeUser.id, "123456");
+    });
+
+    describe("ssoLogin", () => {
+        const ssoResponse = {
+            accessToken: "desktop-token",
+            tokenType: "Bearer",
+            expiresIn: 86400,
+            user: { id: fakeUser.id, email: fakeUser.email, role: "admin" },
+        };
+
+        it("delegates to AuthService.ssoLogin and returns token", async () => {
+            const dto = {
+                email: "admin@example.com",
+                password: "P@ssw0rd!",
+            };
+            ssoLoginMock.mockResolvedValue(ssoResponse as never);
+
+            await expect(controller.ssoLogin(dto)).resolves.toEqual(
+                ssoResponse,
+            );
+            expect(ssoLoginMock).toHaveBeenCalledWith(dto);
+        });
+
+        it("passes totpCode when provided", async () => {
+            const dto = {
+                email: "admin@example.com",
+                password: "P@ssw0rd!",
+                totpCode: "123456",
+            };
+            ssoLoginMock.mockResolvedValue(ssoResponse as never);
+
+            await controller.ssoLogin(dto);
+
+            expect(ssoLoginMock).toHaveBeenCalledWith(dto);
+        });
+
+        it("propagates UnauthorizedException from AuthService", async () => {
+            ssoLoginMock.mockRejectedValue(
+                new (require("@nestjs/common").UnauthorizedException)(
+                    "Invalid credentials",
+                ) as never,
+            );
+
+            await expect(
+                controller.ssoLogin({
+                    email: "admin@example.com",
+                    password: "wrong",
+                }),
+            ).rejects.toThrow("Invalid credentials");
+        });
+
+        it("propagates ForbiddenException when user is not admin", async () => {
+            ssoLoginMock.mockRejectedValue(
+                new (require("@nestjs/common").ForbiddenException)(
+                    "Only administrators can use the desktop SSO",
+                ) as never,
+            );
+
+            await expect(
+                controller.ssoLogin({
+                    email: "resident@example.com",
+                    password: "P@ssw0rd!",
+                }),
+            ).rejects.toThrow("Only administrators can use the desktop SSO");
+        });
     });
 });

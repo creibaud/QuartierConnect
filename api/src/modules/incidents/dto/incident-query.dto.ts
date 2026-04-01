@@ -4,6 +4,7 @@ import { PaginationQueryDto } from "src/common/dto/pagination-query.dto";
 import {
     incidentPriorityEnum,
     incidentStatusEnum,
+    incidentTypeEnum,
 } from "src/database/drizzle/schema";
 
 export class IncidentQueryDto extends PaginationQueryDto {
@@ -16,6 +17,11 @@ export class IncidentQueryDto extends PaginationQueryDto {
     @IsOptional()
     @IsEnum(incidentPriorityEnum.enumValues)
     priority?: string;
+
+    @ApiPropertyOptional({ enum: incidentTypeEnum.enumValues })
+    @IsOptional()
+    @IsEnum(incidentTypeEnum.enumValues)
+    type?: string;
 
     @ApiPropertyOptional({ description: "Search by title" })
     @IsOptional()

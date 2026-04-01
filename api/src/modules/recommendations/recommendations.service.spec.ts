@@ -1,76 +1,51 @@
-import type { Neo4jDriver } from "src/database/neo4j/neo4j.type";
+import { Test, TestingModule } from "@nestjs/testing";
+import type { IRecommendationsRepository } from "src/modules/recommendations/interfaces/recommendations-repository.interface";
 import { RecommendationsService } from "src/modules/recommendations/recommendations.service";
-
-const buildRecord = (values: Record<string, unknown>) => ({
-    get: jest.fn().mockImplementation((key: string) => {
-        const value = values[key];
-        if (typeof value === "number") {
-            return { toNumber: () => value };
-        }
-        return value;
-    }),
-});
 
 describe("RecommendationsService", () => {
     let service: RecommendationsService;
-    let sessionRunMock: jest.Mock;
-    let sessionCloseMock: jest.Mock;
-    let neo4j: Neo4jDriver;
+    let repositoryMock: jest.Mocked<IRecommendationsRepository>;
 
-    beforeEach(() => {
-        jest.clearAllMocks();
+    beforeEach(async () => {
+        repositoryMock = {
+            getEventRecommendations: jest.fn().mockResolvedValue([]),
+            getServiceRecommendations: jest.fn().mockResolvedValue([]),
+            getNeighborRecommendations: jest.fn().mockResolvedValue([]),
+        } as any;
 
-        sessionRunMock = jest.fn();
-        sessionCloseMock = jest.fn().mockResolvedValue(undefined);
+        const module: TestingModule = await Test.createTestingModule({
+            providers: [
+                RecommendationsService,
+                {
+                    provide: "IRecommendationsRepository",
+                    useValue: repositoryMock,
+                },
+            ],
+        }).compile();
 
-        neo4j = {
-            session: jest.fn().mockReturnValue({
-                run: sessionRunMock,
-                close: sessionCloseMock,
-            }),
-        } as unknown as Neo4jDriver;
-
-        service = new RecommendationsService(neo4j);
+        service = module.get<RecommendationsService>(RecommendationsService);
     });
 
     describe("getEventRecommendations", () => {
-        it("runs the correct Cypher query and maps results", async () => {
-            const records = [
-                buildRecord({
-                    eventId: "event-1",
-                    title: "Event one",
-                    score: 5,
-                }),
-                buildRecord({
-                    eventId: "event-2",
-                    title: "Event two",
-                    score: 3,
-                }),
+        it("delegates to repository.getEventRecommendations", async () => {
+            const expectedResult = [
+                { eventId: "event-1", title: "Event one", score: 5 },
+                { eventId: "event-2", title: "Event two", score: 3 },
             ];
-            sessionRunMock.mockResolvedValue({ records });
+            repositoryMock.getEventRecommendations.mockResolvedValue(
+                expectedResult as any,
+            );
 
             const result = await service.getEventRecommendations("user-id");
 
-            expect(sessionRunMock).toHaveBeenCalledWith(
-                expect.stringContaining("INTERESTED_IN_CATEGORY"),
-                { userId: "user-id" },
+            expect(repositoryMock.getEventRecommendations).toHaveBeenCalledWith(
+                "user-id",
             );
-
-            expect(sessionRunMock).toHaveBeenCalledWith(
-                expect.stringContaining("PARTICIPATED_IN"),
-                { userId: "user-id" },
-            );
-
-            expect(result).toEqual([
-                { eventId: "event-1", title: "Event one", score: 5 },
-                { eventId: "event-2", title: "Event two", score: 3 },
-            ]);
-
-            expect(sessionCloseMock).toHaveBeenCalled();
+            expect(result).toEqual(expectedResult);
         });
 
         it("returns an empty array when there are no recommendations", async () => {
-            sessionRunMock.mockResolvedValue({ records: [] });
+            repositoryMock.getEventRecommendations.mockResolvedValue([]);
 
             const result = await service.getEventRecommendations("user-id");
 
@@ -79,36 +54,24 @@ describe("RecommendationsService", () => {
     });
 
     describe("getServiceRecommendations", () => {
-        it("runs the correct Cypher query and maps results", async () => {
-            const records = [
-                buildRecord({
-                    serviceId: "service-1",
-                    title: "Service one",
-                    score: 4,
-                }),
+        it("delegates to repository.getServiceRecommendations", async () => {
+            const expectedResult = [
+                { serviceId: "service-1", title: "Service one", score: 4 },
             ];
-            sessionRunMock.mockResolvedValue({ records });
+            repositoryMock.getServiceRecommendations.mockResolvedValue(
+                expectedResult as any,
+            );
 
             const result = await service.getServiceRecommendations("user-id");
 
-            expect(sessionRunMock).toHaveBeenCalledWith(
-                expect.stringContaining("COMPLETED_SERVICE_WITH"),
-                { userId: "user-id" },
-            );
-
-            expect(sessionRunMock).toHaveBeenCalledWith(
-                expect.stringContaining("CREATED_SERVICE"),
-                { userId: "user-id" },
-            );
-
-            expect(result).toEqual([
-                { serviceId: "service-1", title: "Service one", score: 4 },
-            ]);
-            expect(sessionCloseMock).toHaveBeenCalled();
+            expect(
+                repositoryMock.getServiceRecommendations,
+            ).toHaveBeenCalledWith("user-id");
+            expect(result).toEqual(expectedResult);
         });
 
         it("returns an empty array when there are no recommendations", async () => {
-            sessionRunMock.mockResolvedValue({ records: [] });
+            repositoryMock.getServiceRecommendations.mockResolvedValue([]);
 
             const result = await service.getServiceRecommendations("user-id");
 
@@ -117,59 +80,75 @@ describe("RecommendationsService", () => {
     });
 
     describe("getNeighborRecommendations", () => {
-        it("runs the correct Cypher query and maps results", async () => {
-            const records = [
-                buildRecord({
-                    userId: "neighbor-1",
-                    firstName: "Alice",
-                    lastName: "Martin",
-                    weight: 2.5,
-                }),
-            ];
-            sessionRunMock.mockResolvedValue({ records });
-
-            const result = await service.getNeighborRecommendations("user-id");
-
-            expect(sessionRunMock).toHaveBeenCalledWith(
-                expect.stringContaining("KNOWS"),
-                { userId: "user-id" },
-            );
-
-            expect(sessionRunMock).toHaveBeenCalledWith(
-                expect.stringContaining("COMPLETED_SERVICE_WITH"),
-                { userId: "user-id" },
-            );
-
-            expect(result).toEqual([
+        it("delegates to repository.getNeighborRecommendations", async () => {
+            const expectedResult = [
                 {
                     userId: "neighbor-1",
                     firstName: "Alice",
                     lastName: "Martin",
                     weight: 2.5,
                 },
-            ]);
+            ];
+            repositoryMock.getNeighborRecommendations.mockResolvedValue(
+                expectedResult as any,
+            );
 
-            expect(sessionCloseMock).toHaveBeenCalled();
+            const result = await service.getNeighborRecommendations("user-id");
+
+            expect(
+                repositoryMock.getNeighborRecommendations,
+            ).toHaveBeenCalledWith("user-id");
+            expect(result).toEqual(expectedResult);
         });
 
         it("returns an empty array when there are no neighbor suggestions", async () => {
-            sessionRunMock.mockResolvedValue({ records: [] });
+            repositoryMock.getNeighborRecommendations.mockResolvedValue([]);
 
             const result = await service.getNeighborRecommendations("user-id");
 
             expect(result).toEqual([]);
         });
 
-        it("closes the session even when the query fails", async () => {
-            sessionRunMock.mockRejectedValue(
+        it("propagates errors from repository", async () => {
+            repositoryMock.getNeighborRecommendations.mockRejectedValue(
                 new Error("Neo4j connection error"),
             );
 
             await expect(
                 service.getNeighborRecommendations("user-id"),
             ).rejects.toThrow("Neo4j connection error");
+        });
+    });
 
-            expect(sessionCloseMock).toHaveBeenCalled();
+    describe("error handling", () => {
+        it("propagates errors from getEventRecommendations", async () => {
+            repositoryMock.getEventRecommendations.mockRejectedValue(
+                new Error("Database error"),
+            );
+
+            await expect(
+                service.getEventRecommendations("user-id"),
+            ).rejects.toThrow("Database error");
+        });
+
+        it("propagates errors from getServiceRecommendations", async () => {
+            repositoryMock.getServiceRecommendations.mockRejectedValue(
+                new Error("Query timeout"),
+            );
+
+            await expect(
+                service.getServiceRecommendations("user-id"),
+            ).rejects.toThrow("Query timeout");
+        });
+
+        it("propagates errors from getNeighborRecommendations", async () => {
+            repositoryMock.getNeighborRecommendations.mockRejectedValue(
+                new Error("Connection refused"),
+            );
+
+            await expect(
+                service.getNeighborRecommendations("user-id"),
+            ).rejects.toThrow("Connection refused");
         });
     });
 });

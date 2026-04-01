@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import type { OutboxEventDocument } from "src/database/mongodb/models/outbox-event.model";
 import { Neo4jSyncService } from "src/database/neo4j/neo4j-sync.service";
 import { OUTBOX_EVENT_TYPES } from "src/modules/outbox/outbox-event-types";
@@ -246,7 +246,7 @@ export class OutboxProjectionService {
 
     private requiredString(value: unknown, field: string) {
         if (typeof value !== "string" || value.length === 0) {
-            throw new Error(
+            throw new BadRequestException(
                 `Missing or invalid string payload field: ${field}`,
             );
         }
@@ -259,7 +259,7 @@ export class OutboxProjectionService {
 
     private requiredBoolean(value: unknown, field: string) {
         if (typeof value !== "boolean") {
-            throw new Error(
+            throw new BadRequestException(
                 `Missing or invalid boolean payload field: ${field}`,
             );
         }
@@ -268,7 +268,7 @@ export class OutboxProjectionService {
 
     private requiredNumber(value: unknown, field: string) {
         if (typeof value !== "number" || Number.isNaN(value)) {
-            throw new Error(
+            throw new BadRequestException(
                 `Missing or invalid number payload field: ${field}`,
             );
         }
@@ -282,7 +282,9 @@ export class OutboxProjectionService {
         if (typeof value === "string") {
             return new Date(value);
         }
-        throw new Error(`Missing or invalid date payload field: ${field}`);
+        throw new BadRequestException(
+            `Missing or invalid date payload field: ${field}`,
+        );
     }
 
     private optionalDate(value: unknown) {

@@ -7,21 +7,14 @@ import {
     Logger,
     NotFoundException,
 } from "@nestjs/common";
-import { ObjectId } from "mongodb";
 import { PaginationQueryDto } from "src/common/dto/pagination-query.dto";
-import {
-    EVENT_REGISTRATIONS_COLLECTION,
-    EVENT_SWIPES_COLLECTION,
-    EVENTS_COLLECTION,
-    type EventDocument,
-    type EventRegistrationDocument,
-    type EventSwipeDocument,
-} from "src/database/mongodb/models/event.model";
-import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
+import { buildPaginatedResult } from "src/common/query/query.helper";
 import { CreateEventDto } from "src/modules/events/dto/create-event.dto";
 import { EventQueryDto } from "src/modules/events/dto/event-query.dto";
 import { SwipeEventDto } from "src/modules/events/dto/swipe-event.dto";
 import { UpdateEventDto } from "src/modules/events/dto/update-event.dto";
+import { EventRegistrationService } from "src/modules/events/event-registration.service";
+import { EventSwipeService } from "src/modules/events/event-swipe.service";
 import { OUTBOX_EVENT_TYPES } from "src/modules/outbox/outbox-event-types";
 import { OutboxService } from "src/modules/outbox/outbox.service";
 
@@ -30,13 +23,15 @@ export class EventsService {
     private readonly logger = new Logger(EventsService.name);
 
     constructor(
-        @Inject("MONGODB") private readonly mongo: MongoDatabase,
+        @Inject("IEventsRepository")
+        private readonly eventRepository: IEventsRepository,
         private readonly outbox: OutboxService,
+        private readonly registrationService: EventRegistrationService,
+        private readonly swipeService: EventSwipeService,
     ) {}
 
     async create(creatorId: string, dto: CreateEventDto) {
-        const now = new Date();
-        const document: EventDocument = {
+        const event = await this.eventRepository.create({
             quartierId: dto.quartierId,
             creatorId,
             title: dto.title,
@@ -49,15 +44,9 @@ export class EventsService {
             maxCapacity: dto.maxCapacity,
             imageUrl: dto.imageUrl,
             registrationCount: 0,
-            createdAt: now,
-            updatedAt: now,
-        };
+        });
 
-        const result = await this.mongo
-            .collection<EventDocument>(EVENTS_COLLECTION)
-            .insertOne(document);
-
-        const id = result.insertedId.toString();
+        const id = event._id?.toString();
 
         await this.outbox.publish({
             aggregateType: "event",
@@ -69,14 +58,14 @@ export class EventsService {
                 quartierId: dto.quartierId,
                 title: dto.title,
                 category: dto.category,
-                startDate: document.startDate,
-                createdAt: now,
+                startDate: event.startDate,
+                createdAt: event.createdAt,
             },
         });
 
         this.logger.log(`Event created: ${id} by user ${creatorId}`);
 
-        return { id, ...document };
+        return { id, ...event };
     }
 
     async findAll(query: EventQueryDto, userId: string) {
@@ -102,29 +91,29 @@ export class EventsService {
             filter.title = { $regex: query.search, $options: "i" };
         }
 
-        const collection =
-            this.mongo.collection<EventDocument>(EVENTS_COLLECTION);
-
-        const [events, total] = await Promise.all([
-            collection.find(filter).skip(skip).limit(limit).toArray(),
-            collection.countDocuments(filter),
-        ]);
+        const result = await this.eventRepository.findAll({
+            page,
+            limit,
+            quartierId: query.quartierId,
+            category: query.category,
+            search: query.search,
+            sortBy: "createdAt",
+            sortOrder: "desc",
+        });
 
         return {
-            data: events.map((event) => this.toEventResponse(event)),
+            data: result.data.map((event) => this.toEventResponse(event)),
             meta: {
-                total,
+                total: result.total,
                 page,
                 limit,
-                totalPages: Math.ceil(total / limit),
+                totalPages: Math.ceil(result.total / limit),
             },
         };
     }
 
     async findOne(id: string) {
-        const event = await this.mongo
-            .collection<EventDocument>(EVENTS_COLLECTION)
-            .findOne({ _id: new ObjectId(id) });
+        const event = await this.eventRepository.findById(id);
 
         if (!event) {
             throw new NotFoundException("Event not found");
@@ -150,17 +139,11 @@ export class EventsService {
 
         const now = new Date();
         const { startDate, endDate, ...rest } = dto;
-        await this.mongo.collection<EventDocument>(EVENTS_COLLECTION).updateOne(
-            { _id: new ObjectId(id) },
-            {
-                $set: {
-                    ...rest,
-                    ...(startDate ? { startDate: new Date(startDate) } : {}),
-                    ...(endDate ? { endDate: new Date(endDate) } : {}),
-                    updatedAt: now,
-                },
-            },
-        );
+        await this.eventRepository.update(id, {
+            ...rest,
+            ...(startDate ? { startDate: new Date(startDate) } : {}),
+            ...(endDate ? { endDate: new Date(endDate) } : {}),
+        });
 
         await this.outbox.publish({
             aggregateType: "event",
@@ -191,9 +174,7 @@ export class EventsService {
             );
         }
 
-        await this.mongo
-            .collection<EventDocument>(EVENTS_COLLECTION)
-            .deleteOne({ _id: new ObjectId(id) });
+        await this.eventRepository.delete(id);
 
         await this.outbox.publish({
             aggregateType: "event",
@@ -210,191 +191,23 @@ export class EventsService {
     }
 
     async register(eventId: string, userId: string) {
-        const event = await this.findOne(eventId);
-
-        if (
-            event.maxCapacity !== undefined &&
-            event.registrationCount >= event.maxCapacity
-        ) {
-            throw new BadRequestException(
-                "Event has reached its maximum capacity",
-            );
-        }
-
-        const existingRegistration = await this.mongo
-            .collection<EventRegistrationDocument>(
-                EVENT_REGISTRATIONS_COLLECTION,
-            )
-            .findOne({ eventId, userId, status: { $ne: "cancelled" } });
-
-        if (existingRegistration) {
-            throw new ConflictException(
-                "You are already registered for this event",
-            );
-        }
-
-        const now = new Date();
-        await this.mongo
-            .collection<EventRegistrationDocument>(
-                EVENT_REGISTRATIONS_COLLECTION,
-            )
-            .insertOne({
-                eventId,
-                userId,
-                status: "registered",
-                registeredAt: now,
-            });
-
-        await this.mongo
-            .collection<EventDocument>(EVENTS_COLLECTION)
-            .updateOne(
-                { _id: new ObjectId(eventId) },
-                { $inc: { registrationCount: 1 } },
-            );
-
-        await this.outbox.publish({
-            aggregateType: "event_registration",
-            aggregateId: `${eventId}:${userId}`,
-            eventType: OUTBOX_EVENT_TYPES.eventRegistrationCreated,
-            payload: {
-                eventId,
-                userId,
-                createdAt: now,
-            },
-        });
-
-        this.logger.log(`User ${userId} registered for event ${eventId}`);
+        await this.registrationService.register(eventId, userId);
     }
 
     async cancelRegistration(eventId: string, userId: string) {
-        await this.mongo
-            .collection<EventRegistrationDocument>(
-                EVENT_REGISTRATIONS_COLLECTION,
-            )
-            .updateOne(
-                { eventId, userId, status: "registered" },
-                { $set: { status: "cancelled" } },
-            );
-
-        await this.mongo
-            .collection<EventDocument>(EVENTS_COLLECTION)
-            .updateOne(
-                { _id: new ObjectId(eventId) },
-                { $inc: { registrationCount: -1 } },
-            );
-
-        await this.outbox.publish({
-            aggregateType: "event_registration",
-            aggregateId: `${eventId}:${userId}`,
-            eventType: OUTBOX_EVENT_TYPES.eventRegistrationCancelled,
-            payload: {
-                eventId,
-                userId,
-                cancelledAt: new Date(),
-            },
-        });
-
-        this.logger.log(
-            `User ${userId} cancelled registration for event ${eventId}`,
-        );
+        await this.registrationService.cancelRegistration(eventId, userId);
     }
 
     async getRegistrations(eventId: string, query: PaginationQueryDto) {
-        const { page = 1, limit = 10 } = query;
-        const skip = (page - 1) * limit;
-
-        const collection = this.mongo.collection<EventRegistrationDocument>(
-            EVENT_REGISTRATIONS_COLLECTION,
-        );
-
-        const [registrations, total] = await Promise.all([
-            collection.find({ eventId }).skip(skip).limit(limit).toArray(),
-            collection.countDocuments({ eventId }),
-        ]);
-
-        return {
-            data: registrations.map((reg) => ({
-                ...reg,
-                id: reg._id?.toString(),
-                _id: undefined,
-            })),
-            meta: {
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
-            },
-        };
+        return this.registrationService.getRegistrations(eventId, query);
     }
 
     async swipe(userId: string, dto: SwipeEventDto) {
-        const now = new Date();
-
-        await this.mongo
-            .collection<EventSwipeDocument>(EVENT_SWIPES_COLLECTION)
-            .updateOne(
-                { eventId: dto.eventId, userId },
-                { $set: { liked: dto.liked, swipedAt: now } },
-                { upsert: true },
-            );
-
-        if (!dto.liked) {
-            this.logger.log(`User ${userId} disliked event ${dto.eventId}`);
-            return;
-        }
-
-        await this.outbox.publish({
-            aggregateType: "event_swipe",
-            aggregateId: `${dto.eventId}:${userId}`,
-            eventType: OUTBOX_EVENT_TYPES.eventSwipeLiked,
-            payload: {
-                eventId: dto.eventId,
-                userId,
-                liked: true,
-                swipedAt: now,
-            },
-        });
-
-        this.logger.log(`User ${userId} liked event ${dto.eventId}`);
+        await this.swipeService.recordSwipe(userId, dto);
     }
 
     async getNextSwipe(userId: string, quartierId: string) {
-        const swipedEvents = await this.mongo
-            .collection<EventSwipeDocument>(EVENT_SWIPES_COLLECTION)
-            .find({ userId })
-            .toArray();
-
-        const swipedEventIds = swipedEvents.map((s) => s.eventId);
-
-        const registrations = await this.mongo
-            .collection<EventRegistrationDocument>(
-                EVENT_REGISTRATIONS_COLLECTION,
-            )
-            .find({ userId, status: "registered" })
-            .toArray();
-
-        const registeredEventIds = registrations.map((r) => r.eventId);
-
-        const excludedIds = [...swipedEventIds, ...registeredEventIds];
-
-        const filter: Record<string, unknown> = {
-            quartierId,
-            startDate: { $gt: new Date() },
-        };
-
-        if (excludedIds.length > 0) {
-            filter._id = { $nin: excludedIds.map((id) => new ObjectId(id)) };
-        }
-
-        const event = await this.mongo
-            .collection<EventDocument>(EVENTS_COLLECTION)
-            .findOne(filter);
-
-        if (!event) {
-            return null;
-        }
-
-        return this.toEventResponse(event);
+        return this.swipeService.getNextSwipe(userId, quartierId);
     }
 
     private toEventResponse(event: EventDocument & { _id?: ObjectId }) {

@@ -35,15 +35,10 @@ export class OutboxAdminController {
         },
     })
     async runBatch(@Query("limit") limit?: string) {
-        if (limit === undefined) {
-            return this.outboxDispatcher.dispatchPendingBatch();
-        }
-
-        const parsed = Number(limit);
-        if (!Number.isInteger(parsed) || parsed < 1) {
+        const parsed = limit !== undefined ? Number(limit) : 50;
+        if (limit !== undefined && (!Number.isInteger(parsed) || parsed < 1)) {
             throw new BadRequestException("limit must be a positive integer");
         }
-
         return this.outboxDispatcher.dispatchPendingBatch(parsed);
     }
 }

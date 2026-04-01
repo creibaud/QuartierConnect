@@ -2,10 +2,10 @@ import {
     BadRequestException,
     ConflictException,
     ForbiddenException,
+    NotFoundException,
 } from "@nestjs/common";
 import { ObjectId } from "mongodb";
-import type { DrizzleDB } from "src/database/drizzle/drizzle.type";
-import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
+import type { IServicesRepository } from "src/modules/services/service.repository";
 import { OUTBOX_EVENT_TYPES } from "src/modules/outbox/outbox-event-types";
 import type { OutboxService } from "src/modules/outbox/outbox.service";
 import { ServicesService } from "./services.service";
@@ -13,7 +13,6 @@ import { ServicesService } from "./services.service";
 const SERVICE_ID = new ObjectId().toHexString();
 
 const baseService = {
-    _id: new ObjectId(SERVICE_ID),
     id: SERVICE_ID,
     quartierId: "quartier-uuid",
     creatorId: "creator-uuid",
@@ -39,89 +38,64 @@ const completedService = {
     completedAt: new Date(),
 };
 
-function buildMongoCollection(
-    overrides: Partial<{
-        findOne: jest.Mock;
-        insertOne: jest.Mock;
-        updateOne: jest.Mock;
-        deleteOne: jest.Mock;
-        find: jest.Mock;
-        countDocuments: jest.Mock;
-    }> = {},
-) {
-    const defaultFindOne = jest.fn().mockResolvedValue(null);
-    const defaultInsertOne = jest
-        .fn()
-        .mockResolvedValue({ insertedId: new ObjectId(SERVICE_ID) });
-    const defaultUpdateOne = jest.fn().mockResolvedValue({ modifiedCount: 1 });
-    const defaultDeleteOne = jest.fn().mockResolvedValue({ deletedCount: 1 });
-    const defaultCursor = {
-        sort: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        toArray: jest.fn().mockResolvedValue([]),
-    };
-    const defaultFind = jest.fn().mockReturnValue(defaultCursor);
-    const defaultCount = jest.fn().mockResolvedValue(0);
-
-    return {
-        findOne: overrides.findOne ?? defaultFindOne,
-        insertOne: overrides.insertOne ?? defaultInsertOne,
-        updateOne: overrides.updateOne ?? defaultUpdateOne,
-        deleteOne: overrides.deleteOne ?? defaultDeleteOne,
-        find: overrides.find ?? defaultFind,
-        countDocuments: overrides.countDocuments ?? defaultCount,
-    };
-}
-
 describe("ServicesService", () => {
     let service: ServicesService;
-    let mongo: jest.Mocked<MongoDatabase>;
-    let db: jest.Mocked<DrizzleDB>;
+    let repository: jest.Mocked<IServicesRepository>;
     let outbox: { publish: jest.Mock };
 
     beforeEach(() => {
         jest.clearAllMocks();
 
-        const collectionMock = buildMongoCollection();
-
-        mongo = {
-            collection: jest.fn().mockReturnValue(collectionMock),
-        } as unknown as jest.Mocked<MongoDatabase>;
+        repository = {
+            insertService: jest
+                .fn()
+                .mockResolvedValue(new ObjectId(SERVICE_ID)),
+            findServices: jest.fn().mockResolvedValue([]),
+            countServices: jest.fn().mockResolvedValue(0),
+            findServiceById: jest.fn().mockResolvedValue(null),
+            updateService: jest.fn().mockResolvedValue(undefined),
+            deleteService: jest.fn().mockResolvedValue(undefined),
+            findRating: jest.fn().mockResolvedValue(null),
+            insertRating: jest.fn().mockResolvedValue(undefined),
+            insertTransaction: jest.fn().mockResolvedValue(undefined),
+            getPointConfigForCategory: jest.fn().mockResolvedValue({
+                basePointsPerHour: 2,
+                multiplier: 1,
+            }),
+            getUserBalance: jest.fn().mockResolvedValue(10),
+            deductUserBalance: jest.fn().mockResolvedValue(undefined),
+            addUserBalance: jest.fn().mockResolvedValue(undefined),
+        };
 
         outbox = { publish: jest.fn().mockResolvedValue(undefined) };
 
-        db = {
-            select: jest.fn(),
-            update: jest.fn(),
-        } as unknown as jest.Mocked<DrizzleDB>;
-
         service = new ServicesService(
-            mongo,
-            db,
+            repository,
             outbox as unknown as OutboxService,
         );
     });
 
-    describe("create", () => {
-        it("calculates 1 point for duration < 60 minutes", async () => {
+    describe("create — point calculation", () => {
+        it("calculates 1 point minimum for duration < 30 minutes", async () => {
+            repository.getPointConfigForCategory.mockResolvedValue({
+                basePointsPerHour: 2,
+                multiplier: 1,
+            });
+
             await service.create("creator-uuid", {
                 quartierId: "quartier-uuid",
                 title: "Quick help",
                 category: "cleaning",
                 type: "free",
-                estimatedDurationMinutes: 30,
+                estimatedDurationMinutes: 20,
             });
 
-            const servicesCollection = mongo.collection("services") as {
-                insertOne: jest.Mock;
-            };
-            expect(servicesCollection.insertOne).toHaveBeenCalledWith(
+            expect(repository.insertService).toHaveBeenCalledWith(
                 expect.objectContaining({ pointsValue: 1 }),
             );
         });
 
-        it("calculates 2 points for duration >= 60 minutes", async () => {
+        it("calculates 2 points for 60 minutes with basePointsPerHour=2, multiplier=1", async () => {
             await service.create("creator-uuid", {
                 quartierId: "quartier-uuid",
                 title: "Long task",
@@ -130,11 +104,46 @@ describe("ServicesService", () => {
                 estimatedDurationMinutes: 60,
             });
 
-            const servicesCollection = mongo.collection("services") as {
-                insertOne: jest.Mock;
-            };
-            expect(servicesCollection.insertOne).toHaveBeenCalledWith(
+            expect(repository.insertService).toHaveBeenCalledWith(
                 expect.objectContaining({ pointsValue: 2 }),
+            );
+        });
+
+        it("applies category multiplier — 60min with multiplier=1.5 → 3 points", async () => {
+            repository.getPointConfigForCategory.mockResolvedValue({
+                basePointsPerHour: 2,
+                multiplier: 1.5,
+            });
+
+            await service.create("creator-uuid", {
+                quartierId: "quartier-uuid",
+                title: "Babysitting",
+                category: "babysitting",
+                type: "paid",
+                estimatedDurationMinutes: 60,
+            });
+
+            expect(repository.insertService).toHaveBeenCalledWith(
+                expect.objectContaining({ pointsValue: 3 }),
+            );
+        });
+
+        it("calculates 6 points for 90 minutes with multiplier=1.5", async () => {
+            repository.getPointConfigForCategory.mockResolvedValue({
+                basePointsPerHour: 2,
+                multiplier: 1.5,
+            });
+
+            await service.create("creator-uuid", {
+                quartierId: "quartier-uuid",
+                title: "Babysitting long",
+                category: "babysitting",
+                type: "paid",
+                estimatedDurationMinutes: 90,
+            });
+
+            expect(repository.insertService).toHaveBeenCalledWith(
+                expect.objectContaining({ pointsValue: 6 }),
             );
         });
 
@@ -149,148 +158,96 @@ describe("ServicesService", () => {
 
             expect(outbox.publish).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    payload: expect.objectContaining({
-                        creatorId: "creator-uuid",
-                    }),
+                    eventType: OUTBOX_EVENT_TYPES.serviceCreated,
+                    payload: expect.objectContaining({ creatorId: "creator-uuid" }),
                 }),
             );
         });
     });
 
     describe("accept", () => {
-        it("successfully accepts an open service", async () => {
-            const findableMongo = {
-                ...buildMongoCollection({
-                    findOne: jest.fn().mockResolvedValue(baseService),
-                }),
-            };
-            mongo.collection = jest.fn().mockReturnValue(findableMongo);
-            service = new ServicesService(
-                mongo,
-                db,
-                outbox as unknown as OutboxService,
-            );
+        beforeEach(() => {
+            repository.findServiceById.mockResolvedValue({
+                ...baseService,
+                _id: new ObjectId(SERVICE_ID),
+            });
+        });
 
+        it("successfully accepts an open service", async () => {
             const result = await service.accept(SERVICE_ID, "acceptor-uuid");
+
+            expect(repository.updateService).toHaveBeenCalledWith(
+                SERVICE_ID,
+                expect.objectContaining({ status: "accepted", acceptorId: "acceptor-uuid" }),
+            );
             expect(result.status).toBe("accepted");
             expect(result.acceptorId).toBe("acceptor-uuid");
         });
 
         it("throws BadRequestException when creator tries to accept own service", async () => {
-            const findableMongo = {
-                ...buildMongoCollection({
-                    findOne: jest.fn().mockResolvedValue(baseService),
-                }),
-            };
-            mongo.collection = jest.fn().mockReturnValue(findableMongo);
-            service = new ServicesService(
-                mongo,
-                db,
-                outbox as unknown as OutboxService,
-            );
-
             await expect(
                 service.accept(SERVICE_ID, "creator-uuid"),
+            ).rejects.toBeInstanceOf(BadRequestException);
+        });
+
+        it("throws BadRequestException when service is not open", async () => {
+            repository.findServiceById.mockResolvedValue({
+                ...baseService,
+                status: "accepted",
+                _id: new ObjectId(SERVICE_ID),
+            });
+
+            await expect(
+                service.accept(SERVICE_ID, "acceptor-uuid"),
             ).rejects.toBeInstanceOf(BadRequestException);
         });
     });
 
     describe("complete (paid)", () => {
+        beforeEach(() => {
+            repository.findServiceById.mockResolvedValue({
+                ...acceptedService,
+                _id: new ObjectId(SERVICE_ID),
+            });
+        });
+
         it("transfers points when service type is paid", async () => {
-            const findableMongo = {
-                ...buildMongoCollection({
-                    findOne: jest.fn().mockResolvedValue(acceptedService),
-                }),
-            };
-            mongo.collection = jest.fn().mockReturnValue(findableMongo);
-
-            const balanceSelect = {
-                from: jest.fn().mockReturnValue({
-                    where: jest.fn().mockReturnValue({
-                        limit: jest
-                            .fn()
-                            .mockResolvedValue([{ balance: "10.00" }]),
-                    }),
-                }),
-            };
-            const updateChain = {
-                set: jest.fn().mockReturnValue({
-                    where: jest.fn().mockResolvedValue([]),
-                }),
-            };
-            db.select = jest.fn().mockReturnValue(balanceSelect);
-            db.update = jest.fn().mockReturnValue(updateChain);
-
-            service = new ServicesService(
-                mongo,
-                db,
-                outbox as unknown as OutboxService,
-            );
+            repository.getUserBalance.mockResolvedValue(10);
 
             const result = await service.complete(SERVICE_ID, "creator-uuid");
+
+            expect(repository.insertTransaction).toHaveBeenCalled();
+            expect(repository.deductUserBalance).toHaveBeenCalledWith(
+                "creator-uuid",
+                acceptedService.pointsValue,
+                expect.any(Date),
+            );
+            expect(repository.addUserBalance).toHaveBeenCalledWith(
+                "acceptor-uuid",
+                acceptedService.pointsValue,
+                expect.any(Date),
+            );
             expect(result.status).toBe("completed");
         });
 
         it("throws BadRequestException when balance would fall below -10", async () => {
-            const findableMongo = {
-                ...buildMongoCollection({
-                    findOne: jest.fn().mockResolvedValue(acceptedService),
-                }),
-            };
-            mongo.collection = jest.fn().mockReturnValue(findableMongo);
-
-            const balanceSelect = {
-                from: jest.fn().mockReturnValue({
-                    where: jest.fn().mockReturnValue({
-                        limit: jest
-                            .fn()
-                            .mockResolvedValue([{ balance: "-9.00" }]),
-                    }),
-                }),
-            };
-            db.select = jest.fn().mockReturnValue(balanceSelect);
-
-            service = new ServicesService(
-                mongo,
-                db,
-                outbox as unknown as OutboxService,
-            );
+            repository.getUserBalance.mockResolvedValue(-9);
 
             await expect(
                 service.complete(SERVICE_ID, "creator-uuid"),
             ).rejects.toBeInstanceOf(BadRequestException);
         });
 
+        it("throws NotFoundException when creator account not found", async () => {
+            repository.getUserBalance.mockResolvedValue(null);
+
+            await expect(
+                service.complete(SERVICE_ID, "creator-uuid"),
+            ).rejects.toBeInstanceOf(NotFoundException);
+        });
+
         it("publishes outbox completed event", async () => {
-            const findableMongo = {
-                ...buildMongoCollection({
-                    findOne: jest.fn().mockResolvedValue(acceptedService),
-                }),
-            };
-            mongo.collection = jest.fn().mockReturnValue(findableMongo);
-
-            const balanceSelect = {
-                from: jest.fn().mockReturnValue({
-                    where: jest.fn().mockReturnValue({
-                        limit: jest
-                            .fn()
-                            .mockResolvedValue([{ balance: "20.00" }]),
-                    }),
-                }),
-            };
-            const updateChain = {
-                set: jest.fn().mockReturnValue({
-                    where: jest.fn().mockResolvedValue([]),
-                }),
-            };
-            db.select = jest.fn().mockReturnValue(balanceSelect);
-            db.update = jest.fn().mockReturnValue(updateChain);
-
-            service = new ServicesService(
-                mongo,
-                db,
-                outbox as unknown as OutboxService,
-            );
+            repository.getUserBalance.mockResolvedValue(20);
 
             await service.complete(SERVICE_ID, "creator-uuid");
 
@@ -300,81 +257,74 @@ describe("ServicesService", () => {
                 }),
             );
         });
+
+        it("skips payment for free service", async () => {
+            repository.findServiceById.mockResolvedValue({
+                ...acceptedService,
+                type: "free",
+                _id: new ObjectId(SERVICE_ID),
+            });
+
+            await service.complete(SERVICE_ID, "creator-uuid");
+
+            expect(repository.insertTransaction).not.toHaveBeenCalled();
+            expect(repository.deductUserBalance).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("cancel", () => {
+        it("allows creator to cancel an open service", async () => {
+            repository.findServiceById.mockResolvedValue({
+                ...baseService,
+                _id: new ObjectId(SERVICE_ID),
+            });
+
+            const result = await service.cancel(SERVICE_ID, "creator-uuid");
+
+            expect(repository.updateService).toHaveBeenCalledWith(
+                SERVICE_ID,
+                expect.objectContaining({ status: "cancelled" }),
+            );
+            expect(result.status).toBe("cancelled");
+        });
+
+        it("throws ForbiddenException when unrelated user tries to cancel", async () => {
+            repository.findServiceById.mockResolvedValue({
+                ...baseService,
+                _id: new ObjectId(SERVICE_ID),
+            });
+
+            await expect(
+                service.cancel(SERVICE_ID, "random-user"),
+            ).rejects.toBeInstanceOf(ForbiddenException);
+        });
     });
 
     describe("rate", () => {
-        it("successfully rates a completed service", async () => {
-            const collectionMocks: Record<
-                string,
-                ReturnType<typeof buildMongoCollection>
-            > = {};
-
-            mongo.collection = jest.fn().mockImplementation((name: string) => {
-                if (!collectionMocks[name]) {
-                    if (name === "services") {
-                        collectionMocks[name] = buildMongoCollection({
-                            findOne: jest
-                                .fn()
-                                .mockResolvedValue(completedService),
-                        });
-                    } else {
-                        collectionMocks[name] = buildMongoCollection({
-                            findOne: jest.fn().mockResolvedValue(null),
-                        });
-                    }
-                }
-                return collectionMocks[name];
+        beforeEach(() => {
+            repository.findServiceById.mockResolvedValue({
+                ...completedService,
+                _id: new ObjectId(SERVICE_ID),
             });
+        });
 
-            service = new ServicesService(
-                mongo,
-                db,
-                outbox as unknown as OutboxService,
-            );
-
+        it("successfully rates a completed service", async () => {
             const result = await service.rate(SERVICE_ID, "creator-uuid", {
                 rating: 5,
                 comment: "Great service!",
             });
 
+            expect(repository.insertRating).toHaveBeenCalled();
             expect(result.rating).toBe(5);
         });
 
         it("throws ConflictException when user has already rated", async () => {
-            const existingRating = {
+            repository.findRating.mockResolvedValue({
                 serviceId: SERVICE_ID,
                 raterUserId: "creator-uuid",
                 rating: 4,
-            };
-            const collectionMocks: Record<
-                string,
-                ReturnType<typeof buildMongoCollection>
-            > = {};
-
-            mongo.collection = jest.fn().mockImplementation((name: string) => {
-                if (!collectionMocks[name]) {
-                    if (name === "services") {
-                        collectionMocks[name] = buildMongoCollection({
-                            findOne: jest
-                                .fn()
-                                .mockResolvedValue(completedService),
-                        });
-                    } else {
-                        collectionMocks[name] = buildMongoCollection({
-                            findOne: jest
-                                .fn()
-                                .mockResolvedValue(existingRating),
-                        });
-                    }
-                }
-                return collectionMocks[name];
+                createdAt: new Date(),
             });
-
-            service = new ServicesService(
-                mongo,
-                db,
-                outbox as unknown as OutboxService,
-            );
 
             await expect(
                 service.rate(SERVICE_ID, "creator-uuid", { rating: 3 }),
@@ -382,17 +332,10 @@ describe("ServicesService", () => {
         });
 
         it("throws BadRequestException when service is not completed", async () => {
-            const findableMongo = {
-                ...buildMongoCollection({
-                    findOne: jest.fn().mockResolvedValue(baseService),
-                }),
-            };
-            mongo.collection = jest.fn().mockReturnValue(findableMongo);
-            service = new ServicesService(
-                mongo,
-                db,
-                outbox as unknown as OutboxService,
-            );
+            repository.findServiceById.mockResolvedValue({
+                ...baseService,
+                _id: new ObjectId(SERVICE_ID),
+            });
 
             await expect(
                 service.rate(SERVICE_ID, "creator-uuid", { rating: 4 }),
@@ -400,36 +343,8 @@ describe("ServicesService", () => {
         });
 
         it("throws ForbiddenException when rater is not creator or acceptor", async () => {
-            const collectionMocks: Record<
-                string,
-                ReturnType<typeof buildMongoCollection>
-            > = {};
-
-            mongo.collection = jest.fn().mockImplementation((name: string) => {
-                if (!collectionMocks[name]) {
-                    if (name === "services") {
-                        collectionMocks[name] = buildMongoCollection({
-                            findOne: jest
-                                .fn()
-                                .mockResolvedValue(completedService),
-                        });
-                    } else {
-                        collectionMocks[name] = buildMongoCollection({
-                            findOne: jest.fn().mockResolvedValue(null),
-                        });
-                    }
-                }
-                return collectionMocks[name];
-            });
-
-            service = new ServicesService(
-                mongo,
-                db,
-                outbox as unknown as OutboxService,
-            );
-
             await expect(
-                service.rate(SERVICE_ID, "random-user-uuid", { rating: 3 }),
+                service.rate(SERVICE_ID, "random-user", { rating: 3 }),
             ).rejects.toBeInstanceOf(ForbiddenException);
         });
     });

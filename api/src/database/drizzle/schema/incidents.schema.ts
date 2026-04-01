@@ -24,6 +24,15 @@ export const incidentPriorityEnum = pgEnum("incident_priority", [
     "critical",
 ]);
 
+export const incidentTypeEnum = pgEnum("incident_type", [
+    "infrastructure",
+    "noise",
+    "vandalism",
+    "safety",
+    "cleanliness",
+    "other",
+]);
+
 export const incidents = pgTable("incidents", {
     id: uuid("id").primaryKey().defaultRandom(),
     creatorId: uuid("creator_id")
@@ -33,6 +42,7 @@ export const incidents = pgTable("incidents", {
     description: text("description"),
     status: incidentStatusEnum("status").notNull().default("open"),
     priority: incidentPriorityEnum("priority").notNull().default("medium"),
+    type: incidentTypeEnum("type").notNull().default("other"),
     locationGeojson: jsonb("location_geojson"), // GeoJSON Point/Polygon
     attachmentUrls: text("attachment_urls").array().default([]),
     resolvedAt: timestamp("resolved_at", { withTimezone: true }),
@@ -94,6 +104,7 @@ export type Incident = typeof incidents.$inferSelect;
 export type NewIncident = typeof incidents.$inferInsert;
 export type IncidentStatus = (typeof incidentStatusEnum.enumValues)[number];
 export type IncidentPriority = (typeof incidentPriorityEnum.enumValues)[number];
+export type IncidentType = (typeof incidentTypeEnum.enumValues)[number];
 
 export type IncidentComment = typeof incidentComments.$inferSelect;
 export type NewIncidentComment = typeof incidentComments.$inferInsert;

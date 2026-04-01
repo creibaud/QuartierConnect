@@ -6,6 +6,7 @@ import {
 import { Test, TestingModule } from "@nestjs/testing";
 import type { GeoJsonPolygon } from "src/database/mongodb/models";
 import { OutboxService } from "src/modules/outbox/outbox.service";
+import type { IQuartiersRepository } from "src/modules/quartiers/quartier.repository";
 import { QuartiersService } from "src/modules/quartiers/quartiers.service";
 
 const QUARTIER_ID = "quartier-uuid-1";
@@ -63,6 +64,24 @@ const buildDrizzleMock = () => {
     return chainable;
 };
 
+const buildRepositoryMock = (): jest.Mocked<IQuartiersRepository> =>
+    ({
+        findAll: jest.fn().mockResolvedValue({
+            data: [mockQuartier],
+            total: 1,
+            page: 1,
+            limit: 10,
+        }),
+        findOne: jest.fn().mockResolvedValue(mockQuartier),
+        create: jest.fn().mockResolvedValue(mockQuartier),
+        update: jest.fn().mockResolvedValue(mockQuartier),
+        delete: jest.fn().mockResolvedValue(true),
+        addMember: jest.fn().mockResolvedValue(mockMember),
+        removeMember: jest.fn().mockResolvedValue(true),
+        getMembers: jest.fn().mockResolvedValue([mockMember]),
+        isMember: jest.fn().mockResolvedValue(true),
+    }) as any;
+
 const buildMongoMock = () => ({
     collection: jest.fn().mockReturnValue({
         findOne: jest.fn().mockResolvedValue(null),
@@ -80,11 +99,13 @@ const buildOutboxMock = () => ({
 
 describe("QuartiersService", () => {
     let service: QuartiersService;
+    let repositoryMock: jest.Mocked<IQuartiersRepository>;
     let drizzleMock: ReturnType<typeof buildDrizzleMock>;
     let mongoMock: ReturnType<typeof buildMongoMock>;
     let outboxMock: ReturnType<typeof buildOutboxMock>;
 
     beforeEach(async () => {
+        repositoryMock = buildRepositoryMock();
         drizzleMock = buildDrizzleMock();
         mongoMock = buildMongoMock();
         outboxMock = buildOutboxMock();
@@ -92,6 +113,7 @@ describe("QuartiersService", () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 QuartiersService,
+                { provide: "IQuartiersRepository", useValue: repositoryMock },
                 { provide: "DRIZZLE", useValue: drizzleMock },
                 { provide: "MONGODB", useValue: mongoMock },
                 { provide: OutboxService, useValue: outboxMock },

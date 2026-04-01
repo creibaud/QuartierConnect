@@ -19,6 +19,7 @@ import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import type { User } from "src/database/drizzle/schema";
 import { CreateChatDto } from "src/modules/messages/dto/create-chat.dto";
 import { MessageQueryDto } from "src/modules/messages/dto/message-query.dto";
+import { ReportMessageDto } from "src/modules/messages/dto/report-message.dto";
 import { SendMessageDto } from "src/modules/messages/dto/send-message.dto";
 import { MessagesService } from "src/modules/messages/messages.service";
 
@@ -155,6 +156,48 @@ export class MessagesController {
         @Body() dto: SendMessageDto,
     ) {
         return this.messagesService.sendMessage(id, user.id, dto);
+    }
+
+    @Post(":id/messages/:msgId/report")
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: "Report a message in a chat" })
+    @ApiResponse({
+        status: 200,
+        description: "Report submitted",
+        schema: {
+            example: { message: "Report submitted successfully", reportCount: 2 },
+        },
+    })
+    @ApiResponse({
+        status: 400,
+        description: "Already reported this message",
+        schema: {
+            example: {
+                statusCode: 400,
+                message: "You have already reported this message",
+                error: "Bad Request",
+            },
+        },
+    })
+    @ApiResponse({
+        status: 403,
+        description: "Not a participant",
+        schema: { example: FORBIDDEN },
+    })
+    @ApiResponse({
+        status: 404,
+        description: "Message not found",
+        schema: {
+            example: { statusCode: 404, message: "Message not found", error: "Not Found" },
+        },
+    })
+    reportMessage(
+        @Param("id") chatId: string,
+        @Param("msgId") msgId: string,
+        @CurrentUser() user: User,
+        @Body() dto: ReportMessageDto,
+    ) {
+        return this.messagesService.reportMessage(chatId, msgId, user.id, dto);
     }
 
     @Delete(":id/messages/:msgId")

@@ -28,6 +28,7 @@ import type { User } from "src/database/drizzle/schema";
 import { AuthService } from "src/modules/auth/auth.service";
 import { LoginDto } from "src/modules/auth/dto/login.dto";
 import { RegisterDto } from "src/modules/auth/dto/register.dto";
+import { SsoLoginDto, SsoTokenResponseDto } from "src/modules/auth/dto/sso.dto";
 import { TotpCodeDto, TotpValidateDto } from "src/modules/auth/dto/totp.dto";
 import { TotpService } from "src/modules/auth/totp.service";
 import {
@@ -253,6 +254,47 @@ export class AuthController {
     })
     async totpVerify(@CurrentUser() user: User, @Body() dto: TotpCodeDto) {
         return this.totpService.verifySetup(user.id, dto.code);
+    }
+
+    @Public()
+    @Post("sso/token")
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: "SSO login for the Java desktop application",
+        description:
+            "Authenticates an administrator and returns a long-lived access token (24 h) " +
+            "with `aud: [\"desktop\"]` claim. " +
+            "The same JWT secret is shared with the web app, enabling seamless SSO. " +
+            "TOTP code is required if the account has TOTP enabled.",
+    })
+    @ApiOkResponse({
+        description: "Desktop SSO token issued",
+        type: SsoTokenResponseDto,
+    })
+    @ApiResponse({
+        status: 401,
+        description: "Invalid credentials or TOTP code",
+        schema: {
+            example: {
+                statusCode: 401,
+                message: "Invalid credentials",
+                error: "Unauthorized",
+            },
+        },
+    })
+    @ApiResponse({
+        status: 403,
+        description: "Account does not have admin role",
+        schema: {
+            example: {
+                statusCode: 403,
+                message: "Only administrators can use the desktop SSO",
+                error: "Forbidden",
+            },
+        },
+    })
+    async ssoLogin(@Body() dto: SsoLoginDto) {
+        return this.authService.ssoLogin(dto);
     }
 
     @Delete("totp")

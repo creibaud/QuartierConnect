@@ -9,10 +9,8 @@ import {
 import { and, eq, ilike, sql } from "drizzle-orm";
 import { ObjectId } from "mongodb";
 import { PaginationQueryDto } from "src/common/dto/pagination-query.dto";
-import {
-    buildPaginatedResult,
-    resolvePagination,
-} from "src/common/query/query.helper";
+import { PaginationHelper } from "src/common/helpers/pagination.helper";
+import { PermissionHelper } from "src/common/helpers/permission.helper";
 import { type DrizzleDB } from "src/database/drizzle/drizzle.type";
 import { quartiers, userQuartiers, users } from "src/database/drizzle/schema";
 import {
@@ -26,12 +24,15 @@ import { AddMemberDto } from "src/modules/quartiers/dto/add-member.dto";
 import { CreateQuartierDto } from "src/modules/quartiers/dto/create-quartier.dto";
 import { QuartierQueryDto } from "src/modules/quartiers/dto/quartier-query.dto";
 import { UpdateQuartierDto } from "src/modules/quartiers/dto/update-quartier.dto";
+import type { IQuartiersRepository } from "src/modules/quartiers/quartier.repository";
 
 @Injectable()
 export class QuartiersService {
     private readonly logger = new Logger(QuartiersService.name);
 
     constructor(
+        @Inject("IQuartiersRepository")
+        private readonly quartierRepository: IQuartiersRepository,
         @Inject("DRIZZLE") private readonly db: DrizzleDB,
         @Inject("MONGODB") private readonly mongo: MongoDatabase,
         private readonly outbox: OutboxService,
@@ -87,8 +88,8 @@ export class QuartiersService {
     }
 
     async findAll(query: QuartierQueryDto) {
-        const { page = 1, limit = 10 } = query;
-        const { offset } = resolvePagination(page, limit);
+        const { page, limit, offset } =
+            PaginationHelper.resolvePagination(query);
 
         const where = query.search
             ? ilike(quartiers.name, `%${query.search}%`)
@@ -114,7 +115,12 @@ export class QuartiersService {
             }),
         );
 
-        return buildPaginatedResult(withGeo, Number(count), page, limit);
+        return PaginationHelper.buildPaginatedResponse(
+            withGeo,
+            Number(count),
+            page,
+            limit,
+        );
     }
 
     async findOne(id: string) {

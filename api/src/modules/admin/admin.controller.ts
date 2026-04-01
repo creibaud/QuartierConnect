@@ -1,13 +1,25 @@
-import { Controller, Get, Query } from "@nestjs/common";
+import {
+    Body,
+    Controller,
+    Get,
+    Param,
+    Put,
+    Query,
+} from "@nestjs/common";
 import {
     ApiBearerAuth,
     ApiOperation,
+    ApiParam,
     ApiQuery,
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
+import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { Roles } from "src/common/decorators/roles.decorator";
+import type { User } from "src/database/drizzle/schema";
+import { SERVICE_CATEGORIES, type ServiceCategory } from "src/database/drizzle/schema";
 import { AdminService } from "src/modules/admin/admin.service";
+import { UpdatePointConfigDto } from "src/modules/admin/dto/update-point-config.dto";
 
 @ApiTags("Admin")
 @Controller("admin")
@@ -15,6 +27,75 @@ import { AdminService } from "src/modules/admin/admin.service";
 @Roles("admin")
 export class AdminController {
     constructor(private readonly adminService: AdminService) {}
+
+    @Get("point-config")
+    @ApiOperation({
+        summary: "Get point configuration for all service categories",
+    })
+    @ApiResponse({
+        status: 200,
+        description: "Point config per category",
+        schema: {
+            example: {
+                gardening: {
+                    basePointsPerHour: 2,
+                    multiplier: 1.0,
+                    updatedAt: "2026-03-30T12:00:00.000Z",
+                    updatedBy: null,
+                },
+                babysitting: {
+                    basePointsPerHour: 2,
+                    multiplier: 1.5,
+                    updatedAt: "2026-03-30T12:00:00.000Z",
+                    updatedBy: "550e8400-e29b-41d4-a716-446655440000",
+                },
+            },
+        },
+    })
+    getPointConfig() {
+        return this.adminService.getPointConfig();
+    }
+
+    @Put("point-config/:category")
+    @ApiOperation({
+        summary: "Update point multiplier for a service category",
+    })
+    @ApiParam({
+        name: "category",
+        enum: SERVICE_CATEGORIES,
+        description: "Service category to configure",
+    })
+    @ApiResponse({
+        status: 200,
+        description: "Config updated",
+        schema: {
+            example: {
+                category: "babysitting",
+                basePointsPerHour: 2,
+                multiplier: 1.5,
+                updatedAt: "2026-03-30T12:00:00.000Z",
+                updatedBy: "550e8400-e29b-41d4-a716-446655440000",
+            },
+        },
+    })
+    @ApiResponse({
+        status: 400,
+        description: "Invalid category or values",
+        schema: {
+            example: {
+                statusCode: 400,
+                message: "Validation failed",
+                error: "Bad Request",
+            },
+        },
+    })
+    updatePointConfig(
+        @Param("category") category: ServiceCategory,
+        @Body() dto: UpdatePointConfigDto,
+        @CurrentUser() admin: User,
+    ) {
+        return this.adminService.updatePointConfig(category, dto, admin.id);
+    }
 
     @Get("stats")
     @ApiOperation({ summary: "Get global platform statistics" })

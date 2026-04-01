@@ -1,234 +1,249 @@
 import type { UUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
-import type { DrizzleDB } from "src/database/drizzle/drizzle.type";
-import { type User } from "src/database/drizzle/schema";
-import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
-import { OutboxService } from "src/modules/outbox/outbox.service";
+import { OUTBOX_EVENT_TYPES } from "src/modules/outbox/outbox-event-types";
+import type { OutboxService } from "src/modules/outbox/outbox.service";
+import type { IUserRepository } from "src/modules/users/users.repository";
 import { UserService } from "./user.service";
 
 describe("UserService", () => {
     let service: UserService;
+    let mockUserRepository: Partial<IUserRepository>;
+    let mockOutboxService: Partial<OutboxService>;
 
-    const db = {
-        select: jest.fn(),
-        update: jest.fn(),
-        insert: jest.fn(),
-        delete: jest.fn(),
-    } as unknown as DrizzleDB;
-
-    const mongo = {} as unknown as MongoDatabase;
-
-    const outbox = {
-        publish: jest.fn().mockResolvedValue(undefined),
-    } as unknown as OutboxService;
-
-    const baseUser: User = {
-        id: "6fce8b71-2d1a-4d4a-9c12-44d4624e8f81" as UUID,
-        email: "john.doe@example.com",
-        password: "hashed-password",
+    const mockUser = {
+        id: randomUUID() as UUID,
+        email: "test@example.com",
         firstName: "John",
         lastName: "Doe",
         role: "resident",
+        balance: "0",
         isActive: true,
-        balance: "0.00",
-        createdAt: new Date("2026-01-01T00:00:00.000Z"),
-        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+        password: "hashed",
+        createdAt: new Date(),
+        updatedAt: new Date(),
     };
 
-    const createSelectChain = <T>(result: T[]) => ({
-        from: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-                limit: jest.fn().mockResolvedValue(result),
-                orderBy: jest.fn().mockReturnValue({
-                    limit: jest.fn().mockReturnValue({
-                        offset: jest.fn().mockResolvedValue(result),
-                    }),
-                }),
-                groupBy: jest.fn().mockResolvedValue(result),
-            }),
-            orderBy: jest.fn().mockReturnValue({
-                limit: jest.fn().mockReturnValue({
-                    offset: jest.fn().mockResolvedValue(result),
-                }),
-            }),
-        }),
-    });
-
     beforeEach(() => {
-        jest.clearAllMocks();
-        service = new UserService(db, mongo, outbox);
+        mockUserRepository = {
+            findOne: jest.fn(),
+            findAll: jest.fn(),
+            update: jest.fn(),
+            updateRole: jest.fn(),
+            updateStatus: jest.fn(),
+            getBalance: jest.fn(),
+            getQuartierAssignment: jest.fn(),
+            revokeRefreshTokens: jest.fn(),
+        };
+
+        mockOutboxService = {
+            publish: jest.fn().mockResolvedValue(undefined),
+        };
+
+        service = new UserService(
+            mockUserRepository as IUserRepository,
+            mockOutboxService,
+        );
     });
 
     describe("findOne", () => {
-        it("returns sanitized user when found", async () => {
-            (db.select as jest.Mock).mockReturnValueOnce(
-                createSelectChain([baseUser]),
-            );
+        it("should return sanitized user", async () => {
+            mockUserRepository.findOne.mockResolvedValue(mockUser);
 
-            const result = await service.findOne(baseUser.id as UUID);
+            const result = await service.findOne(mockUser.id);
 
             expect(result).not.toHaveProperty("password");
-            expect(result.email).toBe(baseUser.email);
+            expect(result.email).toBe(mockUser.email);
         });
 
-        it("throws NotFoundException when user not found", async () => {
-            (db.select as jest.Mock).mockReturnValueOnce(createSelectChain([]));
+        it("should throw NotFoundException when user not found", async () => {
+            mockUserRepository.findOne.mockResolvedValue(null);
 
-            await expect(
-                service.findOne("00000000-0000-0000-0000-000000000000" as UUID),
-            ).rejects.toBeInstanceOf(NotFoundException);
-        });
-    });
-
-    describe("updateRole", () => {
-        it("throws ForbiddenException when target is admin", async () => {
-            (db.select as jest.Mock).mockReturnValueOnce(
-                createSelectChain([{ ...baseUser, role: "admin" }]),
+            await expect(service.findOne(randomUUID() as UUID)).rejects.toThrow(
+                NotFoundException,
             );
-
-            await expect(
-                service.updateRole(baseUser.id as UUID, { role: "moderator" }),
-            ).rejects.toBeInstanceOf(ForbiddenException);
-        });
-
-        it("updates role successfully for non-super_admin", async () => {
-            (db.select as jest.Mock).mockReturnValueOnce(
-                createSelectChain([baseUser]),
-            );
-
-            const updateReturning = jest
-                .fn()
-                .mockResolvedValue([{ ...baseUser, role: "admin" }]);
-            const updateWhere = jest
-                .fn()
-                .mockReturnValue({ returning: updateReturning });
-            const updateSet = jest.fn().mockReturnValue({ where: updateWhere });
-            (db.update as jest.Mock).mockReturnValue({ set: updateSet });
-
-            const result = await service.updateRole(baseUser.id as UUID, {
-                role: "admin",
-            });
-
-            expect(result).not.toHaveProperty("password");
-            expect(result.role).toBe("admin");
-        });
-    });
-
-    describe("updateStatus", () => {
-        it("throws ForbiddenException when target is admin", async () => {
-            (db.select as jest.Mock).mockReturnValueOnce(
-                createSelectChain([{ ...baseUser, role: "admin" }]),
-            );
-
-            await expect(
-                service.updateStatus(baseUser.id as UUID, { isActive: false }),
-            ).rejects.toBeInstanceOf(ForbiddenException);
-        });
-
-        it("updates status successfully", async () => {
-            (db.select as jest.Mock).mockReturnValueOnce(
-                createSelectChain([baseUser]),
-            );
-
-            const updateReturning = jest
-                .fn()
-                .mockResolvedValue([{ ...baseUser, isActive: false }]);
-            const updateWhere = jest
-                .fn()
-                .mockReturnValue({ returning: updateReturning });
-            const updateSet = jest.fn().mockReturnValue({ where: updateWhere });
-            (db.update as jest.Mock).mockReturnValue({ set: updateSet });
-
-            const result = await service.updateStatus(baseUser.id as UUID, {
-                isActive: false,
-            });
-
-            expect(result.isActive).toBe(false);
         });
     });
 
     describe("findAll", () => {
-        const createCountChain = (total: number) => ({
-            from: jest.fn().mockReturnValue({
-                where: jest.fn().mockResolvedValue([{ count: total }]),
-            }),
-        });
+        it("should return paginated users without passwords", async () => {
+            mockUserRepository.findAll.mockResolvedValue({
+                data: [mockUser],
+                total: 1,
+                page: 1,
+                limit: 10,
+            });
 
-        it("returns paginated sanitized users", async () => {
-            (db.select as jest.Mock)
-                .mockReturnValueOnce(createSelectChain([baseUser]))
-                .mockReturnValueOnce(createCountChain(1));
+            const result = await service.findAll({
+                page: 1,
+                limit: 10,
+            });
 
-            const result = await service.findAll({ page: 1, limit: 10 });
-
-            expect(result.meta.total).toBe(1);
+            expect(result.data).toHaveLength(1);
             expect(result.data[0]).not.toHaveProperty("password");
         });
 
-        it("filters by role", async () => {
-            (db.select as jest.Mock)
-                .mockReturnValueOnce(createSelectChain([baseUser]))
-                .mockReturnValueOnce(createCountChain(1));
+        it("should filter by role", async () => {
+            mockUserRepository.findAll.mockResolvedValue({
+                data: [mockUser],
+                total: 1,
+                page: 1,
+                limit: 10,
+            });
 
             const result = await service.findAll({ role: "resident" });
             expect(result.data[0].role).toBe("resident");
         });
-
-        it("returns empty when no users match", async () => {
-            (db.select as jest.Mock)
-                .mockReturnValueOnce(createSelectChain([]))
-                .mockReturnValueOnce(createCountChain(0));
-
-            const result = await service.findAll({ search: "unknown" });
-            expect(result.data).toHaveLength(0);
-            expect(result.meta.total).toBe(0);
-        });
     });
 
-    describe("getMyProfile", () => {
-        it("delegates to findOne and returns sanitized user", async () => {
-            (db.select as jest.Mock).mockReturnValueOnce(
-                createSelectChain([baseUser]),
-            );
+    describe("getBalance", () => {
+        it("should return user balance", async () => {
+            mockUserRepository.getBalance.mockResolvedValue({
+                userId: mockUser.id,
+                balance: "100.50",
+            });
 
-            const result = await service.getMyProfile(baseUser.id as UUID);
-            expect(result).not.toHaveProperty("password");
+            const result = await service.getBalance(mockUser.id);
+
+            expect(result.balance).toBe("100.50");
+        });
+
+        it("should throw NotFoundException when user not found", async () => {
+            mockUserRepository.getBalance.mockResolvedValue(null);
+
+            await expect(
+                service.getBalance(randomUUID() as UUID),
+            ).rejects.toThrow(NotFoundException);
         });
     });
 
     describe("updateMyProfile", () => {
-        it("throws NotFoundException when user not found", async () => {
-            const updateReturning = jest.fn().mockResolvedValue([]);
-            const updateWhere = jest
-                .fn()
-                .mockReturnValue({ returning: updateReturning });
-            const updateSet = jest.fn().mockReturnValue({ where: updateWhere });
-            (db.update as jest.Mock).mockReturnValue({ set: updateSet });
+        it("should update profile and publish event", async () => {
+            const updates = { firstName: "Updated" };
+            const updated = { ...mockUser, ...updates };
+            mockUserRepository.update.mockResolvedValue(updated);
 
-            await expect(
-                service.updateMyProfile(
-                    "00000000-0000-0000-0000-000000000000" as UUID,
-                    { firstName: "Jane" },
-                ),
-            ).rejects.toBeInstanceOf(NotFoundException);
+            const result = await service.updateMyProfile(mockUser.id, updates);
+
+            expect(mockUserRepository.update).toHaveBeenCalledWith(
+                mockUser.id,
+                updates,
+            );
+            expect(mockOutboxService.publish).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    eventType: OUTBOX_EVENT_TYPES.userUpdated,
+                }),
+            );
+            expect(result).not.toHaveProperty("password");
         });
 
-        it("updates profile and returns sanitized user", async () => {
-            const updateReturning = jest
-                .fn()
-                .mockResolvedValue([{ ...baseUser, firstName: "Jane" }]);
-            const updateWhere = jest
-                .fn()
-                .mockReturnValue({ returning: updateReturning });
-            const updateSet = jest.fn().mockReturnValue({ where: updateWhere });
-            (db.update as jest.Mock).mockReturnValue({ set: updateSet });
+        it("should throw NotFoundException when user not found", async () => {
+            mockUserRepository.update.mockResolvedValue(null);
 
-            const result = await service.updateMyProfile(baseUser.id as UUID, {
-                firstName: "Jane",
+            await expect(
+                service.updateMyProfile(randomUUID() as UUID, {}),
+            ).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    describe("updateRole", () => {
+        it("should update role and publish event", async () => {
+            const updated = { ...mockUser, role: "moderator" };
+            mockUserRepository.findOne.mockResolvedValue(mockUser);
+            mockUserRepository.updateRole.mockResolvedValue(updated);
+
+            const result = await service.updateRole(mockUser.id, {
+                role: "moderator",
             });
 
-            expect(result.firstName).toBe("Jane");
-            expect(result).not.toHaveProperty("password");
+            expect(mockUserRepository.updateRole).toHaveBeenCalledWith(
+                mockUser.id,
+                "moderator",
+            );
+            expect(mockOutboxService.publish).toHaveBeenCalled();
+            expect(result.role).toBe("moderator");
+        });
+
+        it("should throw ForbiddenException when trying to change admin role", async () => {
+            const adminUser = { ...mockUser, role: "admin" };
+            mockUserRepository.findOne.mockResolvedValue(adminUser);
+
+            await expect(
+                service.updateRole(adminUser.id, { role: "moderator" }),
+            ).rejects.toThrow(ForbiddenException);
+        });
+    });
+
+    describe("updateStatus", () => {
+        it("should update status and publish event", async () => {
+            const updated = { ...mockUser, isActive: false };
+            mockUserRepository.findOne.mockResolvedValue(mockUser);
+            mockUserRepository.updateStatus.mockResolvedValue(updated);
+
+            const result = await service.updateStatus(mockUser.id, {
+                isActive: false,
+            });
+
+            expect(mockUserRepository.updateStatus).toHaveBeenCalledWith(
+                mockUser.id,
+                false,
+            );
+            expect(mockOutboxService.publish).toHaveBeenCalled();
+            expect(result.isActive).toBe(false);
+        });
+
+        it("should throw ForbiddenException when trying to deactivate admin", async () => {
+            const adminUser = { ...mockUser, role: "admin" };
+            mockUserRepository.findOne.mockResolvedValue(adminUser);
+
+            await expect(
+                service.updateStatus(adminUser.id, { isActive: false }),
+            ).rejects.toThrow(ForbiddenException);
+        });
+    });
+
+    describe("exportMyData", () => {
+        it("should export user data with quartier assignment", async () => {
+            const quartier = { userId: mockUser.id, quartierId: randomUUID() };
+            mockUserRepository.findOne.mockResolvedValue(mockUser);
+            mockUserRepository.getQuartierAssignment.mockResolvedValue(
+                quartier,
+            );
+
+            const result = await service.exportMyData(mockUser.id);
+
+            expect(result.profile).not.toHaveProperty("password");
+            expect(result.quartierAssignment).toEqual(quartier);
+        });
+
+        it("should return null for quartier when none assigned", async () => {
+            mockUserRepository.findOne.mockResolvedValue(mockUser);
+            mockUserRepository.getQuartierAssignment.mockResolvedValue(null);
+
+            const result = await service.exportMyData(mockUser.id);
+
+            expect(result.quartierAssignment).toBeNull();
+        });
+    });
+
+    describe("deleteMyAccount", () => {
+        it("should anonymize user and revoke tokens", async () => {
+            mockUserRepository.update.mockResolvedValue(mockUser);
+            mockUserRepository.revokeRefreshTokens.mockResolvedValue(3);
+
+            const result = await service.deleteMyAccount(mockUser.id);
+
+            expect(mockUserRepository.update).toHaveBeenCalledWith(
+                mockUser.id,
+                expect.objectContaining({
+                    isActive: false,
+                }),
+            );
+            expect(mockUserRepository.revokeRefreshTokens).toHaveBeenCalledWith(
+                mockUser.id,
+            );
+            expect(mockOutboxService.publish).toHaveBeenCalled();
+            expect(result.message).toBe("Account deleted");
         });
     });
 });

@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ConflictException,
     ForbiddenException,
     Inject,
@@ -6,18 +7,12 @@ import {
     Logger,
     NotFoundException,
 } from "@nestjs/common";
-import { ObjectId } from "mongodb";
-import {
-    CHATS_COLLECTION,
-    type ChatDocument,
-} from "src/database/mongodb/models/chat.model";
-import {
-    MESSAGES_COLLECTION,
-    type MessageDocument,
-} from "src/database/mongodb/models/message.model";
-import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
+import type { IMessagesRepository } from "src/modules/messages/message.repository";
+import type { MessageReport } from "src/database/mongodb/models/message.model";
+import { REPORT_AUTO_DELETE_THRESHOLD } from "src/database/mongodb/models/message.model";
 import { CreateChatDto } from "src/modules/messages/dto/create-chat.dto";
 import { MessageQueryDto } from "src/modules/messages/dto/message-query.dto";
+import { ReportMessageDto } from "src/modules/messages/dto/report-message.dto";
 import { SendMessageDto } from "src/modules/messages/dto/send-message.dto";
 import { MessagesGateway } from "src/modules/messages/messages.gateway";
 
@@ -26,17 +21,13 @@ export class MessagesService {
     private readonly logger = new Logger(MessagesService.name);
 
     constructor(
-        @Inject("MONGODB") private readonly mongo: MongoDatabase,
+        @Inject("IMessagesRepository")
+        private readonly messagesRepository: IMessagesRepository,
         private readonly gateway: MessagesGateway,
     ) {}
 
     async findMyChats(userId: string) {
-        const chats = await this.mongo
-            .collection<ChatDocument>(CHATS_COLLECTION)
-            .find({ participantIds: userId })
-            .sort({ lastMessageAt: -1 })
-            .toArray();
-
+        const chats = await this.messagesRepository.findUserChats(userId);
         return chats.map((chat) => this.toChatResponse(chat));
     }
 
@@ -44,11 +35,9 @@ export class MessagesService {
         const participantIds = [userId, ...dto.participantIds];
 
         if (participantIds.length === 2) {
-            const existing = await this.mongo
-                .collection<ChatDocument>(CHATS_COLLECTION)
-                .findOne({
-                    participantIds: { $all: participantIds, $size: 2 },
-                });
+            const existing = await this.messagesRepository.findDirectChat(
+                participantIds,
+            );
 
             if (existing) {
                 throw new ConflictException(
@@ -58,27 +47,27 @@ export class MessagesService {
         }
 
         const now = new Date();
-        const doc: ChatDocument = {
+        const insertedId = await this.messagesRepository.createChat({
+            participantIds,
+            name: dto.name,
+            createdAt: now,
+            updatedAt: now,
+        });
+
+        const chatId = insertedId.toHexString();
+        this.logger.log(`Chat created: ${chatId} by user ${userId}`);
+
+        return {
+            id: chatId,
             participantIds,
             name: dto.name,
             createdAt: now,
             updatedAt: now,
         };
-
-        const result = await this.mongo
-            .collection<ChatDocument>(CHATS_COLLECTION)
-            .insertOne(doc);
-
-        const chatId = result.insertedId.toHexString();
-        this.logger.log(`Chat created: ${chatId} by user ${userId}`);
-
-        return this.toChatResponse({ ...doc, _id: result.insertedId });
     }
 
     async getChat(chatId: string, userId: string) {
-        const chat = await this.mongo
-            .collection<ChatDocument>(CHATS_COLLECTION)
-            .findOne({ _id: new ObjectId(chatId) });
+        const chat = await this.messagesRepository.findChatById(chatId);
 
         if (!chat) {
             throw new NotFoundException("Chat not found");
@@ -99,27 +88,18 @@ export class MessagesService {
         const { page = 1, limit = 10 } = query;
         const skip = (page - 1) * limit;
 
-        const filter: Record<string, unknown> = { chatId };
-
-        if (query.before) {
-            filter.createdAt = { $lt: new Date(query.before) };
-        }
-
-        const collection =
-            this.mongo.collection<MessageDocument>(MESSAGES_COLLECTION);
-
         const [messages, total] = await Promise.all([
-            collection
-                .find(filter)
-                .sort({ createdAt: -1 })
-                .skip(skip)
-                .limit(limit)
-                .toArray(),
-            collection.countDocuments(filter),
+            this.messagesRepository.findMessages(
+                chatId,
+                query.before,
+                skip,
+                limit,
+            ),
+            this.messagesRepository.countMessages(chatId, query.before),
         ]);
 
         return {
-            data: messages.map((message) => this.toMessageResponse(message)),
+            data: messages.map((msg) => this.toMessageResponse(msg)),
             meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
         };
     }
@@ -132,7 +112,19 @@ export class MessagesService {
         await this.getChat(chatId, authorUserId);
 
         const now = new Date();
-        const doc: MessageDocument = {
+        const insertedId = await this.messagesRepository.createMessage({
+            chatId,
+            authorUserId,
+            content: dto.content,
+            attachments: [],
+            createdAt: now,
+            updatedAt: now,
+        });
+
+        await this.messagesRepository.updateChatLastMessageAt(chatId, now);
+
+        const message = {
+            id: insertedId.toHexString(),
             chatId,
             authorUserId,
             content: dto.content,
@@ -140,22 +132,6 @@ export class MessagesService {
             createdAt: now,
             updatedAt: now,
         };
-
-        const result = await this.mongo
-            .collection<MessageDocument>(MESSAGES_COLLECTION)
-            .insertOne(doc);
-
-        await this.mongo
-            .collection<ChatDocument>(CHATS_COLLECTION)
-            .updateOne(
-                { _id: new ObjectId(chatId) },
-                { $set: { lastMessageAt: now, updatedAt: now } },
-            );
-
-        const message = this.toMessageResponse({
-            ...doc,
-            _id: result.insertedId,
-        });
 
         this.gateway.broadcastMessage(chatId, message);
 
@@ -166,10 +142,61 @@ export class MessagesService {
         return message;
     }
 
+    async reportMessage(
+        chatId: string,
+        messageId: string,
+        userId: string,
+        dto: ReportMessageDto,
+    ) {
+        await this.getChat(chatId, userId);
+
+        const message = await this.messagesRepository.findMessageInChat(
+            messageId,
+            chatId,
+        );
+
+        if (!message) {
+            throw new NotFoundException("Message not found");
+        }
+
+        const alreadyReported = (message.reports ?? []).some(
+            (r) => r.reportedBy === userId,
+        );
+        if (alreadyReported) {
+            throw new BadRequestException(
+                "You have already reported this message",
+            );
+        }
+
+        const report: MessageReport = {
+            reportedBy: userId,
+            reason: dto.reason,
+            reportedAt: new Date(),
+        };
+
+        await this.messagesRepository.pushMessageReport(messageId, report);
+
+        const updated = await this.messagesRepository.findMessageById(messageId);
+        const reportCount = updated?.reports?.length ?? 0;
+
+        if (reportCount >= REPORT_AUTO_DELETE_THRESHOLD) {
+            await this.messagesRepository.deleteMessage(messageId);
+            this.logger.warn(
+                `Message ${messageId} auto-deleted after ${reportCount} reports`,
+            );
+            return { message: "Message removed due to excessive reports" };
+        }
+
+        this.logger.log(
+            `Message ${messageId} reported by user ${userId} (${reportCount} reports total)`,
+        );
+
+        return { message: "Report submitted successfully", reportCount };
+    }
+
     async deleteMessage(messageId: string, userId: string, userRole: string) {
-        const message = await this.mongo
-            .collection<MessageDocument>(MESSAGES_COLLECTION)
-            .findOne({ _id: new ObjectId(messageId) });
+        const message =
+            await this.messagesRepository.findMessageById(messageId);
 
         if (!message) {
             throw new NotFoundException("Message not found");
@@ -180,20 +207,21 @@ export class MessagesService {
             throw new ForbiddenException("You cannot delete this message");
         }
 
-        await this.mongo
-            .collection<MessageDocument>(MESSAGES_COLLECTION)
-            .deleteOne({ _id: new ObjectId(messageId) });
+        await this.messagesRepository.deleteMessage(messageId);
 
         this.logger.log(`Message ${messageId} deleted by user ${userId}`);
     }
 
-    private toChatResponse(chat: ChatDocument & { _id?: ObjectId }) {
+    private toChatResponse(chat: { _id?: unknown; [key: string]: unknown }) {
         const { _id, ...rest } = chat;
-        return { id: _id?.toString(), ...rest };
+        return { id: (_id as { toString(): string } | undefined)?.toString(), ...rest };
     }
 
-    private toMessageResponse(msg: MessageDocument & { _id?: ObjectId }) {
+    private toMessageResponse(msg: {
+        _id?: unknown;
+        [key: string]: unknown;
+    }) {
         const { _id, ...rest } = msg;
-        return { id: _id?.toString(), ...rest };
+        return { id: (_id as { toString(): string } | undefined)?.toString(), ...rest };
     }
 }
