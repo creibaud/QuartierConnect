@@ -90,8 +90,7 @@ export class UserService {
     async updateRole(id: UUID, dto: UpdateUserRoleDto) {
         const user = await this.findOne(id);
 
-        // Validate permission - cannot change admin role
-        PermissionHelper.validateModifyPermission(id, id, "admin"); // This is a system operation
+        PermissionHelper.validateModifyPermission(id, id, "admin");
 
         if (user.role === "admin") {
             throw new ForbiddenException("Cannot change an admin's role");
@@ -126,7 +125,6 @@ export class UserService {
     async updateStatus(id: UUID, dto: UpdateUserStatusDto) {
         const user = await this.findOne(id);
 
-        // Validate permission - cannot deactivate admin
         PermissionHelper.validateModifyPermission(id, id, "admin");
 
         if (user.role === "admin") {
