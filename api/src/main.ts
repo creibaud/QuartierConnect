@@ -376,19 +376,34 @@ La réponse inclut un objet \`meta\` : \`{ total, page, limit, totalPages }\`.
         }),
     );
 
+    const isDev = config.get<string>("NODE_ENV") !== "production";
     app.enableCors({
         origin: [
             "https://localhost",
             "https://client.localhost",
             "https://admin.localhost",
+            ...(isDev
+                ? [
+                      "http://localhost:5173",
+                      "http://localhost:5174",
+                      "http://localhost:3001",
+                  ]
+                : []),
         ],
         credentials: true,
     });
 
     const port = config.get<number>("PORT") ?? 3000;
     await app.listen(port);
-    console.log(`QuartierConnect API → http://localhost:${port}/v1`);
-    console.log(`Scalar API Docs     → http://localhost:${port}/docs`);
+    const logger = new JsonLogger();
+    logger.log(
+        `QuartierConnect API → http://localhost:${port}/v1`,
+        "Bootstrap",
+    );
+    logger.log(
+        `Scalar API Docs     → http://localhost:${port}/docs`,
+        "Bootstrap",
+    );
 }
 
 void bootstrap();

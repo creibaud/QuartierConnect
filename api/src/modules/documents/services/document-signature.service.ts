@@ -1,5 +1,4 @@
 import { createHash } from "node:crypto";
-// Helper for ConflictException import
 import {
     BadRequestException,
     ConflictException,
@@ -91,7 +90,6 @@ export class DocumentSignatureService {
             height: dto.height,
         };
 
-        // Ensure unique signer per document
         const alreadyExists = doc.signatures.some(
             (s) => s.signerId === dto.signerId,
         );
@@ -144,7 +142,6 @@ export class DocumentSignatureService {
             );
         }
 
-        // In production, would send email invitation here
         this.logger.log(
             `Signer invited - Document: ${documentId}, Signer: ${dto.signerId}`,
         );
@@ -160,7 +157,6 @@ export class DocumentSignatureService {
         signerId: string,
         dto: SignDocumentDto,
     ) {
-        // Verify TOTP if provided
         if (dto.totpCode) {
             const isValidTotp = await this.totpService.verifyToken(
                 signerId,
@@ -179,7 +175,6 @@ export class DocumentSignatureService {
             throw new NotFoundException("Document not found");
         }
 
-        // Find signer's signature zone
         const signatureIndex = doc.signatures.findIndex(
             (s) => s.signerId === signerId && s.status === "pending",
         );
@@ -189,7 +184,6 @@ export class DocumentSignatureService {
             );
         }
 
-        // Update signature entry
         const signature = doc.signatures[signatureIndex];
         const signatureData = this.generateSignatureData(
             documentId,

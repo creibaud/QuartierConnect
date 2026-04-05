@@ -5,14 +5,14 @@
 up: ## Start all services
 	docker compose up -d
 
-up-dev: ## Start all services with development configuration
-	docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+up-dev: ## Start all services with development configuration (hot reload)
+	docker compose -f docker-compose.dev.yml up -d --build
 
 down: ## Stop all services
 	docker compose down
 
 down-dev: ## Stop all services and remove volumes (development)
-	docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
+	docker compose -f docker-compose.dev.yml down -v
 
 build: ## Build all Docker images
 	docker compose build
@@ -63,15 +63,15 @@ install: ## Install all dependencies
 
 # ─── Tests ─────────────────────────────────────────────────────────────────────
 
-test: test-api test-desktop test-dsl ## Run all tests
+test: test-api test-desktop test-dsl ## Run all tests locally
 
-test-api: ## Run API tests
+test-api: ## Run API unit tests (local)
 	cd api && pnpm test
 
-test-api-cov: ## Run API tests with coverage
+test-api-cov: ## Run API tests with coverage (local)
 	cd api && pnpm test:cov
 
-test-api-e2e: ## Run API end-to-end tests
+test-api-e2e: ## Run API end-to-end tests (local, requires databases)
 	cd api && pnpm test:e2e
 
 test-desktop: ## Run desktop tests (Maven)
@@ -82,6 +82,23 @@ test-dsl: ## Run DSL tests with coverage
 
 test-dsl-watch: ## Run DSL tests in watch mode
 	cd dsl && uv run pytest --no-cov -x
+
+test-docker: ## Run all tests in isolated Docker environment (no hot reload)
+	docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from api-test
+	docker compose -f docker-compose.test.yml down -v
+
+test-docker-unit: ## Run API unit tests in Docker
+	docker compose -f docker-compose.test.yml run --rm api-unit
+
+test-docker-e2e: ## Run API e2e tests in Docker with real databases
+	docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from api-test postgres mongodb neo4j api-test
+	docker compose -f docker-compose.test.yml down -v
+
+test-docker-web: ## Run web-apps tests in Docker
+	docker compose -f docker-compose.test.yml run --rm web-test
+
+test-docker-clean: ## Remove test Docker volumes
+	docker compose -f docker-compose.test.yml down -v --remove-orphans
 
 # ─── Shells ────────────────────────────────────────────────────────────────────
 
@@ -126,5 +143,6 @@ help: ## Show this help
 .PHONY: up down build rebuild restart ps logs db-up db-reset \
         dev-api dev-client dev-back-office dev-desktop install \
         test test-api test-api-cov test-api-e2e test-desktop test-dsl test-dsl-watch \
+        test-docker test-docker-unit test-docker-e2e test-docker-web test-docker-clean \
         shell-api shell-postgres shell-mongodb shell-neo4j \
         format-api format-web format-dsl format-desktop format help

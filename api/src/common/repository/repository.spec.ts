@@ -124,7 +124,7 @@ describe("Repositories - Query Building & Data Access (Mock Tests)", () => {
                 .groupBy("severity");
 
             const total = result.reduce(
-                (sum: number, r: any) => sum + r.count,
+                (sum: number, r: { count: number }) => sum + r.count,
                 0,
             );
             expect(total).toBe(7);
@@ -238,7 +238,9 @@ describe("Repositories - Query Building & Data Access (Mock Tests)", () => {
                 .toArray();
 
             expect(
-                result.every((c: any) => c.participants.includes("user-1")),
+                result.every((c: { participants: string[] }) =>
+                    c.participants.includes("user-1"),
+                ),
             ).toBe(true);
         });
     });

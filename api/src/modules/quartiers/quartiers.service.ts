@@ -10,6 +10,10 @@ import { and, eq, ilike, sql } from "drizzle-orm";
 import { ObjectId } from "mongodb";
 import { PaginationQueryDto } from "src/common/dto/pagination-query.dto";
 import { PaginationHelper } from "src/common/helpers/pagination.helper";
+import {
+    buildPaginatedResult,
+    resolvePagination,
+} from "src/common/query/query.helper";
 import { type DrizzleDB } from "src/database/drizzle/drizzle.type";
 import { quartiers, userQuartiers, users } from "src/database/drizzle/schema";
 import {
@@ -23,15 +27,12 @@ import { AddMemberDto } from "src/modules/quartiers/dto/add-member.dto";
 import { CreateQuartierDto } from "src/modules/quartiers/dto/create-quartier.dto";
 import { QuartierQueryDto } from "src/modules/quartiers/dto/quartier-query.dto";
 import { UpdateQuartierDto } from "src/modules/quartiers/dto/update-quartier.dto";
-import type { IQuartiersRepository } from "src/modules/quartiers/quartier.repository";
 
 @Injectable()
 export class QuartiersService {
     private readonly logger = new Logger(QuartiersService.name);
 
     constructor(
-        @Inject("IQuartiersRepository")
-        private readonly quartierRepository: IQuartiersRepository,
         @Inject("DRIZZLE") private readonly db: DrizzleDB,
         @Inject("MONGODB") private readonly mongo: MongoDatabase,
         private readonly outbox: OutboxService,

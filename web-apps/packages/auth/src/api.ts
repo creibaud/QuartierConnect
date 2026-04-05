@@ -102,3 +102,43 @@ export async function apiFetch(
         credentials: "include",
     });
 }
+
+/**
+ * Broadcasts login session to local desktop app via SessionServer (http://localhost:9090)
+ * This enables seamless SSO: user logs in to web, desktop app automatically gets the session
+ */
+export async function syncSessionToDesktop(session: AuthSession): Promise<void> {
+    try {
+        const response = await fetch("http://localhost:9090/api/session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(session),
+        });
+
+        if (response.ok) {
+            console.log("✅ Session synced to desktop app.");
+        } else {
+            // Desktop app not running - that's fine, web login still works
+            console.log("ℹ️  Desktop app not accessible (not running?). Web session saved locally.");
+        }
+    } catch (error) {
+        // Desktop session server not available - not an error, web works fine standalone
+        console.log("ℹ️  Desktop session server unavailable. Continuing with web-only session.");
+    }
+}
+
+/**
+ * Legacy: Handles SSO callback with URI scheme (deprecated)
+ * Kept for backward compatibility but no longer used in new SSO architecture
+ */
+export function redirectToSSOCallback(session: AuthSession): void {
+    const params = new URLSearchParams(window.location.search);
+    const callbackUri = params.get("callbackUri");
+
+    if (!callbackUri) return;
+
+    const userJson = encodeURIComponent(JSON.stringify(session.user));
+    const redirectUrl = `${callbackUri}?token=${encodeURIComponent(session.accessToken)}&refreshToken=${encodeURIComponent(session.refreshToken || "")}&user=${userJson}`;
+
+    window.location.href = redirectUrl;
+}

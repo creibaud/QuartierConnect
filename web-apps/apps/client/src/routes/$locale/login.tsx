@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { completeTotpLogin, login } from "@workspace/auth/api";
+import {
+    completeTotpLogin,
+    login,
+    redirectToSSOCallback,
+    syncSessionToDesktop,
+} from "@workspace/auth/api";
 import { LoginForm } from "@workspace/auth/components/login-form";
 import { TotpForm } from "@workspace/auth/components/totp-form";
 import { useAuth } from "@workspace/auth/context";
@@ -45,6 +50,9 @@ function LoginPage() {
                 return;
             }
             auth.setSession(result.accessToken, result.user);
+            redirectToSSOCallback(result);
+            // Sync session to desktop app via SessionServer
+            void syncSessionToDesktop(result);
             void navigate({ to: "/$locale", params: { locale } });
         },
     });
@@ -56,6 +64,9 @@ function LoginPage() {
         },
         onSuccess: (result) => {
             auth.setSession(result.accessToken, result.user);
+            redirectToSSOCallback(result);
+            // Sync session to desktop app via SessionServer
+            void syncSessionToDesktop(result);
             void navigate({ to: "/$locale", params: { locale } });
         },
     });

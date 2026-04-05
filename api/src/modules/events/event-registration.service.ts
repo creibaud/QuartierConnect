@@ -25,7 +25,6 @@ export class EventRegistrationService {
     ) {}
 
     async register(eventId: string, userId: string) {
-        // Vérifier capacité
         const registrations = await this.eventRepository.getRegistrations(
             eventId,
             1,
@@ -44,7 +43,6 @@ export class EventRegistrationService {
             );
         }
 
-        // Vérifier déjà inscrit
         const alreadyRegistered = registrations.data.some(
             (r) => r.userId === userId && r.status !== "cancelled",
         );
@@ -55,10 +53,8 @@ export class EventRegistrationService {
             );
         }
 
-        // Inscrire
         await this.eventRepository.registerUser(eventId, userId);
 
-        // Publier événement
         await this.outbox.publish({
             aggregateType: "event_registration",
             aggregateId: `${eventId}:${userId}`,
@@ -104,7 +100,7 @@ export class EventRegistrationService {
         return {
             data: result.data.map((reg) => ({
                 ...reg,
-                id: (reg._id as any)?.toString(),
+                id: (reg._id as { toString(): string } | undefined)?.toString(),
                 _id: undefined,
             })),
             meta: {

@@ -21,14 +21,12 @@ export class EventSwipeService {
     async recordSwipe(userId: string, dto: SwipeEventDto) {
         const now = new Date();
 
-        // Enregistrer le swipe
         await this.eventRepository.recordSwipe(
             dto.eventId,
             userId,
             dto.liked ? "like" : "pass",
         );
 
-        // Publier événement seulement si like
         if (!dto.liked) {
             this.logger.log(`User ${userId} disliked event ${dto.eventId}`);
             return;

@@ -1,8 +1,4 @@
 services:
-  # =========================================================
-  # DATABASES
-  # =========================================================
-
   postgres:
     image: postgres:17-alpine
     environment:
@@ -61,16 +57,6 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # =========================================================
-  # NEO4J INTERFACE
-  # Browser interface is built in Neo4j service on :7474
-  # =========================================================
-
-  # =========================================================
-  # API — NestJS hot reload
-  # Seul src/ est monté : node_modules restent dans l'image
-  # =========================================================
-
   api:
     build:
       context: ./api
@@ -109,6 +95,8 @@ services:
       MAIL_USER: ${MAIL_USER:-test@example.com}
       MAIL_FROM: ${MAIL_FROM:-no-reply@quartierconnect.local}
       MAIL_PASS: ${MAIL_PASS:-test}
+      OUTBOX_CONTINUOUS_ENABLED: ${OUTBOX_CONTINUOUS_ENABLED:-true}
+      OUTBOX_POLL_INTERVAL_MS: ${OUTBOX_POLL_INTERVAL_MS:-5000}
     depends_on:
       postgres:
         condition: service_healthy
@@ -119,10 +107,6 @@ services:
     ports:
       - "3000:3000"
     restart: unless-stopped
-
-  # =========================================================
-  # DRIZZLE STUDIO — PostgreSQL admin UI
-  # =========================================================
 
   drizzle-studio:
     build:
@@ -146,11 +130,6 @@ services:
       - "4983:4983"
     restart: unless-stopped
 
-  # =========================================================
-  # CLIENT — Vite dev server (port 5174)
-  # Seul src/ et public/ sont montés pour le HMR
-  # =========================================================
-
   client:
     build:
       context: ./web-apps
@@ -170,10 +149,6 @@ services:
     ports:
       - "5174:5174"
     restart: unless-stopped
-
-  # =========================================================
-  # BACK-OFFICE — Vite dev server (port 5173)
-  # =========================================================
 
   back-office:
     build:
@@ -195,10 +170,6 @@ services:
       - "5173:5173"
     restart: unless-stopped
 
-  # =========================================================
-  # MONGO INTERFACE — Mongo Express
-  # =========================================================
-
   mongo-interface:
     image: mongo-express:latest
     environment:
@@ -214,13 +185,6 @@ services:
       - "8081:8081"
     restart: unless-stopped
 
-  # =========================================================
-  # CADDY — Reverse proxy local (HTTPS auto-signé)
-  # localhost        → client:5174
-  # admin.localhost  → back-office:5173
-  # api.localhost    → api:3000
-  # =========================================================
-
   caddy:
     image: caddy:2-alpine
     ports:
@@ -234,18 +198,28 @@ services:
       - api
       - client
       - back-office
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
-
-  # =========================================================
-  # MAILPIT — Serveur mail de dev (catch-all SMTP)
-  # UI : http://localhost:8025
-  # =========================================================
 
   mailpit:
     image: axllent/mailpit:latest
     ports:
       - "8025:8025"
       - "1025:1025"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8025",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped
 
 volumes:

@@ -4,3 +4,7 @@
 *.out
 *.toc
 *.gz
+.gitnexus
+*.md
+.gitnexus/
+.claude/

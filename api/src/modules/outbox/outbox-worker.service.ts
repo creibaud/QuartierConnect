@@ -84,7 +84,6 @@ export class OutboxWorkerService
                 `Outbox continuous worker iteration failed: ${message}`,
                 error,
             );
-            // Log will be picked up by monitoring; system continues polling
         } finally {
             this.isRunning = false;
         }

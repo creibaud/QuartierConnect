@@ -12,7 +12,6 @@ import {
 import type { MongoDatabase } from "src/database/mongodb/mongodb.type";
 
 export interface IEventsRepository {
-    // CRUD
     create(
         eventData: Omit<EventDocument, "_id" | "createdAt" | "updatedAt">,
     ): Promise<EventDocument>;
@@ -32,7 +31,6 @@ export interface IEventsRepository {
     ): Promise<EventDocument | null>;
     delete(id: ObjectId | string): Promise<boolean>;
 
-    // Registrations
     registerUser(
         eventId: ObjectId | string,
         userId: string,
@@ -51,7 +49,6 @@ export interface IEventsRepository {
     }>;
     getRegistrationCount(eventId: ObjectId | string): Promise<number>;
 
-    // Swipes (recommendations)
     getNextSwipe(userId: string, size: number): Promise<EventDocument[]>;
     recordSwipe(
         eventId: ObjectId | string,
@@ -239,7 +236,6 @@ export class EventRepository implements IEventsRepository {
         const collection = this.mongo.collection(this.collection);
         const swipesCollection = this.mongo.collection(this.swipesCollection);
 
-        // Get swiped event IDs
         const swipedEvents = await swipesCollection
             .find({ userId })
             .project({ eventId: 1 })

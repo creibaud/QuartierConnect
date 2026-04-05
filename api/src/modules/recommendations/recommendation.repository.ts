@@ -1,13 +1,11 @@
 import type { Neo4jDriver } from "src/database/neo4j/neo4j.type";
 
 export interface IRecommendationsRepository {
-    // User recommendations
     getRecommendations(
         userId: string,
         limit: number,
     ): Promise<{ id: string; strength: number }[]>;
 
-    // Social graph
     follow(userId: string, targetUserId: string): Promise<void>;
 
     unfollow(userId: string, targetUserId: string): Promise<void>;
@@ -16,14 +14,12 @@ export interface IRecommendationsRepository {
 
     getFollowers(userId: string): Promise<string[]>;
 
-    // Interest-based recommendations
     getInterestBasedRecommendations(
         userId: string,
         interests: string[],
         limit: number,
     ): Promise<{ id: string; matchScore: number }[]>;
 
-    // Syncing users to Neo4j
     syncUserToGraph(userId: string, email: string, role: string): Promise<void>;
 
     deleteUserFromGraph(userId: string): Promise<void>;

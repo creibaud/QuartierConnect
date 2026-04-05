@@ -30,9 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setAccessToken(session.accessToken);
                 setUser(session.user);
             })
-            .catch(() => {
-                // No valid refresh token — user needs to log in
-            })
+            .catch(() => undefined)
             .finally(() => {
                 setIsLoading(false);
             });
