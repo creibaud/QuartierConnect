@@ -19,5 +19,6 @@
         "^@/(.*)$",
         "^[./]"
     ],
-    "tailwindAttributes": ["className", "classNames", "tw"]
+    "tailwindAttributes": ["className", "classNames", "tw"],
+    "tailwindFunctions": ["cn", "cva"]
 }

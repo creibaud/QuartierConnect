@@ -1,0 +1,91 @@
+export default {
+    common: {
+        loading: "Loading...",
+        error: "An error occurred",
+        retry: "Retry",
+        save: "Save",
+        cancel: "Cancel",
+        confirm: "Confirm",
+        delete: "Delete",
+        close: "Close",
+        back: "Back",
+        search: "Search",
+        noResults: "No results",
+    },
+    auth: {
+        login: "Log in",
+        logout: "Log out",
+        register: "Register",
+        email: "Email",
+        password: "Password",
+        totpCode: "TOTP code",
+        forgotPassword: "Forgot password?",
+        loginSuccess: "Login successful",
+        logoutSuccess: "Logged out successfully",
+    },
+    incidents: {
+        title: "Incidents",
+        new: "Report an incident",
+        status: {
+            open: "Open",
+            in_progress: "In progress",
+            resolved: "Resolved",
+        },
+        fields: {
+            title: "Title",
+            description: "Description",
+            neighborhood: "Neighborhood",
+        },
+    },
+    contracts: {
+        title: "Contracts",
+        new: "New contract",
+        sign: "Sign",
+        status: {
+            draft: "Draft",
+            pending_signature: "Pending signature",
+            signed: "Signed",
+            rejected: "Rejected",
+        },
+        signDialog: {
+            title: "Sign the contract",
+            description: "Enter your TOTP code to confirm the signature.",
+            totpPlaceholder: "6-digit code",
+        },
+    },
+    messaging: {
+        title: "Messaging",
+        newConversation: "New conversation",
+        sendMessage: "Send message",
+        typePlaceholder: "Type a message...",
+        attachFile: "Attach a file",
+    },
+    votes: {
+        like: "Like",
+        dislike: "Dislike",
+        upvote: "Upvote",
+        downvote: "Downvote",
+    },
+    documents: {
+        title: "Documents",
+        upload: "Upload",
+        download: "Download",
+        delete: "Delete",
+        auditLog: "Access log",
+    },
+    recommendations: {
+        title: "Recommendations",
+        empty: "No recommendations yet",
+        types: {
+            service: "Service",
+            event: "Event",
+            neighbor: "Neighbor",
+        },
+    },
+    rgpd: {
+        exportData: "Export my data",
+        deleteAccount: "Delete my account",
+        deleteWarning:
+            "This action is irreversible. All your personal data will be anonymized.",
+    },
+} as const;

@@ -1,0 +1,138 @@
+export interface Incident {
+    id: string;
+    title: string;
+    description: string | null;
+    status: "open" | "in_progress" | "resolved";
+    neighborhoodId: string | null;
+    createdBy: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface User {
+    id: string;
+    email: string;
+    role: "resident" | "moderator" | "admin" | "banned";
+    createdAt: string;
+}
+
+export interface GeoJsonPolygon {
+    type: "Polygon";
+    coordinates: number[][][];
+}
+
+export interface Neighborhood {
+    _id: string;
+    name: string;
+    city: string;
+    description?: string;
+    geometry?: GeoJsonPolygon;
+}
+
+export interface Service {
+    _id: string;
+    title: string;
+    category: string;
+    type: string;
+    description: string;
+    address?: string;
+    neighborhoodId?: string;
+    pointsMultiplier?: number;
+}
+
+export interface Event {
+    _id: string;
+    title: string;
+    description: string;
+    category: string;
+    date: string;
+    location: string;
+    neighborhoodId: string;
+}
+
+export interface PointBalance {
+    balance: number;
+}
+
+export interface PaginatedResponse<T> {
+    data: T[];
+    pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
+
+export interface Recommendation {
+    type: "service" | "event" | "neighbor";
+    id: string;
+    name: string;
+    score: number;
+    reason: string;
+}
+
+export interface Contract {
+    _id: string;
+    title: string;
+    content: string;
+    createdBy: string;
+    signatories: string[];
+    status: "draft" | "pending_signature" | "signed" | "rejected";
+    contentHash: string | null;
+    signedAt: string | null;
+    signatures: Array<{ userId: string; signedAt: string; hash: string }>;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface Conversation {
+    _id: string;
+    participants: string[];
+    isGroup: boolean;
+    groupName: string | null;
+    neighborhoodId: string | null;
+    lastMessageAt: string | null;
+    createdAt: string;
+}
+
+export interface Message {
+    _id: string;
+    conversationId: string;
+    senderId: string;
+    type: "text" | "file" | "image";
+    content: string | null;
+    fileId: string | null;
+    fileName: string | null;
+    deleted: boolean;
+    createdAt: string;
+}
+
+export interface VoteScore {
+    score: number;
+    breakdown: Record<string, number>;
+}
+
+export type VoteTargetType = "incident" | "service" | "event" | "comment";
+export type VoteType = "like" | "dislike" | "up" | "down";
+
+export interface DocumentMeta {
+    fileId: string;
+    fileName: string;
+    contentType: string;
+    size: number;
+    uploadedBy: string;
+    uploadedAt: string;
+}
+
+export interface UserExport {
+    profile: {
+        id: string;
+        email: string;
+        role: string;
+        createdAt: string;
+    } | null;
+    incidents: Incident[];
+    pointsBalance: PointBalance | null;
+    transactions: unknown[];
+}

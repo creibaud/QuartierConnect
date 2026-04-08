@@ -1,0 +1,30 @@
+{
+    "name": "@workspace/shared",
+    "version": "0.0.0",
+    "type": "module",
+    "private": true,
+    "exports": {
+        "./lib/*": "./src/lib/*.ts",
+        "./lib/hooks/*": "./src/lib/hooks/*.ts",
+        "./lib/api/*": "./src/lib/api/*.ts",
+        "./lib/i18n/*": "./src/lib/i18n/*.ts"
+    },
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "devDependencies": {
+        "@tanstack/react-query": "^5.96.2",
+        "@testing-library/react": "^16.3.0",
+        "@testing-library/user-event": "^14.6.1",
+        "i18next": "^26.0.3",
+        "jsdom": "^26.1.0",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
+        "react-i18next": "^17.0.2",
+        "vitest": "^3.2.4"
+    },
+    "dependencies": {
+        "socket.io-client": "^4.8.3"
+    }
+}

@@ -1,0 +1,91 @@
+export default {
+    common: {
+        loading: "Chargement...",
+        error: "Une erreur est survenue",
+        retry: "Réessayer",
+        save: "Enregistrer",
+        cancel: "Annuler",
+        confirm: "Confirmer",
+        delete: "Supprimer",
+        close: "Fermer",
+        back: "Retour",
+        search: "Rechercher",
+        noResults: "Aucun résultat",
+    },
+    auth: {
+        login: "Se connecter",
+        logout: "Se déconnecter",
+        register: "S'inscrire",
+        email: "Email",
+        password: "Mot de passe",
+        totpCode: "Code TOTP",
+        forgotPassword: "Mot de passe oublié ?",
+        loginSuccess: "Connexion réussie",
+        logoutSuccess: "Déconnexion réussie",
+    },
+    incidents: {
+        title: "Incidents",
+        new: "Signaler un incident",
+        status: {
+            open: "Ouvert",
+            in_progress: "En cours",
+            resolved: "Résolu",
+        },
+        fields: {
+            title: "Titre",
+            description: "Description",
+            neighborhood: "Quartier",
+        },
+    },
+    contracts: {
+        title: "Contrats",
+        new: "Nouveau contrat",
+        sign: "Signer",
+        status: {
+            draft: "Brouillon",
+            pending_signature: "En attente de signature",
+            signed: "Signé",
+            rejected: "Rejeté",
+        },
+        signDialog: {
+            title: "Signer le contrat",
+            description: "Entrez votre code TOTP pour confirmer la signature.",
+            totpPlaceholder: "Code à 6 chiffres",
+        },
+    },
+    messaging: {
+        title: "Messagerie",
+        newConversation: "Nouvelle conversation",
+        sendMessage: "Envoyer un message",
+        typePlaceholder: "Écrire un message...",
+        attachFile: "Joindre un fichier",
+    },
+    votes: {
+        like: "J'aime",
+        dislike: "Je n'aime pas",
+        upvote: "Voter pour",
+        downvote: "Voter contre",
+    },
+    documents: {
+        title: "Documents",
+        upload: "Téléverser",
+        download: "Télécharger",
+        delete: "Supprimer",
+        auditLog: "Journal d'accès",
+    },
+    recommendations: {
+        title: "Recommandations",
+        empty: "Aucune recommandation pour le moment",
+        types: {
+            service: "Service",
+            event: "Événement",
+            neighbor: "Voisin",
+        },
+    },
+    rgpd: {
+        exportData: "Exporter mes données",
+        deleteAccount: "Supprimer mon compte",
+        deleteWarning:
+            "Cette action est irréversible. Toutes vos données personnelles seront anonymisées.",
+    },
+} as const;

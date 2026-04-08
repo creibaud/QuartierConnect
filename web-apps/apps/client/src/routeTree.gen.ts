@@ -9,16 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./routes/__root";
-import { Route as LocaleRouteImport } from "./routes/$locale";
-import { Route as LocaleAuthenticatedRouteImport } from "./routes/$locale/_authenticated";
-import { Route as LocaleAuthenticatedIndexRouteImport } from "./routes/$locale/_authenticated/index";
-import { Route as LocaleLoginRouteImport } from "./routes/$locale/login";
-import { Route as LocaleRegisterRouteImport } from "./routes/$locale/register";
+import { Route as ContractsIndexRouteImport } from "./routes/contracts/index";
+import { Route as DashboardIndexRouteImport } from "./routes/dashboard/index";
+import { Route as EventsIndexRouteImport } from "./routes/events/index";
+import { Route as IncidentsIdRouteImport } from "./routes/incidents/$id";
+import { Route as IncidentsIndexRouteImport } from "./routes/incidents/index";
 import { Route as IndexRouteImport } from "./routes/index";
+import { Route as LoginRouteImport } from "./routes/login";
+import { Route as RegisterRouteImport } from "./routes/register";
+import { Route as ServicesIndexRouteImport } from "./routes/services/index";
+import { Route as SsoAuthorizeRouteImport } from "./routes/sso/authorize";
+import { Route as VotesIndexRouteImport } from "./routes/votes/index";
 
-const LocaleRoute = LocaleRouteImport.update({
-    id: "/$locale",
-    path: "/$locale",
+const RegisterRoute = RegisterRouteImport.update({
+    id: "/register",
+    path: "/register",
+    getParentRoute: () => rootRouteImport,
+} as any);
+const LoginRoute = LoginRouteImport.update({
+    id: "/login",
+    path: "/login",
     getParentRoute: () => rootRouteImport,
 } as any);
 const IndexRoute = IndexRouteImport.update({
@@ -26,81 +36,157 @@ const IndexRoute = IndexRouteImport.update({
     path: "/",
     getParentRoute: () => rootRouteImport,
 } as any);
-const LocaleRegisterRoute = LocaleRegisterRouteImport.update({
-    id: "/register",
-    path: "/register",
-    getParentRoute: () => LocaleRoute,
+const VotesIndexRoute = VotesIndexRouteImport.update({
+    id: "/votes/",
+    path: "/votes/",
+    getParentRoute: () => rootRouteImport,
 } as any);
-const LocaleLoginRoute = LocaleLoginRouteImport.update({
-    id: "/login",
-    path: "/login",
-    getParentRoute: () => LocaleRoute,
+const ServicesIndexRoute = ServicesIndexRouteImport.update({
+    id: "/services/",
+    path: "/services/",
+    getParentRoute: () => rootRouteImport,
 } as any);
-const LocaleAuthenticatedRoute = LocaleAuthenticatedRouteImport.update({
-    id: "/_authenticated",
-    getParentRoute: () => LocaleRoute,
+const IncidentsIndexRoute = IncidentsIndexRouteImport.update({
+    id: "/incidents/",
+    path: "/incidents/",
+    getParentRoute: () => rootRouteImport,
 } as any);
-const LocaleAuthenticatedIndexRoute =
-    LocaleAuthenticatedIndexRouteImport.update({
-        id: "/",
-        path: "/",
-        getParentRoute: () => LocaleAuthenticatedRoute,
-    } as any);
+const EventsIndexRoute = EventsIndexRouteImport.update({
+    id: "/events/",
+    path: "/events/",
+    getParentRoute: () => rootRouteImport,
+} as any);
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+    id: "/dashboard/",
+    path: "/dashboard/",
+    getParentRoute: () => rootRouteImport,
+} as any);
+const ContractsIndexRoute = ContractsIndexRouteImport.update({
+    id: "/contracts/",
+    path: "/contracts/",
+    getParentRoute: () => rootRouteImport,
+} as any);
+const SsoAuthorizeRoute = SsoAuthorizeRouteImport.update({
+    id: "/sso/authorize",
+    path: "/sso/authorize",
+    getParentRoute: () => rootRouteImport,
+} as any);
+const IncidentsIdRoute = IncidentsIdRouteImport.update({
+    id: "/incidents/$id",
+    path: "/incidents/$id",
+    getParentRoute: () => rootRouteImport,
+} as any);
 
 export interface FileRoutesByFullPath {
     "/": typeof IndexRoute;
-    "/$locale": typeof LocaleAuthenticatedRouteWithChildren;
-    "/$locale/login": typeof LocaleLoginRoute;
-    "/$locale/register": typeof LocaleRegisterRoute;
-    "/$locale/": typeof LocaleAuthenticatedIndexRoute;
+    "/login": typeof LoginRoute;
+    "/register": typeof RegisterRoute;
+    "/incidents/$id": typeof IncidentsIdRoute;
+    "/sso/authorize": typeof SsoAuthorizeRoute;
+    "/contracts/": typeof ContractsIndexRoute;
+    "/dashboard/": typeof DashboardIndexRoute;
+    "/events/": typeof EventsIndexRoute;
+    "/incidents/": typeof IncidentsIndexRoute;
+    "/services/": typeof ServicesIndexRoute;
+    "/votes/": typeof VotesIndexRoute;
 }
 export interface FileRoutesByTo {
     "/": typeof IndexRoute;
-    "/$locale": typeof LocaleAuthenticatedIndexRoute;
-    "/$locale/login": typeof LocaleLoginRoute;
-    "/$locale/register": typeof LocaleRegisterRoute;
+    "/login": typeof LoginRoute;
+    "/register": typeof RegisterRoute;
+    "/incidents/$id": typeof IncidentsIdRoute;
+    "/sso/authorize": typeof SsoAuthorizeRoute;
+    "/contracts": typeof ContractsIndexRoute;
+    "/dashboard": typeof DashboardIndexRoute;
+    "/events": typeof EventsIndexRoute;
+    "/incidents": typeof IncidentsIndexRoute;
+    "/services": typeof ServicesIndexRoute;
+    "/votes": typeof VotesIndexRoute;
 }
 export interface FileRoutesById {
     __root__: typeof rootRouteImport;
     "/": typeof IndexRoute;
-    "/$locale": typeof LocaleRouteWithChildren;
-    "/$locale/_authenticated": typeof LocaleAuthenticatedRouteWithChildren;
-    "/$locale/login": typeof LocaleLoginRoute;
-    "/$locale/register": typeof LocaleRegisterRoute;
-    "/$locale/_authenticated/": typeof LocaleAuthenticatedIndexRoute;
+    "/login": typeof LoginRoute;
+    "/register": typeof RegisterRoute;
+    "/incidents/$id": typeof IncidentsIdRoute;
+    "/sso/authorize": typeof SsoAuthorizeRoute;
+    "/contracts/": typeof ContractsIndexRoute;
+    "/dashboard/": typeof DashboardIndexRoute;
+    "/events/": typeof EventsIndexRoute;
+    "/incidents/": typeof IncidentsIndexRoute;
+    "/services/": typeof ServicesIndexRoute;
+    "/votes/": typeof VotesIndexRoute;
 }
 export interface FileRouteTypes {
     fileRoutesByFullPath: FileRoutesByFullPath;
     fullPaths:
         | "/"
-        | "/$locale"
-        | "/$locale/login"
-        | "/$locale/register"
-        | "/$locale/";
+        | "/login"
+        | "/register"
+        | "/incidents/$id"
+        | "/sso/authorize"
+        | "/contracts/"
+        | "/dashboard/"
+        | "/events/"
+        | "/incidents/"
+        | "/services/"
+        | "/votes/";
     fileRoutesByTo: FileRoutesByTo;
-    to: "/" | "/$locale" | "/$locale/login" | "/$locale/register";
+    to:
+        | "/"
+        | "/login"
+        | "/register"
+        | "/incidents/$id"
+        | "/sso/authorize"
+        | "/contracts"
+        | "/dashboard"
+        | "/events"
+        | "/incidents"
+        | "/services"
+        | "/votes";
     id:
         | "__root__"
         | "/"
-        | "/$locale"
-        | "/$locale/_authenticated"
-        | "/$locale/login"
-        | "/$locale/register"
-        | "/$locale/_authenticated/";
+        | "/login"
+        | "/register"
+        | "/incidents/$id"
+        | "/sso/authorize"
+        | "/contracts/"
+        | "/dashboard/"
+        | "/events/"
+        | "/incidents/"
+        | "/services/"
+        | "/votes/";
     fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
     IndexRoute: typeof IndexRoute;
-    LocaleRoute: typeof LocaleRouteWithChildren;
+    LoginRoute: typeof LoginRoute;
+    RegisterRoute: typeof RegisterRoute;
+    IncidentsIdRoute: typeof IncidentsIdRoute;
+    SsoAuthorizeRoute: typeof SsoAuthorizeRoute;
+    ContractsIndexRoute: typeof ContractsIndexRoute;
+    DashboardIndexRoute: typeof DashboardIndexRoute;
+    EventsIndexRoute: typeof EventsIndexRoute;
+    IncidentsIndexRoute: typeof IncidentsIndexRoute;
+    ServicesIndexRoute: typeof ServicesIndexRoute;
+    VotesIndexRoute: typeof VotesIndexRoute;
 }
 
 declare module "@tanstack/react-router" {
     interface FileRoutesByPath {
-        "/$locale": {
-            id: "/$locale";
-            path: "/$locale";
-            fullPath: "/$locale";
-            preLoaderRoute: typeof LocaleRouteImport;
+        "/register": {
+            id: "/register";
+            path: "/register";
+            fullPath: "/register";
+            preLoaderRoute: typeof RegisterRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        "/login": {
+            id: "/login";
+            path: "/login";
+            fullPath: "/login";
+            preLoaderRoute: typeof LoginRouteImport;
             parentRoute: typeof rootRouteImport;
         };
         "/": {
@@ -110,66 +196,77 @@ declare module "@tanstack/react-router" {
             preLoaderRoute: typeof IndexRouteImport;
             parentRoute: typeof rootRouteImport;
         };
-        "/$locale/register": {
-            id: "/$locale/register";
-            path: "/register";
-            fullPath: "/$locale/register";
-            preLoaderRoute: typeof LocaleRegisterRouteImport;
-            parentRoute: typeof LocaleRoute;
+        "/votes/": {
+            id: "/votes/";
+            path: "/votes";
+            fullPath: "/votes/";
+            preLoaderRoute: typeof VotesIndexRouteImport;
+            parentRoute: typeof rootRouteImport;
         };
-        "/$locale/login": {
-            id: "/$locale/login";
-            path: "/login";
-            fullPath: "/$locale/login";
-            preLoaderRoute: typeof LocaleLoginRouteImport;
-            parentRoute: typeof LocaleRoute;
+        "/services/": {
+            id: "/services/";
+            path: "/services";
+            fullPath: "/services/";
+            preLoaderRoute: typeof ServicesIndexRouteImport;
+            parentRoute: typeof rootRouteImport;
         };
-        "/$locale/_authenticated": {
-            id: "/$locale/_authenticated";
-            path: "";
-            fullPath: "/$locale";
-            preLoaderRoute: typeof LocaleAuthenticatedRouteImport;
-            parentRoute: typeof LocaleRoute;
+        "/incidents/": {
+            id: "/incidents/";
+            path: "/incidents";
+            fullPath: "/incidents/";
+            preLoaderRoute: typeof IncidentsIndexRouteImport;
+            parentRoute: typeof rootRouteImport;
         };
-        "/$locale/_authenticated/": {
-            id: "/$locale/_authenticated/";
-            path: "/";
-            fullPath: "/$locale/";
-            preLoaderRoute: typeof LocaleAuthenticatedIndexRouteImport;
-            parentRoute: typeof LocaleAuthenticatedRoute;
+        "/events/": {
+            id: "/events/";
+            path: "/events";
+            fullPath: "/events/";
+            preLoaderRoute: typeof EventsIndexRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        "/dashboard/": {
+            id: "/dashboard/";
+            path: "/dashboard";
+            fullPath: "/dashboard/";
+            preLoaderRoute: typeof DashboardIndexRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        "/contracts/": {
+            id: "/contracts/";
+            path: "/contracts";
+            fullPath: "/contracts/";
+            preLoaderRoute: typeof ContractsIndexRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        "/sso/authorize": {
+            id: "/sso/authorize";
+            path: "/sso/authorize";
+            fullPath: "/sso/authorize";
+            preLoaderRoute: typeof SsoAuthorizeRouteImport;
+            parentRoute: typeof rootRouteImport;
+        };
+        "/incidents/$id": {
+            id: "/incidents/$id";
+            path: "/incidents/$id";
+            fullPath: "/incidents/$id";
+            preLoaderRoute: typeof IncidentsIdRouteImport;
+            parentRoute: typeof rootRouteImport;
         };
     }
 }
 
-interface LocaleAuthenticatedRouteChildren {
-    LocaleAuthenticatedIndexRoute: typeof LocaleAuthenticatedIndexRoute;
-}
-
-const LocaleAuthenticatedRouteChildren: LocaleAuthenticatedRouteChildren = {
-    LocaleAuthenticatedIndexRoute: LocaleAuthenticatedIndexRoute,
-};
-
-const LocaleAuthenticatedRouteWithChildren =
-    LocaleAuthenticatedRoute._addFileChildren(LocaleAuthenticatedRouteChildren);
-
-interface LocaleRouteChildren {
-    LocaleAuthenticatedRoute: typeof LocaleAuthenticatedRouteWithChildren;
-    LocaleLoginRoute: typeof LocaleLoginRoute;
-    LocaleRegisterRoute: typeof LocaleRegisterRoute;
-}
-
-const LocaleRouteChildren: LocaleRouteChildren = {
-    LocaleAuthenticatedRoute: LocaleAuthenticatedRouteWithChildren,
-    LocaleLoginRoute: LocaleLoginRoute,
-    LocaleRegisterRoute: LocaleRegisterRoute,
-};
-
-const LocaleRouteWithChildren =
-    LocaleRoute._addFileChildren(LocaleRouteChildren);
-
 const rootRouteChildren: RootRouteChildren = {
     IndexRoute: IndexRoute,
-    LocaleRoute: LocaleRouteWithChildren,
+    LoginRoute: LoginRoute,
+    RegisterRoute: RegisterRoute,
+    IncidentsIdRoute: IncidentsIdRoute,
+    SsoAuthorizeRoute: SsoAuthorizeRoute,
+    ContractsIndexRoute: ContractsIndexRoute,
+    DashboardIndexRoute: DashboardIndexRoute,
+    EventsIndexRoute: EventsIndexRoute,
+    IncidentsIndexRoute: IncidentsIndexRoute,
+    ServicesIndexRoute: ServicesIndexRoute,
+    VotesIndexRoute: VotesIndexRoute,
 };
 export const routeTree = rootRouteImport
     ._addFileChildren(rootRouteChildren)

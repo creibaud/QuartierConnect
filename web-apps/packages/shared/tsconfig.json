@@ -1,0 +1,13 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "jsx": "react-jsx",
+        "moduleResolution": "bundler",
+        "verbatimModuleSyntax": true,
+        "paths": {
+            "@workspace/ui/*": ["../ui/src/*"],
+            "@workspace/shared/*": ["./src/*"]
+        }
+    },
+    "include": ["src"]
+}

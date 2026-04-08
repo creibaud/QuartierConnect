@@ -5,17 +5,20 @@
     "scripts": {
         "build": "turbo build",
         "dev": "turbo dev",
-        "dev:editor": "turbo dev:editor",
         "lint": "turbo lint",
-        "format": "turbo format -- --write && pnpm format:root && turbo lint -- --fix",
-        "format:root": "prettier --write \"*.{json,md,js,ts}\" --ignore-unknown",
-        "typecheck": "turbo typecheck"
+        "format": "pnpm format:root",
+        "format:root": "prettier --write .",
+        "typecheck": "turbo typecheck",
+        "test:e2e": "playwright test",
+        "test:e2e:ui": "playwright test --ui"
     },
     "devDependencies": {
         "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
+        "@playwright/test": "^1.59.1",
+        "otplib": "^13.4.0",
         "prettier": "^3.8.1",
         "prettier-plugin-tailwindcss": "^0.7.2",
-        "turbo": "^2.9.3",
+        "turbo": "^2.8.17",
         "typescript": "5.9.3"
     },
     "packageManager": "pnpm@9.15.9",
