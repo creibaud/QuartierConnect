@@ -12,6 +12,7 @@ import {
 } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 import { MessagingService } from "./messaging.service";
+import { ConversationDocument } from "./schemas/conversation.schema";
 import { MessageType } from "./schemas/message.schema";
 
 interface AuthSocket extends Socket {
@@ -29,14 +30,13 @@ export class MessagingGateway
     server: Server;
 
     private readonly logger = new Logger(MessagingGateway.name);
-    private readonly userSockets = new Map<string, string>();
 
     constructor(
         private readonly messagingService: MessagingService,
         private readonly jwtService: JwtService,
     ) {}
 
-    handleConnection(client: Socket) {
+    async handleConnection(client: Socket) {
         try {
             const token =
                 (client.handshake.auth as Record<string, string>)?.token ||
@@ -52,7 +52,16 @@ export class MessagingGateway
 
             const payload = this.jwtService.verify<{ sub: string }>(token);
             (client as AuthSocket).userId = payload.sub;
-            this.userSockets.set(payload.sub, client.id);
+
+            const conversations = await this.messagingService.findConversations(
+                payload.sub,
+            );
+            for (const conv of conversations) {
+                void client.join(
+                    `conversation:${(conv as ConversationDocument)._id.toString()}`,
+                );
+            }
+
             this.logger.log(`User ${payload.sub} connected`);
         } catch {
             client.disconnect();
@@ -62,7 +71,6 @@ export class MessagingGateway
     handleDisconnect(client: Socket) {
         const userId = (client as AuthSocket).userId;
         if (userId) {
-            this.userSockets.delete(userId);
             this.logger.log(`User ${userId} disconnected`);
         }
     }

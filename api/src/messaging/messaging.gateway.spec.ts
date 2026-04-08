@@ -8,6 +8,7 @@ import { MessageType } from "./schemas/message.schema";
 const mockMessagingService = {
     isParticipant: jest.fn(),
     sendMessage: jest.fn(),
+    findConversations: jest.fn(),
 };
 
 const mockJwtService = {
@@ -49,17 +50,24 @@ describe("MessagingGateway", () => {
     });
 
     describe("handleConnection", () => {
-        it("authenticates user from auth.token", () => {
+        it("authenticates user from auth.token and joins their conversations", async () => {
             const socket = makeSocket({
                 handshake: { auth: { token: "tok" }, headers: {} },
             });
             mockJwtService.verify.mockReturnValue({ sub: "user-1" });
+            mockMessagingService.findConversations.mockResolvedValue([
+                { _id: { toString: () => "conv-1" } },
+                { _id: { toString: () => "conv-2" } },
+            ]);
 
-            gateway.handleConnection(socket as any);
+            await gateway.handleConnection(socket as any);
+
             expect((socket as any).userId).toBe("user-1");
+            expect(socket.join).toHaveBeenCalledWith("conversation:conv-1");
+            expect(socket.join).toHaveBeenCalledWith("conversation:conv-2");
         });
 
-        it("authenticates user from Authorization header", () => {
+        it("authenticates user from Authorization header", async () => {
             const socket = makeSocket({
                 handshake: {
                     auth: {},
@@ -67,19 +75,20 @@ describe("MessagingGateway", () => {
                 },
             });
             mockJwtService.verify.mockReturnValue({ sub: "user-2" });
+            mockMessagingService.findConversations.mockResolvedValue([]);
 
-            gateway.handleConnection(socket as any);
+            await gateway.handleConnection(socket as any);
             expect((socket as any).userId).toBe("user-2");
         });
 
-        it("disconnects when no token provided", () => {
+        it("disconnects when no token provided", async () => {
             const socket = makeSocket({ handshake: { auth: {}, headers: {} } });
 
-            gateway.handleConnection(socket as any);
+            await gateway.handleConnection(socket as any);
             expect(socket.disconnect).toHaveBeenCalled();
         });
 
-        it("disconnects when JWT verification fails", () => {
+        it("disconnects when JWT verification fails", async () => {
             const socket = makeSocket({
                 handshake: { auth: { token: "bad" }, headers: {} },
             });
@@ -87,13 +96,40 @@ describe("MessagingGateway", () => {
                 throw new Error("invalid");
             });
 
-            gateway.handleConnection(socket as any);
+            await gateway.handleConnection(socket as any);
             expect(socket.disconnect).toHaveBeenCalled();
+        });
+
+        it("disconnects when findConversations throws", async () => {
+            const socket = makeSocket({
+                handshake: { auth: { token: "tok" }, headers: {} },
+            });
+            mockJwtService.verify.mockReturnValue({ sub: "user-1" });
+            mockMessagingService.findConversations.mockRejectedValue(
+                new Error("DB error"),
+            );
+
+            await gateway.handleConnection(socket as any);
+            expect(socket.disconnect).toHaveBeenCalled();
+        });
+
+        it("connects with no conversations without error", async () => {
+            const socket = makeSocket({
+                handshake: { auth: { token: "tok" }, headers: {} },
+            });
+            mockJwtService.verify.mockReturnValue({ sub: "user-new" });
+            mockMessagingService.findConversations.mockResolvedValue([]);
+
+            await gateway.handleConnection(socket as any);
+
+            expect((socket as any).userId).toBe("user-new");
+            expect(socket.join).not.toHaveBeenCalled();
+            expect(socket.disconnect).not.toHaveBeenCalled();
         });
     });
 
     describe("handleDisconnect", () => {
-        it("removes user from tracking map", () => {
+        it("handles disconnect for authenticated socket", () => {
             const socket = { ...makeSocket(), userId: "user-1" };
             gateway.handleDisconnect(socket as any);
         });
