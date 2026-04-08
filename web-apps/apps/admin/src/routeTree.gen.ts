@@ -19,6 +19,7 @@ import { Route as EventsIndexRouteImport } from './routes/events/index'
 import { Route as DslIndexRouteImport } from './routes/dsl/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as CommunityVotesIndexRouteImport } from './routes/community-votes/index'
+import { Route as SsoAuthorizeRouteImport } from './routes/sso/authorize'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -70,10 +71,16 @@ const CommunityVotesIndexRoute = CommunityVotesIndexRouteImport.update({
   path: '/community-votes/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SsoAuthorizeRoute = SsoAuthorizeRouteImport.update({
+  id: '/sso/authorize',
+  path: '/sso/authorize',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/sso/authorize': typeof SsoAuthorizeRoute
   '/community-votes/': typeof CommunityVotesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dsl/': typeof DslIndexRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/sso/authorize': typeof SsoAuthorizeRoute
   '/community-votes': typeof CommunityVotesIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dsl': typeof DslIndexRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/sso/authorize': typeof SsoAuthorizeRoute
   '/community-votes/': typeof CommunityVotesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dsl/': typeof DslIndexRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/sso/authorize'
     | '/community-votes/'
     | '/dashboard/'
     | '/dsl/'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/sso/authorize'
     | '/community-votes'
     | '/dashboard'
     | '/dsl'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/login'
+    | '/sso/authorize'
     | '/community-votes/'
     | '/dashboard/'
     | '/dsl/'
@@ -150,6 +162,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  SsoAuthorizeRoute: typeof SsoAuthorizeRoute
   CommunityVotesIndexRoute: typeof CommunityVotesIndexRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   DslIndexRoute: typeof DslIndexRoute
@@ -232,12 +245,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CommunityVotesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sso/authorize': {
+      id: '/sso/authorize'
+      path: '/sso/authorize'
+      fullPath: '/sso/authorize'
+      preLoaderRoute: typeof SsoAuthorizeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  SsoAuthorizeRoute: SsoAuthorizeRoute,
   CommunityVotesIndexRoute: CommunityVotesIndexRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   DslIndexRoute: DslIndexRoute,

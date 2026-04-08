@@ -18,7 +18,6 @@ import { Route as IncidentsIndexRouteImport } from './routes/incidents/index'
 import { Route as EventsIndexRouteImport } from './routes/events/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as ContractsIndexRouteImport } from './routes/contracts/index'
-import { Route as SsoAuthorizeRouteImport } from './routes/sso/authorize'
 import { Route as IncidentsIdRouteImport } from './routes/incidents/$id'
 
 const RegisterRoute = RegisterRouteImport.update({
@@ -66,11 +65,6 @@ const ContractsIndexRoute = ContractsIndexRouteImport.update({
   path: '/contracts/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SsoAuthorizeRoute = SsoAuthorizeRouteImport.update({
-  id: '/sso/authorize',
-  path: '/sso/authorize',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IncidentsIdRoute = IncidentsIdRouteImport.update({
   id: '/incidents/$id',
   path: '/incidents/$id',
@@ -82,7 +76,6 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/incidents/$id': typeof IncidentsIdRoute
-  '/sso/authorize': typeof SsoAuthorizeRoute
   '/contracts/': typeof ContractsIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/events/': typeof EventsIndexRoute
@@ -95,7 +88,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/incidents/$id': typeof IncidentsIdRoute
-  '/sso/authorize': typeof SsoAuthorizeRoute
   '/contracts': typeof ContractsIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/events': typeof EventsIndexRoute
@@ -109,7 +101,6 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/incidents/$id': typeof IncidentsIdRoute
-  '/sso/authorize': typeof SsoAuthorizeRoute
   '/contracts/': typeof ContractsIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/events/': typeof EventsIndexRoute
@@ -124,7 +115,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/incidents/$id'
-    | '/sso/authorize'
     | '/contracts/'
     | '/dashboard/'
     | '/events/'
@@ -137,7 +127,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/incidents/$id'
-    | '/sso/authorize'
     | '/contracts'
     | '/dashboard'
     | '/events'
@@ -150,7 +139,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/incidents/$id'
-    | '/sso/authorize'
     | '/contracts/'
     | '/dashboard/'
     | '/events/'
@@ -164,7 +152,6 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   IncidentsIdRoute: typeof IncidentsIdRoute
-  SsoAuthorizeRoute: typeof SsoAuthorizeRoute
   ContractsIndexRoute: typeof ContractsIndexRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   EventsIndexRoute: typeof EventsIndexRoute
@@ -238,13 +225,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContractsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sso/authorize': {
-      id: '/sso/authorize'
-      path: '/sso/authorize'
-      fullPath: '/sso/authorize'
-      preLoaderRoute: typeof SsoAuthorizeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/incidents/$id': {
       id: '/incidents/$id'
       path: '/incidents/$id'
@@ -260,7 +240,6 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   IncidentsIdRoute: IncidentsIdRoute,
-  SsoAuthorizeRoute: SsoAuthorizeRoute,
   ContractsIndexRoute: ContractsIndexRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   EventsIndexRoute: EventsIndexRoute,
