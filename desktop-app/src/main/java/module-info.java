@@ -6,6 +6,7 @@ module fr.quartierconnect.desktopapp {
     requires java.sql;
     requires java.prefs;
     requires com.fasterxml.jackson.databind;
+    requires java.keyring;
 
     opens fr.quartierconnect.desktopapp to javafx.fxml;
     opens fr.quartierconnect.desktopapp.views to javafx.fxml;

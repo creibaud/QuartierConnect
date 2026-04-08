@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for AuthService offline-login and session-resume behaviour.
+ * Email is persisted in SQLite; tokens are persisted in TokenVault (in-memory fallback in CI).
  * Uses a temp file SQLite database so connections share state between calls.
  */
 class AuthServiceOfflineTest {
@@ -43,7 +44,7 @@ class AuthServiceOfflineTest {
         SQLiteDatabase.initialize();
 
         auth = AuthService.getInstance();
-        auth.clearSession(); // clears memory + SQLite
+        auth.clearSession(); // clears memory + TokenVault + SQLite
     }
 
     // ------------------------------------------------------------------
@@ -63,7 +64,8 @@ class AuthServiceOfflineTest {
     @Test
     void tryResume_returnsTrue_whenValidAccessTokenCached() {
         String jwt = validJwt("alice@demo.fr");
-        SQLiteDatabase.saveSession("alice@demo.fr", jwt, "refresh.token");
+        SQLiteDatabase.saveSession("alice@demo.fr");
+        TokenVault.getInstance().saveTokens(jwt, "refresh.token");
 
         assertTrue(auth.tryResumeFromDatabase());
         assertTrue(auth.isAuthenticated());
@@ -76,45 +78,45 @@ class AuthServiceOfflineTest {
 
     @Test
     void tryResume_returnsTrue_whenAccessTokenExpiredButRefreshTokenPresent() {
-        String expired = expiredJwt("bob@demo.fr");
-        SQLiteDatabase.saveSession("bob@demo.fr", expired, "valid.refresh.token");
+        SQLiteDatabase.saveSession("bob@demo.fr");
+        TokenVault.getInstance().saveTokens(expiredJwt("bob@demo.fr"), "valid.refresh.token");
 
-        // Should still return true — offline-authenticated via refresh token
         assertTrue(auth.tryResumeFromDatabase());
     }
 
     @Test
     void tryResume_setsEmailFromDatabase_whenAccessTokenExpired() {
-        String expired = expiredJwt("bob@demo.fr");
-        SQLiteDatabase.saveSession("bob@demo.fr", expired, "valid.refresh.token");
+        SQLiteDatabase.saveSession("bob@demo.fr");
+        TokenVault.getInstance().saveTokens(expiredJwt("bob@demo.fr"), "valid.refresh.token");
 
         auth.tryResumeFromDatabase();
-        // Even without a valid access token, email comes from the SQLite cached value
         assertEquals("bob@demo.fr", auth.getCurrentUserEmail());
     }
 
     @Test
-    void tryResume_returnsFalse_whenBothTokensAbsent() {
-        SQLiteDatabase.saveSession("ghost@demo.fr", null, null);
+    void tryResume_returnsFalse_whenNoTokensStored() {
+        SQLiteDatabase.saveSession("ghost@demo.fr");
+        // No tokens in TokenVault
 
         assertFalse(auth.tryResumeFromDatabase());
         assertFalse(auth.isAuthenticated());
     }
 
     // ------------------------------------------------------------------
-    // clearSession — also clears SQLite
+    // clearSession — also clears TokenVault and SQLite
     // ------------------------------------------------------------------
 
     @Test
     void clearSession_removesSessionFromDatabase() {
         String jwt = validJwt("alice@demo.fr");
-        SQLiteDatabase.saveSession("alice@demo.fr", jwt, "refresh.token");
+        SQLiteDatabase.saveSession("alice@demo.fr");
+        TokenVault.getInstance().saveTokens(jwt, "refresh.token");
 
         auth.clearSession();
 
-        // After clear, a fresh resume should find nothing
         assertFalse(auth.tryResumeFromDatabase());
         assertNull(SQLiteDatabase.loadSession());
+        assertNull(TokenVault.getInstance().loadTokens());
     }
 
     // ------------------------------------------------------------------
@@ -123,13 +125,10 @@ class AuthServiceOfflineTest {
 
     @Test
     void isAuthenticated_returnsTrue_whenOnlyRefreshTokenAvailable() throws Exception {
-        // Simulate offline state: expired access + refresh in memory
         java.lang.reflect.Field refreshField = AuthService.class.getDeclaredField("refreshToken");
         refreshField.setAccessible(true);
         refreshField.set(auth, "some.refresh.token");
 
-        // No valid access token — but isAuthenticated should still return true
-        // because refresh token means we can reconnect when online
         assertTrue(auth.isAuthenticated());
     }
 
@@ -170,10 +169,10 @@ class AuthServiceOfflineTest {
 
     @Test
     void getCurrentUserEmail_fallsBackToCachedEmail_whenJwtUnavailable() {
-        SQLiteDatabase.saveSession("offline@demo.fr", expiredJwt("offline@demo.fr"), "refresh");
+        SQLiteDatabase.saveSession("offline@demo.fr");
+        TokenVault.getInstance().saveTokens(expiredJwt("offline@demo.fr"), "refresh");
         auth.tryResumeFromDatabase();
 
-        // Access token is expired, but we should still get the email from the DB-cached value
         assertEquals("offline@demo.fr", auth.getCurrentUserEmail());
     }
 

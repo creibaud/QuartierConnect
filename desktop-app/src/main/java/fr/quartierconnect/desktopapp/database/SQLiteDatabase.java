@@ -12,12 +12,8 @@ public class SQLiteDatabase {
 
     private static final String DB_URL = System.getProperty("sqlite.url", "jdbc:sqlite:quartierconnect.db");
 
-    /**
-     * Cached session for offline-resume. Stores email + tokens.
-     * Note: refresh token is stored in plaintext here for demo purposes.
-     * In production, use the OS keychain (SecretService on Linux, Keychain on macOS).
-     */
-    public record SessionRecord(String email, String accessToken, String refreshToken, String savedAt) {}
+    /** Cached session for offline-resume. Stores email only — tokens are in the OS keychain via TokenVault. */
+    public record SessionRecord(String email, String savedAt) {}
 
     public static void initialize() {
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
@@ -34,7 +30,6 @@ public class SQLiteDatabase {
                 )
                 """);
 
-            // Migration for existing DBs that pre-date the remote_id column
             try {
                 stmt.executeUpdate("ALTER TABLE incidents ADD COLUMN remote_id TEXT");
             } catch (SQLException ignored) {
@@ -51,53 +46,51 @@ public class SQLiteDatabase {
 
             stmt.executeUpdate("""
                 CREATE TABLE IF NOT EXISTS session (
-                    id            INTEGER PRIMARY KEY,
-                    email         TEXT NOT NULL,
-                    access_token  TEXT,
-                    refresh_token TEXT,
-                    saved_at      TEXT NOT NULL
+                    id       INTEGER PRIMARY KEY,
+                    email    TEXT NOT NULL,
+                    saved_at TEXT NOT NULL
                 )
                 """);
+
+            // Migration: drop plaintext token columns from pre-keychain databases
+            try {
+                stmt.executeUpdate("ALTER TABLE session DROP COLUMN access_token");
+            } catch (SQLException ignored) {}
+            try {
+                stmt.executeUpdate("ALTER TABLE session DROP COLUMN refresh_token");
+            } catch (SQLException ignored) {}
+
         } catch (SQLException e) {
             throw new RuntimeException("Failed to initialize SQLite database", e);
         }
     }
 
-    /** Persist the current session (upsert on id=1). */
-    public static void saveSession(String email, String accessToken, String refreshToken) {
+    /** Persist the user's email for offline display (upsert on id=1). Tokens are stored separately via TokenVault. */
+    public static void saveSession(String email) {
         String sql = """
-            INSERT INTO session (id, email, access_token, refresh_token, saved_at)
-            VALUES (1, ?, ?, ?, ?)
+            INSERT INTO session (id, email, saved_at)
+            VALUES (1, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 email = excluded.email,
-                access_token = excluded.access_token,
-                refresh_token = excluded.refresh_token,
                 saved_at = excluded.saved_at
             """;
         try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, email);
-            stmt.setString(2, accessToken);
-            stmt.setString(3, refreshToken);
-            stmt.setString(4, Instant.now().toString());
+            stmt.setString(2, Instant.now().toString());
             stmt.executeUpdate();
         } catch (SQLException e) {
-            // Non-critical — silently fail, session will just not persist
+            // Non-critical — silently fail, email just won't show offline
         }
     }
 
-    /** Load the persisted session, or null if none. */
+    /** Load the persisted session email, or null if none. */
     public static SessionRecord loadSession() {
-        String sql = "SELECT email, access_token, refresh_token, saved_at FROM session WHERE id = 1";
+        String sql = "SELECT email, saved_at FROM session WHERE id = 1";
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
             if (rs.next()) {
-                return new SessionRecord(
-                        rs.getString("email"),
-                        rs.getString("access_token"),
-                        rs.getString("refresh_token"),
-                        rs.getString("saved_at")
-                );
+                return new SessionRecord(rs.getString("email"), rs.getString("saved_at"));
             }
         } catch (SQLException e) {
             // Table may not exist yet in older DBs — safe to return null
@@ -105,7 +98,7 @@ public class SQLiteDatabase {
         return null;
     }
 
-    /** Delete the persisted session (called on logout). */
+    /** Delete the persisted session email (called on logout). */
     public static void clearSession() {
         String sql = "DELETE FROM session WHERE id = 1";
         try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {

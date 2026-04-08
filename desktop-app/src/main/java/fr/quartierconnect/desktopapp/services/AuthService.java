@@ -64,27 +64,29 @@ public class AuthService {
     // ------------------------------------------------------------------
 
     /**
-     * Try to resume a session from SQLite without any network call.
-     * Restores in-memory tokens and email from the persisted record.
+     * Try to resume a session from persistent storage without any network call.
+     * Email is restored from SQLite; tokens are restored from the OS keychain via TokenVault.
      *
-     * @return true if a valid (non-expired) access token was restored, false otherwise.
-     *         Also returns true when only a refresh token is available (offline-mode — caller
-     *         should trigger a background refresh when connectivity returns).
+     * @return true if a valid (non-expired) access token was restored, or if only a refresh
+     *         token is available (offline-mode — caller should trigger a background refresh
+     *         when connectivity returns).
      */
     public boolean tryResumeFromDatabase() {
-        SQLiteDatabase.SessionRecord rec = SQLiteDatabase.loadSession();
-        if (rec == null) return false;
+        SQLiteDatabase.SessionRecord emailRecord = SQLiteDatabase.loadSession();
+        TokenVault.TokenPair tokens = TokenVault.getInstance().loadTokens();
 
-        cachedEmail = rec.email();
-        refreshToken = rec.refreshToken();
+        if (emailRecord == null && tokens == null) return false;
 
-        if (rec.accessToken() != null && !isTokenExpired(rec.accessToken())) {
-            accessToken = rec.accessToken();
-            return true;
+        if (emailRecord != null) cachedEmail = emailRecord.email();
+
+        if (tokens != null) {
+            refreshToken = tokens.refreshToken();
+            if (tokens.accessToken() != null && !isTokenExpired(tokens.accessToken())) {
+                accessToken = tokens.accessToken();
+                return true;
+            }
         }
 
-        // Access token is expired but we have a refresh token — mark as offline-authenticated
-        // The caller will refresh when the network is available.
         return refreshToken != null;
     }
 
@@ -140,6 +142,7 @@ public class AuthService {
         accessToken = null;
         refreshToken = null;
         cachedEmail = null;
+        TokenVault.getInstance().clearTokens();
         SQLiteDatabase.clearSession();
     }
 
@@ -151,11 +154,8 @@ public class AuthService {
         accessToken = newAccessToken;
         refreshToken = newRefreshToken;
         cachedEmail = extractEmailFromJwt(newAccessToken);
-        SQLiteDatabase.saveSession(
-                cachedEmail != null ? cachedEmail : "",
-                newAccessToken,
-                newRefreshToken
-        );
+        TokenVault.getInstance().saveTokens(newAccessToken, newRefreshToken);
+        SQLiteDatabase.saveSession(cachedEmail != null ? cachedEmail : "");
     }
 
     private String extractEmailFromJwt(String token) {
