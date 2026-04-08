@@ -61,12 +61,12 @@ make totp
 
 ### Accès rapides
 
-| Surface         | URL                       | Compte         | Rôle     |
-| --------------- | ------------------------- | -------------- | -------- |
-| Client habitant | http://localhost          | alice@demo.fr  | resident |
-| Admin           | http://localhost/admin    | admin@demo.fr  | admin    |
-| API docs Scalar | http://localhost/api/docs | —              | —        |
-| Neo4j Browser   | http://localhost:7474     | neo4j/password | —        |
+| Surface | URL | Compte | Rôle |
+|---------|-----|--------|------|
+| Client habitant | http://localhost | alice@demo.fr | resident |
+| Admin | http://localhost/admin | admin@demo.fr | admin |
+| API docs Scalar | http://localhost/api/docs | — | — |
+| Neo4j Browser | http://localhost:7474 | neo4j/password | — |
 
 **Mot de passe** : `Demo1234!` pour tous les comptes
 **Code TOTP** : `oathtool --totp --base32 JBSWY3DPEHPK3PXP`
@@ -218,27 +218,27 @@ cd dsl && uv run pytest
 
 ## 5. Chiffres à connaître par cœur
 
-| Chiffre                         | Valeur                                                                                                               |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Tests unitaires API             | 236                                                                                                                  |
-| Tests Web shared hooks (Vitest) | 73                                                                                                                   |
-| Tests E2E API                   | 148                                                                                                                  |
-| Tests JUnit Java                | 63                                                                                                                   |
-| Tests pytest DSL                | 21                                                                                                                   |
-| Tests Playwright                | 79                                                                                                                   |
-| **Total tests**                 | **620**                                                                                                              |
-| Coverage statements API         | 95.7%                                                                                                                |
-| Coverage branches API           | 86.1%                                                                                                                |
-| Durée access token JWT          | 15 minutes                                                                                                           |
-| Durée refresh token JWT         | 7 jours                                                                                                              |
-| TTL token SSO                   | 5 minutes (300s)                                                                                                     |
-| Solde minimum points            | -10                                                                                                                  |
-| TTL anti-replay TOTP            | 90 secondes                                                                                                          |
-| Rate limiting                   | 100 req / 15 min / IP                                                                                                |
-| Collections DSL autorisées      | 5                                                                                                                    |
-| Conteneurs Docker               | 7                                                                                                                    |
-| Bases de données                | 3 (PostgreSQL, MongoDB, Neo4j) + 1 local (SQLite)                                                                    |
-| Tables PostgreSQL               | 4 (users, incidents, points_balances, points_transactions)                                                           |
-| Collections MongoDB             | 9 (neighborhoods, services, events, contracts, conversations, messages, votes, communityVotes, documents, ssoTokens) |
-| Modules NestJS                  | 15                                                                                                                   |
-| Taille du JAR desktop           | ~25 MB                                                                                                               |
+| Chiffre | Valeur |
+|---------|--------|
+| Tests unitaires API | 236 |
+| Tests Web shared hooks (Vitest) | 73 |
+| Tests E2E API | 148 |
+| Tests JUnit Java | 63 |
+| Tests pytest DSL | 21 |
+| Tests Playwright | 79 |
+| **Total tests** | **620** |
+| Coverage statements API | 95.7% |
+| Coverage branches API | 86.1% |
+| Durée access token JWT | 15 minutes |
+| Durée refresh token JWT | 7 jours |
+| TTL token SSO | 5 minutes (300s) |
+| Solde minimum points | -10 |
+| TTL anti-replay TOTP | 90 secondes |
+| Rate limiting | 100 req / 15 min / IP |
+| Collections DSL autorisées | 5 |
+| Conteneurs Docker | 7 |
+| Bases de données | 3 (PostgreSQL, MongoDB, Neo4j) + 1 local (SQLite) |
+| Tables PostgreSQL | 4 (users, incidents, points_balances, points_transactions) |
+| Collections MongoDB | 9 (neighborhoods, services, events, contracts, conversations, messages, votes, communityVotes, documents, ssoTokens) |
+| Modules NestJS | 15 |
+| Taille du JAR desktop | ~25 MB |

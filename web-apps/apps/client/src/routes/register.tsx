@@ -91,7 +91,7 @@ function RegisterPage() {
                     password: loginCredentials.password,
                     totpCode: value.totpCode,
                 });
-                setTokens(data.accessToken, data.refreshToken);
+                setTokens(data.accessToken);
                 toast.success("Compte créé avec succès !");
                 navigate({ to: "/dashboard" });
             } catch {

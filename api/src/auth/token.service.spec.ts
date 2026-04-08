@@ -17,13 +17,30 @@ describe("TokenService", () => {
     let mockDb: any;
     let jwtService: JwtService;
 
+    function makeWhereTerminal(rows: unknown[]) {
+        const terminal = Object.assign(Promise.resolve(rows), {
+            for: jest.fn().mockResolvedValue(rows),
+            limit: jest.fn().mockResolvedValue(rows),
+        });
+        return jest.fn().mockReturnValue(terminal);
+    }
+
     beforeEach(async () => {
         mockDb = {
             select: jest.fn().mockReturnThis(),
             from: jest.fn().mockReturnThis(),
-            where: jest.fn().mockResolvedValue([mockUser]),
+            where: makeWhereTerminal([mockUser]),
             update: jest.fn().mockReturnThis(),
             set: jest.fn().mockReturnThis(),
+            insert: jest.fn().mockReturnThis(),
+            values: jest.fn().mockReturnThis(),
+            onConflictDoNothing: jest.fn().mockResolvedValue(undefined),
+            delete: jest.fn().mockReturnThis(),
+            transaction: jest
+                .fn()
+                .mockImplementation((fn: (tx: unknown) => unknown) =>
+                    fn(mockDb),
+                ),
         };
 
         const module: TestingModule = await Test.createTestingModule({
@@ -51,11 +68,10 @@ describe("TokenService", () => {
         mockDb.from.mockReturnValue(mockDb);
         mockDb.update.mockReturnValue(mockDb);
         mockDb.set.mockReturnValue(mockDb);
-        mockDb.where.mockResolvedValue([mockUser]);
     });
 
     it("generates JWT pair and stores refreshTokenHash", async () => {
-        mockDb.where.mockResolvedValue(undefined);
+        mockDb.where = makeWhereTerminal([undefined]);
         const result = await service.generatePair({
             sub: mockUser.id,
             email: mockUser.email,
@@ -72,7 +88,7 @@ describe("TokenService", () => {
     it("rotates valid refresh token", async () => {
         const realRefresh = "refresh.token";
         const hash = await argon2.hash(realRefresh);
-        mockDb.where.mockResolvedValue([
+        mockDb.where = makeWhereTerminal([
             { ...mockUser, refreshTokenHash: hash },
         ]);
         mockDb.update.mockReturnValue(mockDb);
@@ -115,7 +131,7 @@ describe("TokenService", () => {
 
     it("throws UnauthorizedException for banned account during refresh", async () => {
         const hash = await argon2.hash("refresh.token");
-        mockDb.where.mockResolvedValue([
+        mockDb.where = makeWhereTerminal([
             { ...mockUser, role: "banned", refreshTokenHash: hash },
         ]);
         mockDb.update.mockReturnValue(mockDb);
@@ -131,7 +147,7 @@ describe("TokenService", () => {
     });
 
     it("throws UnauthorizedException for revoked token (null hash)", async () => {
-        mockDb.where.mockResolvedValue([
+        mockDb.where = makeWhereTerminal([
             { ...mockUser, refreshTokenHash: null },
         ]);
         await expect(service.rotateRefreshToken("any.token")).rejects.toThrow(
@@ -141,7 +157,7 @@ describe("TokenService", () => {
 
     it("throws UnauthorizedException for hash mismatch (cross-user attack)", async () => {
         const differentUserHash = await argon2.hash("different.refresh.token");
-        mockDb.where.mockResolvedValue([
+        mockDb.where = makeWhereTerminal([
             { ...mockUser, refreshTokenHash: differentUserHash },
         ]);
         await expect(
@@ -150,8 +166,28 @@ describe("TokenService", () => {
     });
 
     it("clears refreshTokenHash on revoke", async () => {
-        mockDb.where.mockResolvedValue(undefined);
+        mockDb.where = makeWhereTerminal([undefined]);
         await service.revokeRefreshToken(mockUser.id);
         expect(mockDb.set).toHaveBeenCalledWith({ refreshTokenHash: null });
+    });
+
+    it("inserts revoked JTI and cleans up expired entries", async () => {
+        mockDb.where = makeWhereTerminal([undefined]);
+        const expiresAt = new Date(Date.now() + 900_000);
+        await service.revokeAccessToken("test-jti", expiresAt);
+        expect(mockDb.insert).toHaveBeenCalled();
+        expect(mockDb.delete).toHaveBeenCalled();
+    });
+
+    it("returns true for a revoked JTI that has not expired", async () => {
+        mockDb.where = makeWhereTerminal([{ jti: "revoked-jti" }]);
+        const result = await service.isAccessTokenRevoked("revoked-jti");
+        expect(result).toBe(true);
+    });
+
+    it("returns false for a non-revoked JTI", async () => {
+        mockDb.where = makeWhereTerminal([]);
+        const result = await service.isAccessTokenRevoked("unknown-jti");
+        expect(result).toBe(false);
     });
 });

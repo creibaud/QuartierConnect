@@ -4,6 +4,7 @@ import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import cookieParser from "cookie-parser";
 import { NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 import { HealthResponseDto, StatsResponseDto } from "./app.dto";
@@ -249,6 +250,8 @@ Les endpoints qui retournent des listes acceptent \`?page=1&limit=20\` (max 100)
     const origins = rawOrigins
         ? rawOrigins.split(",").map((o) => o.trim())
         : DEV_ORIGINS;
+
+    app.use(cookieParser());
 
     app.enableCors({
         origin: origins,

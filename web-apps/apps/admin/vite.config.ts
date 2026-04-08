@@ -6,7 +6,16 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig(({ mode }) => ({
     base: mode === "production" ? "/admin/" : "/",
-    server: { port: 3001 },
+    server: {
+        port: 3001,
+        proxy: {
+            "/api": {
+                target: "http://localhost:5000",
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/api/, ""),
+            },
+        },
+    },
     plugins: [
         TanStackRouterVite({ target: "react", autoCodeSplitting: true }),
         react(),

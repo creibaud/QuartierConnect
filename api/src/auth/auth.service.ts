@@ -210,8 +210,22 @@ export class AuthService {
         return this.tokenService.rotateRefreshToken(refreshToken);
     }
 
-    async logout(userId: string): Promise<{ success: boolean }> {
-        await this.tokenService.revokeRefreshToken(userId);
+    async logout(
+        userId: string,
+        jti?: string,
+        exp?: number,
+    ): Promise<{ success: boolean }> {
+        const ops: Promise<unknown>[] = [
+            this.tokenService.revokeRefreshToken(userId),
+        ];
+
+        if (jti && exp) {
+            ops.push(
+                this.tokenService.revokeAccessToken(jti, new Date(exp * 1000)),
+            );
+        }
+
+        await Promise.all(ops);
         return { success: true };
     }
 }

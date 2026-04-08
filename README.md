@@ -29,20 +29,20 @@ make docker-up
 make seed
 ```
 
-| Surface | URL |
-|---------|-----|
-| **Client habitant** | http://localhost |
-| **Admin back-office** | http://localhost/admin |
+| Surface               | URL                       |
+| --------------------- | ------------------------- |
+| **Client habitant**   | http://localhost          |
+| **Admin back-office** | http://localhost/admin    |
 | **API docs (Scalar)** | http://localhost/api/docs |
-| **Neo4j Browser** | http://localhost:7474 |
+| **Neo4j Browser**     | http://localhost:7474     |
 
 ## Comptes démo
 
-| Email | Mot de passe | Rôle | TOTP |
-|-------|-------------|------|------|
-| alice@demo.fr | Demo1234! | resident | `JBSWY3DPEHPK3PXP` |
-| bob@demo.fr | Demo1234! | moderator | `JBSWY3DPEHPK3PXP` |
-| admin@demo.fr | Demo1234! | admin | `JBSWY3DPEHPK3PXP` |
+| Email         | Mot de passe | Rôle      | TOTP               |
+| ------------- | ------------ | --------- | ------------------ |
+| alice@demo.fr | Demo1234!    | resident  | `JBSWY3DPEHPK3PXP` |
+| bob@demo.fr   | Demo1234!    | moderator | `JBSWY3DPEHPK3PXP` |
+| admin@demo.fr | Demo1234!    | admin     | `JBSWY3DPEHPK3PXP` |
 
 ```bash
 make totp
@@ -99,27 +99,27 @@ make status           # État des services
 
 ## Documentation
 
-| Document | Contenu |
-|----------|---------|
+| Document                                               | Contenu                                                   |
+| ------------------------------------------------------ | --------------------------------------------------------- |
 | [docs/RAPPORT-TECHNIQUE.md](docs/RAPPORT-TECHNIQUE.md) | Rapport complet pour la soutenance — tous les algorithmes |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Diagrammes Mermaid — modules, flux, sécurité |
-| [docs/DATABASE.md](docs/DATABASE.md) | Schémas PostgreSQL, MongoDB, Neo4j, SQLite |
-| [docs/SECURITY.md](docs/SECURITY.md) | Argon2id, TOTP, JWT, SSO, SHA-256, RGPD |
-| [docs/TEST.md](docs/TEST.md) | Rapport QA — 620 tests, coverage, stratégie |
-| [docs/DSL.md](docs/DSL.md) | Micro-langage PLY — grammaire, pipeline, sécurité |
-| [docs/GUIDE-SOUTENANCE.md](docs/GUIDE-SOUTENANCE.md) | Scénarios démo, questions/réponses, chiffres clés |
-| [docs/API.md](docs/API.md) | Référence complète des 50+ endpoints |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Déploiement VPS + Caddy HTTPS |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)           | Diagrammes Mermaid — modules, flux, sécurité              |
+| [docs/DATABASE.md](docs/DATABASE.md)                   | Schémas PostgreSQL, MongoDB, Neo4j, SQLite                |
+| [docs/SECURITY.md](docs/SECURITY.md)                   | Argon2id, TOTP, JWT, SSO, SHA-256, RGPD                   |
+| [docs/TEST.md](docs/TEST.md)                           | Rapport QA — 620 tests, coverage, stratégie               |
+| [docs/DSL.md](docs/DSL.md)                             | Micro-langage PLY — grammaire, pipeline, sécurité         |
+| [docs/GUIDE-SOUTENANCE.md](docs/GUIDE-SOUTENANCE.md)   | Scénarios démo, questions/réponses, chiffres clés         |
+| [docs/API.md](docs/API.md)                             | Référence complète des 50+ endpoints                      |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)               | Déploiement VPS + Caddy HTTPS                             |
 
 ## Stack
 
-| Couche | Technologie |
-|--------|------------|
-| **API** | NestJS 11, TypeScript, Drizzle ORM, Mongoose, JWT HS256, argon2, speakeasy |
-| **Client** | React 19, TanStack Router/Query/Form, Shadcn/ui, Tailwind v4 |
-| **Admin** | React 19 (même stack), DSL editor, Mermaid |
-| **Desktop** | JavaFX 21, Maven Shade JAR, SQLite JDBC, java.net.http |
-| **Bases** | PostgreSQL 16, MongoDB 7, Neo4j 5, SQLite 3 |
-| **Proxy** | Caddy 2 (HTTPS Let's Encrypt automatique) |
-| **CI/CD** | GitHub Actions (lint + test + build), Turbo monorepo |
-| **DSL** | Python PLY + pythonia bridge |
+| Couche      | Technologie                                                                |
+| ----------- | -------------------------------------------------------------------------- |
+| **API**     | NestJS 11, TypeScript, Drizzle ORM, Mongoose, JWT HS256, argon2, speakeasy |
+| **Client**  | React 19, TanStack Router/Query/Form, Shadcn/ui, Tailwind v4               |
+| **Admin**   | React 19 (même stack), DSL editor, Mermaid                                 |
+| **Desktop** | JavaFX 21, Maven Shade JAR, SQLite JDBC, java.net.http                     |
+| **Bases**   | PostgreSQL 16, MongoDB 7, Neo4j 5, SQLite 3                                |
+| **Proxy**   | Caddy 2 (HTTPS Let's Encrypt automatique)                                  |
+| **CI/CD**   | GitHub Actions (lint + test + build), Turbo monorepo                       |
+| **DSL**     | Python PLY + pythonia bridge                                               |

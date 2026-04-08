@@ -2,12 +2,11 @@ import {
     clearTokens,
     decodeToken,
     getAccessToken,
-    getRefreshToken,
     setTokens,
     type TokenPayload,
 } from "./auth";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
+const BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
 
 interface ApiError {
     statusCode: number;
@@ -16,13 +15,10 @@ interface ApiError {
 }
 
 export async function refreshTokens(): Promise<boolean> {
-    const refreshToken = getRefreshToken();
-    if (!refreshToken) return false;
-
     const res = await fetch(`${BASE_URL}/auth/refresh`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
     });
 
     if (!res.ok) {
@@ -31,7 +27,7 @@ export async function refreshTokens(): Promise<boolean> {
     }
 
     const data = await res.json();
-    setTokens(data.accessToken, data.refreshToken);
+    setTokens(data.accessToken);
     return true;
 }
 
@@ -47,10 +43,12 @@ async function apiFetch(
     };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const res = await fetch(`${BASE_URL}${path}`, { ...init, headers });
+    const res = await fetch(`${BASE_URL}${path}`, {
+        ...init,
+        headers,
+        credentials: "include",
+    });
 
-    // Public auth endpoints return 401 for wrong credentials — skip retry to avoid
-    // navigating away from the login/register form on bad credentials.
     const isPublicAuthEndpoint = [
         "/auth/login",
         "/auth/register",
@@ -149,6 +147,7 @@ export async function apiUpload<T>(
         method: "POST",
         headers,
         body: formData,
+        credentials: "include",
     });
 
     const data = await res.json();

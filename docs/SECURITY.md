@@ -1,6 +1,6 @@
 # Sécurité — QuartierConnect
 
-> **Version** 0.1.3 · **Date** 7 avril 2026
+> **Version** 0.1.5 · **Date** 8 avril 2026
 
 ---
 
@@ -40,8 +40,8 @@ flowchart TD
     subgraph Mitigations["Mitigations implementees"]
         M1["Argon2id - 64MB RAM - timeCost 3 + ThrottlerGuard 100req/15min"]
         M2["TanStack Store in-memory TTL 90s - anti-replay par code+secret"]
-        M3["JWT 15min + refresh hash argon2id - Authorization header uniquement"]
-        M4["Header-only tokens - pas de cookie - SameSite inapplicable"]
+        M3["JWT access 15min + refresh httpOnly cookie SameSite=strict - JTI revocation table PG"]
+        M4["Refresh cookie httpOnly SameSite=strict + credentials:include - CSRF impossible"]
         M5["Drizzle ORM parametrise - zero SQL concatene"]
         M6["Mongoose schema strict + ValidationPipe whitelist:true"]
         M7["findOneAndUpdate atomique - usedAt non-null apres echange"]
@@ -68,8 +68,8 @@ flowchart TD
 |--------|-----------|
 | Brute-force mot de passe | Argon2id coût CPU/mémoire + rate limiting 100req/15min |
 | Replay d'un code TOTP | Anti-replay in-memory TanStack Store TTL 90s |
-| Vol de session XSS | Refresh token hashé ; access token 15min ; pas de cookies |
-| CSRF | Tokens dans Authorization header uniquement |
+| Vol de session XSS | Refresh token en httpOnly cookie (inaccessible JS) ; access token 15min ; JTI révocable |
+| CSRF | Refresh cookie httpOnly SameSite=strict ; access token en Authorization header |
 | Injection SQL | Drizzle ORM paramétrisé — jamais de SQL concaté |
 | Injection NoSQL | Mongoose schéma strict ; ValidationPipe whitelist:true |
 | Replay de SSO token | findOneAndUpdate atomique ; usedAt non-null après usage |
@@ -176,28 +176,64 @@ Même si un attaquant intercepte un code valide, la seconde utilisation dans les
 }
 ```
 
-- **access token** : HS256, durée 15 minutes
-- **refresh token** : HS256, durée 7 jours, hashé Argon2 en base
+- **access token** : HS256, durée 15 minutes — envoyé dans `Authorization: Bearer` header
+- **refresh token** : HS256, durée 7 jours, hashé Argon2 en base — stocké en **httpOnly cookie** (`qc_rt`, SameSite=strict)
 
-### Rotation stricte
+Le refresh token est inaccessible au JavaScript (httpOnly), ce qui supprime le vecteur XSS principal. En production, le flag `secure` est activé (HTTPS uniquement).
+
+### Stockage côté client
+
+| Token | Stockage | Accès JS |
+|-------|---------|----------|
+| access token (15min) | `localStorage` | Oui — lecture pour `Authorization` header |
+| refresh token (7j) | httpOnly cookie `qc_rt` | Non — transparent pour le JS |
+
+### Rotation stricte avec verrouillage transactionnel
+
+La rotation est protégée contre les race conditions (TOCTOU) par un `SELECT FOR UPDATE` en transaction PostgreSQL. Deux requêtes simultanées de refresh ne peuvent pas utiliser le même token.
 
 ```mermaid
 flowchart TD
-    A[POST /auth/refresh] --> B[JWT.verify → payload]
-    B --> C[SELECT refreshTokenHash WHERE id=sub]
+    A[POST /auth/refresh — cookie qc_rt] --> B[JWT.verify → payload]
+    B --> C["BEGIN TRANSACTION<br/>SELECT refreshTokenHash FOR UPDATE"]
     C --> D{Hash présent?}
-    D -->|Non| E[401 TOKEN_REVOKED]
+    D -->|Non| E[401 TOKEN_REVOKED — ROLLBACK]
     D -->|Oui| F[argon2.verify hash token]
     F --> G{Valide?}
-    G -->|Non| H[401 TOKEN_REVOKED]
+    G -->|Non| H[401 TOKEN_REVOKED — ROLLBACK]
     G -->|Oui| I[UPDATE SET refresh_token_hash = NULL — invalider ancien]
     I --> J[generatePair nouveaux tokens]
     J --> K[argon2.hash nouveau refresh]
-    K --> L[UPDATE SET refresh_token_hash = hash new]
-    L --> M[Retourner nouveaux tokens]
+    K --> L[UPDATE SET refresh_token_hash = hash new — COMMIT]
+    L --> M[Set-Cookie qc_rt + retourner accessToken]
 ```
 
-Si un attaquant vole un refresh token et l'utilise, l'utilisateur légitime voit son prochain refresh échouer (révocation mutuelle).
+Si un attaquant vole un refresh token et l'utilise, l'utilisateur légitime voit son prochain refresh échouer (révocation mutuelle). Le verrou transactionnel empêche deux échanges simultanés du même token.
+
+### Révocation instantanée — table `revoked_tokens`
+
+À la déconnexion (`POST /auth/logout`), l'access token courant est révoqué immédiatement via son JTI, sans attendre son expiration naturelle.
+
+```sql
+-- api/drizzle/0001_revoked_tokens.sql
+CREATE TABLE "revoked_tokens" (
+  "jti" text PRIMARY KEY NOT NULL,
+  "expires_at" timestamp NOT NULL
+);
+CREATE INDEX "revoked_tokens_expires_at_idx" ON "revoked_tokens" USING btree ("expires_at");
+```
+
+```typescript
+// jwt.strategy.ts — validate()
+if (payload.jti) {
+  const revoked = await this.tokenService.isAccessTokenRevoked(payload.jti);
+  if (revoked) throw new UnauthorizedException({ code: "TOKEN_REVOKED" });
+}
+```
+
+Les entrées expirées sont purgées automatiquement à chaque appel `revokeAccessToken()`, évitant la croissance infinie de la table (pas besoin de Redis ou de cron).
+
+Si un attaquant vole un access token valide, le logout de la victime révoque le token avant son expiration (15 min max d'exposition au lieu de 15 min garanties).
 
 ---
 
@@ -245,11 +281,18 @@ ThrottlerModule.forRoot([{ ttl: 900000, limit: 100 }])
 providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }]
 ```
 
+Routes avec throttling spécifique :
+
+| Route | Limite | Fenêtre | Raison |
+|-------|--------|---------|--------|
+| `POST /auth/login` | 5 tentatives | 15 min | Anti-brute-force (TOTP + password) |
+| `POST /auth/refresh` | 10 requêtes | 60 s | Limitation rotation abusive |
+
 ---
 
 ## 8. Headers HTTP de sécurité
 
-Helmet.js appliqué sur toutes les réponses :
+Helmet.js appliqué sur toutes les réponses, avec CSP par route (Caddy + NestJS) :
 
 | Header | Protection |
 |--------|-----------|
@@ -258,6 +301,8 @@ Helmet.js appliqué sur toutes les réponses :
 | `X-Frame-Options: DENY` | Clickjacking |
 | `Strict-Transport-Security` | Downgrade HTTPS → HTTP |
 | `X-XSS-Protection: 1; mode=block` | XSS legacy browsers |
+
+**CSP par route** — `'unsafe-inline'` retiré des routes client, admin et API. Seules les routes `/docs` et `/scalar` (Scalar UI) conservent `'unsafe-inline'` en `script-src`, car cette UI tiers le nécessite. Les apps React utilisent des nonces implicites via Vite.
 
 ---
 

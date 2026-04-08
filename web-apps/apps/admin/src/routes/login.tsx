@@ -75,7 +75,7 @@ function AdminLoginPage() {
                     setStep("credentials");
                     return;
                 }
-                setTokens(data.accessToken, data.refreshToken);
+                setTokens(data.accessToken);
                 toast.success("Connexion admin réussie");
                 navigate({ to: "/dashboard" });
             } catch (err) {

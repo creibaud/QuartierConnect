@@ -4,7 +4,9 @@ import {
     HttpCode,
     HttpStatus,
     Post,
+    Req,
     Request,
+    Res,
     UseGuards,
 } from "@nestjs/common";
 import {
@@ -14,6 +16,7 @@ import {
     ApiTags,
 } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
+import { Request as ExpressRequest, Response } from "express";
 import { AuthService } from "./auth.service";
 import {
     AuthTokensResponseDto,
@@ -27,14 +30,37 @@ import { SsoExchangeDto } from "./dto/sso-exchange.dto";
 import { SsoGenerateDto, SsoGenerateResponseDto } from "./dto/sso-generate.dto";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 
-interface AuthenticatedRequest {
-    user: { sub: string; email: string; role: string };
+const REFRESH_COOKIE = "qc_rt";
+const REFRESH_COOKIE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+interface AuthenticatedRequest extends ExpressRequest {
+    user: {
+        sub: string;
+        email: string;
+        role: string;
+        jti?: string;
+        exp?: number;
+    };
 }
 
 @ApiTags("auth")
 @Controller("auth")
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
+
+    private setRefreshCookie(res: Response, token: string): void {
+        res.cookie(REFRESH_COOKIE, token, {
+            httpOnly: true,
+            sameSite: "strict",
+            secure: process.env.NODE_ENV === "production",
+            maxAge: REFRESH_COOKIE_TTL_MS,
+            path: "/",
+        });
+    }
+
+    private clearRefreshCookie(res: Response): void {
+        res.clearCookie(REFRESH_COOKIE, { path: "/" });
+    }
 
     @Post("register")
     @ApiOperation({ summary: "Create account + generate TOTP secret" })
@@ -67,8 +93,13 @@ export class AuthController {
         status: 429,
         description: "TOO_MANY_REQUESTS — attendre 15 minutes",
     })
-    login(@Body() dto: LoginDto) {
-        return this.authService.login(dto);
+    async login(
+        @Body() dto: LoginDto,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        const tokens = await this.authService.login(dto);
+        this.setRefreshCookie(res, tokens.refreshToken);
+        return tokens;
     }
 
     @Post("sso/generate")
@@ -103,16 +134,25 @@ export class AuthController {
         status: 401,
         description: "SSO_INVALID — token invalide, expiré ou déjà utilisé",
     })
-    exchangeSsoToken(@Body() dto: SsoExchangeDto) {
-        return this.authService.exchangeSsoToken(dto.ssoToken, dto.state);
+    async exchangeSsoToken(
+        @Body() dto: SsoExchangeDto,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        const tokens = await this.authService.exchangeSsoToken(
+            dto.ssoToken,
+            dto.state,
+        );
+        this.setRefreshCookie(res, tokens.refreshToken);
+        return tokens;
     }
 
     @Post("refresh")
     @HttpCode(HttpStatus.OK)
+    @Throttle({ default: { limit: 10, ttl: 60000 } })
     @ApiOperation({
         summary: "Rotation du refresh token → nouvelle paire JWT",
         description:
-            "Invalide l'ancien refresh token et retourne une nouvelle paire. Utiliser silencieusement côté client quand l'accessToken expire (401).",
+            "Invalide l'ancien refresh token et retourne une nouvelle paire. Le token est lu depuis le cookie httpOnly qc_rt ou depuis le body (compatibilité desktop).",
     })
     @ApiResponse({ status: 200, type: RefreshTokensResponseDto })
     @ApiResponse({
@@ -120,8 +160,17 @@ export class AuthController {
         description:
             "TOKEN_REVOKED | TOKEN_INVALID — refresh token invalide ou révoqué",
     })
-    refresh(@Body() dto: RefreshDto) {
-        return this.authService.refresh(dto.refreshToken);
+    async refresh(
+        @Req() req: ExpressRequest,
+        @Res({ passthrough: true }) res: Response,
+        @Body() dto: RefreshDto,
+    ) {
+        const token =
+            (req.cookies as Record<string, string>)?.[REFRESH_COOKIE] ??
+            dto.refreshToken;
+        const tokens = await this.authService.refresh(token);
+        this.setRefreshCookie(res, tokens.refreshToken);
+        return tokens;
     }
 
     @Post("logout")
@@ -131,10 +180,18 @@ export class AuthController {
     @ApiOperation({
         summary: "Déconnexion — révocation du refresh token côté serveur",
         description:
-            "Efface le hash du refresh token en base. L'accessToken reste valide jusqu'à expiration (15 min).",
+            "Efface le hash du refresh token en base et révoque l'access token courant (JTI blocklist). Efface également le cookie qc_rt.",
     })
     @ApiResponse({ status: 200, type: LogoutResponseDto })
-    logout(@Request() req: AuthenticatedRequest) {
-        return this.authService.logout(req.user.sub);
+    async logout(
+        @Req() req: AuthenticatedRequest,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        this.clearRefreshCookie(res);
+        return this.authService.logout(
+            req.user.sub,
+            req.user.jti,
+            req.user.exp,
+        );
     }
 }

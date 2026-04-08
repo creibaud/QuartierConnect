@@ -55,7 +55,7 @@ function LoginPage() {
                     password: credentials.password,
                     totpCode: value.totpCode,
                 });
-                setTokens(data.accessToken, data.refreshToken);
+                setTokens(data.accessToken);
                 toast.success("Connexion réussie");
                 navigate({ to: "/dashboard" });
             } catch (err) {

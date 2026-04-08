@@ -116,7 +116,7 @@ function SsoAuthorizePage() {
                     password: credentials.password,
                     totpCode: value.totpCode,
                 });
-                setTokens(data.accessToken, data.refreshToken);
+                setTokens(data.accessToken);
                 setIsAuthenticated(true);
                 setIsAdminUser(isAdmin(getCurrentUser()));
                 setServerError(null);

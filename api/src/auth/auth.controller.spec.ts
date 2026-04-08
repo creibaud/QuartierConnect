@@ -17,6 +17,11 @@ const mockAuthService = {
     logout: jest.fn(),
 };
 
+const mockRes = () => ({
+    cookie: jest.fn(),
+    clearCookie: jest.fn(),
+});
+
 describe("AuthController", () => {
     let controller: AuthController;
 
@@ -44,17 +49,23 @@ describe("AuthController", () => {
     });
 
     describe("login", () => {
-        it("delegates to authService.login and returns token pair", async () => {
+        it("sets refresh cookie and returns token pair", async () => {
             const dto = {
                 email: "alice@demo.fr",
                 password: "Demo1234!",
                 totpCode: "123456",
             };
+            const res = mockRes();
             mockAuthService.login.mockResolvedValue(mockTokenPair);
 
-            const result = await controller.login(dto);
+            const result = await controller.login(dto, res as any);
 
             expect(mockAuthService.login).toHaveBeenCalledWith(dto);
+            expect(res.cookie).toHaveBeenCalledWith(
+                "qc_rt",
+                "refresh.token",
+                expect.objectContaining({ httpOnly: true }),
+            );
             expect(result).toBe(mockTokenPair);
         });
     });
@@ -76,7 +87,7 @@ describe("AuthController", () => {
             };
             mockAuthService.generateSsoToken.mockResolvedValue(expected);
 
-            const result = await controller.generateSsoToken(req, dto);
+            const result = await controller.generateSsoToken(req as any, dto);
 
             expect(mockAuthService.generateSsoToken).toHaveBeenCalledWith(
                 "user-id-123",
@@ -88,48 +99,82 @@ describe("AuthController", () => {
     });
 
     describe("sso/exchange", () => {
-        it("delegates to authService.exchangeSsoToken", async () => {
+        it("sets refresh cookie and returns token pair", async () => {
             const dto = { ssoToken: "valid-uuid", state: "abc" };
+            const res = mockRes();
             mockAuthService.exchangeSsoToken.mockResolvedValue(mockTokenPair);
 
-            const result = await controller.exchangeSsoToken(dto);
+            const result = await controller.exchangeSsoToken(dto, res as any);
 
             expect(mockAuthService.exchangeSsoToken).toHaveBeenCalledWith(
                 "valid-uuid",
                 "abc",
+            );
+            expect(res.cookie).toHaveBeenCalledWith(
+                "qc_rt",
+                "refresh.token",
+                expect.objectContaining({ httpOnly: true }),
             );
             expect(result).toBe(mockTokenPair);
         });
     });
 
     describe("refresh", () => {
-        it("delegates to authService.refresh", async () => {
-            const dto = { refreshToken: "refresh.token" };
+        it("reads token from cookie when present", async () => {
+            const req = { cookies: { qc_rt: "cookie.token" } };
+            const res = mockRes();
+            const dto = {};
             mockAuthService.refresh.mockResolvedValue(mockTokenPair);
 
-            const result = await controller.refresh(dto);
+            await controller.refresh(req as any, res as any, dto as any);
 
             expect(mockAuthService.refresh).toHaveBeenCalledWith(
-                "refresh.token",
+                "cookie.token",
             );
-            expect(result).toBe(mockTokenPair);
+            expect(res.cookie).toHaveBeenCalledWith(
+                "qc_rt",
+                "refresh.token",
+                expect.objectContaining({ httpOnly: true }),
+            );
+        });
+
+        it("falls back to body token when no cookie (desktop)", async () => {
+            const req = { cookies: {} };
+            const res = mockRes();
+            const dto = { refreshToken: "body.token" };
+            mockAuthService.refresh.mockResolvedValue(mockTokenPair);
+
+            await controller.refresh(req as any, res as any, dto);
+
+            expect(mockAuthService.refresh).toHaveBeenCalledWith("body.token");
         });
     });
 
     describe("logout", () => {
-        it("delegates to authService.logout with sub from request", async () => {
+        it("clears cookie and delegates logout with jti", async () => {
             const req = {
                 user: {
                     sub: "user-id-123",
                     email: "test@test.fr",
                     role: "resident",
+                    jti: "some-jti",
+                    exp: 9999999999,
                 },
+                cookies: {},
             };
+            const res = mockRes();
             mockAuthService.logout.mockResolvedValue({ success: true });
 
-            const result = await controller.logout(req);
+            const result = await controller.logout(req as any, res as any);
 
-            expect(mockAuthService.logout).toHaveBeenCalledWith("user-id-123");
+            expect(res.clearCookie).toHaveBeenCalledWith("qc_rt", {
+                path: "/",
+            });
+            expect(mockAuthService.logout).toHaveBeenCalledWith(
+                "user-id-123",
+                "some-jti",
+                9999999999,
+            );
             expect(result).toEqual({ success: true });
         });
     });

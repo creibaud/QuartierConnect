@@ -6,7 +6,7 @@ import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { DRIZZLE_TOKEN } from "../../database/drizzle.module";
 import * as schema from "../../database/schema";
-import { JwtPayload } from "../token.service";
+import { JwtPayload, TokenService } from "../token.service";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -14,6 +14,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         configService: ConfigService,
         @Inject(DRIZZLE_TOKEN)
         private readonly db: PostgresJsDatabase<typeof schema>,
+        private readonly tokenService: TokenService,
     ) {
         const secret = configService.get<string>("JWT_SECRET");
         if (!secret) throw new Error("JWT_SECRET env var is required");
@@ -27,6 +28,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     async validate(payload: JwtPayload) {
         if (!payload?.sub) {
             throw new UnauthorizedException({ code: "TOKEN_INVALID" });
+        }
+
+        if (payload.jti) {
+            const revoked = await this.tokenService.isAccessTokenRevoked(
+                payload.jti,
+            );
+            if (revoked) {
+                throw new UnauthorizedException({ code: "TOKEN_REVOKED" });
+            }
         }
 
         const [user] = await this.db
@@ -43,6 +53,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             throw new UnauthorizedException({ code: "ACCOUNT_BANNED" });
         }
 
-        return { sub: payload.sub, email: payload.email, role: user.role };
+        return {
+            sub: payload.sub,
+            email: payload.email,
+            role: user.role,
+            jti: payload.jti,
+            exp: payload.exp,
+        };
     }
 }

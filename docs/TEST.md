@@ -1,6 +1,6 @@
 # Rapport QA — QuartierConnect Étape 4
 
-> **Date** 7 avril 2026 · **Version** 0.1.3 · **Total** 620 tests automatisés · **Résultat** 620/620 ✓
+> **Date** 8 avril 2026 · **Version** 0.1.5 · **Total** 626 tests automatisés · **Résultat** 626/626 ✓
 
 ---
 
@@ -23,13 +23,13 @@
 
 | Composant | Framework | Tests | Résultat |
 |-----------|-----------|-------|----------|
-| API NestJS — unitaires | Jest | 236 | 236/236 ✓ |
+| API NestJS — unitaires | Jest | 242 | 242/242 ✓ |
 | Web shared hooks | Vitest | 73 | 73/73 ✓ |
 | API NestJS — E2E | Jest + Supertest | 148 | 148/148 ✓ |
 | Java Desktop | JUnit 5 + Maven Surefire | 63 | 63/63 ✓ |
 | DSL Python | pytest | 21 | 21/21 ✓ |
 | Web Playwright | Playwright | 79 | 79/79 ✓ |
-| **TOTAL** | | **620** | **620/620 ✓** |
+| **TOTAL** | | **626** | **626/626 ✓** |
 
 > Note : les 148 tests E2E nécessitent MongoDB + PostgreSQL (make docker-up). Les 79 tests Playwright nécessitent les apps sur :3000/:3001/:5000.
 
@@ -42,7 +42,7 @@ flowchart BT
 
     E2EUI["E2E UI — Playwright<br/>79 tests · Chromium headless<br/>:3000 / :3001 / :5000"]
     E2EAPI["E2E API — Supertest<br/>148 tests · BDD réelles<br/>MongoDB + PostgreSQL"]
-    UNIT["Unitaires — Jest + Vitest<br/>309 tests · Mocks injectés<br/>NestJS (236) + Shared (73)"]
+    UNIT["Unitaires — Jest + Vitest<br/>315 tests · Mocks injectés<br/>NestJS (242) + Shared (73)"]
     COMP["Composants — JUnit 5 + pytest<br/>84 tests · Isolation fichier<br/>Java (63) + DSL (21)"]
 
     COMP --> UNIT --> E2EAPI --> E2EUI
@@ -57,17 +57,17 @@ flowchart BT
 
 ## 2. Tests unitaires API — NestJS/Jest
 
-**236 tests · 30 suites · 0 échec**
+**242 tests · 30 suites · 0 échec**
 
 ### Couverture par module
 
 | Suite | Tests | Ce qui est testé |
 |-------|-------|-----------------|
 | `auth.service.spec.ts` | 14 | register, login, SSO generate/exchange, argon2, TOTP |
-| `auth.controller.spec.ts` | 8 | Routes HTTP, codes d'erreur, DTOs |
-| `token.service.spec.ts` | 8 | generatePair, rotateRefreshToken, revokeRefreshToken |
+| `auth.controller.spec.ts` | 12 | Routes HTTP, codes d'erreur, DTOs, cookie qc_rt set/clear, refresh cookie+body |
+| `token.service.spec.ts` | 12 | generatePair, rotateRefreshToken (transaction FOR UPDATE), revokeAccessToken, isAccessTokenRevoked |
 | `totp.service.spec.ts` | 6 | verify, anti-replay, purgeExpiredCodes, generateSecret |
-| `jwt.strategy.spec.ts` | 4 | validate payload valide/invalide/rôle |
+| `jwt.strategy.spec.ts` | 8 | validate payload valide/invalide/rôle, TOKEN_REVOKED (JTI), skip JTI check absent, null payload |
 | `roles.guard.spec.ts` | 5 | admin/resident/moderator/banned/sans rôle |
 | `neighborhoods.controller.spec.ts` | 8 | CRUD + GeoJSON + SocialService mock |
 | `neighborhoods.service.spec.ts` | 6 | assertNoOverlap, geoIntersects, conflicts |

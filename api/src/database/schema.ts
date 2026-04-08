@@ -8,6 +8,15 @@ import {
     varchar,
 } from "drizzle-orm/pg-core";
 
+export const revokedTokens = pgTable(
+    "revoked_tokens",
+    {
+        jti: text("jti").primaryKey(),
+        expiresAt: timestamp("expires_at").notNull(),
+    },
+    (t) => [index("revoked_tokens_expires_at_idx").on(t.expiresAt)],
+);
+
 export const users = pgTable("users", {
     id: uuid("id").defaultRandom().primaryKey(),
     email: varchar("email", { length: 255 }).notNull().unique(),

@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import * as argon2 from "argon2";
-import { eq } from "drizzle-orm";
+import { and, eq, gt, lt } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
@@ -12,6 +12,7 @@ export interface JwtPayload {
     email: string;
     role: string;
     jti?: string;
+    exp?: number;
 }
 
 export interface TokenPair {
@@ -56,36 +57,41 @@ export class TokenService {
             throw new UnauthorizedException({ code: "TOKEN_INVALID" });
         }
 
-        const [user] = await this.db
-            .select()
-            .from(schema.users)
-            .where(eq(schema.users.id, payload.sub));
+        const verifiedRole = await this.db.transaction(async (tx) => {
+            const [user] = await tx
+                .select()
+                .from(schema.users)
+                .where(eq(schema.users.id, payload.sub))
+                .for("update");
 
-        if (!user?.refreshTokenHash) {
-            throw new UnauthorizedException({ code: "TOKEN_REVOKED" });
-        }
+            if (!user?.refreshTokenHash) {
+                throw new UnauthorizedException({ code: "TOKEN_REVOKED" });
+            }
 
-        if (user.role === "banned") {
-            throw new UnauthorizedException({ code: "ACCOUNT_BANNED" });
-        }
+            if (user.role === "banned") {
+                throw new UnauthorizedException({ code: "ACCOUNT_BANNED" });
+            }
 
-        const isValid = await argon2.verify(
-            user.refreshTokenHash,
-            refreshToken,
-        );
-        if (!isValid) {
-            throw new UnauthorizedException({ code: "TOKEN_REVOKED" });
-        }
+            const isValid = await argon2.verify(
+                user.refreshTokenHash,
+                refreshToken,
+            );
+            if (!isValid) {
+                throw new UnauthorizedException({ code: "TOKEN_REVOKED" });
+            }
 
-        await this.db
-            .update(schema.users)
-            .set({ refreshTokenHash: null })
-            .where(eq(schema.users.id, payload.sub));
+            await tx
+                .update(schema.users)
+                .set({ refreshTokenHash: null })
+                .where(eq(schema.users.id, payload.sub));
+
+            return user.role;
+        });
 
         return this.generatePair({
             sub: payload.sub,
             email: payload.email,
-            role: user.role,
+            role: verifiedRole,
         });
     }
 
@@ -94,5 +100,31 @@ export class TokenService {
             .update(schema.users)
             .set({ refreshTokenHash: null })
             .where(eq(schema.users.id, userId));
+    }
+
+    async revokeAccessToken(jti: string, expiresAt: Date): Promise<void> {
+        await Promise.all([
+            this.db
+                .insert(schema.revokedTokens)
+                .values({ jti, expiresAt })
+                .onConflictDoNothing(),
+            this.db
+                .delete(schema.revokedTokens)
+                .where(lt(schema.revokedTokens.expiresAt, new Date())),
+        ]);
+    }
+
+    async isAccessTokenRevoked(jti: string): Promise<boolean> {
+        const [revoked] = await this.db
+            .select({ jti: schema.revokedTokens.jti })
+            .from(schema.revokedTokens)
+            .where(
+                and(
+                    eq(schema.revokedTokens.jti, jti),
+                    gt(schema.revokedTokens.expiresAt, new Date()),
+                ),
+            )
+            .limit(1);
+        return !!revoked;
     }
 }

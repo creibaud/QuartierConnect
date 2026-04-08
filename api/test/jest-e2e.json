@@ -7,5 +7,6 @@
         "^.+\\.(t|j)s$": "ts-jest"
     },
     "testTimeout": 30000,
+    "globalSetup": "./global-setup-e2e.ts",
     "setupFiles": ["./setup-e2e.ts"]
 }
