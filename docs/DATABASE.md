@@ -49,7 +49,7 @@ erDiagram
 
     points_balances {
         uuid id PK
-        uuid user_id FK UK "1 solde par utilisateur"
+        uuid user_id FK, UK "1 solde par utilisateur"
         integer balance "peut être négatif jusqu'à -10"
         timestamp updated_at
     }
@@ -492,22 +492,22 @@ graph LR
 
 ### 3.2 Labels et propriétés
 
-| Label | Propriétés | Origine |
-|-------|-----------|---------|
-| `User` | `id` (UUID PostgreSQL), `createdAt`, `updatedAt` | Sync sur register |
-| `Neighborhood` | `id` (ObjectId MongoDB), `name`, `createdAt`, `updatedAt` | Sync CRUD |
-| `Service` | `id`, `name`, `createdAt`, `updatedAt` | Sync CRUD |
-| `Event` | `id`, `name`, `date`, `createdAt`, `updatedAt` | Sync CRUD |
+| Label          | Propriétés                                                | Origine           |
+| -------------- | --------------------------------------------------------- | ----------------- |
+| `User`         | `id` (UUID PostgreSQL), `createdAt`, `updatedAt`          | Sync sur register |
+| `Neighborhood` | `id` (ObjectId MongoDB), `name`, `createdAt`, `updatedAt` | Sync CRUD         |
+| `Service`      | `id`, `name`, `createdAt`, `updatedAt`                    | Sync CRUD         |
+| `Event`        | `id`, `name`, `date`, `createdAt`, `updatedAt`            | Sync CRUD         |
 
 ### 3.3 Relations
 
-| Relation | De | Vers | Créée quand |
-|----------|-----|------|------------|
-| `LIVES_IN` | User | Neighborhood | Mise à jour profil |
-| `LOCATED_IN` | Service | Neighborhood | Création service |
-| `HELD_IN` | Event | Neighborhood | Création événement |
-| `INTERESTED_IN` | User | Event | `POST /events/:id/interest` |
-| `USED` | User | Service | Futur : appel de service |
+| Relation        | De      | Vers         | Créée quand                 |
+| --------------- | ------- | ------------ | --------------------------- |
+| `LIVES_IN`      | User    | Neighborhood | Mise à jour profil          |
+| `LOCATED_IN`    | Service | Neighborhood | Création service            |
+| `HELD_IN`       | Event   | Neighborhood | Création événement          |
+| `INTERESTED_IN` | User    | Event        | `POST /events/:id/interest` |
+| `USED`          | User    | Service      | Futur : appel de service    |
 
 ### 3.4 Requête de recommandation (Cypher)
 
@@ -583,10 +583,10 @@ Sinon (nouvel incident local) :
 
 ## 5. Règles d'utilisation par base
 
-| Règle | Détail |
-|-------|--------|
-| **Jamais de transaction MongoDB pour les points** | PostgreSQL ACID obligatoire |
-| **Jamais de données auth dans MongoDB** | Sécurité — seul PostgreSQL pour users |
-| **Neo4j = lecture uniquement côté API** | Écriture via socialService fire-and-forget uniquement |
-| **SQLite = cache local uniquement** | Jamais de source de vérité — l'API PostgreSQL fait foi |
-| **GridFS = binaires uniquement** | Métadonnées dans la collection `documents` MongoDB |
+| Règle                                             | Détail                                                 |
+| ------------------------------------------------- | ------------------------------------------------------ |
+| **Jamais de transaction MongoDB pour les points** | PostgreSQL ACID obligatoire                            |
+| **Jamais de données auth dans MongoDB**           | Sécurité — seul PostgreSQL pour users                  |
+| **Neo4j = lecture uniquement côté API**           | Écriture via socialService fire-and-forget uniquement  |
+| **SQLite = cache local uniquement**               | Jamais de source de vérité — l'API PostgreSQL fait foi |
+| **GridFS = binaires uniquement**                  | Métadonnées dans la collection `documents` MongoDB     |
