@@ -8,245 +8,245 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as CommunityVotesIndexRouteImport } from "./routes/community-votes/index";
-import { Route as DashboardIndexRouteImport } from "./routes/dashboard/index";
-import { Route as DslIndexRouteImport } from "./routes/dsl/index";
-import { Route as EventsIndexRouteImport } from "./routes/events/index";
-import { Route as IncidentsIndexRouteImport } from "./routes/incidents/index";
-import { Route as IndexRouteImport } from "./routes/index";
-import { Route as LoginRouteImport } from "./routes/login";
-import { Route as NeighborhoodsIndexRouteImport } from "./routes/neighborhoods/index";
-import { Route as ServicesIndexRouteImport } from "./routes/services/index";
-import { Route as UsersIndexRouteImport } from "./routes/users/index";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as UsersIndexRouteImport } from './routes/users/index'
+import { Route as ServicesIndexRouteImport } from './routes/services/index'
+import { Route as NeighborhoodsIndexRouteImport } from './routes/neighborhoods/index'
+import { Route as IncidentsIndexRouteImport } from './routes/incidents/index'
+import { Route as EventsIndexRouteImport } from './routes/events/index'
+import { Route as DslIndexRouteImport } from './routes/dsl/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as CommunityVotesIndexRouteImport } from './routes/community-votes/index'
 
 const LoginRoute = LoginRouteImport.update({
-    id: "/login",
-    path: "/login",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
-    id: "/",
-    path: "/",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UsersIndexRoute = UsersIndexRouteImport.update({
-    id: "/users/",
-    path: "/users/",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/users/',
+  path: '/users/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ServicesIndexRoute = ServicesIndexRouteImport.update({
-    id: "/services/",
-    path: "/services/",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/services/',
+  path: '/services/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NeighborhoodsIndexRoute = NeighborhoodsIndexRouteImport.update({
-    id: "/neighborhoods/",
-    path: "/neighborhoods/",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/neighborhoods/',
+  path: '/neighborhoods/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IncidentsIndexRoute = IncidentsIndexRouteImport.update({
-    id: "/incidents/",
-    path: "/incidents/",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/incidents/',
+  path: '/incidents/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EventsIndexRoute = EventsIndexRouteImport.update({
-    id: "/events/",
-    path: "/events/",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/events/',
+  path: '/events/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DslIndexRoute = DslIndexRouteImport.update({
-    id: "/dsl/",
-    path: "/dsl/",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/dsl/',
+  path: '/dsl/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
-    id: "/dashboard/",
-    path: "/dashboard/",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/dashboard/',
+  path: '/dashboard/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CommunityVotesIndexRoute = CommunityVotesIndexRouteImport.update({
-    id: "/community-votes/",
-    path: "/community-votes/",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/community-votes/',
+  path: '/community-votes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
-    "/": typeof IndexRoute;
-    "/login": typeof LoginRoute;
-    "/community-votes/": typeof CommunityVotesIndexRoute;
-    "/dashboard/": typeof DashboardIndexRoute;
-    "/dsl/": typeof DslIndexRoute;
-    "/events/": typeof EventsIndexRoute;
-    "/incidents/": typeof IncidentsIndexRoute;
-    "/neighborhoods/": typeof NeighborhoodsIndexRoute;
-    "/services/": typeof ServicesIndexRoute;
-    "/users/": typeof UsersIndexRoute;
+  '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/community-votes/': typeof CommunityVotesIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/dsl/': typeof DslIndexRoute
+  '/events/': typeof EventsIndexRoute
+  '/incidents/': typeof IncidentsIndexRoute
+  '/neighborhoods/': typeof NeighborhoodsIndexRoute
+  '/services/': typeof ServicesIndexRoute
+  '/users/': typeof UsersIndexRoute
 }
 export interface FileRoutesByTo {
-    "/": typeof IndexRoute;
-    "/login": typeof LoginRoute;
-    "/community-votes": typeof CommunityVotesIndexRoute;
-    "/dashboard": typeof DashboardIndexRoute;
-    "/dsl": typeof DslIndexRoute;
-    "/events": typeof EventsIndexRoute;
-    "/incidents": typeof IncidentsIndexRoute;
-    "/neighborhoods": typeof NeighborhoodsIndexRoute;
-    "/services": typeof ServicesIndexRoute;
-    "/users": typeof UsersIndexRoute;
+  '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/community-votes': typeof CommunityVotesIndexRoute
+  '/dashboard': typeof DashboardIndexRoute
+  '/dsl': typeof DslIndexRoute
+  '/events': typeof EventsIndexRoute
+  '/incidents': typeof IncidentsIndexRoute
+  '/neighborhoods': typeof NeighborhoodsIndexRoute
+  '/services': typeof ServicesIndexRoute
+  '/users': typeof UsersIndexRoute
 }
 export interface FileRoutesById {
-    __root__: typeof rootRouteImport;
-    "/": typeof IndexRoute;
-    "/login": typeof LoginRoute;
-    "/community-votes/": typeof CommunityVotesIndexRoute;
-    "/dashboard/": typeof DashboardIndexRoute;
-    "/dsl/": typeof DslIndexRoute;
-    "/events/": typeof EventsIndexRoute;
-    "/incidents/": typeof IncidentsIndexRoute;
-    "/neighborhoods/": typeof NeighborhoodsIndexRoute;
-    "/services/": typeof ServicesIndexRoute;
-    "/users/": typeof UsersIndexRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/community-votes/': typeof CommunityVotesIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/dsl/': typeof DslIndexRoute
+  '/events/': typeof EventsIndexRoute
+  '/incidents/': typeof IncidentsIndexRoute
+  '/neighborhoods/': typeof NeighborhoodsIndexRoute
+  '/services/': typeof ServicesIndexRoute
+  '/users/': typeof UsersIndexRoute
 }
 export interface FileRouteTypes {
-    fileRoutesByFullPath: FileRoutesByFullPath;
-    fullPaths:
-        | "/"
-        | "/login"
-        | "/community-votes/"
-        | "/dashboard/"
-        | "/dsl/"
-        | "/events/"
-        | "/incidents/"
-        | "/neighborhoods/"
-        | "/services/"
-        | "/users/";
-    fileRoutesByTo: FileRoutesByTo;
-    to:
-        | "/"
-        | "/login"
-        | "/community-votes"
-        | "/dashboard"
-        | "/dsl"
-        | "/events"
-        | "/incidents"
-        | "/neighborhoods"
-        | "/services"
-        | "/users";
-    id:
-        | "__root__"
-        | "/"
-        | "/login"
-        | "/community-votes/"
-        | "/dashboard/"
-        | "/dsl/"
-        | "/events/"
-        | "/incidents/"
-        | "/neighborhoods/"
-        | "/services/"
-        | "/users/";
-    fileRoutesById: FileRoutesById;
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/community-votes/'
+    | '/dashboard/'
+    | '/dsl/'
+    | '/events/'
+    | '/incidents/'
+    | '/neighborhoods/'
+    | '/services/'
+    | '/users/'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/login'
+    | '/community-votes'
+    | '/dashboard'
+    | '/dsl'
+    | '/events'
+    | '/incidents'
+    | '/neighborhoods'
+    | '/services'
+    | '/users'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/community-votes/'
+    | '/dashboard/'
+    | '/dsl/'
+    | '/events/'
+    | '/incidents/'
+    | '/neighborhoods/'
+    | '/services/'
+    | '/users/'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-    IndexRoute: typeof IndexRoute;
-    LoginRoute: typeof LoginRoute;
-    CommunityVotesIndexRoute: typeof CommunityVotesIndexRoute;
-    DashboardIndexRoute: typeof DashboardIndexRoute;
-    DslIndexRoute: typeof DslIndexRoute;
-    EventsIndexRoute: typeof EventsIndexRoute;
-    IncidentsIndexRoute: typeof IncidentsIndexRoute;
-    NeighborhoodsIndexRoute: typeof NeighborhoodsIndexRoute;
-    ServicesIndexRoute: typeof ServicesIndexRoute;
-    UsersIndexRoute: typeof UsersIndexRoute;
+  IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
+  CommunityVotesIndexRoute: typeof CommunityVotesIndexRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+  DslIndexRoute: typeof DslIndexRoute
+  EventsIndexRoute: typeof EventsIndexRoute
+  IncidentsIndexRoute: typeof IncidentsIndexRoute
+  NeighborhoodsIndexRoute: typeof NeighborhoodsIndexRoute
+  ServicesIndexRoute: typeof ServicesIndexRoute
+  UsersIndexRoute: typeof UsersIndexRoute
 }
 
-declare module "@tanstack/react-router" {
-    interface FileRoutesByPath {
-        "/login": {
-            id: "/login";
-            path: "/login";
-            fullPath: "/login";
-            preLoaderRoute: typeof LoginRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/": {
-            id: "/";
-            path: "/";
-            fullPath: "/";
-            preLoaderRoute: typeof IndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/users/": {
-            id: "/users/";
-            path: "/users";
-            fullPath: "/users/";
-            preLoaderRoute: typeof UsersIndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/services/": {
-            id: "/services/";
-            path: "/services";
-            fullPath: "/services/";
-            preLoaderRoute: typeof ServicesIndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/neighborhoods/": {
-            id: "/neighborhoods/";
-            path: "/neighborhoods";
-            fullPath: "/neighborhoods/";
-            preLoaderRoute: typeof NeighborhoodsIndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/incidents/": {
-            id: "/incidents/";
-            path: "/incidents";
-            fullPath: "/incidents/";
-            preLoaderRoute: typeof IncidentsIndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/events/": {
-            id: "/events/";
-            path: "/events";
-            fullPath: "/events/";
-            preLoaderRoute: typeof EventsIndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/dsl/": {
-            id: "/dsl/";
-            path: "/dsl";
-            fullPath: "/dsl/";
-            preLoaderRoute: typeof DslIndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/dashboard/": {
-            id: "/dashboard/";
-            path: "/dashboard";
-            fullPath: "/dashboard/";
-            preLoaderRoute: typeof DashboardIndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/community-votes/": {
-            id: "/community-votes/";
-            path: "/community-votes";
-            fullPath: "/community-votes/";
-            preLoaderRoute: typeof CommunityVotesIndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/users/': {
+      id: '/users/'
+      path: '/users'
+      fullPath: '/users/'
+      preLoaderRoute: typeof UsersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/services/': {
+      id: '/services/'
+      path: '/services'
+      fullPath: '/services/'
+      preLoaderRoute: typeof ServicesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/neighborhoods/': {
+      id: '/neighborhoods/'
+      path: '/neighborhoods'
+      fullPath: '/neighborhoods/'
+      preLoaderRoute: typeof NeighborhoodsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/incidents/': {
+      id: '/incidents/'
+      path: '/incidents'
+      fullPath: '/incidents/'
+      preLoaderRoute: typeof IncidentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/events/': {
+      id: '/events/'
+      path: '/events'
+      fullPath: '/events/'
+      preLoaderRoute: typeof EventsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dsl/': {
+      id: '/dsl/'
+      path: '/dsl'
+      fullPath: '/dsl/'
+      preLoaderRoute: typeof DslIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/dashboard'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/community-votes/': {
+      id: '/community-votes/'
+      path: '/community-votes'
+      fullPath: '/community-votes/'
+      preLoaderRoute: typeof CommunityVotesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+  }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-    IndexRoute: IndexRoute,
-    LoginRoute: LoginRoute,
-    CommunityVotesIndexRoute: CommunityVotesIndexRoute,
-    DashboardIndexRoute: DashboardIndexRoute,
-    DslIndexRoute: DslIndexRoute,
-    EventsIndexRoute: EventsIndexRoute,
-    IncidentsIndexRoute: IncidentsIndexRoute,
-    NeighborhoodsIndexRoute: NeighborhoodsIndexRoute,
-    ServicesIndexRoute: ServicesIndexRoute,
-    UsersIndexRoute: UsersIndexRoute,
-};
+  IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
+  CommunityVotesIndexRoute: CommunityVotesIndexRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+  DslIndexRoute: DslIndexRoute,
+  EventsIndexRoute: EventsIndexRoute,
+  IncidentsIndexRoute: IncidentsIndexRoute,
+  NeighborhoodsIndexRoute: NeighborhoodsIndexRoute,
+  ServicesIndexRoute: ServicesIndexRoute,
+  UsersIndexRoute: UsersIndexRoute,
+}
 export const routeTree = rootRouteImport
-    ._addFileChildren(rootRouteChildren)
-    ._addFileTypes<FileRouteTypes>();
+  ._addFileChildren(rootRouteChildren)
+  ._addFileTypes<FileRouteTypes>()

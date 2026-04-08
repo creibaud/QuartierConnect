@@ -8,266 +8,266 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as ContractsIndexRouteImport } from "./routes/contracts/index";
-import { Route as DashboardIndexRouteImport } from "./routes/dashboard/index";
-import { Route as EventsIndexRouteImport } from "./routes/events/index";
-import { Route as IncidentsIdRouteImport } from "./routes/incidents/$id";
-import { Route as IncidentsIndexRouteImport } from "./routes/incidents/index";
-import { Route as IndexRouteImport } from "./routes/index";
-import { Route as LoginRouteImport } from "./routes/login";
-import { Route as RegisterRouteImport } from "./routes/register";
-import { Route as ServicesIndexRouteImport } from "./routes/services/index";
-import { Route as SsoAuthorizeRouteImport } from "./routes/sso/authorize";
-import { Route as VotesIndexRouteImport } from "./routes/votes/index";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as VotesIndexRouteImport } from './routes/votes/index'
+import { Route as ServicesIndexRouteImport } from './routes/services/index'
+import { Route as IncidentsIndexRouteImport } from './routes/incidents/index'
+import { Route as EventsIndexRouteImport } from './routes/events/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as ContractsIndexRouteImport } from './routes/contracts/index'
+import { Route as SsoAuthorizeRouteImport } from './routes/sso/authorize'
+import { Route as IncidentsIdRouteImport } from './routes/incidents/$id'
 
 const RegisterRoute = RegisterRouteImport.update({
-    id: "/register",
-    path: "/register",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
-    id: "/login",
-    path: "/login",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
-    id: "/",
-    path: "/",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VotesIndexRoute = VotesIndexRouteImport.update({
-    id: "/votes/",
-    path: "/votes/",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/votes/',
+  path: '/votes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ServicesIndexRoute = ServicesIndexRouteImport.update({
-    id: "/services/",
-    path: "/services/",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/services/',
+  path: '/services/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IncidentsIndexRoute = IncidentsIndexRouteImport.update({
-    id: "/incidents/",
-    path: "/incidents/",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/incidents/',
+  path: '/incidents/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EventsIndexRoute = EventsIndexRouteImport.update({
-    id: "/events/",
-    path: "/events/",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/events/',
+  path: '/events/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
-    id: "/dashboard/",
-    path: "/dashboard/",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/dashboard/',
+  path: '/dashboard/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContractsIndexRoute = ContractsIndexRouteImport.update({
-    id: "/contracts/",
-    path: "/contracts/",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/contracts/',
+  path: '/contracts/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SsoAuthorizeRoute = SsoAuthorizeRouteImport.update({
-    id: "/sso/authorize",
-    path: "/sso/authorize",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/sso/authorize',
+  path: '/sso/authorize',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IncidentsIdRoute = IncidentsIdRouteImport.update({
-    id: "/incidents/$id",
-    path: "/incidents/$id",
-    getParentRoute: () => rootRouteImport,
-} as any);
+  id: '/incidents/$id',
+  path: '/incidents/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
-    "/": typeof IndexRoute;
-    "/login": typeof LoginRoute;
-    "/register": typeof RegisterRoute;
-    "/incidents/$id": typeof IncidentsIdRoute;
-    "/sso/authorize": typeof SsoAuthorizeRoute;
-    "/contracts/": typeof ContractsIndexRoute;
-    "/dashboard/": typeof DashboardIndexRoute;
-    "/events/": typeof EventsIndexRoute;
-    "/incidents/": typeof IncidentsIndexRoute;
-    "/services/": typeof ServicesIndexRoute;
-    "/votes/": typeof VotesIndexRoute;
+  '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/incidents/$id': typeof IncidentsIdRoute
+  '/sso/authorize': typeof SsoAuthorizeRoute
+  '/contracts/': typeof ContractsIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/events/': typeof EventsIndexRoute
+  '/incidents/': typeof IncidentsIndexRoute
+  '/services/': typeof ServicesIndexRoute
+  '/votes/': typeof VotesIndexRoute
 }
 export interface FileRoutesByTo {
-    "/": typeof IndexRoute;
-    "/login": typeof LoginRoute;
-    "/register": typeof RegisterRoute;
-    "/incidents/$id": typeof IncidentsIdRoute;
-    "/sso/authorize": typeof SsoAuthorizeRoute;
-    "/contracts": typeof ContractsIndexRoute;
-    "/dashboard": typeof DashboardIndexRoute;
-    "/events": typeof EventsIndexRoute;
-    "/incidents": typeof IncidentsIndexRoute;
-    "/services": typeof ServicesIndexRoute;
-    "/votes": typeof VotesIndexRoute;
+  '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/incidents/$id': typeof IncidentsIdRoute
+  '/sso/authorize': typeof SsoAuthorizeRoute
+  '/contracts': typeof ContractsIndexRoute
+  '/dashboard': typeof DashboardIndexRoute
+  '/events': typeof EventsIndexRoute
+  '/incidents': typeof IncidentsIndexRoute
+  '/services': typeof ServicesIndexRoute
+  '/votes': typeof VotesIndexRoute
 }
 export interface FileRoutesById {
-    __root__: typeof rootRouteImport;
-    "/": typeof IndexRoute;
-    "/login": typeof LoginRoute;
-    "/register": typeof RegisterRoute;
-    "/incidents/$id": typeof IncidentsIdRoute;
-    "/sso/authorize": typeof SsoAuthorizeRoute;
-    "/contracts/": typeof ContractsIndexRoute;
-    "/dashboard/": typeof DashboardIndexRoute;
-    "/events/": typeof EventsIndexRoute;
-    "/incidents/": typeof IncidentsIndexRoute;
-    "/services/": typeof ServicesIndexRoute;
-    "/votes/": typeof VotesIndexRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/incidents/$id': typeof IncidentsIdRoute
+  '/sso/authorize': typeof SsoAuthorizeRoute
+  '/contracts/': typeof ContractsIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/events/': typeof EventsIndexRoute
+  '/incidents/': typeof IncidentsIndexRoute
+  '/services/': typeof ServicesIndexRoute
+  '/votes/': typeof VotesIndexRoute
 }
 export interface FileRouteTypes {
-    fileRoutesByFullPath: FileRoutesByFullPath;
-    fullPaths:
-        | "/"
-        | "/login"
-        | "/register"
-        | "/incidents/$id"
-        | "/sso/authorize"
-        | "/contracts/"
-        | "/dashboard/"
-        | "/events/"
-        | "/incidents/"
-        | "/services/"
-        | "/votes/";
-    fileRoutesByTo: FileRoutesByTo;
-    to:
-        | "/"
-        | "/login"
-        | "/register"
-        | "/incidents/$id"
-        | "/sso/authorize"
-        | "/contracts"
-        | "/dashboard"
-        | "/events"
-        | "/incidents"
-        | "/services"
-        | "/votes";
-    id:
-        | "__root__"
-        | "/"
-        | "/login"
-        | "/register"
-        | "/incidents/$id"
-        | "/sso/authorize"
-        | "/contracts/"
-        | "/dashboard/"
-        | "/events/"
-        | "/incidents/"
-        | "/services/"
-        | "/votes/";
-    fileRoutesById: FileRoutesById;
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/incidents/$id'
+    | '/sso/authorize'
+    | '/contracts/'
+    | '/dashboard/'
+    | '/events/'
+    | '/incidents/'
+    | '/services/'
+    | '/votes/'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/incidents/$id'
+    | '/sso/authorize'
+    | '/contracts'
+    | '/dashboard'
+    | '/events'
+    | '/incidents'
+    | '/services'
+    | '/votes'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/register'
+    | '/incidents/$id'
+    | '/sso/authorize'
+    | '/contracts/'
+    | '/dashboard/'
+    | '/events/'
+    | '/incidents/'
+    | '/services/'
+    | '/votes/'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-    IndexRoute: typeof IndexRoute;
-    LoginRoute: typeof LoginRoute;
-    RegisterRoute: typeof RegisterRoute;
-    IncidentsIdRoute: typeof IncidentsIdRoute;
-    SsoAuthorizeRoute: typeof SsoAuthorizeRoute;
-    ContractsIndexRoute: typeof ContractsIndexRoute;
-    DashboardIndexRoute: typeof DashboardIndexRoute;
-    EventsIndexRoute: typeof EventsIndexRoute;
-    IncidentsIndexRoute: typeof IncidentsIndexRoute;
-    ServicesIndexRoute: typeof ServicesIndexRoute;
-    VotesIndexRoute: typeof VotesIndexRoute;
+  IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
+  IncidentsIdRoute: typeof IncidentsIdRoute
+  SsoAuthorizeRoute: typeof SsoAuthorizeRoute
+  ContractsIndexRoute: typeof ContractsIndexRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+  EventsIndexRoute: typeof EventsIndexRoute
+  IncidentsIndexRoute: typeof IncidentsIndexRoute
+  ServicesIndexRoute: typeof ServicesIndexRoute
+  VotesIndexRoute: typeof VotesIndexRoute
 }
 
-declare module "@tanstack/react-router" {
-    interface FileRoutesByPath {
-        "/register": {
-            id: "/register";
-            path: "/register";
-            fullPath: "/register";
-            preLoaderRoute: typeof RegisterRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/login": {
-            id: "/login";
-            path: "/login";
-            fullPath: "/login";
-            preLoaderRoute: typeof LoginRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/": {
-            id: "/";
-            path: "/";
-            fullPath: "/";
-            preLoaderRoute: typeof IndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/votes/": {
-            id: "/votes/";
-            path: "/votes";
-            fullPath: "/votes/";
-            preLoaderRoute: typeof VotesIndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/services/": {
-            id: "/services/";
-            path: "/services";
-            fullPath: "/services/";
-            preLoaderRoute: typeof ServicesIndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/incidents/": {
-            id: "/incidents/";
-            path: "/incidents";
-            fullPath: "/incidents/";
-            preLoaderRoute: typeof IncidentsIndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/events/": {
-            id: "/events/";
-            path: "/events";
-            fullPath: "/events/";
-            preLoaderRoute: typeof EventsIndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/dashboard/": {
-            id: "/dashboard/";
-            path: "/dashboard";
-            fullPath: "/dashboard/";
-            preLoaderRoute: typeof DashboardIndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/contracts/": {
-            id: "/contracts/";
-            path: "/contracts";
-            fullPath: "/contracts/";
-            preLoaderRoute: typeof ContractsIndexRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/sso/authorize": {
-            id: "/sso/authorize";
-            path: "/sso/authorize";
-            fullPath: "/sso/authorize";
-            preLoaderRoute: typeof SsoAuthorizeRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
-        "/incidents/$id": {
-            id: "/incidents/$id";
-            path: "/incidents/$id";
-            fullPath: "/incidents/$id";
-            preLoaderRoute: typeof IncidentsIdRouteImport;
-            parentRoute: typeof rootRouteImport;
-        };
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/votes/': {
+      id: '/votes/'
+      path: '/votes'
+      fullPath: '/votes/'
+      preLoaderRoute: typeof VotesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/services/': {
+      id: '/services/'
+      path: '/services'
+      fullPath: '/services/'
+      preLoaderRoute: typeof ServicesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/incidents/': {
+      id: '/incidents/'
+      path: '/incidents'
+      fullPath: '/incidents/'
+      preLoaderRoute: typeof IncidentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/events/': {
+      id: '/events/'
+      path: '/events'
+      fullPath: '/events/'
+      preLoaderRoute: typeof EventsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/dashboard'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contracts/': {
+      id: '/contracts/'
+      path: '/contracts'
+      fullPath: '/contracts/'
+      preLoaderRoute: typeof ContractsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sso/authorize': {
+      id: '/sso/authorize'
+      path: '/sso/authorize'
+      fullPath: '/sso/authorize'
+      preLoaderRoute: typeof SsoAuthorizeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/incidents/$id': {
+      id: '/incidents/$id'
+      path: '/incidents/$id'
+      fullPath: '/incidents/$id'
+      preLoaderRoute: typeof IncidentsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+  }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-    IndexRoute: IndexRoute,
-    LoginRoute: LoginRoute,
-    RegisterRoute: RegisterRoute,
-    IncidentsIdRoute: IncidentsIdRoute,
-    SsoAuthorizeRoute: SsoAuthorizeRoute,
-    ContractsIndexRoute: ContractsIndexRoute,
-    DashboardIndexRoute: DashboardIndexRoute,
-    EventsIndexRoute: EventsIndexRoute,
-    IncidentsIndexRoute: IncidentsIndexRoute,
-    ServicesIndexRoute: ServicesIndexRoute,
-    VotesIndexRoute: VotesIndexRoute,
-};
+  IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
+  IncidentsIdRoute: IncidentsIdRoute,
+  SsoAuthorizeRoute: SsoAuthorizeRoute,
+  ContractsIndexRoute: ContractsIndexRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+  EventsIndexRoute: EventsIndexRoute,
+  IncidentsIndexRoute: IncidentsIndexRoute,
+  ServicesIndexRoute: ServicesIndexRoute,
+  VotesIndexRoute: VotesIndexRoute,
+}
 export const routeTree = rootRouteImport
-    ._addFileChildren(rootRouteChildren)
-    ._addFileTypes<FileRouteTypes>();
+  ._addFileChildren(rootRouteChildren)
+  ._addFileTypes<FileRouteTypes>()
