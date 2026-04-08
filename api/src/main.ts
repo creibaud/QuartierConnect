@@ -4,6 +4,7 @@ import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 import { HealthResponseDto, StatsResponseDto } from "./app.dto";
 import { AppModule } from "./app.module";
@@ -200,7 +201,6 @@ Les endpoints qui retournent des listes acceptent \`?page=1&limit=20\` (max 100)
         },
     );
 
-    // Mount docs before helmet so CSP doesn't block the inline init script
     app.use(
         "/docs",
         apiReference({
@@ -209,18 +209,41 @@ Les endpoints qui retournent des listes acceptent \`?page=1&limit=20\` (max 100)
         }),
     );
 
-    app.use(
-        helmet({
-            contentSecurityPolicy: {
-                directives: {
-                    ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-                    "script-src": ["'self'", "'unsafe-inline'"],
-                    "style-src": ["'self'", "'unsafe-inline'"],
-                    "img-src": ["'self'", "data:"],
+    app.use((req: Request, res: Response, next: NextFunction) => {
+        if (req.path.startsWith("/docs") || req.path.startsWith("/scalar")) {
+            helmet({
+                contentSecurityPolicy: {
+                    directives: {
+                        "default-src": ["'self'"],
+                        "script-src": ["'self'", "'unsafe-inline'"],
+                        "style-src": ["'self'", "'unsafe-inline'", "https:"],
+                        "font-src": ["'self'", "data:", "https:"],
+                        "img-src": ["'self'", "data:", "https:"],
+                        "connect-src": [
+                            "'self'",
+                            "ws:",
+                            "wss:",
+                            "http://localhost:5000",
+                            "http://localhost/api",
+                            "https://api.scalar.com",
+                        ],
+                        "worker-src": ["blob:"],
+                    },
                 },
-            },
-        }),
-    );
+            })(req, res, next);
+        } else {
+            helmet({
+                contentSecurityPolicy: {
+                    directives: {
+                        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+                        "script-src": ["'self'", "'unsafe-inline'"],
+                        "style-src": ["'self'", "'unsafe-inline'"],
+                        "img-src": ["'self'", "data:"],
+                    },
+                },
+            })(req, res, next);
+        }
+    });
 
     const rawOrigins = process.env.CORS_ORIGINS;
     const origins = rawOrigins
