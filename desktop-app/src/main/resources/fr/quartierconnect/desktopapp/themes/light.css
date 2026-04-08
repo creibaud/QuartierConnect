@@ -1,0 +1,7 @@
+.root {
+    -fx-base: #f5f5f5;
+    -fx-background: #ffffff;
+    -fx-control-inner-background: #ffffff;
+    -fx-text-base-color: #1a1a1a;
+    -fx-accent: #3b82f6;
+}

@@ -1,0 +1,139 @@
+.root {
+    -fx-background-color: #fafafa;
+    -fx-font-family: "System";
+    -fx-font-size: 13px;
+}
+
+.title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #18181b;
+}
+
+.subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: #71717a;
+}
+
+.login-box {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 16, 0, 0, 4);
+}
+
+.text-field, .password-field {
+    -fx-background-radius: 8;
+    -fx-border-color: #e4e4e7;
+    -fx-border-radius: 8;
+    -fx-padding: 8 12 8 12;
+}
+
+.text-field:focused, .password-field:focused {
+    -fx-border-color: #3b82f6;
+}
+
+.primary-button {
+    -fx-background-color: #18181b;
+    -fx-text-fill: white;
+    -fx-background-radius: 8;
+    -fx-padding: 9 16 9 16;
+    -fx-cursor: hand;
+}
+
+.primary-button:hover {
+    -fx-background-color: #3f3f46;
+}
+
+.secondary-button {
+    -fx-background-color: white;
+    -fx-text-fill: #18181b;
+    -fx-border-color: #e4e4e7;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 9 16 9 16;
+    -fx-cursor: hand;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #f4f4f5;
+}
+
+.error-label {
+    -fx-text-fill: #ef4444;
+    -fx-font-size: 12px;
+}
+
+.separator-label {
+    -fx-text-fill: #a1a1aa;
+    -fx-font-size: 12px;
+}
+
+.sidebar {
+    -fx-background-color: #18181b;
+}
+
+.sidebar-title {
+    -fx-text-fill: white;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 8 0;
+}
+
+.menu-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #a1a1aa;
+    -fx-alignment: CENTER-LEFT;
+    -fx-padding: 8 12 8 12;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.menu-button:hover {
+    -fx-background-color: #27272a;
+    -fx-text-fill: white;
+}
+
+.logout-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #71717a;
+    -fx-alignment: CENTER-LEFT;
+    -fx-padding: 8 12 8 12;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.logout-button:hover {
+    -fx-text-fill: #ef4444;
+}
+
+.topbar {
+    -fx-background-color: white;
+    -fx-border-color: #e4e4e7;
+    -fx-border-width: 0 0 1 0;
+}
+
+.topbar-user {
+    -fx-text-fill: #18181b;
+    -fx-font-size: 13px;
+}
+
+.status-online {
+    -fx-text-fill: #22c55e;
+    -fx-font-size: 12px;
+}
+
+.status-offline {
+    -fx-text-fill: #a1a1aa;
+    -fx-font-size: 12px;
+}
+
+.content-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #18181b;
+}
+
+.content-subtitle {
+    -fx-text-fill: #71717a;
+    -fx-font-size: 13px;
+}
