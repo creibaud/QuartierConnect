@@ -27,6 +27,7 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { SocialService } from "../social/social.service";
 import { CreateServiceDto } from "./dto/create-service.dto";
+import { ServiceDto } from "./dto/service-response.dto";
 import { UpdateServiceDto } from "./dto/update-service.dto";
 import { Service, ServiceDocument } from "./schemas/service.schema";
 
@@ -63,23 +64,7 @@ export class ServicesController {
     })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
-    @ApiResponse({
-        status: 200,
-        description: "Tableau des services",
-        schema: {
-            example: [
-                {
-                    _id: "664f1a2b3c4d5e6f7a8b9c0d",
-                    title: "Aide au jardinage",
-                    description: "Disponible les week-ends pour jardinage.",
-                    category: "gardening",
-                    type: "free",
-                    createdBy: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-                    neighborhoodId: null,
-                },
-            ],
-        },
-    })
+    @ApiResponse({ status: 200, type: [ServiceDto] })
     findAll(
         @Query("category") category?: string,
         @Query("type") type?: string,
@@ -103,7 +88,7 @@ export class ServicesController {
         description: "ID MongoDB du service",
         example: "664f1a2b3c4d5e6f7a8b9c0d",
     })
-    @ApiResponse({ status: 200, description: "Service trouvé" })
+    @ApiResponse({ status: 200, type: ServiceDto })
     @ApiResponse({ status: 404, description: "Service introuvable" })
     async findOne(@Param("id") id: string) {
         const service = await this.serviceModel.findById(id).exec();
@@ -119,7 +104,7 @@ export class ServicesController {
         description:
             "Crée une annonce de service. Le champ `createdBy` est automatiquement renseigné depuis le JWT.",
     })
-    @ApiResponse({ status: 201, description: "Service créé" })
+    @ApiResponse({ status: 201, type: ServiceDto, description: "Service créé" })
     @ApiResponse({ status: 401, description: "Non authentifié" })
     async create(@Body() dto: CreateServiceDto, @Request() req: AuthRequest) {
         const created = await this.serviceModel.create({
@@ -142,8 +127,15 @@ export class ServicesController {
         description: "Le propriétaire ou un admin peut modifier.",
     })
     @ApiParam({ name: "id", description: "ID MongoDB du service" })
-    @ApiResponse({ status: 200, description: "Service mis à jour" })
-    @ApiResponse({ status: 403, description: "Accès refusé" })
+    @ApiResponse({
+        status: 200,
+        type: ServiceDto,
+        description: "Service mis à jour",
+    })
+    @ApiResponse({
+        status: 403,
+        description: "Accès refusé (propriétaire ou admin uniquement)",
+    })
     @ApiResponse({ status: 404, description: "Service introuvable" })
     async update(
         @Param("id") id: string,
@@ -178,8 +170,15 @@ export class ServicesController {
     @ApiBearerAuth()
     @ApiOperation({ summary: "Supprimer un service (admin uniquement)" })
     @ApiParam({ name: "id", description: "ID MongoDB du service" })
-    @ApiResponse({ status: 200, description: "{ success: true }" })
-    @ApiResponse({ status: 403, description: "Rôle insuffisant" })
+    @ApiResponse({
+        status: 200,
+        schema: { example: { success: true } },
+        description: "Service supprimé",
+    })
+    @ApiResponse({
+        status: 403,
+        description: "Rôle insuffisant (admin requis)",
+    })
     @ApiResponse({ status: 404, description: "Service introuvable" })
     async remove(@Param("id") id: string) {
         const deleted = await this.serviceModel.findByIdAndDelete(id).exec();

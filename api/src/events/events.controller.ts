@@ -25,6 +25,7 @@ import { Model } from "mongoose";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { SocialService } from "../social/social.service";
 import { CreateEventDto } from "./dto/create-event.dto";
+import { EventDto, EventInterestResponseDto } from "./dto/event-response.dto";
 import { UpdateEventDto } from "./dto/update-event.dto";
 import { Event, EventDocument } from "./schemas/event.schema";
 
@@ -61,23 +62,7 @@ export class EventsController {
     })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
-    @ApiResponse({
-        status: 200,
-        description: "Tableau des événements",
-        schema: {
-            example: [
-                {
-                    _id: "664f1a2b3c4d5e6f7a8b9c0e",
-                    title: "Vide-grenier du quartier",
-                    description: "Grand vide-grenier annuel.",
-                    category: "community",
-                    date: "2026-05-15T09:00:00.000Z",
-                    createdBy: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-                    interestedUserIds: [],
-                },
-            ],
-        },
-    })
+    @ApiResponse({ status: 200, type: [EventDto] })
     findAll(
         @Query("category") category?: string,
         @Query("date") date?: string,
@@ -106,7 +91,7 @@ export class EventsController {
         description: "ID MongoDB de l'événement",
         example: "664f1a2b3c4d5e6f7a8b9c0e",
     })
-    @ApiResponse({ status: 200, description: "Événement trouvé" })
+    @ApiResponse({ status: 200, type: EventDto })
     @ApiResponse({ status: 404, description: "Événement introuvable" })
     async findOne(@Param("id") id: string) {
         const event = await this.eventModel.findById(id).exec();
@@ -122,7 +107,7 @@ export class EventsController {
         description:
             "Crée un événement communautaire. `createdBy` est renseigné automatiquement depuis le JWT.",
     })
-    @ApiResponse({ status: 201, description: "Événement créé" })
+    @ApiResponse({ status: 201, type: EventDto, description: "Événement créé" })
     @ApiResponse({ status: 401, description: "Non authentifié" })
     async create(@Body() dto: CreateEventDto, @Request() req: AuthRequest) {
         const created = await this.eventModel.create({
@@ -147,11 +132,7 @@ export class EventsController {
             "Ajoute l'utilisateur courant à `interestedUserIds` (idempotent via `$addToSet`).",
     })
     @ApiParam({ name: "id", description: "ID MongoDB de l'événement" })
-    @ApiResponse({
-        status: 201,
-        description: "Nombre total de personnes intéressées",
-        schema: { example: { interested: 3 } },
-    })
+    @ApiResponse({ status: 201, type: EventInterestResponseDto })
     @ApiResponse({ status: 404, description: "Événement introuvable" })
     async markInterest(@Param("id") id: string, @Request() req: AuthRequest) {
         const event = await this.eventModel
@@ -171,7 +152,11 @@ export class EventsController {
     @ApiBearerAuth()
     @ApiOperation({ summary: "Modifier un événement" })
     @ApiParam({ name: "id", description: "ID MongoDB de l'événement" })
-    @ApiResponse({ status: 200, description: "Événement modifié" })
+    @ApiResponse({
+        status: 200,
+        type: EventDto,
+        description: "Événement modifié",
+    })
     @ApiResponse({ status: 404, description: "Événement introuvable" })
     async update(@Param("id") id: string, @Body() dto: UpdateEventDto) {
         const event = await this.eventModel

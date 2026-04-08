@@ -8,11 +8,17 @@ import {
 } from "@nestjs/common";
 import {
     ApiBearerAuth,
+    ApiBody,
     ApiOperation,
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import {
+    RecommendationItemDto,
+    RecordInterestBodyDto,
+    RecordInterestResponseDto,
+} from "./dto/social-responses.dto";
 import { SocialService } from "./social.service";
 
 interface AuthRequest {
@@ -32,20 +38,7 @@ export class SocialController {
         description:
             "Retourne services et événements recommandés basés sur le graphe Neo4j. Retourne [] si Neo4j est indisponible.",
     })
-    @ApiResponse({
-        status: 200,
-        schema: {
-            example: [
-                {
-                    type: "service",
-                    id: "abc123",
-                    name: "Bibliothèque municipale",
-                    score: 3,
-                    reason: "Service in your neighborhood",
-                },
-            ],
-        },
-    })
+    @ApiResponse({ status: 200, type: [RecommendationItemDto] })
     getRecommendations(@Request() req: AuthRequest) {
         return this.socialService.getRecommendations(req.user.sub);
     }
@@ -53,8 +46,11 @@ export class SocialController {
     @Post("social/interest")
     @ApiOperation({
         summary: "Enregistrer l'intérêt pour un événement (alimente Neo4j)",
+        description:
+            "Crée ou supprime une relation INTERESTED_IN dans Neo4j entre l'utilisateur et l'événement.",
     })
-    @ApiResponse({ status: 201, description: "Intérêt enregistré" })
+    @ApiBody({ type: RecordInterestBodyDto })
+    @ApiResponse({ status: 201, type: RecordInterestResponseDto })
     recordInterest(
         @Body() body: { eventId: string; interested: boolean },
         @Request() req: AuthRequest,

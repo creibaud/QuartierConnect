@@ -10,6 +10,7 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { DslService } from "./dsl.service";
 import { DslQueryDto } from "./dto/dsl-query.dto";
+import { DslQueryResultDto } from "./dto/dsl-response.dto";
 
 @ApiTags("DSL")
 @ApiBearerAuth()
@@ -25,22 +26,15 @@ export class DslController {
         description:
             "Compile et exécute une requête DSL via le moteur PLY Python (in-process via pythonia).",
     })
-    @ApiResponse({
-        status: 201,
-        schema: {
-            example: {
-                type: "find",
-                collection: "incidents",
-                filter: { status: "open" },
-                limit: 10,
-            },
-        },
-    })
+    @ApiResponse({ status: 201, type: DslQueryResultDto })
     @ApiResponse({
         status: 400,
         description: "Erreur de syntaxe DSL ou collection inconnue",
     })
-    @ApiResponse({ status: 403, description: "Rôle insuffisant" })
+    @ApiResponse({
+        status: 403,
+        description: "Rôle insuffisant (moderator/admin requis)",
+    })
     execute(@Body() dto: DslQueryDto) {
         return this.dslService.execute(dto.query);
     }

@@ -5,7 +5,74 @@ import { NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import helmet from "helmet";
+import { HealthResponseDto, StatsResponseDto } from "./app.dto";
 import { AppModule } from "./app.module";
+import {
+    AuthTokensResponseDto,
+    LogoutResponseDto,
+    RefreshTokensResponseDto,
+    UserProfileDto,
+} from "./auth/dto/auth-responses.dto";
+import {
+    ErrorResponseDto,
+    SuccessResponseDto,
+} from "./common/dto/common-responses.dto";
+import {
+    CastRecordDto,
+    CommunityVoteDto,
+    CommunityVoteOptionResultDto,
+    CommunityVoteResultsDto,
+    VoteOptionResponseDto,
+} from "./community-votes/dto/community-vote-response.dto";
+import {
+    ContractDto,
+    SignatureDto,
+} from "./contracts/dto/contract-response.dto";
+import {
+    DocumentAuditEntryDto,
+    DocumentMetaDto,
+} from "./documents/dto/document-responses.dto";
+import { DslQueryResultDto } from "./dsl/dto/dsl-response.dto";
+import {
+    EventDto,
+    EventInterestResponseDto,
+} from "./events/dto/event-response.dto";
+import {
+    IncidentDto,
+    SyncResultDto,
+} from "./incidents/dto/incident-response.dto";
+import {
+    ConversationDto,
+    MessageDto,
+} from "./messaging/dto/messaging-responses.dto";
+import {
+    GeoJsonPolygonResponseDto,
+    NeighborhoodDto,
+} from "./neighborhoods/dto/neighborhood-response.dto";
+import {
+    PointsBalanceResponseDto,
+    PointsTransactionResponseDto,
+    TransferResponseDto,
+} from "./points/dto/points-responses.dto";
+import { ServiceDto } from "./services/dto/service-response.dto";
+import {
+    RecommendationItemDto,
+    RecordInterestBodyDto,
+    RecordInterestResponseDto,
+} from "./social/dto/social-responses.dto";
+import {
+    DeleteAccountBodyDto,
+    GdprExportDto,
+    PointsBalanceDto,
+    PointsTransactionDto,
+    SocialRelationDto,
+    UserPublicDto,
+} from "./users/dto/user-responses.dto";
+import {
+    VoteActionResponseDto,
+    VoteBreakdownDto,
+    VoteScoreResponseDto,
+} from "./votes/dto/vote-response.dto";
 
 const DEV_ORIGINS = [
     "http://localhost",
@@ -28,6 +95,10 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(
         app,
         new DocumentBuilder()
+            .setExternalDoc(
+                "Source code",
+                "https://github.com/creibaud/QuartierConnect",
+            )
             .setTitle("QuartierConnect API")
             .setDescription(
                 `API REST de la plateforme QuartierConnect — gestion de quartier (ESGI Étape 3).
@@ -81,6 +152,52 @@ Les endpoints qui retournent des listes acceptent \`?page=1&limit=20\` (max 100)
             .addServer("http://localhost/api", "Local API (via Caddy)")
             .addBearerAuth()
             .build(),
+        {
+            extraModels: [
+                HealthResponseDto,
+                StatsResponseDto,
+                AuthTokensResponseDto,
+                RefreshTokensResponseDto,
+                LogoutResponseDto,
+                UserProfileDto,
+                ErrorResponseDto,
+                SuccessResponseDto,
+                CommunityVoteDto,
+                CommunityVoteOptionResultDto,
+                CommunityVoteResultsDto,
+                CastRecordDto,
+                VoteOptionResponseDto,
+                ContractDto,
+                SignatureDto,
+                DocumentAuditEntryDto,
+                DocumentMetaDto,
+                DslQueryResultDto,
+                EventDto,
+                EventInterestResponseDto,
+                IncidentDto,
+                SyncResultDto,
+                ConversationDto,
+                MessageDto,
+                GeoJsonPolygonResponseDto,
+                NeighborhoodDto,
+                PointsBalanceResponseDto,
+                PointsTransactionResponseDto,
+                TransferResponseDto,
+                ServiceDto,
+                RecommendationItemDto,
+                RecordInterestBodyDto,
+                RecordInterestResponseDto,
+                DeleteAccountBodyDto,
+                GdprExportDto,
+                PointsBalanceDto,
+                PointsTransactionDto,
+                SocialRelationDto,
+                UserPublicDto,
+                VoteActionResponseDto,
+                VoteBreakdownDto,
+                VoteScoreResponseDto,
+            ],
+        },
     );
 
     // Mount docs before helmet so CSP doesn't block the inline init script

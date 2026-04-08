@@ -17,10 +17,15 @@ import {
 import { CommunityVoteType } from "../schemas/community-vote.schema";
 
 export class VoteOptionDto {
+    @ApiProperty({
+        example: "yes",
+        description: "Identifiant unique de l'option",
+    })
     @IsString()
     @IsNotEmpty()
     id: string;
 
+    @ApiProperty({ example: "Oui", description: "Libellé affiché de l'option" })
     @IsString()
     @IsNotEmpty()
     label: string;

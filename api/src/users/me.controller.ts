@@ -11,6 +11,7 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import {
     ApiBearerAuth,
+    ApiBody,
     ApiOperation,
     ApiResponse,
     ApiTags,
@@ -25,6 +26,7 @@ import { TotpService } from "../auth/totp.service";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { NEO4J_DRIVER } from "../social/neo4j/neo4j.provider";
+import { DeleteAccountBodyDto, GdprExportDto } from "./dto/user-responses.dto";
 
 interface AuthRequest {
     user: { sub: string };
@@ -51,22 +53,7 @@ export class MeController {
         description:
             "Retourne toutes les données associées au compte courant : profil, incidents, solde de points, transactions.",
     })
-    @ApiResponse({
-        status: 200,
-        schema: {
-            example: {
-                profile: {
-                    id: "uuid",
-                    email: "alice@demo.fr",
-                    role: "resident",
-                    createdAt: "...",
-                },
-                incidents: [],
-                pointsBalance: null,
-                transactions: [],
-            },
-        },
-    })
+    @ApiResponse({ status: 200, type: GdprExportDto })
     async export(@Request() req: AuthRequest) {
         const userId = req.user.sub;
 
@@ -128,8 +115,17 @@ export class MeController {
         description:
             "Anonymise le compte. Requiert une validation TOTP pour prévenir la suppression via token volé. Email remplacé par un hash irréversible, passwordHash et totpSecret effacés, refreshToken révoqué.",
     })
-    @ApiResponse({ status: 200, schema: { example: { success: true } } })
-    @ApiResponse({ status: 401, description: "Code TOTP invalide" })
+    @ApiBody({ type: DeleteAccountBodyDto })
+    @ApiResponse({
+        status: 200,
+        schema: { example: { success: true } },
+        description:
+            "Compte anonymisé — email remplacé par un hash, secrets effacés",
+    })
+    @ApiResponse({
+        status: 401,
+        description: "Code TOTP invalide ou expiré",
+    })
     async deleteAccount(
         @Request() req: AuthRequest,
         @Body() body: { totpCode: string },

@@ -7,6 +7,7 @@ import {
 } from "@nestjs/swagger";
 import { and, count, eq, isNull } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { HealthResponseDto, StatsResponseDto } from "./app.dto";
 import { Roles } from "./auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 import { RolesGuard } from "./auth/guards/roles.guard";
@@ -24,11 +25,12 @@ export class AppController {
     ) {}
 
     @Get("health")
-    @ApiOperation({ summary: "Health check" })
-    @ApiResponse({
-        status: 200,
-        description: '{ status: "ok", timestamp: string }',
+    @ApiOperation({
+        summary: "Health check",
+        description:
+            "Retourne le statut du serveur. Utilisé par SyncService Java toutes les 30s.",
     })
+    @ApiResponse({ status: 200, type: HealthResponseDto })
     health() {
         return {
             status: "ok",
@@ -48,16 +50,14 @@ export class AppController {
     })
     @ApiResponse({
         status: 200,
-        schema: {
-            example: {
-                users: 42,
-                incidents: 17,
-                neighborhoods: 5,
-                activeIncidents: 8,
-            },
-        },
+        type: StatsResponseDto,
+        description:
+            "Compteurs agrégés. Chaque valeur peut être null si la base de données est temporairement indisponible.",
     })
-    @ApiResponse({ status: 403, description: "Rôle insuffisant" })
+    @ApiResponse({
+        status: 403,
+        description: "Rôle insuffisant (admin requis)",
+    })
     async getStats() {
         const safe = async <T>(fn: () => Promise<T>): Promise<T | null> => {
             try {

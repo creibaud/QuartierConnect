@@ -25,6 +25,7 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { SocialService } from "../social/social.service";
 import { CreateNeighborhoodDto } from "./dto/create-neighborhood.dto";
+import { NeighborhoodDto } from "./dto/neighborhood-response.dto";
 import { UpdateNeighborhoodDto } from "./dto/update-neighborhood.dto";
 import { NeighborhoodsService } from "./neighborhoods.service";
 import {
@@ -46,7 +47,7 @@ export class NeighborhoodsController {
     @ApiOperation({ summary: "Lister les quartiers" })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
-    @ApiResponse({ status: 200, description: "Tableau des quartiers" })
+    @ApiResponse({ status: 200, type: [NeighborhoodDto] })
     findAll(@Query("page") page = "1", @Query("limit") limit = "20") {
         const pageNum = Math.max(1, parseInt(page) || 1);
         const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
@@ -57,7 +58,7 @@ export class NeighborhoodsController {
     @Get(":id")
     @ApiOperation({ summary: "Détail d'un quartier" })
     @ApiParam({ name: "id", description: "ID MongoDB du quartier" })
-    @ApiResponse({ status: 200, description: "Quartier trouvé" })
+    @ApiResponse({ status: 200, type: NeighborhoodDto })
     @ApiResponse({ status: 404, description: "Quartier introuvable" })
     async findOne(@Param("id") id: string) {
         const neighborhood = await this.neighborhoodModel.findById(id).exec();
@@ -75,12 +76,20 @@ export class NeighborhoodsController {
         description:
             "Crée un quartier avec polygone GeoJSON. Vérifie les chevauchements avec $geoIntersects.",
     })
-    @ApiResponse({ status: 201, description: "Quartier créé" })
+    @ApiResponse({
+        status: 201,
+        type: NeighborhoodDto,
+        description: "Quartier créé",
+    })
     @ApiResponse({
         status: 409,
-        description: "Chevauchement avec un quartier existant",
+        description:
+            "Chevauchement géographique avec un quartier existant ($geoIntersects)",
     })
-    @ApiResponse({ status: 403, description: "Rôle insuffisant" })
+    @ApiResponse({
+        status: 403,
+        description: "Rôle insuffisant (admin requis)",
+    })
     async create(@Body() dto: CreateNeighborhoodDto) {
         if (dto.geometry) {
             await this.neighborhoodsService.assertNoOverlap(dto.geometry);
@@ -99,10 +108,14 @@ export class NeighborhoodsController {
     @ApiBearerAuth()
     @ApiOperation({ summary: "Modifier un quartier (admin)" })
     @ApiParam({ name: "id", description: "ID MongoDB du quartier" })
-    @ApiResponse({ status: 200, description: "Quartier mis à jour" })
+    @ApiResponse({
+        status: 200,
+        type: NeighborhoodDto,
+        description: "Quartier mis à jour",
+    })
     @ApiResponse({
         status: 409,
-        description: "Chevauchement avec un quartier existant",
+        description: "Chevauchement géographique avec un quartier existant",
     })
     @ApiResponse({ status: 404, description: "Quartier introuvable" })
     async update(@Param("id") id: string, @Body() dto: UpdateNeighborhoodDto) {
@@ -126,7 +139,11 @@ export class NeighborhoodsController {
     @ApiBearerAuth()
     @ApiOperation({ summary: "Supprimer un quartier (admin)" })
     @ApiParam({ name: "id", description: "ID MongoDB du quartier" })
-    @ApiResponse({ status: 200, description: "{ success: true }" })
+    @ApiResponse({
+        status: 200,
+        schema: { example: { success: true } },
+        description: "Quartier supprimé définitivement",
+    })
     @ApiResponse({ status: 404, description: "Quartier introuvable" })
     async remove(@Param("id") id: string) {
         const deleted = await this.neighborhoodModel

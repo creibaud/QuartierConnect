@@ -9,9 +9,23 @@ import {
 } from "class-validator";
 
 export class GeoJsonPolygonDto {
+    @ApiProperty({ example: "Polygon" })
     @IsString()
     type: "Polygon";
 
+    @ApiProperty({
+        example: [
+            [
+                [2.35, 48.87],
+                [2.36, 48.87],
+                [2.36, 48.88],
+                [2.35, 48.88],
+                [2.35, 48.87],
+            ],
+        ],
+        description:
+            "Tableau de rings GeoJSON — premier ring = contour extérieur",
+    })
     coordinates: number[][][];
 }
 

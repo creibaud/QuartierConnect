@@ -29,6 +29,7 @@ import { RolesGuard } from "../auth/guards/roles.guard";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { CreateIncidentDto } from "./dto/create-incident.dto";
+import { IncidentDto, SyncResultDto } from "./dto/incident-response.dto";
 import { SyncIncidentsDto } from "./dto/sync-incident.dto";
 import { UpdateIncidentStatusDto } from "./dto/update-incident-status.dto";
 
@@ -80,23 +81,8 @@ export class IncidentsController {
     })
     @ApiResponse({
         status: 200,
-        description: "Tableau des incidents",
-        schema: {
-            example: [
-                {
-                    id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-                    title: "Lampadaire cassé rue de la Paix",
-                    description:
-                        "Le lampadaire au numéro 12 bloque le trottoir.",
-                    status: "open",
-                    createdBy: "f1e2d3c4-b5a6-7890-1234-567890abcdef",
-                    neighborhoodId: null,
-                    deletedAt: null,
-                    createdAt: "2026-04-05T10:00:00.000Z",
-                    updatedAt: "2026-04-05T10:00:00.000Z",
-                },
-            ],
-        },
+        type: [IncidentDto],
+        description: "Tableau des incidents paginé",
     })
     @ApiResponse({ status: 400, description: "Statut invalide" })
     @ApiResponse({ status: 401, description: "Non authentifié" })
@@ -137,7 +123,7 @@ export class IncidentsController {
         description: "UUID de l'incident",
         example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     })
-    @ApiResponse({ status: 200, description: "Incident trouvé" })
+    @ApiResponse({ status: 200, type: IncidentDto })
     @ApiResponse({
         status: 404,
         description: "Incident introuvable ou supprimé",
@@ -165,22 +151,8 @@ export class IncidentsController {
     })
     @ApiResponse({
         status: 201,
+        type: [IncidentDto],
         description: "Incident créé",
-        schema: {
-            example: [
-                {
-                    id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-                    title: "Lampadaire cassé",
-                    description: "Bloque le trottoir.",
-                    status: "open",
-                    createdBy: "f1e2d3c4-b5a6-7890-1234-567890abcdef",
-                    neighborhoodId: null,
-                    deletedAt: null,
-                    createdAt: "2026-04-05T10:00:00.000Z",
-                    updatedAt: "2026-04-05T10:00:00.000Z",
-                },
-            ],
-        },
     })
     @ApiResponse({ status: 401, description: "Non authentifié" })
     create(@Body() dto: CreateIncidentDto, @Request() req: AuthRequest) {
@@ -205,12 +177,20 @@ export class IncidentsController {
             "Machine d'états stricte : open → in_progress → resolved. Toute autre transition retourne 400. Protégé : moderator ou admin uniquement.",
     })
     @ApiParam({ name: "id", description: "UUID de l'incident" })
-    @ApiResponse({ status: 200, description: "Statut mis à jour" })
+    @ApiResponse({
+        status: 200,
+        type: IncidentDto,
+        description: "Statut mis à jour",
+    })
     @ApiResponse({
         status: 400,
-        description: "Transition invalide ou conflit concurrent",
+        description:
+            "Transition invalide ou conflit concurrent (open→resolved est interdit)",
     })
-    @ApiResponse({ status: 403, description: "Rôle insuffisant" })
+    @ApiResponse({
+        status: 403,
+        description: "Rôle insuffisant (moderator/admin requis)",
+    })
     @ApiResponse({ status: 404, description: "Incident introuvable" })
     async updateStatus(
         @Param("id") id: string,
@@ -263,8 +243,15 @@ export class IncidentsController {
             "Positionne `deleted_at = NOW()` sans modifier le statut. L'incident disparaît de toutes les listes (`WHERE deleted_at IS NULL`) mais reste en base.",
     })
     @ApiParam({ name: "id", description: "UUID de l'incident" })
-    @ApiResponse({ status: 200, description: "{ success: true }" })
-    @ApiResponse({ status: 403, description: "Rôle insuffisant" })
+    @ApiResponse({
+        status: 200,
+        schema: { example: { success: true } },
+        description: "Incident marqué comme supprimé (deleted_at = NOW())",
+    })
+    @ApiResponse({
+        status: 403,
+        description: "Rôle insuffisant (moderator/admin requis)",
+    })
     @ApiResponse({ status: 404, description: "Incident introuvable" })
     async remove(@Param("id") id: string) {
         const [incident] = await this.db
@@ -293,13 +280,7 @@ export class IncidentsController {
         description:
             "Upsert en masse des incidents. Seuls les incidents dont `createdBy` correspond à l'UUID du JWT sont traités ; les autres sont silencieusement ignorés. Le statut est toujours forcé à `open` lors de l'insertion initiale (LWW : les transitions de statut passent par `PATCH /:id/status`).",
     })
-    @ApiResponse({
-        status: 201,
-        description: "Résultat de la synchronisation",
-        schema: {
-            example: { upserted: 2, skipped: 1 },
-        },
-    })
+    @ApiResponse({ status: 201, type: SyncResultDto })
     @ApiResponse({ status: 401, description: "Non authentifié" })
     async sync(@Body() dto: SyncIncidentsDto, @Request() req: AuthRequest) {
         const ownItems = dto.incidents.filter(
