@@ -10,7 +10,7 @@
         seed seed-demo seed-neo4j totp \
         install install-api install-web install-dsl \
         validate validate-fast \
-        status clean info
+        status clean clean-modules info
 
 # ─── Couleurs & Styles ─────────────────────────────────────────────────────────
 BOLD   := $(shell printf '\033[1m')
@@ -361,4 +361,13 @@ clean: ## Supprimer les artefacts de build (dist/, target/, __pycache__, coverag
 	@rm -rf desktop-app/target
 	@find dsl -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 	@find dsl -name "parser.out" -o -name "parsetab.py" | xargs rm -f 2>/dev/null || true
+	@make clean-modules
 	@echo "$(OK) Nettoyage terminé"
+
+clean-modules: ## Supprimer les node_modules (api + web-apps)
+	@echo "$(RUN) Suppression des node_modules..."
+	@rm -rf api/node_modules
+	@rm -rf web-apps/node_modules
+	@rm -rf web-apps/apps/client/node_modules
+	@rm -rf web-apps/apps/admin/node_modules
+	@echo "$(OK) node_modules supprimés"
