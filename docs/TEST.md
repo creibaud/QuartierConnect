@@ -1,6 +1,6 @@
 # Rapport QA — QuartierConnect Étape 4
 
-> **Date** 8 avril 2026 · **Version** 0.1.6 · **Total** 636 tests automatisés · **Résultat** 636/636 ✓
+> **Date** 8 avril 2026 · **Version** 0.1.6 · **Total** 638 tests automatisés · **Résultat** 638/638 ✓
 
 ---
 
@@ -39,13 +39,13 @@
 
 | Composant              | Framework                | Tests   | Résultat      |
 | ---------------------- | ------------------------ | ------- | ------------- |
-| API NestJS — unitaires | Jest                     | 242     | 242/242 ✓     |
+| API NestJS — unitaires | Jest                     | 244     | 244/244 ✓     |
 | Web shared hooks       | Vitest                   | 73      | 73/73 ✓       |
 | API NestJS — E2E       | Jest + Supertest         | 148     | 148/148 ✓     |
 | Java Desktop           | JUnit 5 + Maven Surefire | 73      | 73/73 ✓       |
 | DSL Python             | pytest                   | 21      | 21/21 ✓       |
 | Web Playwright         | Playwright               | 79      | 79/79 ✓       |
-| **TOTAL**              |                          | **636** | **636/636 ✓** |
+| **TOTAL**              |                          | **638** | **638/638 ✓** |
 
 > Note : les 148 tests E2E nécessitent MongoDB + PostgreSQL (make docker-up). Les 79 tests Playwright nécessitent les apps sur :3000/:3001/:5000.
 
@@ -58,7 +58,7 @@ flowchart BT
 
     E2EUI["E2E UI — Playwright<br/>79 tests · Chromium headless<br/>:3000 / :3001 / :5000"]
     E2EAPI["E2E API — Supertest<br/>148 tests · BDD réelles<br/>MongoDB + PostgreSQL"]
-    UNIT["Unitaires — Jest + Vitest<br/>315 tests · Mocks injectés<br/>NestJS (242) + Shared (73)"]
+    UNIT["Unitaires — Jest + Vitest<br/>317 tests · Mocks injectés<br/>NestJS (244) + Shared (73)"]
     COMP["Composants — JUnit 5 + pytest<br/>94 tests · Isolation fichier<br/>Java (73) + DSL (21)"]
 
     COMP --> UNIT --> E2EAPI --> E2EUI
@@ -73,7 +73,7 @@ flowchart BT
 
 ## 2. Tests unitaires API — NestJS/Jest
 
-**242 tests · 30 suites · 0 échec**
+**244 tests · 30 suites · 0 échec**
 
 ### Couverture par module
 
@@ -98,7 +98,7 @@ flowchart BT
 | `contracts.controller.spec.ts`     | 7     | routes, accès, création                                                                            |
 | `messaging.service.spec.ts`        | 8     | conversations, messages, participants                                                              |
 | `messaging.controller.spec.ts`     | 5     | routes REST, pagination                                                                            |
-| `messaging.gateway.spec.ts`        | 6     | WebSocket connect, join, send, disconnect                                                          |
+| `messaging.gateway.spec.ts`        | 10    | WebSocket connect (auto-join), join, send, disconnect                                              |
 | `votes.service.spec.ts`            | 9     | cast, toggle, getScore, strategies                                                                 |
 | `votes.controller.spec.ts`         | 5     | allowedTypes, score, strategy factory                                                              |
 | `community-votes.service.spec.ts`  | 12    | create, cast, results, quorum, close, types                                                        |

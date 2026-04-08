@@ -383,9 +383,13 @@ sequenceDiagram
 
     A->>GW: connect() + auth.token = JWT
     GW->>GW: JWT.verify(token) → userId
-    GW->>GW: userSockets.set(userId, socketId)
+    GW->>SVC: findConversations(userId)
+    Mongo-->>SVC: [{_id, participants, ...}]
+    GW->>GW: socket.join("conversation:convId") × N
+    Note over GW: Rooms reconstruites depuis MongoDB à chaque connexion (résistant aux redémarrages)
 
     A->>GW: emit("join_conversation", conversationId)
+    Note over A,GW: Pour les nouvelles conversations créées pendant la session
     GW->>SVC: isParticipant(conversationId, userId)
     Mongo-->>SVC: {participants:[...]}
     GW->>GW: socket.join("conversation:convId")
