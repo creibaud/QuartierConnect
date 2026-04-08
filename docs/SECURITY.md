@@ -1,21 +1,40 @@
 # Sécurité — QuartierConnect
 
-> **Version** 0.1.5 · **Date** 8 avril 2026
+> **Version** 0.1.6 · **Date** 8 avril 2026
 
 ---
 
 ## Table des matières
 
-1. [Modèle de menace](#1-modèle-de-menace)
-2. [Hachage des mots de passe — Argon2id](#2-hachage-des-mots-de-passe--argon2id)
-3. [Authentification multi-facteur — TOTP RFC 6238](#3-authentification-multi-facteur--totp-rfc-6238)
-4. [JWT — Accès et rafraîchissement](#4-jwt--accès-et-rafraîchissement)
-5. [SSO — Single Sign-On cross-surface](#5-sso--single-sign-on-cross-surface)
-6. [Intégrité des contrats — SHA-256](#6-intégrité-des-contrats--sha-256)
-7. [Rate limiting](#7-rate-limiting)
-8. [Headers HTTP de sécurité](#8-headers-http-de-sécurité)
-9. [Autorisation basée sur les rôles](#9-autorisation-basée-sur-les-rôles)
-10. [RGPD — Protection des données](#10-rgpd--protection-des-données)
+- [Sécurité — QuartierConnect](#sécurité--quartierconnect)
+  - [Table des matières](#table-des-matières)
+  - [1. Modèle de menace](#1-modèle-de-menace)
+  - [2. Hachage des mots de passe — Argon2id](#2-hachage-des-mots-de-passe--argon2id)
+  - [3. Authentification multi-facteur — TOTP RFC 6238](#3-authentification-multi-facteur--totp-rfc-6238)
+    - [Algorithme](#algorithme)
+    - [Génération du secret (inscription)](#génération-du-secret-inscription)
+    - [Vérification avec anti-replay](#vérification-avec-anti-replay)
+  - [4. JWT — Accès et rafraîchissement](#4-jwt--accès-et-rafraîchissement)
+    - [Structure du payload](#structure-du-payload)
+    - [Stockage côté client](#stockage-côté-client)
+    - [Rotation stricte avec verrouillage transactionnel](#rotation-stricte-avec-verrouillage-transactionnel)
+    - [Révocation instantanée — table `revoked_tokens`](#révocation-instantanée--table-revoked_tokens)
+  - [5. SSO — Single Sign-On cross-surface](#5-sso--single-sign-on-cross-surface)
+  - [6. Intégrité des contrats — SHA-256](#6-intégrité-des-contrats--sha-256)
+    - [Hash du contenu](#hash-du-contenu)
+    - [Hash de signature individuelle](#hash-de-signature-individuelle)
+  - [7. Rate limiting](#7-rate-limiting)
+  - [8. Headers HTTP de sécurité](#8-headers-http-de-sécurité)
+  - [9. Autorisation basée sur les rôles](#9-autorisation-basée-sur-les-rôles)
+  - [10. RGPD — Protection des données](#10-rgpd--protection-des-données)
+    - [Export des données personnelles](#export-des-données-personnelles)
+    - [Suppression du compte](#suppression-du-compte)
+  - [11. Stockage des tokens — Application desktop Java](#11-stockage-des-tokens--application-desktop-java)
+    - [Problème adressé](#problème-adressé)
+    - [Solution — TokenVault (OS keychain)](#solution--tokenvault-os-keychain)
+    - [Données restantes dans SQLite](#données-restantes-dans-sqlite)
+    - [Fallback hors trousseau](#fallback-hors-trousseau)
+    - [Migration des bases existantes](#migration-des-bases-existantes)
 
 ---
 
@@ -64,17 +83,17 @@ flowchart TD
     A11 --> M11
 ```
 
-| Menace | Mitigation |
-|--------|-----------|
-| Brute-force mot de passe | Argon2id coût CPU/mémoire + rate limiting 100req/15min |
-| Replay d'un code TOTP | Anti-replay in-memory TanStack Store TTL 90s |
-| Vol de session XSS | Refresh token en httpOnly cookie (inaccessible JS) ; access token 15min ; JTI révocable |
-| CSRF | Refresh cookie httpOnly SameSite=strict ; access token en Authorization header |
-| Injection SQL | Drizzle ORM paramétrisé — jamais de SQL concaté |
-| Injection NoSQL | Mongoose schéma strict ; ValidationPipe whitelist:true |
-| Replay de SSO token | findOneAndUpdate atomique ; usedAt non-null après usage |
-| Élévation de privilège | RolesGuard vérifie le rôle re-lu depuis la BDD |
-| Accès non autorisé | Ownership check dans chaque controller (createdBy === req.user.sub) |
+| Menace                   | Mitigation                                                                              |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| Brute-force mot de passe | Argon2id coût CPU/mémoire + rate limiting 100req/15min                                  |
+| Replay d'un code TOTP    | Anti-replay in-memory TanStack Store TTL 90s                                            |
+| Vol de session XSS       | Refresh token en httpOnly cookie (inaccessible JS) ; access token 15min ; JTI révocable |
+| CSRF                     | Refresh cookie httpOnly SameSite=strict ; access token en Authorization header          |
+| Injection SQL            | Drizzle ORM paramétrisé — jamais de SQL concaté                                         |
+| Injection NoSQL          | Mongoose schéma strict ; ValidationPipe whitelist:true                                  |
+| Replay de SSO token      | findOneAndUpdate atomique ; usedAt non-null après usage                                 |
+| Élévation de privilège   | RolesGuard vérifie le rôle re-lu depuis la BDD                                          |
+| Accès non autorisé       | Ownership check dans chaque controller (createdBy === req.user.sub)                     |
 
 ---
 
@@ -183,10 +202,10 @@ Le refresh token est inaccessible au JavaScript (httpOnly), ce qui supprime le v
 
 ### Stockage côté client
 
-| Token | Stockage | Accès JS |
-|-------|---------|----------|
-| access token (15min) | `localStorage` | Oui — lecture pour `Authorization` header |
-| refresh token (7j) | httpOnly cookie `qc_rt` | Non — transparent pour le JS |
+| Token                | Stockage                | Accès JS                                  |
+| -------------------- | ----------------------- | ----------------------------------------- |
+| access token (15min) | `localStorage`          | Oui — lecture pour `Authorization` header |
+| refresh token (7j)   | httpOnly cookie `qc_rt` | Non — transparent pour le JS              |
 
 ### Rotation stricte avec verrouillage transactionnel
 
@@ -239,13 +258,13 @@ Si un attaquant vole un access token valide, le logout de la victime révoque le
 
 ## 5. SSO — Single Sign-On cross-surface
 
-| Propriété | Mécanisme |
-|-----------|----------|
-| Usage unique | findOneAndUpdate atomique — usedAt non-null après échange |
-| Expiration | expiresAt = now+300s ; index TTL MongoDB supprime automatiquement |
-| PKCE state | UUID v4 côté web, vérifié côté Java — empêche CSRF |
-| Entropie | Token UUID v4 (122 bits) — non devinable par force brute |
-| Transport | HTTPS obligatoire en production ; deep link app:// en dev |
+| Propriété    | Mécanisme                                                         |
+| ------------ | ----------------------------------------------------------------- |
+| Usage unique | findOneAndUpdate atomique — usedAt non-null après échange         |
+| Expiration   | expiresAt = now+300s ; index TTL MongoDB supprime automatiquement |
+| PKCE state   | UUID v4 côté web, vérifié côté Java — empêche CSRF                |
+| Entropie     | Token UUID v4 (122 bits) — non devinable par force brute          |
+| Transport    | HTTPS obligatoire en production ; deep link app:// en dev         |
 
 ---
 
@@ -283,10 +302,10 @@ providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }]
 
 Routes avec throttling spécifique :
 
-| Route | Limite | Fenêtre | Raison |
-|-------|--------|---------|--------|
-| `POST /auth/login` | 5 tentatives | 15 min | Anti-brute-force (TOTP + password) |
-| `POST /auth/refresh` | 10 requêtes | 60 s | Limitation rotation abusive |
+| Route                | Limite       | Fenêtre | Raison                             |
+| -------------------- | ------------ | ------- | ---------------------------------- |
+| `POST /auth/login`   | 5 tentatives | 15 min  | Anti-brute-force (TOTP + password) |
+| `POST /auth/refresh` | 10 requêtes  | 60 s    | Limitation rotation abusive        |
 
 ---
 
@@ -294,13 +313,13 @@ Routes avec throttling spécifique :
 
 Helmet.js appliqué sur toutes les réponses, avec CSP par route (Caddy + NestJS) :
 
-| Header | Protection |
-|--------|-----------|
-| `Content-Security-Policy` | Restreint scripts/styles/images — mitigation XSS |
-| `X-Content-Type-Options: nosniff` | MIME sniffing |
-| `X-Frame-Options: DENY` | Clickjacking |
-| `Strict-Transport-Security` | Downgrade HTTPS → HTTP |
-| `X-XSS-Protection: 1; mode=block` | XSS legacy browsers |
+| Header                            | Protection                                       |
+| --------------------------------- | ------------------------------------------------ |
+| `Content-Security-Policy`         | Restreint scripts/styles/images — mitigation XSS |
+| `X-Content-Type-Options: nosniff` | MIME sniffing                                    |
+| `X-Frame-Options: DENY`           | Clickjacking                                     |
+| `Strict-Transport-Security`       | Downgrade HTTPS → HTTP                           |
+| `X-XSS-Protection: 1; mode=block` | XSS legacy browsers                              |
 
 **CSP par route** — `'unsafe-inline'` retiré des routes client, admin et API. Seules les routes `/docs` et `/scalar` (Scalar UI) conservent `'unsafe-inline'` en `script-src`, car cette UI tiers le nécessite. Les apps React utilisent des nonces implicites via Vite.
 
@@ -313,12 +332,12 @@ resident → moderator → admin
                               banned (terminal — login refusé)
 ```
 
-| Rôle | Permissions clés |
-|------|-----------------|
-| `resident` | Créer incidents/services/events, points, votes, messagerie |
-| `moderator` | + Changer statut incidents, modérer contenu |
-| `admin` | + Gérer utilisateurs, quartiers, stats, DSL |
-| `banned` | Aucune — 401 au login |
+| Rôle        | Permissions clés                                           |
+| ----------- | ---------------------------------------------------------- |
+| `resident`  | Créer incidents/services/events, points, votes, messagerie |
+| `moderator` | + Changer statut incidents, modérer contenu                |
+| `admin`     | + Gérer utilisateurs, quartiers, stats, DSL                |
+| `banned`    | Aucune — 401 au login                                      |
 
 Le rôle est re-vérifié en base à chaque refresh — un ban est effectif immédiatement.
 
@@ -340,3 +359,51 @@ N'inclut jamais : passwordHash, totpSecret, refreshTokenHash.
 1. Soft delete incidents (conservation modération)
 2. Révocation refresh token (déconnexion immédiate)
 3. Suppression nœud Neo4j `deleteNode('User', id)`
+
+---
+
+## 11. Stockage des tokens — Application desktop Java
+
+### Problème adressé
+
+Avant v0.1.6, les tokens d'accès et de rafraîchissement étaient stockés en clair dans `quartierconnect.db` (SQLite) avec des permissions fichier `644` (lisibles par tous les utilisateurs du système). Un attaquant local pouvait lire le refresh token en une commande et usurper la session pendant 7 jours sans connaître le mot de passe ni le code TOTP.
+
+### Solution — TokenVault (OS keychain)
+
+Le service `TokenVault` utilise `java-keyring` pour déléguer le stockage des tokens au trousseau système :
+
+| OS      | Backend                                 | Mécanisme                      |
+| ------- | --------------------------------------- | ------------------------------ |
+| Linux   | SecretService (gnome-keyring / KWallet) | D-Bus `org.freedesktop.Secret` |
+| macOS   | macOS Keychain                          | Security.framework             |
+| Windows | Credential Manager                      | DPAPI                          |
+
+Les tokens sont chiffrés par l'OS, accessibles uniquement à l'utilisateur courant, et ne transitent jamais par le disque en clair.
+
+```java
+// Sauvegarde après login/refresh
+TokenVault.getInstance().saveTokens(accessToken, refreshToken);
+
+// Chargement au démarrage (résume la session sans réseau)
+TokenVault.TokenPair pair = TokenVault.getInstance().loadTokens();
+
+// Suppression au logout
+TokenVault.getInstance().clearTokens();
+```
+
+### Données restantes dans SQLite
+
+La table `session` ne conserve plus que l'**email** (pour afficher l'identité en mode hors-ligne). Aucun secret n'est stocké sur disque.
+
+| Colonne    | Contenu                             | Sensibilité |
+| ---------- | ----------------------------------- | ----------- |
+| `email`    | Adresse email                       | Faible      |
+| `saved_at` | Horodatage de la dernière connexion | Aucune      |
+
+### Fallback hors trousseau
+
+Si aucun trousseau OS n'est disponible (serveur headless, CI, test), `TokenVault` conserve les tokens **en mémoire uniquement**. Ils ne survivent pas au redémarrage. L'utilisateur devra se reconnecter, mais aucun token ne sera jamais écrit en clair.
+
+### Migration des bases existantes
+
+`SQLiteDatabase.initialize()` supprime automatiquement les colonnes `access_token` et `refresh_token` des bases pré-v0.1.6 via `ALTER TABLE session DROP COLUMN`. La migration est idempotente.

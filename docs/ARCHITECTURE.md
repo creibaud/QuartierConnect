@@ -6,21 +6,31 @@
 
 ## Table des matières
 
-1. [Vue d'ensemble](#1-vue-densemble)
-2. [Conteneurs Docker](#2-conteneurs-docker)
-3. [Diagramme des modules NestJS](#3-diagramme-des-modules-nestjs)
-4. [Flux d'authentification complets](#4-flux-dauthentification-complets)
-5. [SSO cross-surface](#5-sso-cross-surface)
-6. [Refresh token et rotation](#6-refresh-token-et-rotation)
-7. [Architecture des bases de données](#7-architecture-des-bases-de-données)
-8. [Sync bidirectionnelle Java ↔ API](#8-sync-bidirectionnelle-java--api)
-9. [Sync Neo4j temps réel](#9-sync-neo4j-temps-réel)
-10. [WebSocket — Messagerie temps réel](#10-websocket--messagerie-temps-réel)
-11. [Système de votes](#11-système-de-votes)
-12. [DSL — Pipeline de compilation](#12-dsl--pipeline-de-compilation)
-13. [Offline mode Java desktop](#13-offline-mode-java-desktop)
-14. [Sécurité en couches](#14-sécurité-en-couches)
-15. [Cycle de vie d'une requête](#15-cycle-de-vie-dune-requête)
+- [Architecture Technique — QuartierConnect](#architecture-technique--quartierconnect)
+  - [Table des matières](#table-des-matières)
+  - [1. Vue d'ensemble](#1-vue-densemble)
+  - [2. Conteneurs Docker](#2-conteneurs-docker)
+    - [Routage Caddy](#routage-caddy)
+  - [3. Diagramme des modules NestJS](#3-diagramme-des-modules-nestjs)
+  - [4. Flux d'authentification complets](#4-flux-dauthentification-complets)
+    - [4.1 Inscription](#41-inscription)
+    - [4.2 Connexion (3 validations séquentielles)](#42-connexion-3-validations-séquentielles)
+  - [5. SSO cross-surface](#5-sso-cross-surface)
+  - [6. Refresh token et rotation](#6-refresh-token-et-rotation)
+  - [7. Architecture des bases de données](#7-architecture-des-bases-de-données)
+    - [7.1 Répartition des données](#71-répartition-des-données)
+    - [7.2 Justification du tri-base](#72-justification-du-tri-base)
+  - [8. Sync bidirectionnelle Java ↔ API](#8-sync-bidirectionnelle-java--api)
+  - [9. Sync Neo4j temps réel](#9-sync-neo4j-temps-réel)
+  - [10. WebSocket — Messagerie temps réel](#10-websocket--messagerie-temps-réel)
+  - [11. Système de votes](#11-système-de-votes)
+    - [Strategy Pattern — deux modes](#strategy-pattern--deux-modes)
+    - [Logique toggle](#logique-toggle)
+  - [12. DSL — Pipeline de compilation](#12-dsl--pipeline-de-compilation)
+    - [Grammaire simplifiée](#grammaire-simplifiée)
+  - [13. Offline mode Java desktop](#13-offline-mode-java-desktop)
+  - [14. Sécurité en couches](#14-sécurité-en-couches)
+  - [15. Cycle de vie d'une requête](#15-cycle-de-vie-dune-requête)
 
 ---
 
@@ -78,15 +88,15 @@ graph TB
 
 ## 2. Conteneurs Docker
 
-| # | Conteneur | Image | Port(s) | Rôle |
-|---|-----------|-------|---------|------|
-| 1 | `caddy` | `caddy:2-alpine` | 80, 443 | Reverse proxy HTTPS + Let's Encrypt automatique |
-| 2 | `client` | Node 20 + Vite | 3000 | SPA React — interface habitant |
-| 3 | `admin` | Node 20 + Vite | 3001 | SPA React — back-office admin |
-| 4 | `api` | Node 20 | 5000 | NestJS REST + WebSocket + DSL bridge |
-| 5 | `mongodb` | `mongo:7` | 27017 | Documents flexibles, GeoJSON, GridFS |
-| 6 | `postgres` | `postgres:16` | 5432 | Données ACID — users, incidents, points |
-| 7 | `neo4j` | `neo4j:5` | 7474, 7687 | Graphe social — recommandations Cypher |
+| #   | Conteneur  | Image            | Port(s)    | Rôle                                            |
+| --- | ---------- | ---------------- | ---------- | ----------------------------------------------- |
+| 1   | `caddy`    | `caddy:2-alpine` | 80, 443    | Reverse proxy HTTPS + Let's Encrypt automatique |
+| 2   | `client`   | Node 20 + Vite   | 3000       | SPA React — interface habitant                  |
+| 3   | `admin`    | Node 20 + Vite   | 3001       | SPA React — back-office admin                   |
+| 4   | `api`      | Node 20          | 5000       | NestJS REST + WebSocket + DSL bridge            |
+| 5   | `mongodb`  | `mongo:7`        | 27017      | Documents flexibles, GeoJSON, GridFS            |
+| 6   | `postgres` | `postgres:16`    | 5432       | Données ACID — users, incidents, points         |
+| 7   | `neo4j`    | `neo4j:5`        | 7474, 7687 | Graphe social — recommandations Cypher          |
 
 ### Routage Caddy
 
@@ -223,7 +233,7 @@ sequenceDiagram
     Note over API,Mongo: Atomique — replay impossible
     API->>API: generateTokenPair(user)
     API-->>Java: Set-Cookie qc_rt (httpOnly) + {accessToken, user} (Java lit refreshToken depuis body via dto.refreshToken)
-    Java->>Java: applyTokens() → SQLiteDatabase.saveSession()
+    Java->>Java: applyTokens() → TokenVault.saveTokens() + SQLiteDatabase.saveSession(email)
 ```
 
 ---
@@ -303,12 +313,12 @@ graph LR
 
 ### 7.2 Justification du tri-base
 
-| Critère | PostgreSQL | MongoDB | Neo4j |
-|---------|-----------|---------|-------|
-| Transactions ACID | Obligatoire (points, auth) | Non critique | Non applicable |
-| Schéma flexible | Non | Oui (GeoJSON, subdocs) | Propriétés libres |
-| Géolocalisation | Non | Index `2dsphere` natif | Non |
-| Recommandations | Non | Non | Cypher traversals |
+| Critère           | PostgreSQL                 | MongoDB                | Neo4j             |
+| ----------------- | -------------------------- | ---------------------- | ----------------- |
+| Transactions ACID | Obligatoire (points, auth) | Non critique           | Non applicable    |
+| Schéma flexible   | Non                        | Oui (GeoJSON, subdocs) | Propriétés libres |
+| Géolocalisation   | Non                        | Index `2dsphere` natif | Non               |
+| Recommandations   | Non                        | Non                    | Cypher traversals |
 
 ---
 
@@ -492,7 +502,7 @@ stateDiagram-v2
     ShowOfflineOption --> MainView : Continuer hors ligne
     ShowOfflineOption --> WaitSSO : Se reconnecter
 
-    WaitSSO --> MainView : SSO échangé + tokens sauvés SQLite
+    WaitSSO --> MainView : SSO échangé + tokens sauvés trousseau OS (TokenVault)
     MainView --> [*]
 ```
 
