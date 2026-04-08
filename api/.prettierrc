@@ -9,12 +9,6 @@
     "bracketSpacing": true,
     "arrowParens": "always",
     "plugins": ["@ianvs/prettier-plugin-sort-imports"],
-    "importOrder": [
-        "^react",
-        "^vite",
-        "<THIRD_PARTY_MODULES>",
-        "^@/(.*)$",
-        "^[./]"
-    ],
+    "importOrder": ["<THIRD_PARTY_MODULES>", "^@/(.*)$", "^[./]"],
     "importOrderParserPlugins": ["typescript", "decorators"]
 }

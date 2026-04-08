@@ -1,7 +1,2 @@
-dist/
-node_modules/
-.turbo/
-coverage/
 pnpm-lock.yaml
 .pnpm-store/
-*.yml

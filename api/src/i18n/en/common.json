@@ -1,0 +1,38 @@
+{
+    "error": {
+        "notFound": "Resource not found",
+        "forbidden": "Access denied",
+        "unauthorized": "Not authenticated",
+        "badRequest": "Invalid request",
+        "internal": "Internal server error",
+        "validation": "Validation failed"
+    },
+    "auth": {
+        "invalidCredentials": "Invalid email or password",
+        "totpRequired": "TOTP code required",
+        "totpInvalid": "Invalid TOTP code",
+        "tokenExpired": "Session expired, please log in again",
+        "sessionRevoked": "Session has been revoked"
+    },
+    "incidents": {
+        "notFound": "Incident not found or deleted",
+        "invalidTransition": "Invalid status transition: {from} → {to}",
+        "concurrentUpdate": "Concurrent update detected, please retry"
+    },
+    "contracts": {
+        "notFound": "Contract not found",
+        "alreadySigned": "You have already signed this contract",
+        "notSignatory": "You are not a signatory of this contract"
+    },
+    "votes": {
+        "typeNotAllowed": "Vote type {voteType} is not allowed for {targetType}"
+    },
+    "documents": {
+        "notFound": "File not found",
+        "deleteForbidden": "You cannot delete this file"
+    },
+    "dsl": {
+        "engineUnavailable": "DSL engine unavailable",
+        "unknownCollection": "Unknown collection: {name}"
+    }
+}

@@ -3,11 +3,9 @@
     "rootDir": ".",
     "testEnvironment": "node",
     "testRegex": ".e2e-spec.ts$",
-    "moduleNameMapper": {
-        "^src/(.*)$": "<rootDir>/../src/$1",
-        "^uuid$": "<rootDir>/uuid-cjs.js"
-    },
     "transform": {
         "^.+\\.(t|j)s$": "ts-jest"
-    }
+    },
+    "testTimeout": 30000,
+    "setupFiles": ["./setup-e2e.ts"]
 }

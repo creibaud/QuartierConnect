@@ -1,30 +1,24 @@
-# Stage 1: build
 FROM node:22-alpine AS builder
-
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
 WORKDIR /app
-
-COPY package.json pnpm-lock.yaml ./
+RUN apk add --no-cache python3 py3-pip
+RUN npm install -g pnpm
+COPY api/package.json api/pnpm-lock.yaml* ./
 RUN pnpm install --frozen-lockfile
+COPY api/ .
+COPY dsl/ ./dsl/
+RUN pip3 install --break-system-packages ply>=3.11
+RUN pnpm run build
 
-COPY . .
-RUN pnpm build
-
-# Stage 2: production
-FROM node:22-alpine AS runner
-
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
+FROM node:22-alpine
 WORKDIR /app
-
-ENV NODE_ENV=production
-
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --prod --frozen-lockfile
-
+RUN apk add --no-cache python3 py3-pip
+RUN pip3 install --break-system-packages ply>=3.11
+RUN npm install -g pnpm
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 COPY --from=builder /app/dist ./dist
-
-EXPOSE 3000
-
-CMD ["node", "dist/main.js"]
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dsl ./dsl
+COPY --from=builder /app/package.json ./
+ENV PYTHONPATH=/app
+USER appuser
+CMD ["node", "dist/main"]

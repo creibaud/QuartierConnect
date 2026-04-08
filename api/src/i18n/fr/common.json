@@ -1,0 +1,38 @@
+{
+    "error": {
+        "notFound": "Ressource introuvable",
+        "forbidden": "Accès refusé",
+        "unauthorized": "Non authentifié",
+        "badRequest": "Requête invalide",
+        "internal": "Erreur interne du serveur",
+        "validation": "Données de validation incorrectes"
+    },
+    "auth": {
+        "invalidCredentials": "Email ou mot de passe incorrect",
+        "totpRequired": "Code TOTP requis",
+        "totpInvalid": "Code TOTP invalide",
+        "tokenExpired": "Session expirée, veuillez vous reconnecter",
+        "sessionRevoked": "Session révoquée"
+    },
+    "incidents": {
+        "notFound": "Incident introuvable ou supprimé",
+        "invalidTransition": "Transition de statut invalide : {from} → {to}",
+        "concurrentUpdate": "Mise à jour concurrente détectée, veuillez réessayer"
+    },
+    "contracts": {
+        "notFound": "Contrat introuvable",
+        "alreadySigned": "Vous avez déjà signé ce contrat",
+        "notSignatory": "Vous n'êtes pas signataire de ce contrat"
+    },
+    "votes": {
+        "typeNotAllowed": "Le type de vote {voteType} n'est pas autorisé pour {targetType}"
+    },
+    "documents": {
+        "notFound": "Fichier introuvable",
+        "deleteForbidden": "Vous ne pouvez pas supprimer ce fichier"
+    },
+    "dsl": {
+        "engineUnavailable": "Moteur DSL indisponible",
+        "unknownCollection": "Collection inconnue : {name}"
+    }
+}

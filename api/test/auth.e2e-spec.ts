@@ -1,259 +1,323 @@
-import {
-    ForbiddenException,
-    INestApplication,
-    UnauthorizedException,
-    VersioningType,
-} from "@nestjs/common";
-import type { ExecutionContext } from "@nestjs/common";
+import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
-import type { NextFunction, Request, Response } from "express";
+import { ThrottlerStorage } from "@nestjs/throttler";
+import { eq } from "drizzle-orm";
+import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import * as jwt from "jsonwebtoken";
+import * as speakeasy from "speakeasy";
 import request from "supertest";
-import { App } from "supertest/types";
-import * as packageJson from "../package.json";
 import { AppModule } from "../src/app.module";
-import { JwtAuthGuard } from "../src/common/guards/jwt-auth.guard";
-import { AuthService } from "../src/modules/auth/auth.service";
+import { DRIZZLE_TOKEN } from "../src/database/drizzle.module";
+import * as schema from "../src/database/schema";
 
-describe("AuthController (e2e)", () => {
-    let app: INestApplication<App>;
-    let jwtGuardCanActivateSpy: jest.SpyInstance;
+const DEMO_PASSWORD = "Demo1234!";
 
-    const majorVersion = packageJson.version.split(".")[0];
+function currentTotp(secret: string, timeOffsetSeconds = 0): string {
+    return speakeasy.totp({
+        secret,
+        encoding: "base32",
+        time: Math.floor(Date.now() / 1000) + timeOffsetSeconds,
+    });
+}
 
-    const authServiceMock = {
-        register: jest.fn(),
-        login: jest.fn(),
-        refresh: jest.fn(),
-        logout: jest.fn(),
-        getRefreshCookieConfig: jest.fn(),
+async function registerAndLogin(
+    app: INestApplication,
+    email: string,
+): Promise<{ accessToken: string; refreshToken: string; totpSecret: string }> {
+    const regRes = await request(app.getHttpServer())
+        .post("/auth/register")
+        .send({ email, password: DEMO_PASSWORD })
+        .expect(201);
+
+    const urlParams = new URL(
+        regRes.body.otpauthUrl.replace("otpauth://", "http://"),
+    );
+    const totpSecret = urlParams.searchParams.get("secret")!;
+
+    const loginRes = await request(app.getHttpServer())
+        .post("/auth/login")
+        .send({
+            email,
+            password: DEMO_PASSWORD,
+            totpCode: currentTotp(totpSecret),
+        })
+        .expect(200);
+
+    return {
+        accessToken: loginRes.body.accessToken,
+        refreshToken: loginRes.body.refreshToken,
+        totpSecret,
     };
+}
 
-    const fakeUser = {
-        id: "6fce8b71-2d1a-4d4a-9c12-44d4624e8f81",
-        email: "john.doe@example.com",
-        role: "resident",
-    };
+describe("Auth (e2e)", () => {
+    let app: INestApplication;
+    let registeredEmail: string;
+    let totpSecret: string;
+    let throttlerStorage: { storage: Map<string, unknown> };
+
+    let primaryAccessToken: string;
+    let disposableAccessToken: string;
+    let disposableRefreshToken: string;
+    let refreshTestRefreshToken: string;
+    let preMintedSsoToken: string;
+    let preMintedSsoTokenForAlreadyUsed: string;
 
     beforeAll(async () => {
-        jwtGuardCanActivateSpy = jest
-            .spyOn(JwtAuthGuard.prototype, "canActivate")
-            .mockImplementation((ctx: ExecutionContext) => {
-                const req = ctx
-                    .switchToHttp()
-                    .getRequest<{ user: typeof fakeUser }>();
-                req.user = fakeUser;
-                return true;
-            });
-
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [AppModule],
-        })
-            .overrideProvider("DRIZZLE")
-            .useValue({ execute: jest.fn().mockResolvedValue([{ result: 1 }]) })
-            .overrideProvider("MONGODB")
-            .useValue({
-                command: jest.fn().mockResolvedValue({}),
-                collection: jest.fn().mockReturnValue({}),
-            })
-            .overrideProvider("NEO4J")
-            .useValue({
-                verifyConnectivity: jest.fn().mockResolvedValue(undefined),
-            })
-            .overrideProvider(AuthService)
-            .useValue(authServiceMock)
-            .compile();
+        }).compile();
 
         app = moduleFixture.createNestApplication();
-        app.use(
-            (
-                req: Request & { cookies?: Record<string, string> },
-                _res: Response,
-                next: NextFunction,
-            ) => {
-                const rawCookieHeader = req.headers.cookie;
-                const parsed: Record<string, string> = {};
-
-                const rawCookie = Array.isArray(rawCookieHeader)
-                    ? rawCookieHeader.join(";")
-                    : rawCookieHeader;
-
-                if (typeof rawCookie === "string") {
-                    for (const pair of rawCookie.split(";")) {
-                        const [name, ...rest] = pair.trim().split("=");
-                        if (!name || rest.length === 0) {
-                            continue;
-                        }
-                        parsed[name] = decodeURIComponent(rest.join("="));
-                    }
-                }
-
-                req.cookies = parsed;
-                next();
-            },
-        );
-        app.enableVersioning({
-            type: VersioningType.URI,
-            defaultVersion: majorVersion,
-        });
+        app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
         await app.init();
-    });
 
-    beforeEach(() => {
-        jest.clearAllMocks();
-        jwtGuardCanActivateSpy.mockImplementation((ctx: ExecutionContext) => {
-            const req = ctx
-                .switchToHttp()
-                .getRequest<{ user: typeof fakeUser }>();
-            req.user = fakeUser;
-            return true;
-        });
-        authServiceMock.getRefreshCookieConfig.mockReturnValue({
-            name: "refresh_token",
-            path: "/v1/auth/refresh",
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
-    });
+        const ts = Date.now();
+        const email1 = `e2e-primary-${ts}@test.fr`;
+        const email2 = `e2e-disposable-${ts}@test.fr`;
+
+        const primary = await registerAndLogin(app, email1);
+        primaryAccessToken = primary.accessToken;
+        totpSecret = primary.totpSecret;
+        registeredEmail = email1;
+
+        const disposable = await registerAndLogin(app, email2);
+        disposableAccessToken = disposable.accessToken;
+        disposableRefreshToken = disposable.refreshToken;
+
+        // Dedicated user for refresh test — avoids TOTP replay exhaustion on the primary user.
+        const email3 = `e2e-refresh-${ts}@test.fr`;
+        const refresh = await registerAndLogin(app, email3);
+        refreshTestRefreshToken = refresh.refreshToken;
+
+        const db =
+            moduleFixture.get<PostgresJsDatabase<typeof schema>>(DRIZZLE_TOKEN);
+        await db
+            .update(schema.users)
+            .set({ role: "admin" })
+            .where(eq(schema.users.email, email1));
+
+        const adminLogin = await request(app.getHttpServer())
+            .post("/auth/login")
+            .send({
+                email: email1,
+                password: DEMO_PASSWORD,
+                totpCode: currentTotp(totpSecret, 30),
+            })
+            .expect(200);
+        primaryAccessToken = adminLogin.body.accessToken;
+
+        throttlerStorage = moduleFixture.get(ThrottlerStorage);
+
+        const ssoGen1 = await request(app.getHttpServer())
+            .post("/auth/sso/generate")
+            .set("Authorization", `Bearer ${primaryAccessToken}`)
+            .send({ surface: "java-desktop" })
+            .expect(201);
+        preMintedSsoToken = ssoGen1.body.ssoToken;
+
+        const ssoGen2 = await request(app.getHttpServer())
+            .post("/auth/sso/generate")
+            .set("Authorization", `Bearer ${primaryAccessToken}`)
+            .send({ surface: "java-desktop" })
+            .expect(201);
+        preMintedSsoTokenForAlreadyUsed = ssoGen2.body.ssoToken;
+    }, 30000);
 
     afterAll(async () => {
-        jwtGuardCanActivateSpy.mockRestore();
         await app.close();
     });
 
-    it(`/v${majorVersion}/auth/register (POST) returns 201`, async () => {
-        const payload = {
-            email: "new.user@example.com",
-            password: "P@ssw0rd!",
-            firstName: "New",
-            lastName: "User",
-        };
-
-        const expected = {
-            user: { id: "user-id", email: payload.email },
-            accessToken: "access-token",
-        };
-
-        const serviceResult = {
-            ...expected,
-            refreshToken: "refresh-token",
-        };
-
-        authServiceMock.register.mockResolvedValue(serviceResult);
-
-        await request(app.getHttpServer())
-            .post(`/v${majorVersion}/auth/register`)
-            .send(payload)
-            .expect(201)
-            .expect(({ body }) => {
-                expect(body).toEqual(expected);
-            });
-
-        expect(authServiceMock.register).toHaveBeenCalledWith(payload);
-    });
-
-    it(`/v${majorVersion}/auth/login (POST) returns 200`, async () => {
-        const payload = {
-            email: "john.doe@example.com",
-            password: "P@ssw0rd!",
-        };
-
-        const expected = {
-            user: { id: "user-id", email: payload.email },
-            accessToken: "access-token",
-        };
-
-        const serviceResult = {
-            ...expected,
-            refreshToken: "refresh-token",
-        };
-
-        authServiceMock.login.mockResolvedValue(serviceResult);
-
-        await request(app.getHttpServer())
-            .post(`/v${majorVersion}/auth/login`)
-            .send(payload)
-            .expect(200)
-            .expect(({ body }) => {
-                expect(body).toEqual(expected);
-            });
-
-        expect(authServiceMock.login).toHaveBeenCalledWith(payload);
-    });
-
-    it(`/v${majorVersion}/auth/refresh (POST) returns 200`, async () => {
-        const expected = {
-            accessToken: "new-access-token",
-            user: { id: "user-id", email: "john.doe@example.com" },
-        };
-
-        const serviceResult = {
-            ...expected,
-            refreshToken: "new-refresh-token",
-        };
-
-        authServiceMock.refresh.mockResolvedValue(serviceResult);
-
-        await request(app.getHttpServer())
-            .post(`/v${majorVersion}/auth/refresh`)
-            .set("Cookie", ["refresh_token=valid-refresh-token"])
-            .expect(200)
-            .expect(({ body }) => {
-                expect(body).toEqual(expected);
-            });
-
-        expect(authServiceMock.refresh).toHaveBeenCalledWith({
-            refreshToken: "valid-refresh-token",
+    describe("GET /health", () => {
+        it("returns status ok", () => {
+            return request(app.getHttpServer())
+                .get("/health")
+                .expect(200)
+                .expect((res) => {
+                    expect(res.body.status).toBe("ok");
+                });
         });
     });
 
-    it(`/v${majorVersion}/auth/refresh (POST) returns 401 on invalid token`, async () => {
-        authServiceMock.refresh.mockRejectedValue(
-            new UnauthorizedException("Invalid refresh token"),
-        );
+    describe("POST /auth/register", () => {
+        it("returns otpauthUrl and no totpSecret in body", async () => {
+            const res = await request(app.getHttpServer())
+                .post("/auth/register")
+                .send({
+                    email: `new-${Date.now()}@test.fr`,
+                    password: DEMO_PASSWORD,
+                })
+                .expect(201);
 
-        await request(app.getHttpServer())
-            .post(`/v${majorVersion}/auth/refresh`)
-            .set("Cookie", ["refresh_token=invalid-token"])
-            .expect(401);
-    });
-
-    it(`/v${majorVersion}/auth/refresh (POST) returns 403 on revoked token reuse`, async () => {
-        authServiceMock.refresh.mockRejectedValue(
-            new ForbiddenException(
-                "Security alert: revoked refresh token used",
-            ),
-        );
-
-        await request(app.getHttpServer())
-            .post(`/v${majorVersion}/auth/refresh`)
-            .set("Cookie", ["refresh_token=revoked-token"])
-            .expect(403);
-    });
-
-    it(`/v${majorVersion}/auth/logout (POST) returns 401 without auth`, async () => {
-        jwtGuardCanActivateSpy.mockImplementation(() => {
-            throw new UnauthorizedException("Unauthorized");
+            expect(res.body.otpauthUrl).toBeTruthy();
+            expect(JSON.stringify(res.body)).not.toContain("totpSecret");
         });
 
-        await request(app.getHttpServer())
-            .post(`/v${majorVersion}/auth/logout`)
-            .send({ userId: "6fce8b71-2d1a-4d4a-9c12-44d4624e8f81" })
-            .expect(401);
+        it("returns 409 on duplicate email", async () => {
+            const res = await request(app.getHttpServer())
+                .post("/auth/register")
+                .send({ email: registeredEmail, password: DEMO_PASSWORD })
+                .expect(409);
+
+            expect(res.body.code).toBe("EMAIL_ALREADY_EXISTS");
+        });
     });
 
-    it(`/v${majorVersion}/auth/logout (POST) returns 200 when authenticated`, async () => {
-        const expected = { message: "Logged out successfully" };
+    describe("POST /auth/login", () => {
+        beforeEach(() => {
+            throttlerStorage.storage.clear();
+        });
 
-        authServiceMock.logout.mockResolvedValue(expected);
+        it("returns JWT pair for valid credentials + TOTP", async () => {
+            const res = await request(app.getHttpServer())
+                .post("/auth/login")
+                .send({
+                    email: registeredEmail,
+                    password: DEMO_PASSWORD,
+                    totpCode: currentTotp(totpSecret, -30),
+                })
+                .expect(200);
 
-        await request(app.getHttpServer())
-            .post(`/v${majorVersion}/auth/logout`)
-            .expect(200)
-            .expect(({ body }) => {
-                expect(body).toEqual(expected);
-            });
+            expect(res.body.accessToken).toBeTruthy();
+            expect(res.body.refreshToken).toBeTruthy();
+        });
 
-        expect(authServiceMock.logout).toHaveBeenCalledWith({
-            userId: fakeUser.id,
+        it("returns 401 for wrong password", async () => {
+            const res = await request(app.getHttpServer())
+                .post("/auth/login")
+                .send({
+                    email: registeredEmail,
+                    password: "WrongPass!",
+                    totpCode: currentTotp(totpSecret),
+                })
+                .expect(401);
+
+            expect(res.body.code).toBe("INVALID_PASSWORD");
+        });
+
+        it("returns 401 for wrong TOTP", async () => {
+            const res = await request(app.getHttpServer())
+                .post("/auth/login")
+                .send({
+                    email: registeredEmail,
+                    password: DEMO_PASSWORD,
+                    totpCode: "000000",
+                })
+                .expect(401);
+
+            expect(res.body.code).toBe("INVALID_TOTP");
+        });
+
+        it("returns 429 after 5 failed login attempts", async () => {
+            const uniqueEmail = `ratelimit-${Date.now()}@test.fr`;
+            for (let i = 0; i < 5; i++) {
+                await request(app.getHttpServer()).post("/auth/login").send({
+                    email: uniqueEmail,
+                    password: "bad",
+                    totpCode: "000000",
+                });
+            }
+            const res = await request(app.getHttpServer())
+                .post("/auth/login")
+                .send({
+                    email: uniqueEmail,
+                    password: "bad",
+                    totpCode: "000000",
+                });
+
+            expect(res.status).toBe(429);
+        });
+    });
+
+    describe("POST /auth/refresh", () => {
+        it("returns new access token for valid refresh token", async () => {
+            const res = await request(app.getHttpServer())
+                .post("/auth/refresh")
+                .send({ refreshToken: refreshTestRefreshToken })
+                .expect(200);
+
+            expect(res.body.accessToken).toBeTruthy();
+        });
+
+        it("returns 401 for revoked refresh token", async () => {
+            await request(app.getHttpServer())
+                .post("/auth/logout")
+                .set("Authorization", `Bearer ${disposableAccessToken}`)
+                .send({ refreshToken: disposableRefreshToken })
+                .expect(200);
+
+            const res = await request(app.getHttpServer())
+                .post("/auth/refresh")
+                .send({ refreshToken: disposableRefreshToken });
+
+            expect(res.status).toBe(401);
+        });
+    });
+
+    describe("SSO flow", () => {
+        it("sso/generate returns ssoToken + expiresIn 300", async () => {
+            const res = await request(app.getHttpServer())
+                .post("/auth/sso/generate")
+                .set("Authorization", `Bearer ${primaryAccessToken}`)
+                .send({ surface: "java-desktop" })
+                .expect(201);
+
+            expect(res.body.ssoToken).toBeTruthy();
+            expect(res.body.expiresIn).toBe(300);
+            expect(new Date(res.body.expiresAt).getTime()).toBeGreaterThan(
+                Date.now(),
+            );
+        });
+
+        it("sso/exchange returns JWT pair for valid token", async () => {
+            const res = await request(app.getHttpServer())
+                .post("/auth/sso/exchange")
+                .send({ ssoToken: preMintedSsoToken })
+                .expect(200);
+
+            expect(res.body.accessToken).toBeTruthy();
+        });
+
+        it("sso/exchange returns 401 for already-used token", async () => {
+            await request(app.getHttpServer())
+                .post("/auth/sso/exchange")
+                .send({ ssoToken: preMintedSsoTokenForAlreadyUsed })
+                .expect(200);
+
+            const res = await request(app.getHttpServer())
+                .post("/auth/sso/exchange")
+                .send({ ssoToken: preMintedSsoTokenForAlreadyUsed });
+
+            expect(res.status).toBe(401);
+        });
+
+        it("sso/exchange returns 401 for non-existent token", async () => {
+            const res = await request(app.getHttpServer())
+                .post("/auth/sso/exchange")
+                .send({ ssoToken: "00000000-0000-4000-a000-000000000000" });
+
+            expect(res.status).toBe(401);
+        });
+    });
+
+    describe("Expired access token", () => {
+        it("returns 401 for an expired access token on a protected endpoint", async () => {
+            const secret = process.env.JWT_SECRET ?? "test-secret";
+            const expiredToken = jwt.sign(
+                {
+                    sub: "00000000-0000-4000-a000-000000000001",
+                    email: "expired@test.fr",
+                    role: "resident",
+                    exp: Math.floor(Date.now() / 1000) - 60,
+                },
+                secret,
+            );
+
+            const res = await request(app.getHttpServer())
+                .get("/users/me/export")
+                .set("Authorization", `Bearer ${expiredToken}`);
+
+            expect(res.status).toBe(401);
         });
     });
 });

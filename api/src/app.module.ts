@@ -1,76 +1,76 @@
-import { MailerModule } from "@nestjs-modules/mailer";
+import * as path from "path";
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
-import { JwtAuthGuard } from "src/common/guards/jwt-auth.guard";
-import { RolesGuard } from "src/common/guards/roles.guard";
-import { validateEnv } from "src/config/env.validation";
-import { DrizzleModule } from "src/database/drizzle/drizzle.module";
-import { MongodbModule } from "src/database/mongodb/mongodb.module";
-import { Neo4jModule } from "src/database/neo4j/neo4j.module";
-import { AdminModule } from "src/modules/admin/admin.module";
-import { AuthModule } from "src/modules/auth/auth.module";
-import { DocumentsModule } from "src/modules/documents/documents.module";
-import { EventsModule } from "src/modules/events/events.module";
-import { HealthModule } from "src/modules/health/health.module";
-import { IncidentsModule } from "src/modules/incidents/incidents.module";
-import { MessagesModule } from "src/modules/messages/messages.module";
-import { OutboxModule } from "src/modules/outbox/outbox.module";
-import { QuartiersModule } from "src/modules/quartiers/quartiers.module";
-import { RecommendationsModule } from "src/modules/recommendations/recommendations.module";
-import { ServicesModule } from "src/modules/services/services.module";
-import { SyncModule } from "src/modules/sync/sync.module";
-import { TransactionsModule } from "src/modules/transactions/transactions.module";
-import { UsersModule } from "src/modules/users/users.module";
-import { VotesModule } from "src/modules/votes/votes.module";
+import { MongooseModule } from "@nestjs/mongoose";
+import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import { AcceptLanguageResolver, I18nModule, QueryResolver } from "nestjs-i18n";
+import { AppController } from "./app.controller";
+import { AuthModule } from "./auth/auth.module";
+import { CommunityVotesModule } from "./community-votes/community-votes.module";
+import { ContractsModule } from "./contracts/contracts.module";
+import { DrizzleModule } from "./database/drizzle.module";
+import { DocumentsModule } from "./documents/documents.module";
+import { DslModule } from "./dsl/dsl.module";
+import { EventsModule } from "./events/events.module";
+import { IncidentsModule } from "./incidents/incidents.module";
+import { MessagingModule } from "./messaging/messaging.module";
+import { NeighborhoodsModule } from "./neighborhoods/neighborhoods.module";
+import { PointsModule } from "./points/points.module";
+import { ServicesModule } from "./services/services.module";
+import { SocialModule } from "./social/social.module";
+import { UsersModule } from "./users/users.module";
+import { VotesModule } from "./votes/votes.module";
 
 @Module({
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
-            envFilePath: ".env",
-            validate: validateEnv,
+            envFilePath: [".env", "../.env"],
         }),
-        MailerModule.forRootAsync({
-            useFactory: (configService: ConfigService) => ({
-                transport: {
-                    host: configService.getOrThrow<string>("MAIL_HOST"),
-                    port: configService.getOrThrow<number>("MAIL_PORT"),
-                    auth: {
-                        user: configService.getOrThrow<string>("MAIL_USER"),
-                        pass: configService.getOrThrow<string>("MAIL_PASS"),
-                    },
-                },
-                defaults: {
-                    from: `"QuartierConnect" <${configService.getOrThrow<string>(
-                        "MAIL_FROM",
-                    )}>`,
-                },
-            }),
+        MongooseModule.forRootAsync({
             inject: [ConfigService],
+            useFactory: (config: ConfigService) => ({
+                uri: config.get<string>(
+                    "MONGO_URI",
+                    "mongodb://localhost:27017/quartierconnect",
+                ),
+            }),
+        }),
+        ThrottlerModule.forRoot([{ ttl: 900000, limit: 100 }]),
+        I18nModule.forRoot({
+            fallbackLanguage: "fr",
+            loaderOptions: {
+                path: path.join(__dirname, "/i18n/"),
+                watch: true,
+            },
+            resolvers: [
+                { use: QueryResolver, options: ["lang"] },
+                AcceptLanguageResolver,
+            ],
         }),
         DrizzleModule,
-        MongodbModule,
-        Neo4jModule,
-        OutboxModule,
         AuthModule,
-        HealthModule,
-        UsersModule,
-        QuartiersModule,
+        NeighborhoodsModule,
+        ServicesModule,
         IncidentsModule,
         EventsModule,
-        ServicesModule,
-        TransactionsModule,
+        PointsModule,
+        UsersModule,
+        SocialModule,
+        ContractsModule,
+        MessagingModule,
         VotesModule,
-        MessagesModule,
         DocumentsModule,
-        RecommendationsModule,
-        AdminModule,
-        SyncModule,
+        DslModule,
+        CommunityVotesModule,
     ],
+    controllers: [AppController],
     providers: [
-        { provide: APP_GUARD, useClass: JwtAuthGuard },
-        { provide: APP_GUARD, useClass: RolesGuard },
+        {
+            provide: APP_GUARD,
+            useClass: ThrottlerGuard,
+        },
     ],
 })
 export class AppModule {}

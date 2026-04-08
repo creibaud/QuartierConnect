@@ -1,11 +1,7 @@
 node_modules
 dist
-.env
-.env.*
-!.env.example
 coverage
-test/coverage
-*.log
+*.spec.ts
+test/
+.env
 *.tsbuildinfo
-.git
-.gitignore
