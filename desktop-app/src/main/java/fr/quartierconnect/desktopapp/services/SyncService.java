@@ -105,11 +105,22 @@ public class SyncService {
                 if (remoteId != null && !remoteId.isEmpty()) {
                     incidentRepo.writeRemoteId(dirty.get(i).localId(), remoteId);
                 }
+                updateBaseAfterPush(dirty.get(i));
             }
         } else {
             for (IncidentRepository.Incident inc : dirty) {
                 incidentRepo.markSynced(inc.localId());
+                updateBaseAfterPush(inc);
             }
+        }
+    }
+
+    private void updateBaseAfterPush(IncidentRepository.Incident inc) {
+        try {
+            incidentRepo.updateBase(inc.localId(), inc.title(), inc.description(),
+                    inc.status(), inc.updatedAt());
+        } catch (Exception ignored) {
+            // Non-critical: LWW fallback applies on next pull if base update fails
         }
     }
 
@@ -128,10 +139,10 @@ public class SyncService {
             String remoteId = node.path("id").asText(null);
             if (remoteId == null) continue;
 
-            String title = node.path("title").asText("");
+            String title       = node.path("title").asText("");
             String description = node.path("description").asText(null);
-            String status = node.path("status").asText("open");
-            String updatedAt = node.path("updatedAt").asText(null);
+            String status      = node.path("status").asText("open");
+            String updatedAt   = node.path("updatedAt").asText(null);
             if (updatedAt == null) updatedAt = node.path("updated_at").asText("");
 
             incidentRepo.upsertFromServer(remoteId, title, description, status, updatedAt);

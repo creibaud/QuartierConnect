@@ -52,7 +52,7 @@ public class IncidentsView {
         header.setAlignment(Pos.CENTER_LEFT);
 
         listView.setPlaceholder(new Label("Aucun incident signalé."));
-        listView.setCellFactory(lv -> new IncidentCell());
+        listView.setCellFactory(lv -> new IncidentCell(this));
         VBox.setVgrow(listView, Priority.ALWAYS);
 
         VBox layout = new VBox(12, header, listView);
@@ -101,7 +101,81 @@ public class IncidentsView {
         dialog.showAndWait();
     }
 
+    void openConflictDialog(IncidentRepository.Incident item) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Conflit de synchronisation");
+
+        Label info = new Label("Ce champ a été modifié des deux côtés depuis la dernière synchronisation.");
+        info.setWrapText(true);
+
+        Label localHeader  = new Label("Version locale");
+        localHeader.setStyle("-fx-font-weight: bold;");
+        Label localText = new Label(formatConflictSummary(item.title(), item.description(), item.status()));
+        localText.setWrapText(true);
+
+        Label remoteHeader = new Label("Version serveur");
+        remoteHeader.setStyle("-fx-font-weight: bold;");
+        Label remoteText = new Label(formatConflictSummary(item.remoteTitle(), item.remoteDescription(), item.remoteStatus()));
+        remoteText.setWrapText(true);
+
+        Button keepLocalBtn  = new Button("Garder la version locale");
+        Button keepRemoteBtn = new Button("Accepter la version serveur");
+        Button cancelBtn     = new Button("Plus tard");
+
+        cancelBtn.setOnAction(e -> dialog.close());
+
+        keepLocalBtn.setOnAction(e -> {
+            resolveConflict(item.localId(), false);
+            dialog.close();
+        });
+
+        keepRemoteBtn.setOnAction(e -> {
+            resolveConflict(item.localId(), true);
+            dialog.close();
+        });
+
+        HBox buttons = new HBox(8, keepLocalBtn, keepRemoteBtn, cancelBtn);
+        buttons.setAlignment(Pos.CENTER_RIGHT);
+
+        VBox content = new VBox(12,
+                info,
+                localHeader, localText,
+                remoteHeader, remoteText,
+                buttons);
+        content.setPadding(new Insets(16));
+        content.setPrefWidth(480);
+
+        dialog.getDialogPane().setContent(content);
+        dialog.showAndWait();
+    }
+
+    private void resolveConflict(int localId, boolean acceptRemote) {
+        try {
+            repo.resolveConflict(localId, acceptRemote);
+            refresh();
+        } catch (SQLException e) {
+            // Non-critical — conflict badge remains until next successful resolve
+        }
+    }
+
+    private String formatConflictSummary(String title, String description, String status) {
+        String statusLabel = switch (status == null ? "" : status) {
+            case "in_progress" -> "En cours";
+            case "resolved"    -> "Résolu";
+            default            -> "Ouvert";
+        };
+        return "[" + statusLabel + "] " + title +
+                (description != null && !description.isBlank() ? "\n" + description : "");
+    }
+
     private static class IncidentCell extends ListCell<IncidentRepository.Incident> {
+
+        private final IncidentsView view;
+
+        IncidentCell(IncidentsView view) {
+            this.view = view;
+        }
+
         @Override
         protected void updateItem(IncidentRepository.Incident item, boolean empty) {
             super.updateItem(item, empty);
@@ -115,8 +189,8 @@ public class IncidentsView {
 
             String statusText = switch (item.status()) {
                 case "in_progress" -> "En cours";
-                case "resolved" -> "Résolu";
-                default -> "Ouvert";
+                case "resolved"    -> "Résolu";
+                default            -> "Ouvert";
             };
             Label statusLabel = new Label(statusText);
             statusLabel.setStyle("-fx-text-fill: grey; -fx-font-size: 11px;");
@@ -127,6 +201,20 @@ public class IncidentsView {
             HBox statusRow = new HBox(8, statusLabel, dirtyLabel);
 
             VBox cell = new VBox(2, titleLabel, statusRow);
+
+            if (item.isConflict()) {
+                Label conflictLabel = new Label("⚠ Conflit");
+                conflictLabel.setStyle("-fx-text-fill: red; -fx-font-size: 10px; -fx-font-weight: bold;");
+
+                Button resolveBtn = new Button("Résoudre");
+                resolveBtn.setStyle("-fx-font-size: 10px;");
+                resolveBtn.setOnAction(e -> view.openConflictDialog(item));
+
+                HBox conflictRow = new HBox(8, conflictLabel, resolveBtn);
+                conflictRow.setAlignment(Pos.CENTER_LEFT);
+                cell.getChildren().add(conflictRow);
+            }
+
             cell.setPadding(new Insets(4, 0, 4, 0));
             setGraphic(cell);
         }

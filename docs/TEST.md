@@ -1,6 +1,6 @@
 # Rapport QA — QuartierConnect Étape 4
 
-> **Date** 8 avril 2026 · **Version** 0.1.8 · **Total** 654 tests automatisés · **Résultat** 654/654 ✓
+> **Date** 8 avril 2026 · **Version** 0.1.9 · **Total** 666 tests automatisés · **Résultat** 666/666 ✓
 
 ---
 
@@ -42,10 +42,10 @@
 | API NestJS — unitaires | Jest                     | 260     | 260/260 ✓     |
 | Web shared hooks       | Vitest                   | 73      | 73/73 ✓       |
 | API NestJS — E2E       | Jest + Supertest         | 148     | 148/148 ✓     |
-| Java Desktop           | JUnit 5 + Maven Surefire | 73      | 73/73 ✓       |
+| Java Desktop           | JUnit 5 + Maven Surefire | 85      | 85/85 ✓       |
 | DSL Python             | pytest                   | 21      | 21/21 ✓       |
 | Web Playwright         | Playwright               | 79      | 79/79 ✓       |
-| **TOTAL**              |                          | **654** | **654/654 ✓** |
+| **TOTAL**              |                          | **666** | **666/666 ✓** |
 
 > Note : les 148 tests E2E nécessitent MongoDB + PostgreSQL (make docker-up). Les 79 tests Playwright nécessitent les apps sur :3000/:3001/:5000.
 
@@ -59,7 +59,7 @@ flowchart BT
     E2EUI["E2E UI — Playwright<br/>79 tests · Chromium headless<br/>:3000 / :3001 / :5000"]
     E2EAPI["E2E API — Supertest<br/>148 tests · BDD réelles<br/>MongoDB + PostgreSQL"]
     UNIT["Unitaires — Jest + Vitest<br/>333 tests · Mocks injectés<br/>NestJS (260) + Shared (73)"]
-    COMP["Composants — JUnit 5 + pytest<br/>94 tests · Isolation fichier<br/>Java (73) + DSL (21)"]
+    COMP["Composants — JUnit 5 + pytest<br/>106 tests · Isolation fichier<br/>Java (85) + DSL (21)"]
 
     COMP --> UNIT --> E2EAPI --> E2EUI
 
@@ -234,7 +234,7 @@ it('POST /auth/login is rate-limited after 5 attempts', async () => {
 
 ## 5. Tests unitaires Java — JUnit 5
 
-**73 tests · 13 classes · 0 échec**
+**85 tests · 16 classes · 0 échec**
 
 | Classe                     | Tests | Ce qui est testé                                                                                                              |
 | -------------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------- |
@@ -243,7 +243,9 @@ it('POST /auth/login is rate-limited after 5 attempts', async () => {
 | `ApiServiceOfflineTest`    | 2     | isReachable() sur connexion refusée / hostname inconnu                                                                        |
 | `AuthServiceTest`          | 6     | login, exchangeSsoToken, clearSession, applyTokens                                                                            |
 | `SsoCallbackServerTest`    | 7     | démarrage, écoute callback, état valide/invalide, timeout                                                                     |
-| `SyncServiceTest`          | 4     | sync incidents dirty, logSync, isReachable                                                                                    |
+| `SyncServiceTest`          | 6     | start/stop lifecycle, idempotence, post-shutdown stop, listener enregistré, statut offline                                    |
+| `ThreeWayMergerTest`       | 6     | null base → LWW remote, pas de changement → local, local-only, remote-only, même changement, conflit vrai                     |
+| `IncidentRepositoryTest`   | 5     | updateBase, insert sans ancêtre, merge remote-only, conflit flagué, résolution conflit                                        |
 | `ContractsServiceTest`     | 4     | list, create, sign, findOne                                                                                                   |
 | `EventsServiceTest`        | 4     | list, findOne, create, interest                                                                                               |
 | `NeighborhoodsServiceTest` | 3     | list, findOne, create                                                                                                         |

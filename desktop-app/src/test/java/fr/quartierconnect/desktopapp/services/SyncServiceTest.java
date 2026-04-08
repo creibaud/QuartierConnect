@@ -55,6 +55,18 @@ class SyncServiceTest {
     }
 
     @Test
+    void stop_calledAfterShutdown_doesNotThrow() {
+        syncService.start();
+        syncService.shutdown();
+        assertDoesNotThrow(() -> syncService.stop());
+    }
+
+    @Test
+    void onIncidentsChanged_listenerIsRegistered_doesNotThrow() {
+        assertDoesNotThrow(() -> syncService.setOnIncidentsChanged(() -> {}));
+    }
+
+    @Test
     void apiUnreachable_notifiesStatusFalse() throws InterruptedException {
         System.setProperty("api.url", "http://localhost:19999");
 

@@ -19,22 +19,24 @@ public class SQLiteDatabase {
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
             stmt.executeUpdate("""
                 CREATE TABLE IF NOT EXISTS incidents (
-                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                    remote_id   TEXT,
-                    title       TEXT    NOT NULL,
-                    description TEXT,
-                    status      TEXT    NOT NULL DEFAULT 'open',
-                    is_dirty    INTEGER NOT NULL DEFAULT 1,
-                    created_at  TEXT    NOT NULL,
-                    updated_at  TEXT    NOT NULL
+                    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+                    remote_id          TEXT,
+                    title              TEXT    NOT NULL,
+                    description        TEXT,
+                    status             TEXT    NOT NULL DEFAULT 'open',
+                    is_dirty           INTEGER NOT NULL DEFAULT 1,
+                    created_at         TEXT    NOT NULL,
+                    updated_at         TEXT    NOT NULL,
+                    base_title         TEXT,
+                    base_description   TEXT,
+                    base_status        TEXT,
+                    base_updated_at    TEXT,
+                    is_conflict        INTEGER NOT NULL DEFAULT 0,
+                    remote_title       TEXT,
+                    remote_description TEXT,
+                    remote_status      TEXT
                 )
                 """);
-
-            try {
-                stmt.executeUpdate("ALTER TABLE incidents ADD COLUMN remote_id TEXT");
-            } catch (SQLException ignored) {
-                // Column already exists — safe to ignore
-            }
 
             stmt.executeUpdate("""
                 CREATE TABLE IF NOT EXISTS sync_log (

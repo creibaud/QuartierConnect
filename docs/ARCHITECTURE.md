@@ -344,10 +344,26 @@ sequenceDiagram
 
     loop Pour chaque incident dirty
         Java->>API: POST /sync/incidents [{remoteId?, title, status, updatedAt}]
-        Note over API: LWW — last-write-wins sur updated_at
-        API->>PG: UPSERT incidents ON CONFLICT DO UPDATE IF newer
+        API->>PG: UPSERT incidents ON CONFLICT DO UPDATE
         API-->>Java: [{id, synced:true}]
         Java->>SQLite: UPDATE SET is_dirty=0, remote_id=?
+        Java->>SQLite: UPDATE SET base_title/desc/status/updated_at (ancêtre 3WM)
+    end
+
+    Note over Java,SQLite: Pull — résolution Three-Way Merge
+    Java->>API: GET /incidents?since=lastPull
+    API-->>Java: [incidents mis à jour]
+    loop Pour chaque incident reçu
+        alt base == null (jamais synchronisé)
+            Java->>SQLite: LWW fallback — serveur gagne si plus récent
+        else local inchangé depuis base
+            Java->>SQLite: Auto-merge — applique la version serveur
+        else serveur inchangé depuis base
+            Java->>SQLite: Auto-merge — conserve la version locale
+        else les deux ont changé le même champ
+            Java->>SQLite: SET is_conflict=1, remote_title/desc/status
+            Note over Java: Conflit visible dans l'UI (⚠ badge + dialog Résoudre)
+        end
     end
     Java->>SQLite: INSERT sync_log (synced_at, success=1)
 ```
