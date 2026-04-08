@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import { Driver } from "neo4j-driver";
+import { Driver, Neo4jError } from "neo4j-driver";
 import { NEO4J_DRIVER } from "./neo4j/neo4j.provider";
 
 export interface Recommendation {
@@ -15,6 +15,38 @@ export class SocialService {
     private readonly logger = new Logger(SocialService.name);
 
     constructor(@Inject(NEO4J_DRIVER) private readonly driver: Driver) {}
+
+    private isRetriable(error: unknown): boolean {
+        if (error instanceof Neo4jError) {
+            return [
+                "ServiceUnavailable",
+                "SessionExpired",
+                "TransientError",
+            ].some((code) => error.code.startsWith(code));
+        }
+        return false;
+    }
+
+    private async withRetry<T>(
+        operation: () => Promise<T>,
+        maxAttempts = 3,
+    ): Promise<T> {
+        let lastError: unknown;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                return await operation();
+            } catch (error) {
+                lastError = error;
+                if (attempt === maxAttempts || !this.isRetriable(error)) {
+                    throw error;
+                }
+                await new Promise((r) =>
+                    setTimeout(r, 100 * 2 ** (attempt - 1)),
+                );
+            }
+        }
+        throw lastError;
+    }
 
     async getRecommendations(userId: string): Promise<Recommendation[]> {
         const session = this.driver.session();
@@ -69,59 +101,77 @@ export class SocialService {
         neighborhoodId: string,
         name: string,
     ): Promise<void> {
-        const session = this.driver.session();
         try {
-            await session.run(
-                `MERGE (n:Neighborhood {id: $neighborhoodId})
+            await this.withRetry(async () => {
+                const session = this.driver.session();
+                try {
+                    await session.run(
+                        `MERGE (n:Neighborhood {id: $neighborhoodId})
          ON CREATE SET n.name = $name, n.createdAt = datetime()
          ON MATCH SET n.name = $name, n.updatedAt = datetime()`,
-                { neighborhoodId, name },
-            );
-        } catch (error) {
-            this.logger.warn(`Neo4j syncNeighborhood failed: ${error}`);
-        } finally {
-            await session.close();
-        }
-    }
-
-    async deleteNode(label: string, id: string): Promise<void> {
-        const session = this.driver.session();
-        try {
-            await session.run(`MATCH (n:${label} {id: $id}) DETACH DELETE n`, {
-                id,
+                        { neighborhoodId, name },
+                    );
+                } finally {
+                    await session.close();
+                }
             });
         } catch (error) {
             this.logger.warn(
-                `Neo4j deleteNode (${label}:${id}) failed: ${error}`,
+                `Neo4j syncNeighborhood failed after retries: ${error}`,
             );
-        } finally {
-            await session.close();
+        }
+    }
+
+    async deleteNode(
+        label: "Neighborhood" | "Service" | "Event" | "User",
+        id: string,
+    ): Promise<void> {
+        try {
+            await this.withRetry(async () => {
+                const session = this.driver.session();
+                try {
+                    await session.run(
+                        `MATCH (n:${label} {id: $id}) DETACH DELETE n`,
+                        { id },
+                    );
+                } finally {
+                    await session.close();
+                }
+            });
+        } catch (error) {
+            this.logger.warn(
+                `Neo4j deleteNode (${label}:${id}) failed after retries: ${error}`,
+            );
         }
     }
 
     async syncUser(userId: string, neighborhoodId?: string): Promise<void> {
-        const session = this.driver.session();
         try {
-            await session.run(
-                `MERGE (u:User {id: $userId})
+            await this.withRetry(async () => {
+                const session = this.driver.session();
+                try {
+                    await session.run(
+                        `MERGE (u:User {id: $userId})
          ON CREATE SET u.createdAt = datetime()
          ON MATCH SET u.updatedAt = datetime()`,
-                { userId },
-            );
+                        { userId },
+                    );
 
-            if (neighborhoodId) {
-                await session.run(
-                    `MERGE (n:Neighborhood {id: $neighborhoodId})
+                    if (neighborhoodId) {
+                        await session.run(
+                            `MERGE (n:Neighborhood {id: $neighborhoodId})
            WITH n
            MATCH (u:User {id: $userId})
            MERGE (u)-[:LIVES_IN]->(n)`,
-                    { userId, neighborhoodId },
-                );
-            }
+                            { userId, neighborhoodId },
+                        );
+                    }
+                } finally {
+                    await session.close();
+                }
+            });
         } catch (error) {
-            this.logger.warn(`Neo4j syncUser failed: ${error}`);
-        } finally {
-            await session.close();
+            this.logger.warn(`Neo4j syncUser failed after retries: ${error}`);
         }
     }
 
@@ -130,28 +180,34 @@ export class SocialService {
         name: string,
         neighborhoodId?: string,
     ): Promise<void> {
-        const session = this.driver.session();
         try {
-            await session.run(
-                `MERGE (s:Service {id: $serviceId})
+            await this.withRetry(async () => {
+                const session = this.driver.session();
+                try {
+                    await session.run(
+                        `MERGE (s:Service {id: $serviceId})
          ON CREATE SET s.name = $name, s.createdAt = datetime()
          ON MATCH SET s.name = $name, s.updatedAt = datetime()`,
-                { serviceId, name },
-            );
+                        { serviceId, name },
+                    );
 
-            if (neighborhoodId) {
-                await session.run(
-                    `MERGE (n:Neighborhood {id: $neighborhoodId})
+                    if (neighborhoodId) {
+                        await session.run(
+                            `MERGE (n:Neighborhood {id: $neighborhoodId})
            WITH n
            MATCH (s:Service {id: $serviceId})
            MERGE (s)-[:LOCATED_IN]->(n)`,
-                    { serviceId, neighborhoodId },
-                );
-            }
+                            { serviceId, neighborhoodId },
+                        );
+                    }
+                } finally {
+                    await session.close();
+                }
+            });
         } catch (error) {
-            this.logger.warn(`Neo4j syncService failed: ${error}`);
-        } finally {
-            await session.close();
+            this.logger.warn(
+                `Neo4j syncService failed after retries: ${error}`,
+            );
         }
     }
 
@@ -160,22 +216,30 @@ export class SocialService {
         eventId: string,
         interested: boolean,
     ): Promise<{ success: boolean }> {
-        const session = this.driver.session();
         try {
-            const relation = interested ? "INTERESTED_IN" : "NOT_INTERESTED_IN";
-            await session.run(
-                `MERGE (u:User {id: $userId})
+            await this.withRetry(async () => {
+                const session = this.driver.session();
+                try {
+                    const relation = interested
+                        ? "INTERESTED_IN"
+                        : "NOT_INTERESTED_IN";
+                    await session.run(
+                        `MERGE (u:User {id: $userId})
          MERGE (e:Event {id: $eventId})
          MERGE (u)-[r:${relation}]->(e)
          ON CREATE SET r.timestamp = datetime()`,
-                { userId, eventId },
-            );
+                        { userId, eventId },
+                    );
+                } finally {
+                    await session.close();
+                }
+            });
             return { success: true };
         } catch (error) {
-            this.logger.warn(`Neo4j recordEventInterest failed: ${error}`);
+            this.logger.warn(
+                `Neo4j recordEventInterest failed after retries: ${error}`,
+            );
             return { success: false };
-        } finally {
-            await session.close();
         }
     }
 
@@ -185,28 +249,32 @@ export class SocialService {
         date: Date,
         neighborhoodId?: string,
     ): Promise<void> {
-        const session = this.driver.session();
         try {
-            await session.run(
-                `MERGE (e:Event {id: $eventId})
+            await this.withRetry(async () => {
+                const session = this.driver.session();
+                try {
+                    await session.run(
+                        `MERGE (e:Event {id: $eventId})
          ON CREATE SET e.name = $name, e.date = datetime($date), e.createdAt = datetime()
          ON MATCH SET e.name = $name, e.date = datetime($date), e.updatedAt = datetime()`,
-                { eventId, name, date: date.toISOString() },
-            );
+                        { eventId, name, date: date.toISOString() },
+                    );
 
-            if (neighborhoodId) {
-                await session.run(
-                    `MERGE (n:Neighborhood {id: $neighborhoodId})
+                    if (neighborhoodId) {
+                        await session.run(
+                            `MERGE (n:Neighborhood {id: $neighborhoodId})
            WITH n
            MATCH (e:Event {id: $eventId})
            MERGE (e)-[:HELD_IN]->(n)`,
-                    { eventId, neighborhoodId },
-                );
-            }
+                            { eventId, neighborhoodId },
+                        );
+                    }
+                } finally {
+                    await session.close();
+                }
+            });
         } catch (error) {
-            this.logger.warn(`Neo4j syncEvent failed: ${error}`);
-        } finally {
-            await session.close();
+            this.logger.warn(`Neo4j syncEvent failed after retries: ${error}`);
         }
     }
 }

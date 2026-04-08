@@ -323,11 +323,11 @@ seed-demo: ## Créer les 3 comptes démo (alice/bob/admin) dans PostgreSQL + Mon
 
 seed-neo4j: ## Peupler Neo4j avec les nœuds depuis MongoDB (quartiers, services, événements)
 	@echo "$(RUN) Seed Neo4j..."
-	@cd api && NEO4J_URI=$$(grep NEO4J_URI ../.env | cut -d= -f2) \
-	           NEO4J_USER=$$(grep NEO4J_USER ../.env | cut -d= -f2) \
-	           NEO4J_PASSWORD=$$(grep NEO4J_PASSWORD ../.env | cut -d= -f2) \
-	           MONGO_URI=$$(grep MONGO_URI ../.env | cut -d= -f2) \
-	           npx ts-node ../scripts/seed-neo4j.ts
+	@cd api && NEO4J_URI=$$(grep ^NEO4J_URI ../.env | cut -d= -f2-) \
+	           NEO4J_USER=$$(grep ^NEO4J_AUTH ../.env | cut -d= -f2- | cut -d/ -f1) \
+	           NEO4J_PASSWORD=$$(grep ^NEO4J_AUTH ../.env | cut -d= -f2- | cut -d/ -f2) \
+	           MONGO_URI=$$(grep ^MONGO_URI ../.env | cut -d= -f2-) \
+	           NODE_PATH=./node_modules npx ts-node --transpile-only --project tsconfig.json ../scripts/seed-neo4j.ts
 	@echo "$(OK) Graphe Neo4j peuplé"
 
 totp: ## Générer un code TOTP pour les comptes démo (secret JBSWY3DPEHPK3PXP)

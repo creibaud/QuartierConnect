@@ -356,7 +356,7 @@ sequenceDiagram
 
 ## 9. Sync Neo4j temps réel
 
-À chaque opération CRUD sur les entités sociales, un appel **fire-and-forget** synchronise Neo4j. Une panne Neo4j ne bloque jamais l'API principale.
+À chaque opération CRUD sur les entités sociales, un appel **fire-and-forget** synchronise Neo4j. Une panne Neo4j ne bloque jamais l'API principale. En cas d'erreur récupérable (`ServiceUnavailable`, `SessionExpired`, `TransientError`), `withRetry` retente jusqu'à 3 fois avec un backoff exponentiel (100 ms → 200 ms → 400 ms). Les erreurs non récupérables (ex. syntaxe Cypher) échouent immédiatement sans retry.
 
 ```mermaid
 flowchart TD
@@ -365,9 +365,11 @@ flowchart TD
     C -->|Non| D[Erreur HTTP renvoyée au client]
     C -->|Oui| E[Réponse HTTP envoyée au client]
     E --> F["void socialService.syncX()<br/>fire-and-forget — pas d'await"]
-    F --> G{Neo4j disponible?}
+    F --> R["withRetry — 3 tentatives<br/>backoff 100/200/400 ms"]
+    R --> G{Neo4j disponible?}
     G -->|Oui| H["Session Neo4j<br/>MERGE (n:Label {id}) ON CREATE/MATCH SET"]
-    G -->|Non| I["Logger.warn<br/>ignoré silencieusement"]
+    G -->|Non, tentative < 3| R
+    G -->|Non, tentative = 3| I["Logger.warn<br/>ignoré silencieusement"]
 ```
 
 ---
