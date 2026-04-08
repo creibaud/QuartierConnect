@@ -234,7 +234,7 @@ function SsoAuthorizePage() {
                                     <field.TextField
                                         label="Email"
                                         type="email"
-                                        placeholder="alice@demo.fr"
+                                        placeholder="admin@demo.fr"
                                         autoFocus
                                     />
                                 )}

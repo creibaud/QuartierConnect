@@ -126,7 +126,7 @@ public class LoginView {
 
         int port = server.getPort();
         String callbackUrl = "http://localhost:" + port + "/cb";
-        String authorizeUrl = "http://localhost:3000/sso/authorize"
+        String authorizeUrl = "http://localhost:3001/sso/authorize"
                 + "?state=" + URLEncoder.encode(state, StandardCharsets.UTF_8)
                 + "&redirect=" + URLEncoder.encode(callbackUrl, StandardCharsets.UTF_8);
 
