@@ -1,128 +1,125 @@
 # QuartierConnect
 
-Plateforme communautaire de quartier permettant aux habitants de se connecter, partager des informations et interagir avec leur environnement local.
+Plateforme communautaire de quartier — ESGI 3AL2 · Étape 4 (95%)
 
-## Architecture
+> **Rendu final** : 19 juillet 2026 · **Enseignant** : Frédéric SANANES
+> **v0.1.3** · **620 tests automatisés** · 7 conteneurs Docker · 3 bases de données · 4 surfaces
 
-Le projet est composé de quatre modules principaux :
-
-```text
-QuartierConnect/
-├── api/            # API REST (NestJS / TypeScript)
-├── desktop-app/    # Application desktop (JavaFX / Java 25)
-├── dsl/            # Langage de domaine spécifique (Python / PLY)
-├── web-apps/       # Applications web (React / Turborepo)
-└── docker-compose.yml
-```
-
-### Infrastructure
-
-L'ensemble des services est orchestré via Docker Compose et exposé par un reverse proxy [Caddy](https://caddyserver.com/) :
-
-| URL               | Service      |
-|-------------------|--------------|
-| `localhost`       | App cliente  |
-| `admin.localhost` | Back-office  |
-| `api.localhost`   | API NestJS   |
-
-#### Bases de données
-
-| Base          | Usage                          | Port  |
-|---------------|--------------------------------|-------|
-| PostgreSQL 17 | Données relationnelles         | 5432  |
-| MongoDB 8     | Données documentaires          | 27017 |
-| Neo4j 5       | Graphe de relations sociales   | 7474 / 7687 |
+---
 
 ## Prérequis
 
-- [Docker](https://www.docker.com/) et Docker Compose
-- [Make](https://www.gnu.org/software/make/)
-- [Node.js](https://nodejs.org/) >= 20 et [pnpm](https://pnpm.io/) (développement local)
-- [Java 21](https://openjdk.org/) et [Maven](https://maven.apache.org/) (desktop uniquement)
-- [Python 3.12+](https://www.python.org/) et [uv](https://docs.astral.sh/uv/) (DSL uniquement)
+- Docker + Docker Compose
+- Make
+- Node.js 20+ (pour le seed)
+- Java 21 (pour le desktop)
+- oathtool (`sudo apt install oathtool`) ou Google Authenticator
 
 ## Démarrage rapide
 
-### Configuration
-
-Copier le fichier d'environnement et l'adapter si nécessaire :
-
 ```bash
+# 1. Configurer l'environnement
 cp .env.example .env
+# Éditer .env : POSTGRES_PASSWORD, MONGO_ROOT_PASSWORD, JWT_SECRET, NEO4J_AUTH
+
+# 2. Lancer les 7 services Docker
+make docker-up
+
+# 3. Créer les comptes de démo + peupler Neo4j
+make seed
 ```
 
-### Avec Docker
+| Surface | URL |
+|---------|-----|
+| **Client habitant** | http://localhost |
+| **Admin back-office** | http://localhost/admin |
+| **API docs (Scalar)** | http://localhost/api/docs |
+| **Neo4j Browser** | http://localhost:7474 |
+
+## Comptes démo
+
+| Email | Mot de passe | Rôle | TOTP |
+|-------|-------------|------|------|
+| alice@demo.fr | Demo1234! | resident | `JBSWY3DPEHPK3PXP` |
+| bob@demo.fr | Demo1234! | moderator | `JBSWY3DPEHPK3PXP` |
+| admin@demo.fr | Demo1234! | admin | `JBSWY3DPEHPK3PXP` |
 
 ```bash
-make up       # Démarrer tous les services
-make down     # Arrêter tous les services
-make logs     # Suivre les logs
+make totp
+# Ou : oathtool --totp --base32 JBSWY3DPEHPK3PXP
 ```
 
-### Développement local
+## Développement local
 
 ```bash
-make install          # Installer les dépendances (API + web-apps)
-
-make dev-api          # API en mode watch
-make dev-client       # App cliente en mode dev
-make dev-back-office  # Back-office en mode dev
-make dev-desktop      # Application desktop JavaFX
-```
-
-### Bases de données uniquement
-
-```bash
-make db-up      # Démarrer uniquement PostgreSQL, MongoDB et Neo4j
-make db-reset   # Réinitialiser toutes les données (destructif)
+make dev              # API + client + admin en parallèle (hot reload)
+make dev-api          # API seule (port 5000)
+make dev-client       # Client React (port 3000)
+make dev-admin        # Admin React (port 3001)
+make dev-desktop      # JavaFX (javafx:run)
 ```
 
 ## Tests
 
 ```bash
-make test              # Lancer tous les tests
-
-make test-api          # Tests unitaires de l'API
-make test-api-cov      # Tests API avec couverture
-make test-api-e2e      # Tests end-to-end de l'API
-
-make test-desktop      # Tests desktop (Maven)
-
-make test-dsl          # Tests du DSL avec couverture
-make test-dsl-watch    # Tests DSL en mode watch
+make test             # Unitaires API (236) + Web shared hooks (73) + Desktop (63) + DSL (21)
+make test-cov         # + rapport coverage (stmts 95.7%, branches 86.1%)
+make test-e2e         # E2E API Supertest (148) — nécessite Docker
+make test-e2e-web     # E2E Playwright (79) — nécessite apps lancées
+make validate         # Tout en séquence : lint + typecheck + tests + build
 ```
 
-## Formatage
+## Format
 
 ```bash
-make format              # Formater tout le code
-
-make format-api          # API (Prettier + ESLint)
-make format-web          # Web apps (Prettier + ESLint)
-make format-dsl          # DSL (Ruff)
-make format-desktop      # Desktop (Spotless / Maven)
+make format           # Formate les 4 composants (Prettier + Ruff)
+make format-api       # API NestJS uniquement
+make format-web       # Monorepo web uniquement
+make format-desktop   # Desktop Java (compile -q)
+make format-dsl       # DSL Python (ruff format)
 ```
 
-> `format-desktop` nécessite le plugin [Spotless](https://github.com/diffplug/spotless/tree/main/plugin-maven) dans `desktop-app/pom.xml`.
-
-## Shells de débogage
+## Build
 
 ```bash
-make shell-api       # Shell dans le conteneur API
-make shell-postgres  # Shell psql
-make shell-mongodb   # Shell mongosh
-make shell-neo4j     # Shell cypher-shell
+make build            # Tous les composants
+make build-desktop    # Fat JAR (~25 MB)
+java -jar desktop-app/target/quartierconnect-desktop.jar
 ```
 
-## Commandes Make disponibles
+## Docker
 
 ```bash
-make help   # Afficher toutes les commandes disponibles
+make docker-up        # Démarrer
+make docker-down      # Arrêter
+make docker-reset     # Reset complet (⚠️ supprime volumes)
+make docker-logs      # Logs temps réel
+make status           # État des services
 ```
 
-## Documentation des modules
+## Documentation
 
-- [API](./api/README.md) - NestJS REST API
-- [Application desktop](./desktop-app/README.md) - JavaFX desktop app
-- [DSL](./dsl/README.md) - Domain Specific Language Python
-- [Web apps](./web-apps/README.md) - Monorepo React (client + back-office)
+| Document | Contenu |
+|----------|---------|
+| [docs/RAPPORT-TECHNIQUE.md](docs/RAPPORT-TECHNIQUE.md) | Rapport complet pour la soutenance — tous les algorithmes |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Diagrammes Mermaid — modules, flux, sécurité |
+| [docs/DATABASE.md](docs/DATABASE.md) | Schémas PostgreSQL, MongoDB, Neo4j, SQLite |
+| [docs/SECURITY.md](docs/SECURITY.md) | Argon2id, TOTP, JWT, SSO, SHA-256, RGPD |
+| [docs/TEST.md](docs/TEST.md) | Rapport QA — 620 tests, coverage, stratégie |
+| [docs/DSL.md](docs/DSL.md) | Micro-langage PLY — grammaire, pipeline, sécurité |
+| [docs/GUIDE-SOUTENANCE.md](docs/GUIDE-SOUTENANCE.md) | Scénarios démo, questions/réponses, chiffres clés |
+| [docs/API.md](docs/API.md) | Référence complète des 50+ endpoints |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Déploiement VPS + Caddy HTTPS |
+
+## Stack
+
+| Couche | Technologie |
+|--------|------------|
+| **API** | NestJS 11, TypeScript, Drizzle ORM, Mongoose, JWT HS256, argon2, speakeasy |
+| **Client** | React 19, TanStack Router/Query/Form, Shadcn/ui, Tailwind v4 |
+| **Admin** | React 19 (même stack), DSL editor, Mermaid |
+| **Desktop** | JavaFX 21, Maven Shade JAR, SQLite JDBC, java.net.http |
+| **Bases** | PostgreSQL 16, MongoDB 7, Neo4j 5, SQLite 3 |
+| **Proxy** | Caddy 2 (HTTPS Let's Encrypt automatique) |
+| **CI/CD** | GitHub Actions (lint + test + build), Turbo monorepo |
+| **DSL** | Python PLY + pythonia bridge |

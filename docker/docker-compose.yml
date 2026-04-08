@@ -1,0 +1,97 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: api/Dockerfile
+    ports:
+      - "5000:5000"
+    env_file:
+      - ../.env
+    environment:
+      PORT: 5000
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-root}:${MONGO_ROOT_PASSWORD}@mongo:27017/quartierconnect?authSource=admin
+      POSTGRES_URL: postgresql://${POSTGRES_USER:-qc}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-quartierconnect}
+      CORS_ORIGINS: http://localhost,http://localhost:3000,http://localhost:3001
+      LOGIN_RATE_LIMIT: "100"
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  client:
+    build:
+      context: ../web-apps
+      dockerfile: apps/client/Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+  admin:
+    build:
+      context: ../web-apps
+      dockerfile: apps/admin/Dockerfile
+    ports:
+      - "3001:3001"
+    depends_on:
+      - api
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "127.0.0.1:27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: quartierconnect
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet -u ${MONGO_ROOT_USER:-root} -p ${MONGO_ROOT_PASSWORD} --eval \"db.adminCommand('ping')\""]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  neo4j:
+    image: neo4j:5
+    ports:
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
+    environment:
+      NEO4J_AUTH: ${NEO4J_AUTH}
+    volumes:
+      - neo4j_data:/data
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_DB: quartierconnect
+      POSTGRES_USER: ${POSTGRES_USER:-qc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-qc}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    depends_on:
+      - api
+      - client
+      - admin
+
+volumes:
+  mongo_data:
+  neo4j_data:
+  postgres_data:
+  caddy_data:

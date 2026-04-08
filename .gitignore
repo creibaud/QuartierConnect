@@ -4,7 +4,9 @@
 *.out
 *.toc
 *.gz
-.gitnexus
-*.md
-.gitnexus/
-.claude/
+test-results/
+.env
+!.env.example
+# PLY generated parser tables
+dsl/parsetab.py
+dsl/parser.out

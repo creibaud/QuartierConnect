@@ -1,0 +1,31 @@
+(security_headers) {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), camera=(), microphone=()"
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self' ws: wss:; font-src 'self'; frame-ancestors 'none'"
+    }
+}
+
+:80 {
+    import security_headers
+
+    handle /api/* {
+        uri strip_prefix /api
+        reverse_proxy api:5000
+    }
+    handle /docs* {
+        reverse_proxy api:5000
+    }
+    handle /scalar* {
+        reverse_proxy api:5000
+    }
+    handle /admin* {
+        reverse_proxy admin:3001
+    }
+    handle {
+        reverse_proxy client:3000
+    }
+}
