@@ -1,5 +1,9 @@
 package fr.quartierconnect.desktopapp.plugin;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.Node;
+
 import java.io.IOException;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -10,6 +14,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -24,6 +29,15 @@ public class PluginRegistry {
 
     private final List<QuartierConnectPlugin> plugins = new ArrayList<>();
     private final Map<QuartierConnectPlugin, URLClassLoader> classLoaders = new IdentityHashMap<>();
+    private final Map<String, Boolean> enabledState = new ConcurrentHashMap<>();
+
+    /** UI slot — buttons injected into the incidents table header by plugins. */
+    private final ObservableList<Node> incidentSlot = FXCollections.observableArrayList();
+    /** UI slot — buttons/icons injected into the top bar by plugins. */
+    private final ObservableList<Node> topBarSlot = FXCollections.observableArrayList();
+
+    public ObservableList<Node> getIncidentSlot() { return incidentSlot; }
+    public ObservableList<Node> getTopBarSlot()   { return topBarSlot; }
 
     private PluginRegistry() {}
 
@@ -170,6 +184,39 @@ public class PluginRegistry {
 
     public List<QuartierConnectPlugin> getPlugins() {
         return Collections.unmodifiableList(plugins);
+    }
+
+    public boolean isEnabled(String pluginId) {
+        return enabledState.getOrDefault(pluginId, true);
+    }
+
+    public void enable(String pluginId) {
+        enabledState.put(pluginId, true);
+        plugins.stream()
+                .filter(p -> pluginId.equals(p.getId()))
+                .findFirst()
+                .ifPresent(p -> {
+                    try {
+                        p.onLoad();
+                    } catch (Exception e) {
+                        enabledState.put(pluginId, false);
+                        LOG.severe("Plugin " + pluginId + " failed to enable: " + e.getMessage());
+                    }
+                });
+    }
+
+    public void disable(String pluginId) {
+        enabledState.put(pluginId, false);
+        plugins.stream()
+                .filter(p -> pluginId.equals(p.getId()))
+                .findFirst()
+                .ifPresent(p -> {
+                    try {
+                        p.onUnload();
+                    } catch (Exception e) {
+                        LOG.warning("Plugin " + pluginId + " failed to disable cleanly: " + e.getMessage());
+                    }
+                });
     }
 
     /**

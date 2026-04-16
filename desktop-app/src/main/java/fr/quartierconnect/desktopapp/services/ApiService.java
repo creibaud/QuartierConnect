@@ -1,12 +1,35 @@
 package fr.quartierconnect.desktopapp.services;
 
+import javafx.application.Platform;
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
 public class ApiService {
+
+    private static volatile boolean offlineMode = false;
+    private static final List<Consumer<Boolean>> offlineModeListeners = new CopyOnWriteArrayList<>();
+
+    public static void setOfflineMode(boolean offline) {
+        offlineMode = offline;
+        Platform.runLater(() -> offlineModeListeners.forEach(l -> l.accept(offline)));
+    }
+
+    public static boolean isOfflineMode() { return offlineMode; }
+
+    public static void addOfflineModeListener(Consumer<Boolean> listener) {
+        offlineModeListeners.add(listener);
+    }
+
+    public static void removeOfflineModeListener(Consumer<Boolean> listener) {
+        offlineModeListeners.remove(listener);
+    }
 
     private static String getBaseUrl() {
         return System.getProperty("api.url", "http://localhost:5000");
@@ -17,65 +40,40 @@ public class ApiService {
             .build();
 
     public static String post(String path, String jsonBody, String bearerToken) throws Exception {
-        return post(path, jsonBody, bearerToken, false);
+        return execute("POST", path, jsonBody, bearerToken, false);
     }
 
-    private static String post(String path, String jsonBody, String bearerToken, boolean retried) throws Exception {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(getBaseUrl() + path))
-                .timeout(Duration.ofSeconds(15))
-                .header("Content-Type", "application/json");
-
-        if (bearerToken != null) {
-            builder.header("Authorization", "Bearer " + bearerToken);
-        }
-
-        HttpRequest request = builder
-                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                .build();
-
-        HttpResponse<String> response = CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() == 401) {
-            if (!retried) {
-                boolean refreshed = AuthService.getInstance().refreshAccessToken();
-                if (refreshed) {
-                    return post(path, jsonBody, AuthService.getInstance().getAccessToken(), true);
-                }
-            }
-            throw new RuntimeException("Session expirée");
-        }
-
-        if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new RuntimeException("API error " + response.statusCode() + ": " + response.body());
-        }
-
-        return response.body();
+    public static String patch(String path, String jsonBody, String bearerToken) throws Exception {
+        return execute("PATCH", path, jsonBody, bearerToken, false);
     }
 
-    /**
-     * Quick reachability check against GET /health.
-     * Returns true if the API responds with 2xx within 3 seconds.
-     */
+    public static String delete(String path, String bearerToken) throws Exception {
+        return execute("DELETE", path, null, bearerToken, false);
+    }
+
+    public static String get(String path, String bearerToken) throws Exception {
+        return execute("GET", path, null, bearerToken, false);
+    }
+
     public static boolean isReachable() {
+        if (offlineMode) return false;
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(getBaseUrl() + "/health"))
                     .timeout(Duration.ofSeconds(3))
                     .GET()
                     .build();
-            HttpResponse<Void> response = CLIENT.send(request, HttpResponse.BodyHandlers.discarding());
-            return response.statusCode() >= 200 && response.statusCode() < 300;
+            CLIENT.send(request, HttpResponse.BodyHandlers.discarding());
+            return true;
         } catch (Exception e) {
             return false;
         }
     }
 
-    public static String get(String path, String bearerToken) throws Exception {
-        return get(path, bearerToken, false);
-    }
+    private static String execute(String method, String path, String jsonBody,
+                                   String bearerToken, boolean retried) throws Exception {
+        if (offlineMode) throw new java.io.IOException("Mode hors ligne activé");
 
-    private static String get(String path, String bearerToken, boolean retried) throws Exception {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(getBaseUrl() + path))
                 .timeout(Duration.ofSeconds(15))
@@ -85,21 +83,24 @@ public class ApiService {
             builder.header("Authorization", "Bearer " + bearerToken);
         }
 
-        HttpRequest request = builder.GET().build();
-        HttpResponse<String> response = CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpRequest.BodyPublisher body = jsonBody != null
+                ? HttpRequest.BodyPublishers.ofString(jsonBody)
+                : HttpRequest.BodyPublishers.noBody();
 
-        if (response.statusCode() == 401) {
-            if (!retried) {
-                boolean refreshed = AuthService.getInstance().refreshAccessToken();
-                if (refreshed) {
-                    return get(path, AuthService.getInstance().getAccessToken(), true);
-                }
+        HttpResponse<String> response = CLIENT.send(
+                builder.method(method, body).build(),
+                HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() == 401 && !retried) {
+            if (AuthService.getInstance().refreshAccessToken()) {
+                return execute(method, path, jsonBody,
+                        AuthService.getInstance().getAccessToken(), true);
             }
             throw new RuntimeException("Session expirée");
         }
 
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new RuntimeException("API error " + response.statusCode() + ": " + response.body());
+            throw new RuntimeException("Erreur API — " + response.statusCode());
         }
 
         return response.body();

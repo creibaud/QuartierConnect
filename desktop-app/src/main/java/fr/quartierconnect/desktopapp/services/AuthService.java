@@ -138,6 +138,24 @@ public class AuthService {
         return fromJwt != null ? fromJwt : cachedEmail;
     }
 
+    public String getCurrentUserId() {
+        JsonNode payload = parseJwtPayload(accessToken);
+        if (payload == null) return null;
+        return payload.has("sub") ? payload.get("sub").asText() : null;
+    }
+
+    public String getCurrentUserRole() {
+        JsonNode payload = parseJwtPayload(accessToken);
+        if (payload == null) return null;
+        return payload.has("role") ? payload.get("role").asText() : null;
+    }
+
+    public long getTokenExpiryEpochSeconds() {
+        JsonNode payload = parseJwtPayload(accessToken);
+        if (payload == null) return 0;
+        return payload.has("exp") ? payload.get("exp").asLong() : 0;
+    }
+
     public void clearSession() {
         accessToken = null;
         refreshToken = null;
@@ -159,28 +177,27 @@ public class AuthService {
     }
 
     private String extractEmailFromJwt(String token) {
+        JsonNode payload = parseJwtPayload(token);
+        if (payload == null) return null;
+        return payload.has("email") ? payload.get("email").asText() : null;
+    }
+
+    public boolean isTokenExpired(String token) {
+        JsonNode payload = parseJwtPayload(token);
+        if (payload == null) return true;
+        long exp = payload.has("exp") ? payload.get("exp").asLong() : 0;
+        return exp * 1000L < System.currentTimeMillis();
+    }
+
+    private JsonNode parseJwtPayload(String token) {
         if (token == null) return null;
         try {
             String[] parts = token.split("\\.");
             if (parts.length < 2) return null;
-            String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
-            JsonNode node = MAPPER.readTree(payload);
-            return node.has("email") ? node.get("email").asText() : null;
+            String decoded = new String(Base64.getUrlDecoder().decode(parts[1]));
+            return MAPPER.readTree(decoded);
         } catch (Exception e) {
             return null;
-        }
-    }
-
-    public boolean isTokenExpired(String token) {
-        try {
-            String[] parts = token.split("\\.");
-            if (parts.length < 2) return true;
-            String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
-            JsonNode node = MAPPER.readTree(payload);
-            long exp = node.get("exp").asLong();
-            return exp * 1000L < System.currentTimeMillis();
-        } catch (Exception e) {
-            return true;
         }
     }
 }

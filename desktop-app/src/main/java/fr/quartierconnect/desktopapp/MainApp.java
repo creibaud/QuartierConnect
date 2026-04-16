@@ -1,5 +1,6 @@
 package fr.quartierconnect.desktopapp;
 
+import atlantafx.base.theme.PrimerDark;
 import fr.quartierconnect.desktopapp.database.SQLiteDatabase;
 import fr.quartierconnect.desktopapp.views.LoginView;
 import javafx.application.Application;
@@ -10,10 +11,11 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
         SQLiteDatabase.initialize();
 
         LoginView loginView = new LoginView(primaryStage, url -> getHostServices().showDocument(url));
-        Scene scene = new Scene(loginView.getRoot(), 420, 500);
+        Scene scene = new Scene(loginView.getRoot(), 420, 560);
         scene.getStylesheets().add(getClass().getResource("/styles/app.css").toExternalForm());
 
         primaryStage.setTitle("QuartierConnect");

@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class IncidentRepository {
 
@@ -24,37 +25,31 @@ public class IncidentRepository {
             String updatedAt,
             String remoteTitle,
             String remoteDescription,
-            String remoteStatus
+            String remoteStatus,
+            String baseTitle,
+            String baseDescription,
+            String baseStatus
     ) {}
 
     private static final String SELECT_COLUMNS =
             "id, remote_id, title, description, status, is_dirty, is_conflict, " +
-            "created_at, updated_at, remote_title, remote_description, remote_status";
+            "created_at, updated_at, remote_title, remote_description, remote_status, " +
+            "base_title, base_description, base_status";
 
     public List<Incident> listAll() throws SQLException {
-        String sql = "SELECT " + SELECT_COLUMNS + " FROM incidents ORDER BY created_at DESC";
-        List<Incident> result = new ArrayList<>();
-        try (Connection conn = SQLiteDatabase.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) result.add(map(rs));
-        }
-        return result;
+        return queryList("deleted_at IS NULL ORDER BY created_at DESC");
     }
 
     public List<Incident> listDirty() throws SQLException {
-        String sql = "SELECT " + SELECT_COLUMNS + " FROM incidents WHERE is_dirty = 1";
-        List<Incident> result = new ArrayList<>();
-        try (Connection conn = SQLiteDatabase.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) result.add(map(rs));
-        }
-        return result;
+        return queryList("is_dirty = 1 AND is_conflict = 0 AND deleted_at IS NULL");
     }
 
     public List<Incident> listConflicts() throws SQLException {
-        String sql = "SELECT " + SELECT_COLUMNS + " FROM incidents WHERE is_conflict = 1";
+        return queryList("is_conflict = 1 AND deleted_at IS NULL");
+    }
+
+    private List<Incident> queryList(String whereClause) throws SQLException {
+        String sql = "SELECT " + SELECT_COLUMNS + " FROM incidents WHERE " + whereClause;
         List<Incident> result = new ArrayList<>();
         try (Connection conn = SQLiteDatabase.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -181,7 +176,8 @@ public class IncidentRepository {
                                  String remoteStatus, String serverUpdatedAt) throws SQLException {
         String selectSql = """
                 SELECT id, title, description, status, is_dirty, updated_at,
-                       base_title, base_description, base_status, base_updated_at
+                       base_title, base_description, base_status, base_updated_at,
+                       deleted_at
                 FROM incidents WHERE remote_id = ?
                 """;
         try (Connection conn = SQLiteDatabase.getConnection();
@@ -189,6 +185,7 @@ public class IncidentRepository {
             select.setString(1, remoteId);
             try (ResultSet rs = select.executeQuery()) {
                 if (rs.next()) {
+                    if (rs.getString("deleted_at") != null) return; // tombstoned locally — never revive
                     applyMerge(conn, rs, remoteTitle, remoteDescription, remoteStatus, serverUpdatedAt);
                 } else {
                     insertFromServer(conn, remoteId, remoteTitle, remoteDescription, remoteStatus, serverUpdatedAt);
@@ -322,6 +319,128 @@ public class IncidentRepository {
         }
     }
 
+    public void assignRemoteId(int localId, String remoteId) throws SQLException {
+        String sql = "UPDATE incidents SET remote_id = ? WHERE id = ?";
+        try (Connection conn = SQLiteDatabase.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, remoteId);
+            stmt.setInt(2, localId);
+            stmt.executeUpdate();
+        }
+    }
+
+    public void updateLocally(int localId, String title, String description, String status) throws SQLException {
+        String now = Instant.now().toString();
+        String sql = "UPDATE incidents SET title = ?, description = ?, status = ?, updated_at = ?, is_dirty = 1 WHERE id = ?";
+        try (Connection conn = SQLiteDatabase.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, title);
+            stmt.setString(2, description);
+            stmt.setString(3, status);
+            stmt.setString(4, now);
+            stmt.setInt(5, localId);
+            stmt.executeUpdate();
+        }
+    }
+
+    public int countAll() throws SQLException {
+        return countWhere("deleted_at IS NULL");
+    }
+
+    public int countDirty() throws SQLException {
+        return countWhere("is_dirty = 1 AND deleted_at IS NULL");
+    }
+
+    public int countConflicts() throws SQLException {
+        return countWhere("is_conflict = 1 AND deleted_at IS NULL");
+    }
+
+    private int countWhere(String whereClause) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM incidents WHERE " + whereClause;
+        try (Connection conn = SQLiteDatabase.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            return rs.next() ? rs.getInt(1) : 0;
+        }
+    }
+
+    public void updateStatusLocally(int localId, String newStatus) throws SQLException {
+        String now = Instant.now().toString();
+        String sql = "UPDATE incidents SET status = ?, updated_at = ?, is_dirty = 1 WHERE id = ?";
+        try (Connection conn = SQLiteDatabase.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, newStatus);
+            stmt.setString(2, now);
+            stmt.setInt(3, localId);
+            stmt.executeUpdate();
+        }
+    }
+
+    /**
+     * Deletes an incident. If the incident has a remote_id (already synced to server),
+     * uses a soft-delete tombstone so the pull cycle never re-creates it locally.
+     * Local-only incidents (no remote_id) are hard-deleted.
+     */
+    public void deleteByLocalId(int localId) throws SQLException {
+        String checkSql = "SELECT remote_id FROM incidents WHERE id = ?";
+        try (Connection conn = SQLiteDatabase.getConnection();
+             PreparedStatement check = conn.prepareStatement(checkSql)) {
+            check.setInt(1, localId);
+            try (ResultSet rs = check.executeQuery()) {
+                if (rs.next() && rs.getString("remote_id") != null) {
+                    tombstoneById(conn, localId);
+                    return;
+                }
+            }
+        }
+        String deleteSql = "DELETE FROM incidents WHERE id = ?";
+        try (Connection conn = SQLiteDatabase.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(deleteSql)) {
+            stmt.setInt(1, localId);
+            stmt.executeUpdate();
+        }
+    }
+
+    private void tombstoneById(Connection conn, int localId) throws SQLException {
+        String sql = "UPDATE incidents SET deleted_at = ?, is_dirty = 0 WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, Instant.now().toString());
+            stmt.setInt(2, localId);
+            stmt.executeUpdate();
+        }
+    }
+
+    /**
+     * Tombstones local incidents whose remote_id is no longer returned by the server.
+     * Called after a full pull (no since= parameter) to clean up server-side soft-deletes.
+     */
+    public void tombstoneOrphans(Set<String> activeRemoteIds) throws SQLException {
+        if (activeRemoteIds.isEmpty()) return;
+        String sql = "SELECT id, remote_id FROM incidents WHERE remote_id IS NOT NULL AND deleted_at IS NULL";
+        List<Integer> orphans = new ArrayList<>();
+        try (Connection conn = SQLiteDatabase.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                if (!activeRemoteIds.contains(rs.getString("remote_id"))) {
+                    orphans.add(rs.getInt("id"));
+                }
+            }
+        }
+        if (orphans.isEmpty()) return;
+        String tombstoneSql = "UPDATE incidents SET deleted_at = ?, is_dirty = 0 WHERE id = ?";
+        try (Connection conn = SQLiteDatabase.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(tombstoneSql)) {
+            String now = Instant.now().toString();
+            for (int id : orphans) {
+                stmt.setString(1, now);
+                stmt.setInt(2, id);
+                stmt.addBatch();
+            }
+            stmt.executeBatch();
+        }
+    }
+
     private Incident map(ResultSet rs) throws SQLException {
         return new Incident(
                 rs.getInt("id"),
@@ -335,7 +454,10 @@ public class IncidentRepository {
                 rs.getString("updated_at"),
                 rs.getString("remote_title"),
                 rs.getString("remote_description"),
-                rs.getString("remote_status")
+                rs.getString("remote_status"),
+                rs.getString("base_title"),
+                rs.getString("base_description"),
+                rs.getString("base_status")
         );
     }
 }

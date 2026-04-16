@@ -165,7 +165,7 @@ public class SsoCallbackServer {
             String receivedState = parseQueryParam(query, "state");
 
             if (token == null || receivedState == null) {
-                log.warning("SSO callback missing token or state in query: " + query);
+                log.warning("SSO callback missing required parameters (token or state)");
                 sendResponse(socket.getOutputStream(), 400, "Bad Request", ERROR_HTML);
                 future.completeExceptionally(
                         new IllegalArgumentException("Missing token or state in callback"));

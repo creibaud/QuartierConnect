@@ -4,10 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.quartierconnect.desktopapp.database.IncidentRepository;
 import fr.quartierconnect.desktopapp.database.SQLiteDatabase;
+import fr.quartierconnect.desktopapp.plugin.PluginEventBus;
 import javafx.application.Platform;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -29,10 +33,16 @@ public class SyncService {
 
     private volatile boolean isSyncing = false;
     private volatile String lastPullTimestamp = null;
+    private volatile long lastSyncEpoch = 0;
 
     private ScheduledFuture<?> task;
     private Consumer<Boolean> onStatusChange;
     private Runnable onIncidentsChanged;
+    private volatile PluginEventBus eventBus;
+
+    public void setEventBus(PluginEventBus eventBus) {
+        this.eventBus = eventBus;
+    }
 
     public void setOnStatusChange(Consumer<Boolean> listener) {
         this.onStatusChange = listener;
@@ -56,63 +66,114 @@ public class SyncService {
         scheduler.shutdownNow();
     }
 
+    public void syncNow() {
+        if (!isSyncing) scheduler.execute(this::poll);
+    }
+
+    /**
+     * Submits a poll to the scheduler and blocks until it completes.
+     * Safe to call from a background thread (e.g. manual sync button).
+     */
+    public void syncNowAndWait() throws Exception {
+        java.util.concurrent.CompletableFuture<Void> future = new java.util.concurrent.CompletableFuture<>();
+        scheduler.execute(() -> {
+            try {
+                poll();
+                future.complete(null);
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
+        });
+        future.get(30, TimeUnit.SECONDS);
+    }
+
     private void poll() {
         if (isSyncing) return;
         isSyncing = true;
         try {
             String token = AuthService.getInstance().getAccessToken();
-            if (token == null) {
-                notifyStatus(false);
-                return;
+
+            if (token == null || AuthService.getInstance().isTokenExpired(token)) {
+                boolean refreshed = AuthService.getInstance().refreshAccessToken();
+                if (!refreshed) {
+                    notifyStatus(false);
+                    return;
+                }
+                token = AuthService.getInstance().getAccessToken();
+                if (token == null) {
+                    notifyStatus(false);
+                    return;
+                }
             }
 
-            pushDirtyIncidents(token);
-            pullIncidents(token);
+            publishEvent(PluginEventBus.Event.SYNC_STARTED);
 
+            Set<String> justPushed = pushDirtyIncidents(token);
+            pullIncidents(token, justPushed);
+
+            lastSyncEpoch = System.currentTimeMillis();
             SQLiteDatabase.logSync(true);
             notifyStatus(true);
             notifyIncidentsChanged();
+            publishEvent(PluginEventBus.Event.INCIDENTS_CHANGED);
+            publishEvent(PluginEventBus.Event.SYNC_COMPLETED);
         } catch (Exception e) {
             SQLiteDatabase.logSync(false);
             notifyStatus(false);
+            publishEvent(PluginEventBus.Event.SYNC_FAILED, e.getMessage());
         } finally {
             isSyncing = false;
         }
     }
 
-    private void pushDirtyIncidents(String token) throws Exception {
+    /**
+     * Pushes all dirty incidents to the server and returns the set of remote IDs
+     * that were just pushed, so the subsequent pull can skip them (avoids the pull
+     * overwriting values the server may not have stored correctly yet).
+     */
+    private Set<String> pushDirtyIncidents(String token) throws Exception {
         List<IncidentRepository.Incident> dirty = incidentRepo.listDirty();
-        if (dirty.isEmpty()) return;
+        if (dirty.isEmpty()) return Set.of();
 
+        String userId = AuthService.getInstance().getCurrentUserId();
+        if (userId == null) return Set.of();
+
+        List<String> syncIds = new ArrayList<>();
         List<Object> payload = new ArrayList<>();
+
         for (IncidentRepository.Incident inc : dirty) {
+            String syncId = (inc.remoteId() != null && !inc.remoteId().isBlank())
+                    ? inc.remoteId()
+                    : UUID.randomUUID().toString();
+            syncIds.add(syncId);
+
+            String desc = (inc.description() != null && !inc.description().isBlank())
+                    ? inc.description() : "—";
+
             payload.add(new java.util.LinkedHashMap<String, Object>() {{
-                put("title", inc.title());
-                put("description", inc.description());
-                put("status", inc.status());
-                put("updatedAt", inc.updatedAt());
+                put("id",          syncId);
+                put("title",       inc.title());
+                put("description", desc);
+                put("status",      inc.status());
+                put("createdBy",   userId);
+                put("updatedAt",   inc.updatedAt());
             }});
         }
 
         String body = JSON.writeValueAsString(java.util.Map.of("incidents", payload));
-        String response = ApiService.post("/incidents/sync", body, token);
+        ApiService.post("/incidents/sync", body, token);
 
-        JsonNode root = JSON.readTree(response);
-        JsonNode ids = root.path("ids");
-        if (ids.isArray()) {
-            for (int i = 0; i < ids.size() && i < dirty.size(); i++) {
-                String remoteId = ids.get(i).asText(null);
-                if (remoteId != null && !remoteId.isEmpty()) {
-                    incidentRepo.writeRemoteId(dirty.get(i).localId(), remoteId);
-                }
-                updateBaseAfterPush(dirty.get(i));
+        Set<String> pushed = new HashSet<>();
+        for (int i = 0; i < dirty.size(); i++) {
+            IncidentRepository.Incident inc = dirty.get(i);
+            if (inc.remoteId() == null || inc.remoteId().isBlank()) {
+                incidentRepo.assignRemoteId(inc.localId(), syncIds.get(i));
             }
-        } else {
-            for (IncidentRepository.Incident inc : dirty) {
-                incidentRepo.markSynced(inc.localId());
-                updateBaseAfterPush(inc);
-            }
+            incidentRepo.markSynced(inc.localId());
+            updateBaseAfterPush(inc);
+            pushed.add(syncIds.get(i));
         }
+        return pushed;
     }
 
     private void updateBaseAfterPush(IncidentRepository.Incident inc) {
@@ -124,10 +185,11 @@ public class SyncService {
         }
     }
 
-    private void pullIncidents(String token) throws Exception {
-        String path = lastPullTimestamp != null
-                ? "/incidents?limit=100&since=" + lastPullTimestamp
-                : "/incidents?limit=100";
+    private void pullIncidents(String token, Set<String> justPushed) throws Exception {
+        boolean isFullPull = lastPullTimestamp == null;
+        String path = isFullPull
+                ? "/incidents?limit=100"
+                : "/incidents?limit=100&since=" + lastPullTimestamp;
 
         String response = ApiService.get(path, token);
         JsonNode incidents = JSON.readTree(response);
@@ -135,6 +197,8 @@ public class SyncService {
         if (!incidents.isArray()) return;
 
         String newestTs = lastPullTimestamp;
+        Set<String> seenRemoteIds = isFullPull ? new HashSet<>() : null;
+
         for (JsonNode node : incidents) {
             String remoteId = node.path("id").asText(null);
             if (remoteId == null) continue;
@@ -145,11 +209,18 @@ public class SyncService {
             String updatedAt   = node.path("updatedAt").asText(null);
             if (updatedAt == null) updatedAt = node.path("updated_at").asText("");
 
-            incidentRepo.upsertFromServer(remoteId, title, description, status, updatedAt);
+            if (!justPushed.contains(remoteId)) {
+                incidentRepo.upsertFromServer(remoteId, title, description, status, updatedAt);
+            }
 
+            if (seenRemoteIds != null) seenRemoteIds.add(remoteId);
             if (newestTs == null || updatedAt.compareTo(newestTs) > 0) {
                 newestTs = updatedAt;
             }
+        }
+
+        if (isFullPull && seenRemoteIds != null) {
+            incidentRepo.tombstoneOrphans(seenRemoteIds);
         }
 
         if (newestTs != null) {
@@ -171,7 +242,22 @@ public class SyncService {
 
     private Consumer<Runnable> statusDispatcher = Platform::runLater;
 
+    public long getLastSyncEpoch() {
+        return lastSyncEpoch;
+    }
+
     void setStatusDispatcher(Consumer<Runnable> dispatcher) {
         this.statusDispatcher = dispatcher;
+    }
+
+    private void publishEvent(PluginEventBus.Event event) {
+        publishEvent(event, null);
+    }
+
+    private void publishEvent(PluginEventBus.Event event, Object payload) {
+        PluginEventBus bus = this.eventBus;
+        if (bus != null) {
+            bus.publish(event, payload);
+        }
     }
 }

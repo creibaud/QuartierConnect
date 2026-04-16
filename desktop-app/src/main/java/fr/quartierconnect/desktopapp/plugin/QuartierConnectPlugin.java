@@ -34,4 +34,9 @@ public interface QuartierConnectPlugin {
      * Clean up resources here (e.g. cancel scheduled tasks, close connections).
      */
     void onUnload();
+
+    /**
+     * Short description of what the plugin does (shown in the plugin manager).
+     */
+    default String getDescription() { return ""; }
 }

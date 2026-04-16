@@ -52,6 +52,7 @@
                 <transformer>
                   <mainClass>fr.quartierconnect.desktopapp.Launcher</mainClass>
                 </transformer>
+                <transformer />
               </transformers>
               <filters>
                 <filter>
@@ -60,6 +61,7 @@
                     <exclude>META-INF/*.SF</exclude>
                     <exclude>META-INF/*.DSA</exclude>
                     <exclude>META-INF/*.RSA</exclude>
+                    <exclude>module-info.class</exclude>
                   </excludes>
                 </filter>
               </filters>

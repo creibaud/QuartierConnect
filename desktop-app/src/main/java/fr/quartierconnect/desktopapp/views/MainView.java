@@ -1,177 +1,183 @@
 package fr.quartierconnect.desktopapp.views;
 
+import atlantafx.base.controls.ModalPane;
+import fr.quartierconnect.desktopapp.database.IncidentRepository;
+import fr.quartierconnect.desktopapp.plugin.AppContext;
+import fr.quartierconnect.desktopapp.plugin.CompactModePlugin;
+import fr.quartierconnect.desktopapp.plugin.ExportPlugin;
+import fr.quartierconnect.desktopapp.plugin.NotificationPlugin;
+import fr.quartierconnect.desktopapp.plugin.OfflineModePlugin;
+import fr.quartierconnect.desktopapp.plugin.PluginEventBus;
 import fr.quartierconnect.desktopapp.plugin.PluginRegistry;
-import fr.quartierconnect.desktopapp.plugin.QuartierConnectPlugin;
+import fr.quartierconnect.desktopapp.plugin.ThemePlugin;
+import fr.quartierconnect.desktopapp.services.ApiService;
 import fr.quartierconnect.desktopapp.services.AuthService;
 import fr.quartierconnect.desktopapp.services.SyncService;
-import fr.quartierconnect.desktopapp.services.UpdateService;
+import fr.quartierconnect.desktopapp.ui.components.AppModal;
+import fr.quartierconnect.desktopapp.ui.components.ToastManager;
+import fr.quartierconnect.desktopapp.ui.layout.AppSidebar;
+import fr.quartierconnect.desktopapp.ui.layout.AppTopBar;
+import fr.quartierconnect.desktopapp.ui.layout.PageLayout;
 import javafx.application.Platform;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.function.Consumer;
-
-@SuppressWarnings("FieldCanBeLocal")
 
 public class MainView {
 
-    private final Stage stage;
+    private final Stage            stage;
     private final Consumer<String> openBrowser;
-    private final BorderPane root;
-    private final SyncService syncService = new SyncService();
-    private final UpdateService updateService = new UpdateService();
-    private final Label statusLabel = new Label("● Connexion…");
-    private final IncidentsView incidentsView = new IncidentsView();
+    private final AppSidebar       sidebar;
+    private final AppTopBar        topBar;
+    private final PageLayout       layout;
+    private final ModalPane        modalPane;
+    private final AppModal         appModal;
+    private final ToastManager     toast;
+    private final SyncService      syncService;
+    private final StackPane        root;
+
+    private AppSidebar.NavItem dashBtn;
+    private AppSidebar.NavItem incidentsBtn;
+    private AppSidebar.NavItem profileBtn;
+    private AppSidebar.NavItem pluginsBtn;
 
     public MainView(Stage stage, Consumer<String> openBrowser) {
-        this.stage = stage;
+        this.stage       = stage;
         this.openBrowser = openBrowser;
-        this.root = buildLayout();
-        startSync();
-        startUpdateChecker();
+
+        sidebar     = new AppSidebar();
+        topBar      = new AppTopBar(extractInitials(AuthService.getInstance().getCurrentUserEmail()));
+        layout      = new PageLayout(sidebar, topBar);
+        modalPane   = new ModalPane();
+        appModal    = new AppModal(modalPane);
+        root        = new StackPane(layout, modalPane);
+        toast       = new ToastManager(root);
+        syncService = new SyncService();
+
+        PluginEventBus eventBus = new PluginEventBus();
+        syncService.setEventBus(eventBus);
+
+        AppContext appContext = new AppContext(
+                null,
+                AuthService.getInstance(),
+                stage.getScene(),
+                new IncidentRepository(),
+                syncService,
+                toast,
+                eventBus
+        );
+
+        PluginRegistry registry = PluginRegistry.getInstance();
+        registry.unregisterAll();
+        registry.register(new ThemePlugin(), appContext);
+        registry.register(new CompactModePlugin(), appContext);
+        registry.register(new ExportPlugin(), appContext);
+        registry.register(new NotificationPlugin(), appContext);
+        registry.register(new OfflineModePlugin(), appContext);
+
+        Path pluginsDir = Paths.get("plugins");
+        registry.loadFromDirectory(pluginsDir, appContext);
+
+        syncService.setOnStatusChange(online -> {
+            if (online) eventBus.publish(PluginEventBus.Event.ONLINE_STATUS_CHANGED, true);
+        });
+        syncService.start();
+        tryBackgroundReconnect();
+
+        buildNavigation();
+        navigate(dashBtn, "Tableau de bord");
+    }
+
+    private void tryBackgroundReconnect() {
+        if (AuthService.getInstance().getAccessToken() != null
+                && !AuthService.getInstance().isTokenExpired(AuthService.getInstance().getAccessToken())) {
+            return;
+        }
+        new Thread(() -> {
+            if (!ApiService.isReachable()) return;
+            boolean refreshed = AuthService.getInstance().refreshAccessToken();
+            if (refreshed) {
+                Platform.runLater(() -> toast.showSuccess("Reconnexion automatique réussie"));
+                syncService.syncNow();
+            }
+        }, "background-reconnect").start();
     }
 
     public Parent getRoot() {
         return root;
     }
 
-    private BorderPane buildLayout() {
-        BorderPane layout = new BorderPane();
-        layout.setLeft(buildSidebar());
-        layout.setTop(buildTopBar());
-        layout.setCenter(buildContent());
-        return layout;
+    // ── Navigation ──────────────────────────────────────────────────────────
+
+    private void buildNavigation() {
+        dashBtn      = sidebar.addNavItem(FontAwesomeSolid.HOME,           "Tableau de bord");
+        incidentsBtn = sidebar.addNavItem(FontAwesomeSolid.CLIPBOARD_LIST, "Incidents");
+
+        sidebar.addSeparator();
+
+        profileBtn = sidebar.addNavItem(FontAwesomeSolid.USER, "Mon profil");
+        pluginsBtn = sidebar.addNavItem(FontAwesomeSolid.PLUG, "Plugins");
+
+        sidebar.addSpacer();
+
+        AppSidebar.NavItem logoutBtn = sidebar.addLogoutItem(FontAwesomeSolid.POWER_OFF, "Déconnexion");
+
+        dashBtn.setAction(()      -> navigate(dashBtn,      "Tableau de bord"));
+        incidentsBtn.setAction(() -> navigate(incidentsBtn, "Incidents"));
+        profileBtn.setAction(()   -> navigate(profileBtn,   "Mon profil"));
+        pluginsBtn.setAction(()   -> navigate(pluginsBtn,   "Plugins"));
+        logoutBtn.setAction(()    -> logout());
     }
 
-    private VBox buildSidebar() {
-        Label appName = new Label("QuartierConnect");
-        appName.getStyleClass().add("sidebar-title");
+    private void navigate(AppSidebar.NavItem item, String page) {
+        sidebar.setActive(item);
+        topBar.setBreadcrumb(page);
 
-        Button dashboardBtn = menuButton("Tableau de bord");
-        dashboardBtn.setOnAction(e -> root.setCenter(buildContent()));
-
-        Button incidentsBtn = menuButton("Incidents");
-        incidentsBtn.setOnAction(e -> root.setCenter(incidentsView.getRoot()));
-
-        Button profileBtn = menuButton("Mon profil");
-
-        Button pluginsBtn = menuButton("Plugins");
-        pluginsBtn.setOnAction(e -> root.setCenter(buildPluginsView()));
-
-        VBox spacer = new VBox();
-        VBox.setVgrow(spacer, Priority.ALWAYS);
-
-        Button logoutBtn = new Button("Déconnexion");
-        logoutBtn.getStyleClass().add("logout-button");
-        logoutBtn.setMaxWidth(Double.MAX_VALUE);
-        logoutBtn.setOnAction(e -> handleLogout());
-
-        VBox sidebar = new VBox(12, appName, dashboardBtn, incidentsBtn, profileBtn, pluginsBtn, spacer, logoutBtn);
-        sidebar.setPadding(new Insets(20));
-        sidebar.setPrefWidth(200);
-        sidebar.getStyleClass().add("sidebar");
-        return sidebar;
-    }
-
-    private HBox buildTopBar() {
-        String email = AuthService.getInstance().getCurrentUserEmail();
-        Label userLabel = new Label(email != null ? email : "Utilisateur");
-        userLabel.getStyleClass().add("topbar-user");
-
-        statusLabel.getStyleClass().add("status-offline");
-
-        HBox spacer = new HBox();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        HBox topBar = new HBox(12, spacer, statusLabel, userLabel);
-        topBar.setAlignment(Pos.CENTER_RIGHT);
-        topBar.setPadding(new Insets(12, 20, 12, 20));
-        topBar.getStyleClass().add("topbar");
-        return topBar;
-    }
-
-    private VBox buildContent() {
-        Label welcome = new Label("Bienvenue sur QuartierConnect");
-        welcome.getStyleClass().add("content-title");
-
-        Label info = new Label("Les fonctionnalités complètes seront disponibles à l'Étape 3.");
-        info.getStyleClass().add("content-subtitle");
-        info.setWrapText(true);
-
-        VBox content = new VBox(16, welcome, info);
-        content.setPadding(new Insets(30));
-        content.setAlignment(Pos.TOP_LEFT);
-        return content;
-    }
-
-    private Button menuButton(String text) {
-        Button btn = new Button(text);
-        btn.getStyleClass().add("menu-button");
-        btn.setMaxWidth(Double.MAX_VALUE);
-        return btn;
-    }
-
-    private VBox buildPluginsView() {
-        Label title = new Label("Plugins installés");
-        title.getStyleClass().add("content-title");
-
-        var pluginList = PluginRegistry.getInstance().getPlugins();
-        VBox content = new VBox(12, title);
-        content.setPadding(new Insets(30));
-
-        if (pluginList.isEmpty()) {
-            Label empty = new Label("Aucun plugin installé. Déposez des fichiers .jar dans le dossier plugins/.");
-            empty.setWrapText(true);
-            empty.getStyleClass().add("content-subtitle");
-            content.getChildren().add(empty);
-        } else {
-            for (QuartierConnectPlugin plugin : pluginList) {
-                Label info = new Label(plugin.getName() + " v" + plugin.getVersion() + "  [" + plugin.getId() + "]");
-                info.getStyleClass().add("content-subtitle");
-                content.getChildren().add(info);
-            }
+        switch (page) {
+            case "Tableau de bord" -> layout.setContent(new DashboardView(this::handleRoute, syncService, toast).getRoot());
+            case "Incidents"       -> layout.setContent(new IncidentsView(appModal, toast, syncService).getRoot());
+            case "Mon profil"      -> layout.setContent(new ProfileView(this::logout, syncService).getRoot());
+            case "Plugins"         -> layout.setContent(new PluginsView(appModal).getRoot());
         }
-        return content;
     }
 
-    private void startUpdateChecker() {
-        updateService.setOnUpdateAvailable(version -> Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Mise à jour disponible");
-            alert.setHeaderText("Version " + version + " disponible");
-            alert.setContentText("Une nouvelle version de QuartierConnect est disponible. Téléchargez-la depuis le portail.");
-            alert.showAndWait();
-        }));
-        updateService.checkInBackground();
+    private void handleRoute(String route) {
+        switch (route) {
+            case "incidents", "create_incident" -> navigate(incidentsBtn, "Incidents");
+            case "plugins"                      -> navigate(pluginsBtn,   "Plugins");
+        }
     }
 
-    private void startSync() {
-        syncService.setOnStatusChange(online -> {
-            statusLabel.setText(online ? "● En ligne" : "● Hors ligne");
-            statusLabel.getStyleClass().setAll(online ? "status-online" : "status-offline");
-        });
-        syncService.setOnIncidentsChanged(incidentsView::refresh);
-        syncService.start();
-    }
+    // ── Logout ──────────────────────────────────────────────────────────────
 
-    private void handleLogout() {
+    private void logout() {
+        topBar.shutdown();
         syncService.shutdown();
-        updateService.shutdown();
         PluginRegistry.getInstance().unregisterAll();
         AuthService.getInstance().clearSession();
-        LoginView loginView = new LoginView(stage, openBrowser);
-        stage.getScene().setRoot(loginView.getRoot());
-        stage.setWidth(420);
-        stage.setHeight(500);
-        stage.setResizable(false);
+        Platform.runLater(() -> {
+            LoginView loginView = new LoginView(stage, openBrowser);
+            stage.getScene().setRoot(loginView.getRoot());
+            stage.setResizable(false);
+            stage.setWidth(420);
+            stage.setHeight(560);
+        });
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+
+    private static String extractInitials(String email) {
+        if (email == null || email.isBlank()) return "?";
+        String local = email.contains("@") ? email.substring(0, email.indexOf('@')) : email;
+        String[] parts = local.split("[._-]");
+        if (parts.length >= 2) {
+            return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
+        }
+        return local.substring(0, Math.min(2, local.length())).toUpperCase();
     }
 }
