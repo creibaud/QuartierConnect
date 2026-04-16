@@ -297,7 +297,7 @@ export class IncidentsController {
                     id: item.id,
                     title: item.title,
                     description: item.description,
-                    status: "open",
+                    status: item.status ?? "open",
                     createdBy: req.user.sub,
                     neighborhoodId: item.neighborhoodId,
                 })),
@@ -307,6 +307,7 @@ export class IncidentsController {
                 set: {
                     title: sql`excluded.title`,
                     description: sql`excluded.description`,
+                    status: sql`excluded.status`,
                     updatedAt: new Date(),
                 },
                 where: eq(schema.incidents.createdBy, req.user.sub),

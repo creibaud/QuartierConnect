@@ -206,4 +206,38 @@ describe("IncidentsController", () => {
         expect(result.upserted).toBe(0);
         expect(result.skipped).toBe(1);
     });
+
+    it("POST /incidents/sync preserves status from client payload", async () => {
+        const valuesSpy = jest.fn().mockReturnValue({
+            onConflictDoUpdate: jest.fn().mockReturnValue({
+                returning: jest.fn().mockResolvedValue([]),
+            }),
+        });
+        mockDb = {
+            insert: jest.fn().mockReturnValue({ values: valuesSpy }),
+        } as any;
+        const module = await Test.createTestingModule({
+            controllers: [IncidentsController],
+            providers: [{ provide: DRIZZLE_TOKEN, useValue: mockDb }],
+        }).compile();
+        controller = module.get<IncidentsController>(IncidentsController);
+
+        await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-status-1",
+                        title: "T",
+                        description: "D",
+                        createdBy: "user-uuid-1",
+                        status: "in_progress",
+                    },
+                ],
+            },
+            authReq() as any,
+        );
+
+        const insertedValues = valuesSpy.mock.calls[0][0];
+        expect(insertedValues[0].status).toBe("in_progress");
+    });
 });

@@ -3,6 +3,7 @@ import { Type } from "class-transformer";
 import {
     IsArray,
     IsDateString,
+    IsIn,
     IsNotEmpty,
     IsOptional,
     IsString,
@@ -50,6 +51,15 @@ export class SyncIncidentItemDto {
     @IsString()
     @IsOptional()
     neighborhoodId?: string;
+
+    @ApiProperty({
+        description: "Statut de l'incident (open | in_progress | resolved)",
+        example: "in_progress",
+        required: false,
+    })
+    @IsIn(["open", "in_progress", "resolved"])
+    @IsOptional()
+    status?: string;
 
     @ApiProperty({
         description: "Date ISO 8601 de dernière modification côté client (LWW)",
