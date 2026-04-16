@@ -19,27 +19,29 @@ class ContractsServiceTest {
     @Test
     void contractSummary_record_fieldsAccessible() {
         ContractsService.ContractSummary summary =
-                new ContractsService.ContractSummary("id-1", "Contrat de prestation", "draft", 0, 2);
+                new ContractsService.ContractSummary("id-1", "Contrat de prestation", "draft", 0, 2, true);
         assertEquals("id-1", summary.id());
         assertEquals("Contrat de prestation", summary.title());
         assertEquals("draft", summary.status());
         assertEquals(0, summary.signatureCount());
         assertEquals(2, summary.signatoryCount());
+        assertTrue(summary.canSign());
     }
 
     @Test
-    void contractSummary_fullySigned_signatureCountEqualsSignatoryCount() {
+    void contractSummary_fullySigned_canSignIsFalse() {
         ContractsService.ContractSummary summary =
-                new ContractsService.ContractSummary("id-2", "Accord", "signed", 2, 2);
+                new ContractsService.ContractSummary("id-2", "Accord", "fully_signed", 2, 2, false);
+        assertFalse(summary.canSign());
         assertEquals(summary.signatureCount(), summary.signatoryCount());
     }
 
     @Test
     void contractSummary_equality_byValue() {
         ContractsService.ContractSummary a =
-                new ContractsService.ContractSummary("id-1", "Accord", "draft", 1, 2);
+                new ContractsService.ContractSummary("id-1", "Accord", "draft", 1, 2, true);
         ContractsService.ContractSummary b =
-                new ContractsService.ContractSummary("id-1", "Accord", "draft", 1, 2);
+                new ContractsService.ContractSummary("id-1", "Accord", "draft", 1, 2, true);
         assertEquals(a, b);
     }
 }

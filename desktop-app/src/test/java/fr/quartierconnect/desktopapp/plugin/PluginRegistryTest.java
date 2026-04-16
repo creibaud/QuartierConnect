@@ -57,6 +57,58 @@ class PluginRegistryTest {
     }
 
     @Test
+    void isEnabled_defaultTrue_forNewlyRegisteredPlugin() {
+        registry.register(new QuartierConnectPlugin() {
+            public String getId() { return "enabled.default"; }
+            public String getName() { return "Enabled Default"; }
+            public String getVersion() { return "1.0.0"; }
+            public void onLoad() {}
+            public void onUnload() {}
+        });
+
+        assertTrue(registry.isEnabled("enabled.default"));
+    }
+
+    @Test
+    void disable_callsOnUnloadAndMarksDisabled() {
+        AtomicBoolean unloaded = new AtomicBoolean(false);
+
+        registry.register(new QuartierConnectPlugin() {
+            public String getId() { return "disable.test"; }
+            public String getName() { return "Disable Test"; }
+            public String getVersion() { return "1.0.0"; }
+            public void onLoad() {}
+            public void onUnload() { unloaded.set(true); }
+        });
+
+        registry.disable("disable.test");
+
+        assertTrue(unloaded.get(), "onUnload should be called on disable");
+        assertFalse(registry.isEnabled("disable.test"));
+    }
+
+    @Test
+    void enable_afterDisable_callsOnLoadAndMarksEnabled() {
+        AtomicBoolean loadCalled = new AtomicBoolean(false);
+
+        registry.register(new QuartierConnectPlugin() {
+            public String getId() { return "enable.after.disable"; }
+            public String getName() { return "Re-enable Test"; }
+            public String getVersion() { return "1.0.0"; }
+            public void onLoad() { loadCalled.set(true); }
+            public void onUnload() {}
+        });
+
+        registry.disable("enable.after.disable");
+        loadCalled.set(false);
+
+        registry.enable("enable.after.disable");
+
+        assertTrue(loadCalled.get(), "onLoad should be called on enable");
+        assertTrue(registry.isEnabled("enable.after.disable"));
+    }
+
+    @Test
     void register_failingOnLoad_doesNotPreventFurtherRegistrations() {
         registry.register(new QuartierConnectPlugin() {
             public String getId() { return "failing.plugin"; }

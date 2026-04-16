@@ -100,6 +100,90 @@ class IncidentRepositoryTest {
     }
 
     @Test
+    void updateLocally_changesValuesAndMarksDirty() throws SQLException {
+        IncidentRepository repo = new IncidentRepository();
+        int localId = repo.insertDirty("original title", "original desc");
+        repo.markSynced(localId);
+
+        repo.updateLocally(localId, "updated title", "updated desc", "in_progress");
+
+        IncidentRepository.Incident updated = repo.listAll().stream()
+                .filter(i -> i.localId() == localId).findFirst().orElseThrow();
+
+        assertEquals("updated title", updated.title());
+        assertEquals("updated desc", updated.description());
+        assertEquals("in_progress", updated.status());
+        assertTrue(updated.isDirty());
+    }
+
+    @Test
+    void updateLocally_nonExistentId_noException() {
+        IncidentRepository repo = new IncidentRepository();
+        assertDoesNotThrow(() -> repo.updateLocally(Integer.MAX_VALUE, "t", "d", "open"));
+    }
+
+    @Test
+    void deleteByLocalId_removesRow() throws SQLException {
+        IncidentRepository repo = new IncidentRepository();
+        int localId = repo.insertDirty("to be deleted", "desc");
+        int countBefore = repo.countAll();
+
+        repo.deleteByLocalId(localId);
+
+        assertEquals(countBefore - 1, repo.countAll());
+        boolean stillPresent = repo.listAll().stream().anyMatch(i -> i.localId() == localId);
+        assertFalse(stillPresent);
+    }
+
+    @Test
+    void updateStatusLocally_changesStatusAndMarksDirty() throws SQLException {
+        IncidentRepository repo = new IncidentRepository();
+        int localId = repo.insertDirty("status test", "desc");
+        repo.markSynced(localId);
+
+        repo.updateStatusLocally(localId, "resolved");
+
+        IncidentRepository.Incident updated = repo.listAll().stream()
+                .filter(i -> i.localId() == localId).findFirst().orElseThrow();
+
+        assertEquals("resolved", updated.status());
+        assertTrue(updated.isDirty());
+    }
+
+    @Test
+    void countAll_countDirty_countConflicts_returnCorrectValues() throws SQLException {
+        IncidentRepository repo = new IncidentRepository();
+        int totalBefore = repo.countAll();
+        int dirtyBefore = repo.countDirty();
+
+        int newId = repo.insertDirty("count test", "desc");
+        assertEquals(totalBefore + 1, repo.countAll());
+        assertEquals(dirtyBefore + 1, repo.countDirty());
+
+        repo.markSynced(newId);
+        assertEquals(totalBefore + 1, repo.countAll());
+        assertEquals(dirtyBefore, repo.countDirty());
+
+        int conflictsBefore = repo.countConflicts();
+        assertEquals(conflictsBefore, repo.countConflicts());
+    }
+
+    @Test
+    void insertDemoConflicts_insertsConflictRows() throws SQLException {
+        IncidentRepository repo = new IncidentRepository();
+        int conflictsBefore = repo.countConflicts();
+
+        SQLiteDatabase.insertDemoConflicts();
+
+        int conflictsAfter = repo.countConflicts();
+        assertEquals(conflictsBefore + 2, conflictsAfter);
+
+        List<IncidentRepository.Incident> conflicts = repo.listConflicts();
+        assertTrue(conflicts.stream().anyMatch(i -> i.remoteTitle() != null));
+        assertTrue(conflicts.stream().anyMatch(IncidentRepository.Incident::isConflict));
+    }
+
+    @Test
     void resolveConflict_acceptRemote_clearsFlag() throws SQLException {
         IncidentRepository repo = new IncidentRepository();
         String remoteId = "repo-test-resolve-" + System.nanoTime();

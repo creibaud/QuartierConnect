@@ -67,6 +67,33 @@ class SyncServiceTest {
     }
 
     @Test
+    void syncNow_whenIdle_triggersStatusNotification() throws InterruptedException {
+        System.setProperty("api.url", "http://localhost:19999");
+
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicBoolean notified = new AtomicBoolean(false);
+
+        syncService.setOnStatusChange(online -> {
+            notified.set(true);
+            latch.countDown();
+        });
+
+        syncService.syncNow();
+        boolean fired = latch.await(3, TimeUnit.SECONDS);
+        System.clearProperty("api.url");
+
+        assertTrue(fired, "syncNow should trigger status notification");
+        assertTrue(notified.get());
+    }
+
+    @Test
+    void syncNow_calledRepeatedly_doesNotThrow() {
+        assertDoesNotThrow(() -> {
+            for (int i = 0; i < 5; i++) syncService.syncNow();
+        });
+    }
+
+    @Test
     void apiUnreachable_notifiesStatusFalse() throws InterruptedException {
         System.setProperty("api.url", "http://localhost:19999");
 

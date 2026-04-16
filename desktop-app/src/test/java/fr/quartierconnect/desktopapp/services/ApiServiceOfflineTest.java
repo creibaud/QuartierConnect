@@ -23,11 +23,11 @@ class ApiServiceOfflineTest {
     }
 
     @Test
-    void isReachable_returnsFalse_whenHostUnresolvable() {
-        System.setProperty("api.url", "http://nonexistent.invalid:5000");
+    void isReachable_returnsFalse_whenPortUnreachable() {
+        System.setProperty("api.url", "http://127.0.0.1:1");
         try {
             boolean result = ApiService.isReachable();
-            assertFalse(result, "Should return false when host does not resolve");
+            assertFalse(result, "Should return false when port is unreachable");
         } finally {
             System.clearProperty("api.url");
         }
