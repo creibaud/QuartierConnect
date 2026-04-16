@@ -1,6 +1,6 @@
 # Architecture Technique — QuartierConnect
 
-> **Version** 0.1.5 · **Date** 8 avril 2026 · **Étape** 4 (95 %)
+> **Version** 0.2.0 · **Date** 16 avril 2026 · **Étape** 4 (95 %)
 
 ---
 
@@ -21,6 +21,10 @@
     - [7.1 Répartition des données](#71-répartition-des-données)
     - [7.2 Justification du tri-base](#72-justification-du-tri-base)
   - [8. Sync bidirectionnelle Java ↔ API](#8-sync-bidirectionnelle-java--api)
+    - [8.1 Flux de synchronisation](#81-flux-de-synchronisation)
+    - [8.2 Three-Way Merge — résolution de conflits](#82-three-way-merge--résolution-de-conflits)
+    - [8.3 Gestion des conflits dans l'UI](#83-gestion-des-conflits-dans-lui)
+    - [8.4 Tombstone delete](#84-tombstone-delete)
   - [9. Sync Neo4j temps réel](#9-sync-neo4j-temps-réel)
   - [10. WebSocket — Messagerie temps réel](#10-websocket--messagerie-temps-réel)
   - [11. Système de votes](#11-système-de-votes)
@@ -29,8 +33,13 @@
   - [12. DSL — Pipeline de compilation](#12-dsl--pipeline-de-compilation)
     - [Grammaire simplifiée](#grammaire-simplifiée)
   - [13. Offline mode Java desktop](#13-offline-mode-java-desktop)
-  - [14. Sécurité en couches](#14-sécurité-en-couches)
-  - [15. Cycle de vie d'une requête](#15-cycle-de-vie-dune-requête)
+  - [14. Système de plugins Java desktop](#14-système-de-plugins-java-desktop)
+    - [14.1 Architecture](#141-architecture)
+    - [14.2 EventBus — communication inter-plugins](#142-eventbus--communication-inter-plugins)
+    - [14.3 Plugins intégrés](#143-plugins-intégrés)
+  - [15. Auto-reconnexion et token auto-refresh](#15-auto-reconnexion-et-token-auto-refresh)
+  - [16. Sécurité en couches](#16-sécurité-en-couches)
+  - [17. Cycle de vie d'une requête](#17-cycle-de-vie-dune-requête)
 
 ---
 
@@ -324,6 +333,8 @@ graph LR
 
 ## 8. Sync bidirectionnelle Java ↔ API
 
+### 8.1 Flux de synchronisation
+
 ```mermaid
 sequenceDiagram
     participant Java as JavaFX Desktop
@@ -339,8 +350,8 @@ sequenceDiagram
     Java->>API: GET /health
     API-->>Java: {status:"ok"}
 
-    Java->>SQLite: SELECT * FROM incidents WHERE is_dirty = 1
-    SQLite-->>Java: [incidents modifiés]
+    Java->>SQLite: SELECT * FROM incidents WHERE is_dirty = 1 AND is_conflict = 0
+    SQLite-->>Java: [incidents modifiés, conflits exclus]
 
     loop Pour chaque incident dirty
         Java->>API: POST /sync/incidents [{remoteId?, title, status, updatedAt}]
@@ -350,10 +361,11 @@ sequenceDiagram
         Java->>SQLite: UPDATE SET base_title/desc/status/updated_at (ancêtre 3WM)
     end
 
-    Note over Java,SQLite: Pull — résolution Three-Way Merge
+    Note over Java: Push retourne justPushed (set d'IDs)
+    Note over Java,SQLite: Pull — résolution Three-Way Merge (skip justPushed IDs)
     Java->>API: GET /incidents?since=lastPull
     API-->>Java: [incidents mis à jour]
-    loop Pour chaque incident reçu
+    loop Pour chaque incident reçu (sauf justPushed)
         alt base == null (jamais synchronisé)
             Java->>SQLite: LWW fallback — serveur gagne si plus récent
         else local inchangé depuis base
@@ -365,8 +377,34 @@ sequenceDiagram
             Note over Java: Conflit visible dans l'UI (⚠ badge + dialog Résoudre)
         end
     end
+
+    Note over Java,SQLite: Orphan cleanup — tombstone des incidents serveur-supprimés
+    Java->>SQLite: tombstoneOrphans(remoteIds) — SET deleted_at pour absents du serveur
     Java->>SQLite: INSERT sync_log (synced_at, success=1)
 ```
+
+### 8.2 Three-Way Merge — résolution de conflits
+
+Le Three-Way Merger compare trois versions de chaque champ (titre, description, statut) :
+
+| Cas                    | Base | Local | Remote | Résultat                                      |
+| ---------------------- | ---- | ----- | ------ | --------------------------------------------- |
+| Pas de base (1er sync) | null | L     | R      | LWW — remote gagne si plus récent             |
+| Local inchangé         | B    | B     | R      | Auto-merge — applique remote                  |
+| Remote inchangé        | B    | L     | B      | Auto-merge — conserve local                   |
+| Même changement        | B    | X     | X      | Auto-merge — les deux convergent              |
+| Conflit vrai           | B    | L     | R      | `is_conflict=1` — résolution manuelle requise |
+
+### 8.3 Gestion des conflits dans l'UI
+
+- **Banner** : alerte visible en haut de la vue incidents quand des conflits existent
+- **Filtre** : bouton "Conflits" pour afficher uniquement les incidents en conflit
+- **Modal merge** : double-clic ouvre un GridPane 4 colonnes (champ / base / local / remote) avec diff highlighting
+- **Résolution** : l'utilisateur choisit chaque champ, la résolution met à jour l'ancêtre et efface le flag conflit
+
+### 8.4 Tombstone delete
+
+Les suppressions côté serveur sont propagées localement via une colonne `deleted_at` (soft delete). `tombstoneOrphans()` marque les incidents absents de la réponse serveur lors d'un pull complet. Les incidents marqués sont exclus des vues mais conservés pour audit.
 
 ---
 
@@ -530,7 +568,114 @@ stateDiagram-v2
 
 ---
 
-## 14. Sécurité en couches
+## 14. Système de plugins Java desktop
+
+### 14.1 Architecture
+
+```mermaid
+classDiagram
+    class QuartierConnectPlugin {
+        <<interface>>
+        +getId() String
+        +getName() String
+        +getVersion() String
+        +getDescription() String
+        +onLoad()
+        +onUnload()
+    }
+    class ViewablePlugin {
+        <<interface>>
+        +getViewName() String
+        +createView() Node
+    }
+    class ContextAwarePlugin {
+        <<interface>>
+        +setContext(AppContext)
+    }
+    class PluginRegistry {
+        -plugins Map
+        +register(plugin, context)
+        +unregister(pluginId)
+        +getPlugins() List
+    }
+    class AppContext {
+        +getApiService() ApiService
+        +getAuthService() AuthService
+        +getScene() Scene
+        +getIncidentRepository() IncidentRepository
+        +getSyncService() SyncService
+        +getToastManager() ToastManager
+        +getEventBus() PluginEventBus
+    }
+    class PluginEventBus {
+        +subscribe(listener)
+        +unsubscribe(listener)
+        +publish(event, payload)
+    }
+    QuartierConnectPlugin <|.. ViewablePlugin
+    QuartierConnectPlugin <|.. ContextAwarePlugin
+    PluginRegistry --> QuartierConnectPlugin
+    PluginRegistry --> AppContext
+    AppContext --> PluginEventBus
+```
+
+### 14.2 EventBus — communication inter-plugins
+
+Le `PluginEventBus` implémente un pattern publish/subscribe thread-safe (`CopyOnWriteArrayList`) avec 5 types d'événements :
+
+| Événement               | Émetteur                   | Payload           |
+| ----------------------- | -------------------------- | ----------------- |
+| `INCIDENTS_CHANGED`     | SyncService, IncidentsView | null              |
+| `SYNC_STARTED`          | SyncService                | null              |
+| `SYNC_COMPLETED`        | SyncService                | null              |
+| `SYNC_FAILED`           | SyncService                | Exception message |
+| `ONLINE_STATUS_CHANGED` | SyncService                | Boolean (online)  |
+
+### 14.3 Plugins intégrés
+
+| Plugin             | Type         | Rôle                                                        |
+| ------------------ | ------------ | ----------------------------------------------------------- |
+| ThemePlugin        | ContextAware | Thèmes CSS (Primer Dark par défaut), appliqué au `onLoad()` |
+| CompactModePlugin  | ContextAware | Mode compact UI                                             |
+| NotificationPlugin | ContextAware | Notifications event-driven via EventBus (plus de polling)   |
+| ExportPlugin       | ContextAware | Export de données incidents via AppContext                  |
+| OfflineModePlugin  | ContextAware | Toggle hors-ligne dans AppTopBar.pluginSlot                 |
+
+---
+
+## 15. Auto-reconnexion et token auto-refresh
+
+```mermaid
+stateDiagram-v2
+    [*] --> CheckSession : Démarrage application
+
+    CheckSession --> AutoConnect : Session SQLite trouvée + token valide
+    CheckSession --> WaitSSO : Pas de session
+
+    AutoConnect --> Refresh : Token access < 60s restantes
+    AutoConnect --> MainView : Token access valide
+
+    Refresh --> MainView : Nouveau access token obtenu
+    Refresh --> OfflineMode : Réseau indisponible
+
+    OfflineMode --> BackgroundReconnect : Timer périodique
+    BackgroundReconnect --> MainView : isReachable() + refresh OK
+    BackgroundReconnect --> OfflineMode : Toujours offline
+
+    WaitSSO --> MainView : SSO échangé
+
+    state MainView {
+        [*] --> Active
+        Active --> TokenRefresh : access token < 60s
+        TokenRefresh --> Active : Nouveau token
+    }
+```
+
+Le seuil de 60 secondes pour le renouvellement proactif du token évite les échecs de requêtes API causés par l'expiration pendant le traitement.
+
+---
+
+## 16. Sécurité en couches
 
 ```mermaid
 graph TD
@@ -565,7 +710,7 @@ graph TD
 
 ---
 
-## 15. Cycle de vie d'une requête
+## 17. Cycle de vie d'une requête
 
 ```mermaid
 sequenceDiagram

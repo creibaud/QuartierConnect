@@ -3,7 +3,7 @@
 Plateforme communautaire de quartier — ESGI 3AL2 · Étape 4 (95%)
 
 > **Rendu final** : 19 juillet 2026 · **Enseignant** : Frédéric SANANES
-> **v0.1.3** · **620 tests automatisés** · 7 conteneurs Docker · 3 bases de données · 4 surfaces
+> **v0.2.0** · **720 tests automatisés** · 7 conteneurs Docker · 3 bases de données · 4 surfaces
 
 ---
 
@@ -62,7 +62,7 @@ make dev-desktop      # JavaFX (javafx:run)
 ## Tests
 
 ```bash
-make test             # Unitaires API (236) + Web shared hooks (73) + Desktop (63) + DSL (21)
+make test             # Unitaires API (260) + Web shared hooks (73) + Desktop (139) + DSL (21)
 make test-cov         # + rapport coverage (stmts 95.7%, branches 86.1%)
 make test-e2e         # E2E API Supertest (148) — nécessite Docker
 make test-e2e-web     # E2E Playwright (79) — nécessite apps lancées
@@ -105,7 +105,7 @@ make status           # État des services
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)           | Diagrammes Mermaid — modules, flux, sécurité              |
 | [docs/DATABASE.md](docs/DATABASE.md)                   | Schémas PostgreSQL, MongoDB, Neo4j, SQLite                |
 | [docs/SECURITY.md](docs/SECURITY.md)                   | Argon2id, TOTP, JWT, SSO, SHA-256, RGPD                   |
-| [docs/TEST.md](docs/TEST.md)                           | Rapport QA — 620 tests, coverage, stratégie               |
+| [docs/TEST.md](docs/TEST.md)                           | Rapport QA — 720 tests, coverage, stratégie               |
 | [docs/DSL.md](docs/DSL.md)                             | Micro-langage PLY — grammaire, pipeline, sécurité         |
 | [docs/GUIDE-SOUTENANCE.md](docs/GUIDE-SOUTENANCE.md)   | Scénarios démo, questions/réponses, chiffres clés         |
 | [docs/API.md](docs/API.md)                             | Référence complète des 50+ endpoints                      |

@@ -1,6 +1,6 @@
 # Sécurité — QuartierConnect
 
-> **Version** 0.1.6 · **Date** 8 avril 2026
+> **Version** 0.2.0 · **Date** 16 avril 2026
 
 ---
 
@@ -35,6 +35,17 @@
     - [Données restantes dans SQLite](#données-restantes-dans-sqlite)
     - [Fallback hors trousseau](#fallback-hors-trousseau)
     - [Migration des bases existantes](#migration-des-bases-existantes)
+  - [12. Intégrité des données — Three-Way Merge](#12-intégrité-des-données--three-way-merge)
+    - [Problème adressé](#problème-adressé-1)
+    - [Solution — Three-Way Merge avec détection de conflits](#solution--three-way-merge-avec-détection-de-conflits)
+    - [Tombstone delete](#tombstone-delete)
+  - [13. Validation des entrées — Application desktop](#13-validation-des-entrées--application-desktop)
+  - [14. Sanitisation des erreurs API](#14-sanitisation-des-erreurs-api)
+    - [Problème adressé](#problème-adressé-2)
+    - [Solution](#solution)
+  - [15. Token auto-refresh proactif](#15-token-auto-refresh-proactif)
+    - [Problème adressé](#problème-adressé-3)
+    - [Solution](#solution-1)
 
 ---
 
@@ -407,3 +418,66 @@ Si aucun trousseau OS n'est disponible (serveur headless, CI, test), `TokenVault
 ### Migration des bases existantes
 
 `SQLiteDatabase.initialize()` supprime automatiquement les colonnes `access_token` et `refresh_token` des bases pré-v0.1.6 via `ALTER TABLE session DROP COLUMN`. La migration est idempotente.
+
+---
+
+## 12. Intégrité des données — Three-Way Merge
+
+### Problème adressé
+
+La synchronisation bidirectionnelle entre SQLite (desktop) et PostgreSQL (API) exposait un risque de perte silencieuse de données. Avec le mécanisme Last-Writer-Wins (LWW), une modification locale pouvait être écrasée par une modification serveur sans avertissement.
+
+### Solution — Three-Way Merge avec détection de conflits
+
+Le `ThreeWayMerger` compare trois versions de chaque champ (titre, description, statut) :
+
+- **Base** (ancêtre commun) : dernière version synchronisée, stockée localement après chaque push/pull réussi
+- **Local** : version courante dans SQLite
+- **Remote** : version reçue depuis le serveur
+
+Lorsque les deux côtés ont modifié le même champ différemment (par rapport à la base), un **conflit explicite** est déclaré (`is_conflict=1`). L'incident est exclu de `listDirty()` pour éviter de pousser des données incohérentes. L'utilisateur doit résoudre manuellement via la modal merge (GridPane 4 colonnes avec diff highlighting).
+
+Le LWW reste utilisé en fallback uniquement quand aucun ancêtre n'est disponible (premier sync d'un incident).
+
+### Tombstone delete
+
+Les suppressions côté serveur sont propagées via `tombstoneOrphans()` qui marque les incidents absents du serveur avec `deleted_at`. Cette approche empêche la résurrection d'incidents supprimés lors du prochain push.
+
+---
+
+## 13. Validation des entrées — Application desktop
+
+Les champs de saisie dans l'application desktop sont validés côté client avant envoi à l'API :
+
+| Champ                | Limite              | Raison                                    |
+| -------------------- | ------------------- | ----------------------------------------- |
+| Titre incident       | 200 caractères max  | Prévention injection longue / DoS payload |
+| Description incident | 2000 caractères max | Cohérence avec les limites API            |
+
+La validation empêche la soumission de données malformées qui seraient rejetées par l'API, améliorant l'expérience utilisateur et réduisant le trafic réseau inutile.
+
+---
+
+## 14. Sanitisation des erreurs API
+
+### Problème adressé
+
+Avant cette version, les messages d'erreur HTTP dans `ApiService` incluaient le corps de la réponse serveur. Un message d'erreur mal filtré pouvait exposer des détails internes (stack traces, noms de tables, chemins de fichiers) dans les logs ou dans l'UI.
+
+### Solution
+
+La méthode `execute()` de `ApiService` ne remonte plus le corps de la réponse dans les exceptions. Seuls le code HTTP et une description générique sont inclus dans le message d'erreur. Le corps de la réponse est disponible uniquement en retour de la méthode en cas de succès.
+
+Les logs SSO sont également sanitisés : les tokens et identifiants ne sont plus affichés en clair dans les messages de log.
+
+---
+
+## 15. Token auto-refresh proactif
+
+### Problème adressé
+
+Le renouvellement du token d'accès ne se déclenchait qu'après un échec 401. Pendant le délai entre l'expiration et le retry, les requêtes en cours échouaient, causant des erreurs transitoires dans l'UI.
+
+### Solution
+
+`AuthService.parseJwtPayload()` extrait le champ `exp` du token JWT (décodage Base64 du payload, sans vérification de signature côté client). Lorsque le token expire dans moins de 60 secondes, un refresh proactif est déclenché avant la prochaine requête API. Ce seuil est suffisant pour couvrir la latence réseau et le temps de traitement serveur.

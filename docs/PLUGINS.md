@@ -31,6 +31,9 @@ public interface QuartierConnectPlugin {
 
     /** Called once on shutdown or unload. Release resources here. */
     void onUnload();
+
+    /** Short description of what the plugin does (shown in the plugin manager). */
+    default String getDescription() { return ""; }
 }
 ```
 
@@ -42,10 +45,15 @@ Source: `desktop-app/src/main/java/fr/quartierconnect/desktopapp/plugin/Quartier
 
 Plugins receive an `AppContext` at load time (injected by the registry) that exposes:
 
-| Service | Description |
-|---------|-------------|
-| `ApiService` | Authenticated HTTP client — call any `GET`/`POST` against the QuartierConnect API. Handles JWT refresh automatically. |
-| `AuthService` | Read the current user's email and token state. Do not store tokens — use read-only methods only. |
+| Getter                    | Service              | Description                                                                                      |
+| ------------------------- | -------------------- | ------------------------------------------------------------------------------------------------ |
+| `getApiService()`         | `ApiService`         | Authenticated HTTP client — single `execute()` method. Handles JWT refresh automatically.        |
+| `getAuthService()`        | `AuthService`        | Read the current user's email and token state. Do not store tokens — use read-only methods only. |
+| `getScene()`              | `Scene`              | The primary JavaFX scene — for CSS injection (themes) or UI extension.                           |
+| `getIncidentRepository()` | `IncidentRepository` | Read/write access to the local SQLite incident store.                                            |
+| `getSyncService()`        | `SyncService`        | Trigger or observe sync operations.                                                              |
+| `getToastManager()`       | `ToastManager`       | Show toast notifications in the UI.                                                              |
+| `getEventBus()`           | `PluginEventBus`     | Subscribe to application events (see EventBus section below).                                    |
 
 To receive AppContext, implement `PluginRegistry.ContextAwarePlugin` in addition to `QuartierConnectPlugin`:
 
@@ -61,7 +69,53 @@ public class WeatherPlugin implements QuartierConnectPlugin, PluginRegistry.Cont
 }
 ```
 
-Plugins **must not** access `SQLiteDatabase` or any JavaFX stage directly. All UI interactions should go through provided extension points.
+Plugins **must not** access `SQLiteDatabase` directly. All UI interactions should go through provided extension points or the `Scene` from AppContext.
+
+---
+
+## EventBus — Inter-plugin Communication
+
+The `PluginEventBus` provides a thread-safe publish/subscribe mechanism (`CopyOnWriteArrayList`) for plugins to react to application events without polling.
+
+### Available Events
+
+| Event                   | Emitted by                 | Payload                | Description                      |
+| ----------------------- | -------------------------- | ---------------------- | -------------------------------- |
+| `INCIDENTS_CHANGED`     | SyncService, IncidentsView | null                   | Local incident data has changed  |
+| `SYNC_STARTED`          | SyncService                | null                   | A sync cycle has begun           |
+| `SYNC_COMPLETED`        | SyncService                | null                   | Sync cycle finished successfully |
+| `SYNC_FAILED`           | SyncService                | String (error message) | Sync cycle failed                |
+| `ONLINE_STATUS_CHANGED` | SyncService                | Boolean                | Network connectivity changed     |
+
+### Subscribing to Events
+
+```java
+@Override
+public void onLoad() {
+    context.getEventBus().subscribe(eventData -> {
+        switch (eventData.event()) {
+            case INCIDENTS_CHANGED ->
+                context.getToastManager().show("Incidents updated");
+            case ONLINE_STATUS_CHANGED -> {
+                boolean online = (Boolean) eventData.payload();
+                updateStatusIndicator(online);
+            }
+            default -> {}
+        }
+    });
+}
+```
+
+### Publishing Events
+
+Plugins can also publish events to notify other plugins:
+
+```java
+context.getEventBus().publish(PluginEventBus.Event.INCIDENTS_CHANGED);
+context.getEventBus().publish(PluginEventBus.Event.SYNC_FAILED, "Connection timeout");
+```
+
+Exceptions thrown by subscribers are caught and silently ignored — a faulty listener cannot break other listeners or the publisher.
 
 ---
 
@@ -154,7 +208,8 @@ cp target/qc-weather-plugin-1.0.0.jar ~/.quartierconnect/plugins/
 Then in your startup code:
 
 ```java
-AppContext ctx = new AppContext(apiService, authService);
+AppContext ctx = new AppContext(apiService, authService, scene,
+    incidentRepository, syncService, toastManager, eventBus);
 PluginRegistry.getInstance().loadFromDirectory(
     Path.of(System.getProperty("user.home"), ".quartierconnect", "plugins"),
     ctx
@@ -164,7 +219,8 @@ PluginRegistry.getInstance().loadFromDirectory(
 ### Programmatic registration (development)
 
 ```java
-AppContext ctx = new AppContext(apiService, authService);
+AppContext ctx = new AppContext(apiService, authService, scene,
+    incidentRepository, syncService, toastManager, eventBus);
 PluginRegistry.getInstance().register(new WeatherPlugin(), ctx);
 ```
 
@@ -177,22 +233,45 @@ Call this before `Application.launch()` in `Launcher.java` during development. U
 ```java
 package fr.example.hello;
 
+import fr.quartierconnect.desktopapp.plugin.AppContext;
+import fr.quartierconnect.desktopapp.plugin.PluginEventBus;
+import fr.quartierconnect.desktopapp.plugin.PluginRegistry;
 import fr.quartierconnect.desktopapp.plugin.QuartierConnectPlugin;
 
-public class HelloWorldPlugin implements QuartierConnectPlugin {
+import java.util.function.Consumer;
+import java.util.logging.Logger;
 
-    @Override public String getId()      { return "fr.example.hello"; }
-    @Override public String getName()    { return "Hello World"; }
-    @Override public String getVersion() { return "0.1.0"; }
+public class HelloWorldPlugin implements QuartierConnectPlugin, PluginRegistry.ContextAwarePlugin {
+
+    private static final Logger LOG = Logger.getLogger(HelloWorldPlugin.class.getName());
+    private AppContext context;
+    private Consumer<PluginEventBus.EventData> listener;
+
+    @Override public String getId()          { return "fr.example.hello"; }
+    @Override public String getName()        { return "Hello World"; }
+    @Override public String getVersion()     { return "0.1.0"; }
+    @Override public String getDescription() { return "Shows a toast on every sync completion"; }
+
+    @Override
+    public void setContext(AppContext context) {
+        this.context = context;
+    }
 
     @Override
     public void onLoad() {
-        System.out.println("Hello from QuartierConnect plugin!");
+        listener = eventData -> {
+            if (eventData.event() == PluginEventBus.Event.SYNC_COMPLETED) {
+                context.getToastManager().show("Sync done!");
+            }
+        };
+        context.getEventBus().subscribe(listener);
+        LOG.info("HelloWorldPlugin loaded — listening for sync events.");
     }
 
     @Override
     public void onUnload() {
-        System.out.println("Goodbye from QuartierConnect plugin!");
+        context.getEventBus().unsubscribe(listener);
+        LOG.info("HelloWorldPlugin unloaded.");
     }
 }
 ```
@@ -201,10 +280,10 @@ public class HelloWorldPlugin implements QuartierConnectPlugin {
 
 ## Constraints
 
-| Rule | Detail |
-|------|--------|
-| API access only | Use `ApiService` from `AppContext`. No direct JDBC/MongoDB/Neo4j calls. |
-| No UI stage access | Do not obtain or modify `Stage` or `Scene` outside provided extension points. |
-| Clean `onUnload` | Cancel all scheduled tasks and close all connections in `onUnload`. Uncleaned resources will produce warnings and may leak threads. |
-| No credential storage | Plugins must not store tokens or passwords to disk. |
-| Exception safety | Exceptions thrown from `onLoad` are caught by the registry and logged — the plugin is still registered but may be non-functional. Exceptions in `onUnload` are caught and logged — shutdown continues. |
+| Rule                  | Detail                                                                                                                                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| API access only       | Use `ApiService` from `AppContext`. No direct JDBC/MongoDB/Neo4j calls.                                                                                                                                |
+| No UI stage access    | Do not obtain or modify `Stage` or `Scene` outside provided extension points.                                                                                                                          |
+| Clean `onUnload`      | Cancel all scheduled tasks and close all connections in `onUnload`. Uncleaned resources will produce warnings and may leak threads.                                                                    |
+| No credential storage | Plugins must not store tokens or passwords to disk.                                                                                                                                                    |
+| Exception safety      | Exceptions thrown from `onLoad` are caught by the registry and logged — the plugin is still registered but may be non-functional. Exceptions in `onUnload` are caught and logged — shutdown continues. |
