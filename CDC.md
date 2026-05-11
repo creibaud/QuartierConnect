@@ -702,6 +702,25 @@ Après **chaque** modification :
 3. `/qa [url]` → zéro erreur console
 4. Coverage ne descend pas
 
+### 13.3 Utilisation de gstack
+
+| Situation               | Commande               |
+| ----------------------- | ---------------------- |
+| Décision d'architecture | `/plan-eng-review`     |
+| Nouvelle page React     | `/design-consultation` |
+| Après chaque sprint     | `/review`              |
+| Bug                     | `/investigate` d'abord |
+| Audit sécurité          | `/cso`                 |
+| Valider une page        | `/qa [url]`            |
+| Committer               | `/ship`                |
+| Mise à jour docs        | `/document-release`    |
+| Analyse globale         | `/autoplan`            |
+| Rétrospective           | `/retro`               |
+
+### 13.4 Sessions Claude Code
+
+**Une session = un prompt = une branche.**
+
 ---
 
 ## 14. Jalons & Livrables

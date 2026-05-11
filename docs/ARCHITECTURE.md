@@ -6,40 +6,23 @@
 
 ## Table des matières
 
-- [Architecture Technique — QuartierConnect](#architecture-technique--quartierconnect)
-  - [Table des matières](#table-des-matières)
-  - [1. Vue d'ensemble](#1-vue-densemble)
-  - [2. Conteneurs Docker](#2-conteneurs-docker)
-    - [Routage Caddy](#routage-caddy)
-  - [3. Diagramme des modules NestJS](#3-diagramme-des-modules-nestjs)
-  - [4. Flux d'authentification complets](#4-flux-dauthentification-complets)
-    - [4.1 Inscription](#41-inscription)
-    - [4.2 Connexion (3 validations séquentielles)](#42-connexion-3-validations-séquentielles)
-  - [5. SSO cross-surface](#5-sso-cross-surface)
-  - [6. Refresh token et rotation](#6-refresh-token-et-rotation)
-  - [7. Architecture des bases de données](#7-architecture-des-bases-de-données)
-    - [7.1 Répartition des données](#71-répartition-des-données)
-    - [7.2 Justification du tri-base](#72-justification-du-tri-base)
-  - [8. Sync bidirectionnelle Java ↔ API](#8-sync-bidirectionnelle-java--api)
-    - [8.1 Flux de synchronisation](#81-flux-de-synchronisation)
-    - [8.2 Three-Way Merge — résolution de conflits](#82-three-way-merge--résolution-de-conflits)
-    - [8.3 Gestion des conflits dans l'UI](#83-gestion-des-conflits-dans-lui)
-    - [8.4 Tombstone delete](#84-tombstone-delete)
-  - [9. Sync Neo4j temps réel](#9-sync-neo4j-temps-réel)
-  - [10. WebSocket — Messagerie temps réel](#10-websocket--messagerie-temps-réel)
-  - [11. Système de votes](#11-système-de-votes)
-    - [Strategy Pattern — deux modes](#strategy-pattern--deux-modes)
-    - [Logique toggle](#logique-toggle)
-  - [12. DSL — Pipeline de compilation](#12-dsl--pipeline-de-compilation)
-    - [Grammaire simplifiée](#grammaire-simplifiée)
-  - [13. Offline mode Java desktop](#13-offline-mode-java-desktop)
-  - [14. Système de plugins Java desktop](#14-système-de-plugins-java-desktop)
-    - [14.1 Architecture](#141-architecture)
-    - [14.2 EventBus — communication inter-plugins](#142-eventbus--communication-inter-plugins)
-    - [14.3 Plugins intégrés](#143-plugins-intégrés)
-  - [15. Auto-reconnexion et token auto-refresh](#15-auto-reconnexion-et-token-auto-refresh)
-  - [16. Sécurité en couches](#16-sécurité-en-couches)
-  - [17. Cycle de vie d'une requête](#17-cycle-de-vie-dune-requête)
+1. [Vue d'ensemble](#1-vue-densemble)
+2. [Conteneurs Docker](#2-conteneurs-docker)
+3. [Diagramme des modules NestJS](#3-diagramme-des-modules-nestjs)
+4. [Flux d'authentification complets](#4-flux-dauthentification-complets)
+5. [SSO cross-surface](#5-sso-cross-surface)
+6. [Refresh token et rotation](#6-refresh-token-et-rotation)
+7. [Architecture des bases de données](#7-architecture-des-bases-de-données)
+8. [Sync bidirectionnelle Java ↔ API](#8-sync-bidirectionnelle-java--api)
+9. [Sync Neo4j temps réel](#9-sync-neo4j-temps-réel)
+10. [WebSocket — Messagerie temps réel](#10-websocket--messagerie-temps-réel)
+11. [Système de votes](#11-système-de-votes)
+12. [DSL — Pipeline de compilation](#12-dsl--pipeline-de-compilation)
+13. [Offline mode Java desktop](#13-offline-mode-java-desktop)
+14. [Système de plugins Java desktop](#14-système-de-plugins-java-desktop)
+15. [Auto-reconnexion et token auto-refresh](#15-auto-reconnexion-et-token-auto-refresh)
+16. [Sécurité en couches](#16-sécurité-en-couches)
+17. [Cycle de vie d'une requête](#17-cycle-de-vie-dune-requête)
 
 ---
 
@@ -97,15 +80,15 @@ graph TB
 
 ## 2. Conteneurs Docker
 
-| #   | Conteneur  | Image            | Port(s)    | Rôle                                            |
-| --- | ---------- | ---------------- | ---------- | ----------------------------------------------- |
-| 1   | `caddy`    | `caddy:2-alpine` | 80, 443    | Reverse proxy HTTPS + Let's Encrypt automatique |
-| 2   | `client`   | Node 20 + Vite   | 3000       | SPA React — interface habitant                  |
-| 3   | `admin`    | Node 20 + Vite   | 3001       | SPA React — back-office admin                   |
-| 4   | `api`      | Node 20          | 5000       | NestJS REST + WebSocket + DSL bridge            |
-| 5   | `mongodb`  | `mongo:7`        | 27017      | Documents flexibles, GeoJSON, GridFS            |
-| 6   | `postgres` | `postgres:16`    | 5432       | Données ACID — users, incidents, points         |
-| 7   | `neo4j`    | `neo4j:5`        | 7474, 7687 | Graphe social — recommandations Cypher          |
+| # | Conteneur | Image | Port(s) | Rôle |
+|---|-----------|-------|---------|------|
+| 1 | `caddy` | `caddy:2-alpine` | 80, 443 | Reverse proxy HTTPS + Let's Encrypt automatique |
+| 2 | `client` | Node 20 + Vite | 3000 | SPA React — interface habitant |
+| 3 | `admin` | Node 20 + Vite | 3001 | SPA React — back-office admin |
+| 4 | `api` | Node 20 | 5000 | NestJS REST + WebSocket + DSL bridge |
+| 5 | `mongodb` | `mongo:7` | 27017 | Documents flexibles, GeoJSON, GridFS |
+| 6 | `postgres` | `postgres:16` | 5432 | Données ACID — users, incidents, points |
+| 7 | `neo4j` | `neo4j:5` | 7474, 7687 | Graphe social — recommandations Cypher |
 
 ### Routage Caddy
 
@@ -322,12 +305,12 @@ graph LR
 
 ### 7.2 Justification du tri-base
 
-| Critère           | PostgreSQL                 | MongoDB                | Neo4j             |
-| ----------------- | -------------------------- | ---------------------- | ----------------- |
-| Transactions ACID | Obligatoire (points, auth) | Non critique           | Non applicable    |
-| Schéma flexible   | Non                        | Oui (GeoJSON, subdocs) | Propriétés libres |
-| Géolocalisation   | Non                        | Index `2dsphere` natif | Non               |
-| Recommandations   | Non                        | Non                    | Cypher traversals |
+| Critère | PostgreSQL | MongoDB | Neo4j |
+|---------|-----------|---------|-------|
+| Transactions ACID | Obligatoire (points, auth) | Non critique | Non applicable |
+| Schéma flexible | Non | Oui (GeoJSON, subdocs) | Propriétés libres |
+| Géolocalisation | Non | Index `2dsphere` natif | Non |
+| Recommandations | Non | Non | Cypher traversals |
 
 ---
 
@@ -387,13 +370,13 @@ sequenceDiagram
 
 Le Three-Way Merger compare trois versions de chaque champ (titre, description, statut) :
 
-| Cas                    | Base | Local | Remote | Résultat                                      |
-| ---------------------- | ---- | ----- | ------ | --------------------------------------------- |
-| Pas de base (1er sync) | null | L     | R      | LWW — remote gagne si plus récent             |
-| Local inchangé         | B    | B     | R      | Auto-merge — applique remote                  |
-| Remote inchangé        | B    | L     | B      | Auto-merge — conserve local                   |
-| Même changement        | B    | X     | X      | Auto-merge — les deux convergent              |
-| Conflit vrai           | B    | L     | R      | `is_conflict=1` — résolution manuelle requise |
+| Cas | Base | Local | Remote | Résultat |
+|-----|------|-------|--------|----------|
+| Pas de base (1er sync) | null | L | R | LWW — remote gagne si plus récent |
+| Local inchangé | B | B | R | Auto-merge — applique remote |
+| Remote inchangé | B | L | B | Auto-merge — conserve local |
+| Même changement | B | X | X | Auto-merge — les deux convergent |
+| Conflit vrai | B | L | R | `is_conflict=1` — résolution manuelle requise |
 
 ### 8.3 Gestion des conflits dans l'UI
 
@@ -623,23 +606,23 @@ classDiagram
 
 Le `PluginEventBus` implémente un pattern publish/subscribe thread-safe (`CopyOnWriteArrayList`) avec 5 types d'événements :
 
-| Événement               | Émetteur                   | Payload           |
-| ----------------------- | -------------------------- | ----------------- |
-| `INCIDENTS_CHANGED`     | SyncService, IncidentsView | null              |
-| `SYNC_STARTED`          | SyncService                | null              |
-| `SYNC_COMPLETED`        | SyncService                | null              |
-| `SYNC_FAILED`           | SyncService                | Exception message |
-| `ONLINE_STATUS_CHANGED` | SyncService                | Boolean (online)  |
+| Événement | Émetteur | Payload |
+|-----------|----------|---------|
+| `INCIDENTS_CHANGED` | SyncService, IncidentsView | null |
+| `SYNC_STARTED` | SyncService | null |
+| `SYNC_COMPLETED` | SyncService | null |
+| `SYNC_FAILED` | SyncService | Exception message |
+| `ONLINE_STATUS_CHANGED` | SyncService | Boolean (online) |
 
 ### 14.3 Plugins intégrés
 
-| Plugin             | Type         | Rôle                                                        |
-| ------------------ | ------------ | ----------------------------------------------------------- |
-| ThemePlugin        | ContextAware | Thèmes CSS (Primer Dark par défaut), appliqué au `onLoad()` |
-| CompactModePlugin  | ContextAware | Mode compact UI                                             |
-| NotificationPlugin | ContextAware | Notifications event-driven via EventBus (plus de polling)   |
-| ExportPlugin       | ContextAware | Export de données incidents via AppContext                  |
-| OfflineModePlugin  | ContextAware | Toggle hors-ligne dans AppTopBar.pluginSlot                 |
+| Plugin | Type | Rôle |
+|--------|------|------|
+| ThemePlugin | ContextAware | Thèmes CSS (Primer Dark par défaut), appliqué au `onLoad()` |
+| CompactModePlugin | ContextAware | Mode compact UI |
+| NotificationPlugin | ContextAware | Notifications event-driven via EventBus (plus de polling) |
+| ExportPlugin | ContextAware | Export de données incidents via AppContext |
+| OfflineModePlugin | ContextAware | Toggle hors-ligne dans AppTopBar.pluginSlot |
 
 ---
 

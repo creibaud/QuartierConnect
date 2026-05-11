@@ -4,16 +4,17 @@
  *
  * Requires: NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD, MONGO_URI, DATABASE_URL
  */
-import neo4j from 'neo4j-driver';
-import mongoose from 'mongoose';
-import * as dotenv from 'dotenv';
+import neo4j from "neo4j-driver";
+import mongoose from "mongoose";
+import * as dotenv from "dotenv";
 
-dotenv.config({ path: '.env' });
+dotenv.config({ path: ".env" });
 
-const NEO4J_URI = process.env.NEO4J_URI ?? 'bolt://localhost:7687';
-const NEO4J_USER = process.env.NEO4J_USER ?? 'neo4j';
-const NEO4J_PASSWORD = process.env.NEO4J_PASSWORD ?? '';
-const MONGO_URI = process.env.MONGO_URI ?? 'mongodb://localhost:27017/quartierconnect';
+const NEO4J_URI = process.env.NEO4J_URI ?? "bolt://localhost:7687";
+const NEO4J_USER = process.env.NEO4J_USER ?? "neo4j";
+const NEO4J_PASSWORD = process.env.NEO4J_PASSWORD ?? "";
+const MONGO_URI =
+  process.env.MONGO_URI ?? "mongodb://localhost:27017/quartierconnect";
 
 async function main() {
   const driver = neo4j.driver(
@@ -22,14 +23,14 @@ async function main() {
   );
 
   await mongoose.connect(MONGO_URI);
-  console.log('Connected to MongoDB');
+  console.log("Connected to MongoDB");
 
   const session = driver.session();
 
   try {
     // Seed Neighborhoods
     const neighborhoods = await mongoose.connection
-      .collection('neighborhoods')
+      .collection("neighborhoods")
       .find({})
       .toArray();
 
@@ -45,7 +46,7 @@ async function main() {
 
     // Seed Services
     const services = await mongoose.connection
-      .collection('services')
+      .collection("services")
       .find({})
       .toArray();
 
@@ -56,8 +57,8 @@ async function main() {
          ON MATCH SET s.name = $name, s.category = $category, s.updatedAt = datetime()`,
         {
           id: svc._id.toString(),
-          name: (svc.title ?? svc.name ?? '') as string,
-          category: (svc.category ?? '') as string,
+          name: (svc.title ?? svc.name ?? "") as string,
+          category: (svc.category ?? "") as string,
         },
       );
 
@@ -66,7 +67,10 @@ async function main() {
           `MATCH (s:Service {id: $serviceId})
            MERGE (n:Neighborhood {id: $neighborhoodId})
            MERGE (s)-[:LOCATED_IN]->(n)`,
-          { serviceId: svc._id.toString(), neighborhoodId: String(svc.neighborhoodId) },
+          {
+            serviceId: svc._id.toString(),
+            neighborhoodId: String(svc.neighborhoodId),
+          },
         );
       }
     }
@@ -74,7 +78,7 @@ async function main() {
 
     // Seed Events
     const events = await mongoose.connection
-      .collection('events')
+      .collection("events")
       .find({})
       .toArray();
 
@@ -95,13 +99,16 @@ async function main() {
           `MATCH (e:Event {id: $eventId})
            MERGE (n:Neighborhood {id: $neighborhoodId})
            MERGE (e)-[:HELD_IN]->(n)`,
-          { eventId: evt._id.toString(), neighborhoodId: String(evt.neighborhoodId) },
+          {
+            eventId: evt._id.toString(),
+            neighborhoodId: String(evt.neighborhoodId),
+          },
         );
       }
     }
     console.log(`Seeded ${events.length} events`);
 
-    console.log('Neo4j seed completed successfully');
+    console.log("Neo4j seed completed successfully");
   } finally {
     await session.close();
     await driver.close();
@@ -110,6 +117,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('Seed failed:', err);
+  console.error("Seed failed:", err);
   process.exit(1);
 });

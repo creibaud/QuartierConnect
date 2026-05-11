@@ -6,46 +6,30 @@
 
 ## Table des matières
 
-- [Rapport QA — QuartierConnect Étape 4](#rapport-qa--quartierconnect-étape-4)
-  - [Table des matières](#table-des-matières)
-  - [1. Vue d'ensemble](#1-vue-densemble)
-  - [2. Tests unitaires API — NestJS/Jest](#2-tests-unitaires-api--nestjsjest)
-    - [Couverture par module](#couverture-par-module)
-    - [Exemples de cas de test clés](#exemples-de-cas-de-test-clés)
-  - [3. Tests unitaires Web — Vitest shared hooks](#3-tests-unitaires-web--vitest-shared-hooks)
-    - [Exemple de cas de test](#exemple-de-cas-de-test)
-  - [4. Tests E2E API — Supertest](#4-tests-e2e-api--supertest)
-    - [Fichiers](#fichiers)
-    - [Stratégie E2E](#stratégie-e2e)
-    - [Cas E2E clés (auth)](#cas-e2e-clés-auth)
-  - [5. Tests unitaires Java — JUnit 5](#5-tests-unitaires-java--junit-5)
-    - [Cas offline clés](#cas-offline-clés)
-  - [6. Tests DSL — pytest](#6-tests-dsl--pytest)
-    - [Cas de test DSL](#cas-de-test-dsl)
-  - [7. Tests E2E Web — Playwright](#7-tests-e2e-web--playwright)
-  - [8. Coverage API](#8-coverage-api)
-  - [9. Architecture des tests](#9-architecture-des-tests)
-    - [Isolation SQLite en tests Java](#isolation-sqlite-en-tests-java)
-  - [10. Stratégie de test par composant](#10-stratégie-de-test-par-composant)
-    - [API — ce qui est toujours testé dans chaque controller](#api--ce-qui-est-toujours-testé-dans-chaque-controller)
-    - [Points — cas aux limites testés](#points--cas-aux-limites-testés)
-    - [Contrats — flow complet testé](#contrats--flow-complet-testé)
-    - [CommunityVotes — types de scrutin testés](#communityvotes--types-de-scrutin-testés)
-    - [Commandes](#commandes)
+1. [Vue d'ensemble](#1-vue-densemble)
+2. [Tests unitaires API — NestJS/Jest](#2-tests-unitaires-api--nestjsjest)
+3. [Tests unitaires Web — Vitest shared hooks](#3-tests-unitaires-web--vitest-shared-hooks)
+4. [Tests E2E API — Supertest](#4-tests-e2e-api--supertest)
+5. [Tests unitaires Java — JUnit 5](#5-tests-unitaires-java--junit-5)
+6. [Tests DSL — pytest](#6-tests-dsl--pytest)
+7. [Tests E2E Web — Playwright](#7-tests-e2e-web--playwright)
+8. [Coverage API](#8-coverage-api)
+9. [Architecture des tests](#9-architecture-des-tests)
+10. [Stratégie de test par composant](#10-stratégie-de-test-par-composant)
 
 ---
 
 ## 1. Vue d'ensemble
 
-| Composant              | Framework                | Tests   | Résultat      |
-| ---------------------- | ------------------------ | ------- | ------------- |
-| API NestJS — unitaires | Jest                     | 260     | 260/260 ✓     |
-| Web shared hooks       | Vitest                   | 73      | 73/73 ✓       |
-| API NestJS — E2E       | Jest + Supertest         | 148     | 148/148 ✓     |
-| Java Desktop           | JUnit 5 + Maven Surefire | 139     | 139/139 ✓     |
-| DSL Python             | pytest                   | 21      | 21/21 ✓       |
-| Web Playwright         | Playwright               | 79      | 79/79 ✓       |
-| **TOTAL**              |                          | **720** | **720/720 ✓** |
+| Composant | Framework | Tests | Résultat |
+|-----------|-----------|-------|----------|
+| API NestJS — unitaires | Jest | 260 | 260/260 ✓ |
+| Web shared hooks | Vitest | 73 | 73/73 ✓ |
+| API NestJS — E2E | Jest + Supertest | 148 | 148/148 ✓ |
+| Java Desktop | JUnit 5 + Maven Surefire | 139 | 139/139 ✓ |
+| DSL Python | pytest | 21 | 21/21 ✓ |
+| Web Playwright | Playwright | 79 | 79/79 ✓ |
+| **TOTAL** | | **720** | **720/720 ✓** |
 
 > Note : les 148 tests E2E nécessitent MongoDB + PostgreSQL (make docker-up). Les 79 tests Playwright nécessitent les apps sur :3000/:3001/:5000.
 
@@ -77,38 +61,38 @@ flowchart BT
 
 ### Couverture par module
 
-| Suite                              | Tests | Ce qui est testé                                                                                                                                 |
-| ---------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `auth.service.spec.ts`             | 14    | register, login, SSO generate/exchange, argon2, TOTP                                                                                             |
-| `auth.controller.spec.ts`          | 12    | Routes HTTP, codes d'erreur, DTOs, cookie qc_rt set/clear, refresh cookie+body                                                                   |
-| `token.service.spec.ts`            | 12    | generatePair, rotateRefreshToken (transaction FOR UPDATE), revokeAccessToken, isAccessTokenRevoked                                               |
-| `totp.service.spec.ts`             | 6     | verify, anti-replay, purgeExpiredCodes, generateSecret                                                                                           |
-| `jwt.strategy.spec.ts`             | 8     | validate payload valide/invalide/rôle, TOKEN_REVOKED (JTI), skip JTI check absent, null payload                                                  |
-| `roles.guard.spec.ts`              | 5     | admin/resident/moderator/banned/sans rôle                                                                                                        |
-| `neighborhoods.controller.spec.ts` | 8     | CRUD + GeoJSON + SocialService mock                                                                                                              |
-| `neighborhoods.service.spec.ts`    | 6     | assertNoOverlap, geoIntersects, conflicts                                                                                                        |
-| `services.controller.spec.ts`      | 11    | CRUD, ownership, filters, SocialService                                                                                                          |
-| `events.controller.spec.ts`        | 7     | CRUD, markInterest, SocialService                                                                                                                |
-| `incidents.controller.spec.ts`     | 12    | CRUD, machine d'états, soft delete, sync                                                                                                         |
-| `points.service.spec.ts`           | 11    | transfer ACID, balance, history, MIN_BALANCE=-10                                                                                                 |
-| `points.controller.spec.ts`        | 5     | GET balance, GET history, POST transfer                                                                                                          |
-| `users.controller.spec.ts`         | 6     | list, ban, role update, stats                                                                                                                    |
-| `me.controller.spec.ts`            | 8     | export RGPD, profil, delete account                                                                                                              |
-| `contracts.service.spec.ts`        | 10    | create, sign, TOTP validation, SHA-256, workflow                                                                                                 |
-| `contracts.controller.spec.ts`     | 7     | routes, accès, création                                                                                                                          |
-| `messaging.service.spec.ts`        | 8     | conversations, messages, participants                                                                                                            |
-| `messaging.controller.spec.ts`     | 5     | routes REST, pagination                                                                                                                          |
-| `messaging.gateway.spec.ts`        | 10    | WebSocket connect (auto-join), join, send, disconnect                                                                                            |
-| `votes.service.spec.ts`            | 9     | cast, toggle, getScore, strategies                                                                                                               |
-| `votes.controller.spec.ts`         | 5     | allowedTypes, score, strategy factory                                                                                                            |
-| `community-votes.service.spec.ts`  | 12    | create, cast, results, quorum, close, types                                                                                                      |
-| `documents.service.spec.ts`        | 5     | upload, download, audit log                                                                                                                      |
-| `documents.controller.spec.ts`     | 4     | routes, accès                                                                                                                                    |
-| `social.service.spec.ts`           | 26    | sync* + retry backoff + exhaustion, isRetriable (ServiceUnavailable/SessionExpired), deleteNode union type, recordEventInterest, recommendations |
-| `social.controller.spec.ts`        | 4     | GET /recommendations                                                                                                                             |
-| `dsl.service.spec.ts`              | 8     | bridge Python, collections, erreurs                                                                                                              |
-| `dsl.controller.spec.ts`           | 5     | POST /dsl/query, erreurs syntaxe                                                                                                                 |
-| `app.controller.spec.ts`           | 5     | GET /health, version, uptime                                                                                                                     |
+| Suite | Tests | Ce qui est testé |
+|-------|-------|-----------------|
+| `auth.service.spec.ts` | 14 | register, login, SSO generate/exchange, argon2, TOTP |
+| `auth.controller.spec.ts` | 12 | Routes HTTP, codes d'erreur, DTOs, cookie qc_rt set/clear, refresh cookie+body |
+| `token.service.spec.ts` | 12 | generatePair, rotateRefreshToken (transaction FOR UPDATE), revokeAccessToken, isAccessTokenRevoked |
+| `totp.service.spec.ts` | 6 | verify, anti-replay, purgeExpiredCodes, generateSecret |
+| `jwt.strategy.spec.ts` | 8 | validate payload valide/invalide/rôle, TOKEN_REVOKED (JTI), skip JTI check absent, null payload |
+| `roles.guard.spec.ts` | 5 | admin/resident/moderator/banned/sans rôle |
+| `neighborhoods.controller.spec.ts` | 8 | CRUD + GeoJSON + SocialService mock |
+| `neighborhoods.service.spec.ts` | 6 | assertNoOverlap, geoIntersects, conflicts |
+| `services.controller.spec.ts` | 11 | CRUD, ownership, filters, SocialService |
+| `events.controller.spec.ts` | 7 | CRUD, markInterest, SocialService |
+| `incidents.controller.spec.ts` | 12 | CRUD, machine d'états, soft delete, sync |
+| `points.service.spec.ts` | 11 | transfer ACID, balance, history, MIN_BALANCE=-10 |
+| `points.controller.spec.ts` | 5 | GET balance, GET history, POST transfer |
+| `users.controller.spec.ts` | 6 | list, ban, role update, stats |
+| `me.controller.spec.ts` | 8 | export RGPD, profil, delete account |
+| `contracts.service.spec.ts` | 10 | create, sign, TOTP validation, SHA-256, workflow |
+| `contracts.controller.spec.ts` | 7 | routes, accès, création |
+| `messaging.service.spec.ts` | 8 | conversations, messages, participants |
+| `messaging.controller.spec.ts` | 5 | routes REST, pagination |
+| `messaging.gateway.spec.ts` | 10 | WebSocket connect (auto-join), join, send, disconnect |
+| `votes.service.spec.ts` | 9 | cast, toggle, getScore, strategies |
+| `votes.controller.spec.ts` | 5 | allowedTypes, score, strategy factory |
+| `community-votes.service.spec.ts` | 12 | create, cast, results, quorum, close, types |
+| `documents.service.spec.ts` | 5 | upload, download, audit log |
+| `documents.controller.spec.ts` | 4 | routes, accès |
+| `social.service.spec.ts` | 26 | sync* + retry backoff + exhaustion, isRetriable (ServiceUnavailable/SessionExpired), deleteNode union type, recordEventInterest, recommendations |
+| `social.controller.spec.ts` | 4 | GET /recommendations |
+| `dsl.service.spec.ts` | 8 | bridge Python, collections, erreurs |
+| `dsl.controller.spec.ts` | 5 | POST /dsl/query, erreurs syntaxe |
+| `app.controller.spec.ts` | 5 | GET /health, version, uptime |
 
 ### Exemples de cas de test clés
 
@@ -149,22 +133,22 @@ it('removes vote when same type cast again', async () => {
 
 Ces tests couvrent le package `packages/shared` du monorepo web. Ils valident les hooks TanStack Query, les utilitaires API, la gestion des tokens et le refresh silencieux.
 
-| Hook / Utilitaire     | Tests | Ce qui est testé                                              |
-| --------------------- | ----- | ------------------------------------------------------------- |
-| `useAuth`             | 6     | login, logout, register, état connexion, rôle, token persisté |
-| `useIncidents`        | 5     | list, create, patch, delete, invalidation cache               |
-| `useServices`         | 5     | list, create, patch, delete, filtre quartier                  |
-| `useEvents`           | 5     | list, create, patch, delete, markInterest                     |
-| `useNeighborhoods`    | 4     | list, create, patch, delete                                   |
-| `useContracts`        | 5     | list, create, sign, status, 403 non-signataire                |
-| `useVotes`            | 4     | cast up/down, toggle, score                                   |
-| `useCommunityVotes`   | 5     | create, cast, results, close, types                           |
-| `usePoints`           | 4     | balance, transfer, history, error MIN                         |
-| `useMessages`         | 5     | conversations, messages, send, read, paginate                 |
-| `useDocuments`        | 3     | upload, download, list                                        |
-| `useMe`               | 4     | profil, export RGPD, delete, update                           |
-| `apiPost / apiGet`    | 4     | Bearer header, retry 401, refresh silencieux                  |
-| `ensureAuthenticated` | 4     | redirect si non-auth, pass si auth, rôle admin                |
+| Hook / Utilitaire | Tests | Ce qui est testé |
+|-------------------|-------|-----------------|
+| `useAuth` | 6 | login, logout, register, état connexion, rôle, token persisté |
+| `useIncidents` | 5 | list, create, patch, delete, invalidation cache |
+| `useServices` | 5 | list, create, patch, delete, filtre quartier |
+| `useEvents` | 5 | list, create, patch, delete, markInterest |
+| `useNeighborhoods` | 4 | list, create, patch, delete |
+| `useContracts` | 5 | list, create, sign, status, 403 non-signataire |
+| `useVotes` | 4 | cast up/down, toggle, score |
+| `useCommunityVotes` | 5 | create, cast, results, close, types |
+| `usePoints` | 4 | balance, transfer, history, error MIN |
+| `useMessages` | 5 | conversations, messages, send, read, paginate |
+| `useDocuments` | 3 | upload, download, list |
+| `useMe` | 4 | profil, export RGPD, delete, update |
+| `apiPost / apiGet` | 4 | Bearer header, retry 401, refresh silencieux |
+| `ensureAuthenticated` | 4 | redirect si non-auth, pass si auth, rôle admin |
 
 ### Exemple de cas de test
 
@@ -190,18 +174,18 @@ it('refreshes token silently when 401 is received', async () => {
 
 ### Fichiers
 
-| Fichier                     | Tests | Modules couverts                                                                 |
-| --------------------------- | ----- | -------------------------------------------------------------------------------- |
-| `auth.e2e-spec.ts`          | 15    | register, login (valid/invalid/banned), rate-limit, refresh, logout, SSO         |
-| `api.e2e-spec.ts`           | 44    | neighborhoods, services, events, incidents, points, users, contracts, votes, DSL |
-| `contracts.e2e-spec.ts`     | 15    | create, sign, TOTP validation, list                                              |
-| `messaging-ws.e2e-spec.ts`  | 21    | WebSocket connect, join, send, broadcast, disconnect                             |
-| `modules.e2e-spec.ts`       | 40    | community-votes, documents, social, DSL, me                                      |
-| `neighborhoods.e2e-spec.ts` | 15    | CRUD, GeoJSON, overlap detection                                                 |
-| `points.e2e-spec.ts`        | 12    | transfer ACID, balance, history                                                  |
-| `rgpd.e2e-spec.ts`          | 8     | export RGPD, account deletion                                                    |
-| `social.e2e-spec.ts`        | 4     | recommendations, Neo4j nodes                                                     |
-| `app.e2e-spec.ts`           | 2     | GET /health, version                                                             |
+| Fichier | Tests | Modules couverts |
+|---------|-------|-----------------|
+| `auth.e2e-spec.ts` | 15 | register, login (valid/invalid/banned), rate-limit, refresh, logout, SSO |
+| `api.e2e-spec.ts` | 44 | neighborhoods, services, events, incidents, points, users, contracts, votes, DSL |
+| `contracts.e2e-spec.ts` | 15 | create, sign, TOTP validation, list |
+| `messaging-ws.e2e-spec.ts` | 21 | WebSocket connect, join, send, broadcast, disconnect |
+| `modules.e2e-spec.ts` | 40 | community-votes, documents, social, DSL, me |
+| `neighborhoods.e2e-spec.ts` | 15 | CRUD, GeoJSON, overlap detection |
+| `points.e2e-spec.ts` | 12 | transfer ACID, balance, history |
+| `rgpd.e2e-spec.ts` | 8 | export RGPD, account deletion |
+| `social.e2e-spec.ts` | 4 | recommendations, Neo4j nodes |
+| `app.e2e-spec.ts` | 2 | GET /health, version |
 
 ### Stratégie E2E
 
@@ -236,27 +220,27 @@ it('POST /auth/login is rate-limited after 5 attempts', async () => {
 
 **139 tests · 19 classes · 0 échec**
 
-| Classe                     | Tests | Ce qui est testé                                                                                                                                                          |
-| -------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SQLiteSessionTest`        | 5     | saveSession, loadSession, overwrite, clearSession, idempotent init                                                                                                        |
-| `IncidentRepositoryTest`   | 11    | queryList/countWhere (DRY), tombstone delete (deleted_at), tombstoneOrphans, updateBase, merge remote-only, conflit flagué, résolution conflit, listDirty exclut conflits |
-| `AuthServiceOfflineTest`   | 13    | tryResume, refresh, isTokenExpired, getCurrentUserEmail offline                                                                                                           |
-| `ApiServiceOfflineTest`    | 2     | isReachable() sur connexion refusée / hostname inconnu                                                                                                                    |
-| `AuthServiceTest`          | 6     | login, exchangeSsoToken, clearSession, applyTokens, parseJwtPayload                                                                                                       |
-| `SsoCallbackServerTest`    | 7     | démarrage, écoute callback, état valide/invalide, timeout                                                                                                                 |
-| `SyncServiceTest`          | 8     | start/stop lifecycle, idempotence, post-shutdown stop, listener enregistré, statut offline, justPushed race condition fix, orphan cleanup                                 |
-| `ThreeWayMergerTest`       | 29    | null base → LWW remote, pas de changement → local, local-only, remote-only, même changement, conflit vrai, cas limites multiples                                          |
-| `ContractsServiceTest`     | 4     | list, create, sign, findOne                                                                                                                                               |
-| `EventsServiceTest`        | 4     | list, findOne, create, interest                                                                                                                                           |
-| `NeighborhoodsServiceTest` | 3     | list, findOne, create                                                                                                                                                     |
-| `ServicesServiceTest`      | 4     | list, findOne, create, filter                                                                                                                                             |
-| `StatisticsServiceTest`    | 5     | fetchStats, parseResponse, offline fallback                                                                                                                               |
-| `UpdateServiceTest`        | 5     | checkUpdate, versionParsing, skip, apply                                                                                                                                  |
-| `VotesServiceTest`         | 4     | cast, toggle, getScore, strategies                                                                                                                                        |
-| `PluginRegistryTest`       | 7     | register, unregister, lifecycle, fail gracefully, EventBus integration, ContextAwarePlugin                                                                                |
-| `TokenVaultTest`           | 10    | round-trip save/load, overwrite, null access/refresh token, les deux null, clear idempotent, multiples saves, save-clear-save                                             |
-| `ApiIntegrationTest`       | 8     | execute() single method, error sanitization, retry on 401                                                                                                                 |
-| `ToastManagerTest`         | 4     | show, dismiss, auto-dismiss, queue                                                                                                                                        |
+| Classe | Tests | Ce qui est testé |
+|--------|-------|-----------------|
+| `SQLiteSessionTest` | 5 | saveSession, loadSession, overwrite, clearSession, idempotent init |
+| `IncidentRepositoryTest` | 11 | queryList/countWhere (DRY), tombstone delete (deleted_at), tombstoneOrphans, updateBase, merge remote-only, conflit flagué, résolution conflit, listDirty exclut conflits |
+| `AuthServiceOfflineTest` | 13 | tryResume, refresh, isTokenExpired, getCurrentUserEmail offline |
+| `ApiServiceOfflineTest` | 2 | isReachable() sur connexion refusée / hostname inconnu |
+| `AuthServiceTest` | 6 | login, exchangeSsoToken, clearSession, applyTokens, parseJwtPayload |
+| `SsoCallbackServerTest` | 7 | démarrage, écoute callback, état valide/invalide, timeout |
+| `SyncServiceTest` | 8 | start/stop lifecycle, idempotence, post-shutdown stop, listener enregistré, statut offline, justPushed race condition fix, orphan cleanup |
+| `ThreeWayMergerTest` | 29 | null base → LWW remote, pas de changement → local, local-only, remote-only, même changement, conflit vrai, cas limites multiples |
+| `ContractsServiceTest` | 4 | list, create, sign, findOne |
+| `EventsServiceTest` | 4 | list, findOne, create, interest |
+| `NeighborhoodsServiceTest` | 3 | list, findOne, create |
+| `ServicesServiceTest` | 4 | list, findOne, create, filter |
+| `StatisticsServiceTest` | 5 | fetchStats, parseResponse, offline fallback |
+| `UpdateServiceTest` | 5 | checkUpdate, versionParsing, skip, apply |
+| `VotesServiceTest` | 4 | cast, toggle, getScore, strategies |
+| `PluginRegistryTest` | 7 | register, unregister, lifecycle, fail gracefully, EventBus integration, ContextAwarePlugin |
+| `TokenVaultTest` | 10 | round-trip save/load, overwrite, null access/refresh token, les deux null, clear idempotent, multiples saves, save-clear-save |
+| `ApiIntegrationTest` | 8 | execute() single method, error sanitization, retry on 401 |
+| `ToastManagerTest` | 4 | show, dismiss, auto-dismiss, queue |
 
 ### Cas offline clés
 
@@ -287,10 +271,10 @@ void isReachable_returnsFalse_whenConnectionRefused() {
 
 **21 tests · 2 fichiers · 0 échec**
 
-| Fichier            | Tests | Ce qui est testé                                                                                               |
-| ------------------ | ----- | -------------------------------------------------------------------------------------------------------------- |
-| `test_lexer.py`    | 8     | tokens FIND/COUNT/WHERE/LIMIT, STRING, NUMBER, opérateurs, caractère illégal                                   |
-| `test_compiler.py` | 13    | FIND simple, WHERE, LIMIT, combiné, COUNT, comparateurs, LIKE, OR, collections non autorisées, erreurs syntaxe |
+| Fichier | Tests | Ce qui est testé |
+|---------|-------|-----------------|
+| `test_lexer.py` | 8 | tokens FIND/COUNT/WHERE/LIMIT, STRING, NUMBER, opérateurs, caractère illégal |
+| `test_compiler.py` | 13 | FIND simple, WHERE, LIMIT, combiné, COUNT, comparateurs, LIKE, OR, collections non autorisées, erreurs syntaxe |
 
 ### Cas de test DSL
 
@@ -319,24 +303,24 @@ def test_find_where_or():
 
 **79 tests · 16 fichiers · Navigateur Chromium**
 
-| Fichier                           | Tests | Ce qui est testé                                              |
-| --------------------------------- | ----- | ------------------------------------------------------------- |
-| `admin/dashboard.spec.ts`         | 3     | Heading, stats live, navigation                               |
-| `admin/dsl.spec.ts`               | 7     | Éditeur DSL, exécution, Ctrl+Enter, erreurs syntaxe           |
-| `admin/events.spec.ts`            | 6     | CRUD événements complet (création, modification, suppression) |
-| `admin/incidents.spec.ts`         | 5     | Modération, filtres statut, accès non-admin                   |
-| `admin/login.spec.ts`             | 3     | Login admin, refus résident, redirect dashboard               |
-| `admin/neighborhoods.spec.ts`     | 5     | CRUD quartiers                                                |
-| `admin/services.spec.ts`          | 6     | CRUD services                                                 |
-| `admin/users.spec.ts`             | 5     | Liste, rôles, bannissement, redirect non-admin                |
-| `client/contracts.spec.ts`        | 4     | Page contrats, dialog création                                |
-| `client/dashboard.spec.ts`        | 3     | Email affiché, token SSO, logout                              |
-| `client/events.spec.ts`           | 5     | Calendrier, liste, création événement                         |
-| `client/incidents.spec.ts`        | 5     | Liste, création, navigation vers détail                       |
-| `client/incidents-detail.spec.ts` | 5     | Titre, statut, votes, lien retour, 404                        |
-| `client/login.spec.ts`            | 3     | TOTP step, erreur mdp, redirect dashboard                     |
-| `client/register.spec.ts`         | 4     | QR code, erreur mdp, doublon email, flow complet              |
-| `client/services.spec.ts`         | 4     | Heading, filtre quartier, option "tous", sans erreur          |
+| Fichier | Tests | Ce qui est testé |
+|---------|-------|-----------------|
+| `admin/dashboard.spec.ts` | 3 | Heading, stats live, navigation |
+| `admin/dsl.spec.ts` | 7 | Éditeur DSL, exécution, Ctrl+Enter, erreurs syntaxe |
+| `admin/events.spec.ts` | 6 | CRUD événements complet (création, modification, suppression) |
+| `admin/incidents.spec.ts` | 5 | Modération, filtres statut, accès non-admin |
+| `admin/login.spec.ts` | 3 | Login admin, refus résident, redirect dashboard |
+| `admin/neighborhoods.spec.ts` | 5 | CRUD quartiers |
+| `admin/services.spec.ts` | 6 | CRUD services |
+| `admin/users.spec.ts` | 5 | Liste, rôles, bannissement, redirect non-admin |
+| `client/contracts.spec.ts` | 4 | Page contrats, dialog création |
+| `client/dashboard.spec.ts` | 3 | Email affiché, token SSO, logout |
+| `client/events.spec.ts` | 5 | Calendrier, liste, création événement |
+| `client/incidents.spec.ts` | 5 | Liste, création, navigation vers détail |
+| `client/incidents-detail.spec.ts` | 5 | Titre, statut, votes, lien retour, 404 |
+| `client/login.spec.ts` | 3 | TOTP step, erreur mdp, redirect dashboard |
+| `client/register.spec.ts` | 4 | QR code, erreur mdp, doublon email, flow complet |
+| `client/services.spec.ts` | 4 | Heading, filtre quartier, option "tous", sans erreur |
 
 ---
 
@@ -357,12 +341,12 @@ Seuils définis dans `api/package.json` :
 
 **Résultat mesuré :**
 
-| Métrique   | Seuil | Valeur | Statut |
-| ---------- | ----- | ------ | ------ |
-| Statements | 80%   | 95.7%  | ✓      |
-| Branches   | 75%   | 86.1%  | ✓      |
-| Functions  | 80%   | 94.3%  | ✓      |
-| Lines      | 80%   | 95.2%  | ✓      |
+| Métrique | Seuil | Valeur | Statut |
+|----------|-------|--------|--------|
+| Statements | 80% | 95.7% | ✓ |
+| Branches | 75% | 86.1% | ✓ |
+| Functions | 80% | 94.3% | ✓ |
+| Lines | 80% | 95.2% | ✓ |
 
 ---
 

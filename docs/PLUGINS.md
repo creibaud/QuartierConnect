@@ -45,15 +45,15 @@ Source: `desktop-app/src/main/java/fr/quartierconnect/desktopapp/plugin/Quartier
 
 Plugins receive an `AppContext` at load time (injected by the registry) that exposes:
 
-| Getter                    | Service              | Description                                                                                      |
-| ------------------------- | -------------------- | ------------------------------------------------------------------------------------------------ |
-| `getApiService()`         | `ApiService`         | Authenticated HTTP client — single `execute()` method. Handles JWT refresh automatically.        |
-| `getAuthService()`        | `AuthService`        | Read the current user's email and token state. Do not store tokens — use read-only methods only. |
-| `getScene()`              | `Scene`              | The primary JavaFX scene — for CSS injection (themes) or UI extension.                           |
-| `getIncidentRepository()` | `IncidentRepository` | Read/write access to the local SQLite incident store.                                            |
-| `getSyncService()`        | `SyncService`        | Trigger or observe sync operations.                                                              |
-| `getToastManager()`       | `ToastManager`       | Show toast notifications in the UI.                                                              |
-| `getEventBus()`           | `PluginEventBus`     | Subscribe to application events (see EventBus section below).                                    |
+| Getter | Service | Description |
+|--------|---------|-------------|
+| `getApiService()` | `ApiService` | Authenticated HTTP client — single `execute()` method. Handles JWT refresh automatically. |
+| `getAuthService()` | `AuthService` | Read the current user's email and token state. Do not store tokens — use read-only methods only. |
+| `getScene()` | `Scene` | The primary JavaFX scene — for CSS injection (themes) or UI extension. |
+| `getIncidentRepository()` | `IncidentRepository` | Read/write access to the local SQLite incident store. |
+| `getSyncService()` | `SyncService` | Trigger or observe sync operations. |
+| `getToastManager()` | `ToastManager` | Show toast notifications in the UI. |
+| `getEventBus()` | `PluginEventBus` | Subscribe to application events (see EventBus section below). |
 
 To receive AppContext, implement `PluginRegistry.ContextAwarePlugin` in addition to `QuartierConnectPlugin`:
 
@@ -79,13 +79,13 @@ The `PluginEventBus` provides a thread-safe publish/subscribe mechanism (`CopyOn
 
 ### Available Events
 
-| Event                   | Emitted by                 | Payload                | Description                      |
-| ----------------------- | -------------------------- | ---------------------- | -------------------------------- |
-| `INCIDENTS_CHANGED`     | SyncService, IncidentsView | null                   | Local incident data has changed  |
-| `SYNC_STARTED`          | SyncService                | null                   | A sync cycle has begun           |
-| `SYNC_COMPLETED`        | SyncService                | null                   | Sync cycle finished successfully |
-| `SYNC_FAILED`           | SyncService                | String (error message) | Sync cycle failed                |
-| `ONLINE_STATUS_CHANGED` | SyncService                | Boolean                | Network connectivity changed     |
+| Event | Emitted by | Payload | Description |
+|-------|-----------|---------|-------------|
+| `INCIDENTS_CHANGED` | SyncService, IncidentsView | null | Local incident data has changed |
+| `SYNC_STARTED` | SyncService | null | A sync cycle has begun |
+| `SYNC_COMPLETED` | SyncService | null | Sync cycle finished successfully |
+| `SYNC_FAILED` | SyncService | String (error message) | Sync cycle failed |
+| `ONLINE_STATUS_CHANGED` | SyncService | Boolean | Network connectivity changed |
 
 ### Subscribing to Events
 
@@ -280,10 +280,10 @@ public class HelloWorldPlugin implements QuartierConnectPlugin, PluginRegistry.C
 
 ## Constraints
 
-| Rule                  | Detail                                                                                                                                                                                                 |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| API access only       | Use `ApiService` from `AppContext`. No direct JDBC/MongoDB/Neo4j calls.                                                                                                                                |
-| No UI stage access    | Do not obtain or modify `Stage` or `Scene` outside provided extension points.                                                                                                                          |
-| Clean `onUnload`      | Cancel all scheduled tasks and close all connections in `onUnload`. Uncleaned resources will produce warnings and may leak threads.                                                                    |
-| No credential storage | Plugins must not store tokens or passwords to disk.                                                                                                                                                    |
-| Exception safety      | Exceptions thrown from `onLoad` are caught by the registry and logged — the plugin is still registered but may be non-functional. Exceptions in `onUnload` are caught and logged — shutdown continues. |
+| Rule | Detail |
+|------|--------|
+| API access only | Use `ApiService` from `AppContext`. No direct JDBC/MongoDB/Neo4j calls. |
+| No UI stage access | Do not obtain or modify `Stage` or `Scene` outside provided extension points. |
+| Clean `onUnload` | Cancel all scheduled tasks and close all connections in `onUnload`. Uncleaned resources will produce warnings and may leak threads. |
+| No credential storage | Plugins must not store tokens or passwords to disk. |
+| Exception safety | Exceptions thrown from `onLoad` are caught by the registry and logged — the plugin is still registered but may be non-functional. Exceptions in `onUnload` are caught and logged — shutdown continues. |
