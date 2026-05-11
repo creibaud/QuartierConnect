@@ -38,6 +38,3 @@ build/
 ### Mac OS ###
 .DS_Store
 quartierconnect.db
-org/**/*.class
-META-INF/
-module-info.class
