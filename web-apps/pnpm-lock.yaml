@@ -284,6 +284,12 @@ importers:
       '@fontsource-variable/geist':
         specifier: ^5.2.8
         version: 5.2.8
+      '@fontsource-variable/inter':
+        specifier: ^5.2.8
+        version: 5.2.8
+      '@fontsource-variable/newsreader':
+        specifier: ^5.2.10
+        version: 5.2.10
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.72.1(react@19.2.4))
@@ -317,6 +323,18 @@ importers:
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      leaflet:
+        specifier: ^1.9.4
+        version: 1.9.4
+      leaflet-draw:
+        specifier: ^1.0.4
+        version: 1.0.4
+      leaflet.fullscreen:
+        specifier: ^5.3.1
+        version: 5.3.1(leaflet@1.9.4)
+      leaflet.markercluster:
+        specifier: ^1.5.3
+        version: 1.5.3(leaflet@1.9.4)
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -335,6 +353,12 @@ importers:
       react-hook-form:
         specifier: ^7.72.1
         version: 7.72.1(react@19.2.4)
+      react-leaflet:
+        specifier: ^5.0.0
+        version: 5.0.0(leaflet@1.9.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react-leaflet-markercluster:
+        specifier: 5.0.0-rc.0
+        version: 5.0.0-rc.0(leaflet.markercluster@1.5.3(leaflet@1.9.4))(leaflet@1.9.4)(react-dom@19.2.4(react@19.2.4))(react-leaflet@5.0.0(leaflet@1.9.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
       react-resizable-panels:
         specifier: ^4.9.0
         version: 4.9.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -369,6 +393,18 @@ importers:
       '@turbo/gen':
         specifier: ^2.8.1
         version: 2.8.11(@types/node@25.3.0)
+      '@types/geojson':
+        specifier: ^7946.0.16
+        version: 7946.0.16
+      '@types/leaflet':
+        specifier: ^1.9.21
+        version: 1.9.21
+      '@types/leaflet-draw':
+        specifier: ^1.0.13
+        version: 1.0.13
+      '@types/leaflet.markercluster':
+        specifier: ^1.5.6
+        version: 1.5.6
       '@types/node':
         specifier: ^25.1.0
         version: 25.3.0
@@ -827,6 +863,12 @@ packages:
 
   '@fontsource-variable/geist@5.2.8':
     resolution: {integrity: sha512-cJ6m9e+8MQ5dCYJsLylfZrgBh6KkG4bOLckB35Tr9J/EqdkEM6QllH5PxqP1dhTvFup+HtMRPuz9xOjxXJggxw==}
+
+  '@fontsource-variable/inter@5.2.8':
+    resolution: {integrity: sha512-kOfP2D+ykbcX/P3IFnokOhVRNoTozo5/JxhAIVYLpea/UBmCQ/YWPBfWIDuBImXX/15KH+eKh4xpEUyS2sQQGQ==}
+
+  '@fontsource-variable/newsreader@5.2.10':
+    resolution: {integrity: sha512-MdI2iRwrqWpMOU/2aV2BgfZ4dJNlj/XlYaY8Zb7t87mWqHskYW0XiUANkt1cyOCiEfW2VQ0bQ5vZgGPp6B2B4w==}
 
   '@hono/node-server@1.19.12':
     resolution: {integrity: sha512-txsUW4SQ1iilgE0l9/e9VQWmELXifEFvmdA1j6WFh/aFPj99hIntrSsq/if0UWyGVkmrRPKA1wCeP+UCr1B9Uw==}
@@ -2338,6 +2380,12 @@ packages:
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
+  '@types/leaflet-draw@1.0.13':
+    resolution: {integrity: sha512-YU82kilOaU+wPNbqKCCDfHH3hqepN6XilrBwG/mSeZ/z4ewumaRCOah44s3FMxSu/Aa0SVa3PPJvhIZDUA09mw==}
+
+  '@types/leaflet.markercluster@1.5.6':
+    resolution: {integrity: sha512-I7hZjO2+isVXGYWzKxBp8PsCzAYCJBc29qBdFpquOCkS7zFDqUsUvkEOyQHedsk/Cy5tocQzf+Ndorm5W9YKTQ==}
+
   '@types/leaflet@1.9.21':
     resolution: {integrity: sha512-TbAd9DaPGSnzp6QvtYngntMZgcRk+igFELwR2N99XZn7RXUdKgsXMR+28bUO0rPsWp8MIu/f47luLIQuSLYv/w==}
 
@@ -3608,6 +3656,19 @@ packages:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
     engines: {node: '>=6'}
 
+  leaflet-draw@1.0.4:
+    resolution: {integrity: sha512-rsQ6saQO5ST5Aj6XRFylr5zvarWgzWnrg46zQ1MEOEIHsppdC/8hnN8qMoFvACsPvTioAuysya/TVtog15tyAQ==}
+
+  leaflet.fullscreen@5.3.1:
+    resolution: {integrity: sha512-2IO5WJ5xpQWyn2ZLICwwpyiWJ2KdZMuxAUCsrK7b4dj770GZ/zwPp4uVQNKOxqnz9xRWEN1d2VNpLaX4ptSdnA==}
+    peerDependencies:
+      leaflet: ^1.7.0 || >=2.0.0-alpha.1
+
+  leaflet.markercluster@1.5.3:
+    resolution: {integrity: sha512-vPTw/Bndq7eQHjLBVlWpnGeLa3t+3zGiuM7fJwCkiMFq+nmRuG3RI3f7f4N4TDX7T4NpbAXpR2+NTRSEGfCSeA==}
+    peerDependencies:
+      leaflet: ^1.3.1
+
   leaflet@1.9.4:
     resolution: {integrity: sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==}
 
@@ -4181,6 +4242,14 @@ packages:
 
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
+
+  react-leaflet-markercluster@5.0.0-rc.0:
+    resolution: {integrity: sha512-jWa4bPD5LfLV3Lid1RWgl+yKUuQtnqeYtJzzLb/fiRjvX+rtwzY8pMoUFuygqyxNrWxMTQlWKBHxkpI7Sxvu4Q==}
+    peerDependencies:
+      leaflet: ^1.9.4
+      leaflet.markercluster: ^1.5.3
+      react: ^19.0.0
+      react-leaflet: ^5.0.0
 
   react-leaflet@5.0.0:
     resolution: {integrity: sha512-CWbTpr5vcHw5bt9i4zSlPEVQdTVcML390TjeDG0cK59z1ylexpqC6M1PJFjV8jD7CF+ACBFsLIDs6DRMoLEofw==}
@@ -5402,6 +5471,10 @@ snapshots:
   '@floating-ui/utils@0.2.11': {}
 
   '@fontsource-variable/geist@5.2.8': {}
+
+  '@fontsource-variable/inter@5.2.8': {}
+
+  '@fontsource-variable/newsreader@5.2.10': {}
 
   '@hono/node-server@1.19.12(hono@4.12.10)':
     dependencies:
@@ -6893,6 +6966,14 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
+  '@types/leaflet-draw@1.0.13':
+    dependencies:
+      '@types/leaflet': 1.9.21
+
+  '@types/leaflet.markercluster@1.5.6':
+    dependencies:
+      '@types/leaflet': 1.9.21
+
   '@types/leaflet@1.9.21':
     dependencies:
       '@types/geojson': 7946.0.16
@@ -8226,6 +8307,16 @@ snapshots:
 
   kleur@4.1.5: {}
 
+  leaflet-draw@1.0.4: {}
+
+  leaflet.fullscreen@5.3.1(leaflet@1.9.4):
+    dependencies:
+      leaflet: 1.9.4
+
+  leaflet.markercluster@1.5.3(leaflet@1.9.4):
+    dependencies:
+      leaflet: 1.9.4
+
   leaflet@1.9.4: {}
 
   levn@0.4.1:
@@ -8756,6 +8847,16 @@ snapshots:
   react-is@16.13.1: {}
 
   react-is@17.0.2: {}
+
+  react-leaflet-markercluster@5.0.0-rc.0(leaflet.markercluster@1.5.3(leaflet@1.9.4))(leaflet@1.9.4)(react-dom@19.2.4(react@19.2.4))(react-leaflet@5.0.0(leaflet@1.9.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4):
+    dependencies:
+      '@react-leaflet/core': 3.0.0(leaflet@1.9.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      leaflet: 1.9.4
+      leaflet.markercluster: 1.5.3(leaflet@1.9.4)
+      react: 19.2.4
+      react-leaflet: 5.0.0(leaflet@1.9.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+    transitivePeerDependencies:
+      - react-dom
 
   react-leaflet@5.0.0(leaflet@1.9.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
     dependencies:
