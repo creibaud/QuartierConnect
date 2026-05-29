@@ -121,7 +121,7 @@ interface NeighborhoodPolygonProps {
 
 export function NeighborhoodPolygon({
     geometry,
-    color = "#18181B",
+    color = "#16a34a",
     label,
 }: NeighborhoodPolygonProps) {
     const positions: LatLng[] = geometry.coordinates[0].map(
@@ -132,8 +132,10 @@ export function NeighborhoodPolygon({
             positions={positions}
             pathOptions={{
                 color,
-                weight: 2,
-                fillOpacity: 0.08,
+                weight: 3,
+                fillColor: color,
+                fillOpacity: 0.2,
+                opacity: 0.9,
             }}
         >
             {label ? <Popup>{label}</Popup> : null}
