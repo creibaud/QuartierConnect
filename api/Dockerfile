@@ -1,7 +1,7 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 RUN apk add --no-cache python3 py3-pip
-RUN npm install -g pnpm
+RUN npm install -g pnpm@10.29.2
 COPY api/package.json api/pnpm-lock.yaml* ./
 RUN pnpm install --frozen-lockfile
 COPY api/ .
@@ -13,7 +13,7 @@ FROM node:22-alpine
 WORKDIR /app
 RUN apk add --no-cache python3 py3-pip
 RUN pip3 install --break-system-packages ply>=3.11
-RUN npm install -g pnpm
+RUN npm install -g pnpm@10.29.2
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules

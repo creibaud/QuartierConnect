@@ -124,5 +124,18 @@
                 "lines": 80
             }
         }
+    },
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "argon2",
+            "esbuild"
+        ],
+        "ignoredBuiltDependencies": [
+            "@nestjs/core",
+            "@scarf/scarf",
+            "core-js",
+            "protobufjs",
+            "vue-demi"
+        ]
     }
 }

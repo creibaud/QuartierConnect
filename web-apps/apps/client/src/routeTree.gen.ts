@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VotesIndexRouteImport } from './routes/votes/index'
 import { Route as ServicesIndexRouteImport } from './routes/services/index'
+import { Route as MessagesIndexRouteImport } from './routes/messages/index'
 import { Route as IncidentsIndexRouteImport } from './routes/incidents/index'
 import { Route as EventsIndexRouteImport } from './routes/events/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
@@ -43,6 +44,11 @@ const VotesIndexRoute = VotesIndexRouteImport.update({
 const ServicesIndexRoute = ServicesIndexRouteImport.update({
   id: '/services/',
   path: '/services/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesIndexRoute = MessagesIndexRouteImport.update({
+  id: '/messages/',
+  path: '/messages/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IncidentsIndexRoute = IncidentsIndexRouteImport.update({
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/': typeof DashboardIndexRoute
   '/events/': typeof EventsIndexRoute
   '/incidents/': typeof IncidentsIndexRoute
+  '/messages/': typeof MessagesIndexRoute
   '/services/': typeof ServicesIndexRoute
   '/votes/': typeof VotesIndexRoute
 }
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardIndexRoute
   '/events': typeof EventsIndexRoute
   '/incidents': typeof IncidentsIndexRoute
+  '/messages': typeof MessagesIndexRoute
   '/services': typeof ServicesIndexRoute
   '/votes': typeof VotesIndexRoute
 }
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/dashboard/': typeof DashboardIndexRoute
   '/events/': typeof EventsIndexRoute
   '/incidents/': typeof IncidentsIndexRoute
+  '/messages/': typeof MessagesIndexRoute
   '/services/': typeof ServicesIndexRoute
   '/votes/': typeof VotesIndexRoute
 }
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/events/'
     | '/incidents/'
+    | '/messages/'
     | '/services/'
     | '/votes/'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/events'
     | '/incidents'
+    | '/messages'
     | '/services'
     | '/votes'
   id:
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/events/'
     | '/incidents/'
+    | '/messages/'
     | '/services/'
     | '/votes/'
   fileRoutesById: FileRoutesById
@@ -156,6 +168,7 @@ export interface RootRouteChildren {
   DashboardIndexRoute: typeof DashboardIndexRoute
   EventsIndexRoute: typeof EventsIndexRoute
   IncidentsIndexRoute: typeof IncidentsIndexRoute
+  MessagesIndexRoute: typeof MessagesIndexRoute
   ServicesIndexRoute: typeof ServicesIndexRoute
   VotesIndexRoute: typeof VotesIndexRoute
 }
@@ -195,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/services/'
       preLoaderRoute: typeof ServicesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages/': {
+      id: '/messages/'
+      path: '/messages'
+      fullPath: '/messages/'
+      preLoaderRoute: typeof MessagesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/incidents/': {
@@ -244,6 +264,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardIndexRoute: DashboardIndexRoute,
   EventsIndexRoute: EventsIndexRoute,
   IncidentsIndexRoute: IncidentsIndexRoute,
+  MessagesIndexRoute: MessagesIndexRoute,
   ServicesIndexRoute: ServicesIndexRoute,
   VotesIndexRoute: VotesIndexRoute,
 }
