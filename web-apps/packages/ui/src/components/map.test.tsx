@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render } from "@testing-library/react";
 import {
+    DrawControl,
     Map,
     Marker,
     MarkerCluster,
@@ -132,6 +133,17 @@ describe("<MarkerCluster>", () => {
                 </Map>,
             ),
         ).not.toThrow();
+    });
+});
+
+describe("<DrawControl>", () => {
+    it("mounts and unmounts without throwing", () => {
+        const { unmount } = render(
+            <Map center={[48.85, 2.35]}>
+                <DrawControl mode="polygon" onCreate={() => {}} />
+            </Map>,
+        );
+        expect(() => unmount()).not.toThrow();
     });
 });
 

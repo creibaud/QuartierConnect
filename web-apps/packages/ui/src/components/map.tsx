@@ -22,6 +22,7 @@ import MarkerClusterGroup from "react-leaflet-markercluster";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+import "leaflet-draw/dist/leaflet.draw.css";
 import { cn } from "@workspace/ui/lib/utils";
 
 const OSM_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -184,6 +185,85 @@ export function MarkerCluster({
             {children}
         </MarkerClusterGroup>
     );
+}
+
+interface DrawControlProps {
+    mode: "polygon";
+    onCreate?: (geometry: GeoJSON.Polygon) => void;
+    onEdit?: (geometry: GeoJSON.Polygon) => void;
+    onDelete?: () => void;
+}
+
+export function DrawControl({
+    mode,
+    onCreate,
+    onEdit,
+    onDelete,
+}: DrawControlProps) {
+    const map = useMap();
+    useEffect(() => {
+        let drawControl: L.Control | null = null;
+        let cancelled = false;
+        const featureGroup = L.featureGroup().addTo(map);
+
+        const handleCreated = (e: L.LeafletEvent) => {
+            const layer = (e as unknown as { layer: L.Layer }).layer;
+            featureGroup.addLayer(layer);
+            const geojson = (
+                layer as L.Polygon
+            ).toGeoJSON() as GeoJSON.Feature<GeoJSON.Polygon>;
+            if (geojson.geometry.type === "Polygon") {
+                onCreate?.(geojson.geometry);
+            }
+        };
+        const handleEdited = (e: L.LeafletEvent) => {
+            const layers = (e as unknown as { layers: L.LayerGroup }).layers;
+            layers.eachLayer((layer) => {
+                const geojson = (
+                    layer as L.Polygon
+                ).toGeoJSON() as GeoJSON.Feature<GeoJSON.Polygon>;
+                if (geojson.geometry.type === "Polygon") {
+                    onEdit?.(geojson.geometry);
+                }
+            });
+        };
+        const handleDeleted = () => onDelete?.();
+
+        void import("leaflet-draw").then(() => {
+            if (cancelled) return;
+            const LDraw = (
+                L.Control as unknown as {
+                    Draw: new (opts: unknown) => L.Control;
+                }
+            ).Draw;
+            drawControl = new LDraw({
+                position: "topright",
+                draw: {
+                    polygon: mode === "polygon" ? {} : false,
+                    polyline: false,
+                    rectangle: false,
+                    circle: false,
+                    marker: false,
+                    circlemarker: false,
+                },
+                edit: { featureGroup },
+            });
+            map.addControl(drawControl);
+            map.on("draw:created" as never, handleCreated as never);
+            map.on("draw:edited" as never, handleEdited as never);
+            map.on("draw:deleted" as never, handleDeleted as never);
+        });
+
+        return () => {
+            cancelled = true;
+            map.off("draw:created" as never, handleCreated as never);
+            map.off("draw:edited" as never, handleEdited as never);
+            map.off("draw:deleted" as never, handleDeleted as never);
+            if (drawControl) map.removeControl(drawControl);
+            map.removeLayer(featureGroup);
+        };
+    }, [map, mode, onCreate, onEdit, onDelete]);
+    return null;
 }
 
 export function useFitBounds(positions: LatLng[]): RefObject<L.Map | null> {
