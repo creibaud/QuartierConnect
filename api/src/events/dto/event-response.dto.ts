@@ -34,6 +34,15 @@ export class EventDto {
     })
     interestedUserIds: string[];
 
+    @ApiPropertyOptional({ example: "Place du marché", nullable: true })
+    address?: string | null;
+
+    @ApiPropertyOptional({
+        example: { type: "Point", coordinates: [2.3522, 48.8566] },
+        nullable: true,
+    })
+    location?: { type: "Point"; coordinates: [number, number] } | null;
+
     @ApiProperty({ example: "2026-04-05T10:00:00.000Z" })
     createdAt: string;
 

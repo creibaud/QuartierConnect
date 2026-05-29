@@ -1,7 +1,8 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
     IsDateString,
     IsNotEmpty,
+    IsObject,
     IsOptional,
     IsString,
 } from "class-validator";
@@ -47,4 +48,20 @@ export class CreateEventDto {
     @IsString()
     @IsOptional()
     neighborhoodId?: string;
+
+    @ApiPropertyOptional({
+        description: "Adresse postale lisible",
+        example: "Place du marché",
+    })
+    @IsString()
+    @IsOptional()
+    address?: string;
+
+    @ApiPropertyOptional({
+        description: "Position GeoJSON (coordinates = [lng, lat])",
+        example: { type: "Point", coordinates: [2.3522, 48.8566] },
+    })
+    @IsOptional()
+    @IsObject()
+    location?: { type: "Point"; coordinates: [number, number] };
 }
