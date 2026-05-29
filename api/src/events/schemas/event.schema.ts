@@ -1,5 +1,9 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument } from "mongoose";
+import {
+    GeoPoint,
+    GeoPointSchema,
+} from "../../common/schemas/geo-point.schema";
 
 export type EventDocument = HydratedDocument<Event>;
 
@@ -25,6 +29,13 @@ export class Event {
 
     @Prop({ type: [String], default: [] })
     interestedUserIds: string[];
+
+    @Prop()
+    address?: string;
+
+    @Prop({ type: GeoPointSchema, required: false })
+    location?: GeoPoint;
 }
 
 export const EventSchema = SchemaFactory.createForClass(Event);
+EventSchema.index({ location: "2dsphere" }, { sparse: true });
