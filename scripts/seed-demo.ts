@@ -123,6 +123,99 @@ async function seedAccount(email: string, role: string): Promise<void> {
   console.log(`  ✓ created (TOTP: ${DEMO_TOTP_SECRET})`);
 }
 
+const PARIS_NEIGHBORHOODS: Array<{
+  name: string;
+  city: string;
+  coordinates: number[][];
+}> = [
+  {
+    name: "Montmartre",
+    city: "Paris",
+    coordinates: [
+      [2.338, 48.883],
+      [2.347, 48.883],
+      [2.347, 48.892],
+      [2.338, 48.892],
+      [2.338, 48.883],
+    ],
+  },
+  {
+    name: "Marais",
+    city: "Paris",
+    coordinates: [
+      [2.355, 48.854],
+      [2.368, 48.854],
+      [2.368, 48.862],
+      [2.355, 48.862],
+      [2.355, 48.854],
+    ],
+  },
+  {
+    name: "Belleville",
+    city: "Paris",
+    coordinates: [
+      [2.376, 48.87],
+      [2.392, 48.87],
+      [2.392, 48.879],
+      [2.376, 48.879],
+      [2.376, 48.87],
+    ],
+  },
+  {
+    name: "Quartier Latin",
+    city: "Paris",
+    coordinates: [
+      [2.338, 48.846],
+      [2.355, 48.846],
+      [2.355, 48.855],
+      [2.338, 48.855],
+      [2.338, 48.846],
+    ],
+  },
+];
+
+async function loginAdmin(): Promise<string | null> {
+  const res = await post("/auth/login", {
+    email: "admin@demo.fr",
+    password: DEMO_PASSWORD,
+    totpCode: totp(DEMO_TOTP_SECRET),
+  });
+  if (!res.ok) return null;
+  const data = (await res.json()) as { accessToken: string };
+  return data.accessToken;
+}
+
+async function existingNeighborhoodNames(token: string): Promise<Set<string>> {
+  const res = await fetch(`${BASE_URL}/neighborhoods`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return new Set();
+  const list = (await res.json()) as Array<{ name: string }>;
+  return new Set(list.map((n) => n.name));
+}
+
+async function seedNeighborhoods(token: string): Promise<void> {
+  const existing = await existingNeighborhoodNames(token);
+  let created = 0;
+  for (const nbh of PARIS_NEIGHBORHOODS) {
+    if (existing.has(nbh.name)) continue;
+    const res = await fetch(`${BASE_URL}/neighborhoods`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        name: nbh.name,
+        city: nbh.city,
+        geometry: { type: "Polygon", coordinates: [nbh.coordinates] },
+      }),
+    });
+    if (res.ok) created++;
+  }
+  console.log(`  ✓ ${created} quartier(s) Paris créé(s)`);
+}
+
 async function main(): Promise<void> {
   console.log("QuartierConnect — Demo Seed");
   console.log(`API: ${BASE_URL}`);
@@ -130,6 +223,14 @@ async function main(): Promise<void> {
 
   for (const { email, role } of ACCOUNTS) {
     await seedAccount(email, role);
+  }
+
+  console.log("\nSeeding Paris neighborhoods…");
+  const adminToken = await loginAdmin();
+  if (adminToken) {
+    await seedNeighborhoods(adminToken);
+  } else {
+    console.warn("  ! admin login failed — skipping neighborhood seed");
   }
 
   console.log("\nDone.");

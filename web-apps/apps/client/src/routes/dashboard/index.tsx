@@ -171,8 +171,8 @@ function DashboardPage() {
                         <CardContent>
                             <Map
                                 center={centroidOf(primaryNeighborhood.geometry)}
-                                zoom={14}
-                                className="h-48 w-full"
+                                zoom={13}
+                                className="h-64 w-full"
                             >
                                 {neighborhoods?.map((n) =>
                                     n.geometry ? (
