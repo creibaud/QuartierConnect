@@ -3,7 +3,7 @@
 Plateforme communautaire de quartier — ESGI 3AL2 · Étape 4 (95%)
 
 > **Rendu final** : 19 juillet 2026 · **Enseignant** : Frédéric SANANES
-> **v0.2.0** · **720 tests automatisés** · 7 conteneurs Docker · 3 bases de données · 4 surfaces
+> **v0.2.0** · **736 tests automatisés** · 7 conteneurs Docker · 3 bases de données · 4 surfaces
 
 ---
 
@@ -105,7 +105,7 @@ make status           # État des services
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)           | Diagrammes Mermaid — modules, flux, sécurité              |
 | [docs/DATABASE.md](docs/DATABASE.md)                   | Schémas PostgreSQL, MongoDB, Neo4j, SQLite                |
 | [docs/SECURITY.md](docs/SECURITY.md)                   | Argon2id, TOTP, JWT, SSO, SHA-256, RGPD                   |
-| [docs/TEST.md](docs/TEST.md)                           | Rapport QA — 720 tests, coverage, stratégie               |
+| [docs/TEST.md](docs/TEST.md)                           | Rapport QA — 736 tests, coverage, stratégie               |
 | [docs/DSL.md](docs/DSL.md)                             | Micro-langage PLY — grammaire, pipeline, sécurité         |
 | [docs/GUIDE-SOUTENANCE.md](docs/GUIDE-SOUTENANCE.md)   | Scénarios démo, questions/réponses, chiffres clés         |
 | [docs/API.md](docs/API.md)                             | Référence complète des 50+ endpoints                      |

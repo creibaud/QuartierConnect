@@ -1,6 +1,6 @@
 # Rapport QA — QuartierConnect Étape 4
 
-> **Date** 16 avril 2026 · **Version** 0.2.0 · **Total** 720 tests automatisés · **Résultat** 720/720 ✓
+> **Date** 29 mai 2026 · **Version** 0.2.0 · **Total** 734 tests automatisés · **Résultat** 734/734 ✓
 
 ---
 
@@ -24,12 +24,13 @@
 | Composant | Framework | Tests | Résultat |
 |-----------|-----------|-------|----------|
 | API NestJS — unitaires | Jest | 260 | 260/260 ✓ |
-| Web shared hooks | Vitest | 73 | 73/73 ✓ |
+| Web shared hooks | Vitest | 76 | 76/76 ✓ |
+| Web UI components | Vitest | 11 | 11/11 ✓ |
 | API NestJS — E2E | Jest + Supertest | 148 | 148/148 ✓ |
 | Java Desktop | JUnit 5 + Maven Surefire | 139 | 139/139 ✓ |
 | DSL Python | pytest | 21 | 21/21 ✓ |
-| Web Playwright | Playwright | 79 | 79/79 ✓ |
-| **TOTAL** | | **720** | **720/720 ✓** |
+| Web Playwright | Playwright | 81 | 81/81 ✓ |
+| **TOTAL** | | **736** | **736/736 ✓** |
 
 > Note : les 148 tests E2E nécessitent MongoDB + PostgreSQL (make docker-up). Les 79 tests Playwright nécessitent les apps sur :3000/:3001/:5000.
 
