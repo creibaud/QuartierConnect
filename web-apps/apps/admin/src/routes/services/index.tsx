@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useMapEvents } from "react-leaflet";
 import { ensureAuthenticated } from "@workspace/shared/lib/api";
 import { centroidOf, latLngToPoint, pointToLatLng } from "@workspace/shared/lib/geo";
 import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
@@ -23,6 +22,7 @@ import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import {
     Map,
+    MapClickHandler,
     Marker,
     MarkerCluster,
     NeighborhoodPolygon,
@@ -52,18 +52,6 @@ import {
 import { Textarea } from "@workspace/ui/components/textarea";
 import { toast } from "sonner";
 
-function ClickToPlace({
-    onPlace,
-}: {
-    onPlace: (lat: number, lng: number) => void;
-}) {
-    useMapEvents({
-        click(e) {
-            onPlace(e.latlng.lat, e.latlng.lng);
-        },
-    });
-    return null;
-}
 
 export const Route = createFileRoute("/services/")({
     beforeLoad: async () => {
@@ -467,8 +455,8 @@ function ServiceDialog({
                                 <NeighborhoodPolygon
                                     geometry={firstNeighborhood.geometry}
                                 />
-                                <ClickToPlace
-                                    onPlace={(lat, lng) => {
+                                <MapClickHandler
+                                    onClick={(lat, lng) => {
                                         setPickedLat(lat);
                                         setPickedLng(lng);
                                     }}

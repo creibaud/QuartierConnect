@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useMapEvents } from "react-leaflet";
 import { ensureAuthenticated } from "@workspace/shared/lib/api";
 import { centroidOf } from "@workspace/shared/lib/geo";
 import {
@@ -27,6 +26,7 @@ import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import {
     Map,
+    MapClickHandler,
     Marker,
     NeighborhoodPolygon,
 } from "@workspace/ui/components/map";
@@ -53,19 +53,6 @@ export const Route = createFileRoute("/incidents/")({
     },
     component: IncidentsPage,
 });
-
-function ClickToPlace({
-    onPlace,
-}: {
-    onPlace: (lat: number, lng: number) => void;
-}) {
-    useMapEvents({
-        click(e) {
-            onPlace(e.latlng.lat, e.latlng.lng);
-        },
-    });
-    return null;
-}
 
 function IncidentsPage() {
     const [createOpen, setCreateOpen] = useState(false);
@@ -311,8 +298,8 @@ function CreateIncidentDialog({
                                 <NeighborhoodPolygon
                                     geometry={firstNeighborhood.geometry}
                                 />
-                                <ClickToPlace
-                                    onPlace={(lat, lng) => {
+                                <MapClickHandler
+                                    onClick={(lat, lng) => {
                                         setPickedLat(lat);
                                         setPickedLng(lng);
                                     }}

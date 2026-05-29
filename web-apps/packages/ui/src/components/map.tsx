@@ -16,6 +16,7 @@ import {
     Polygon,
     Popup,
     useMap,
+    useMapEvents,
 } from "react-leaflet";
 import L from "leaflet";
 import MarkerClusterGroup from "react-leaflet-markercluster";
@@ -165,6 +166,19 @@ export function UserLocation({ onLocate, fallbackCenter }: UserLocationProps) {
             { enableHighAccuracy: true, timeout: 5000 },
         );
     }, [map, onLocate, fallbackCenter]);
+    return null;
+}
+
+interface MapClickHandlerProps {
+    onClick: (lat: number, lng: number) => void;
+}
+
+export function MapClickHandler({ onClick }: MapClickHandlerProps) {
+    useMapEvents({
+        click(e) {
+            onClick(e.latlng.lat, e.latlng.lng);
+        },
+    });
     return null;
 }
 
