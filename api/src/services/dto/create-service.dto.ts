@@ -1,8 +1,9 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
     IsIn,
     IsNotEmpty,
     IsNumber,
+    IsObject,
     IsOptional,
     IsString,
     Max,
@@ -75,4 +76,12 @@ export class CreateServiceDto {
     @Max(10.0)
     @IsOptional()
     pointsMultiplier?: number;
+
+    @ApiPropertyOptional({
+        description: "Position GeoJSON (coordinates = [lng, lat])",
+        example: { type: "Point", coordinates: [2.3522, 48.8566] },
+    })
+    @IsOptional()
+    @IsObject()
+    location?: { type: "Point"; coordinates: [number, number] };
 }
