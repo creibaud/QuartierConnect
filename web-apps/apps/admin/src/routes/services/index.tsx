@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { ensureAuthenticated } from "@workspace/shared/lib/api";
+import { centroidOf, latLngToPoint, pointToLatLng } from "@workspace/shared/lib/geo";
 import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
 import {
     useCreateService,
@@ -20,6 +21,13 @@ import {
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import {
+    Map,
+    MapClickHandler,
+    Marker,
+    MarkerCluster,
+    NeighborhoodPolygon,
+} from "@workspace/ui/components/map";
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -35,8 +43,15 @@ import {
     TableHeader,
     TableRow,
 } from "@workspace/ui/components/table";
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from "@workspace/ui/components/tabs";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/services/")({
     beforeLoad: async () => {
@@ -92,6 +107,12 @@ function AdminServicesPage() {
                     </Button>
                 </header>
 
+                <Tabs defaultValue="list">
+                    <TabsList>
+                        <TabsTrigger value="list">Liste</TabsTrigger>
+                        <TabsTrigger value="map">Carte</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="list">
                 {isLoading ? (
                     <div className="space-y-2">
                         {Array.from({ length: 4 }).map((_, i) => (
@@ -171,6 +192,14 @@ function AdminServicesPage() {
                         </Table>
                     </div>
                 )}
+                    </TabsContent>
+                    <TabsContent value="map">
+                        <ServicesMap
+                            services={services}
+                            neighborhoods={neighborhoods}
+                        />
+                    </TabsContent>
+                </Tabs>
 
                 <ServiceDialog
                     open={createOpen}
@@ -193,6 +222,48 @@ function AdminServicesPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+function ServicesMap({
+    services,
+    neighborhoods,
+}: {
+    services: Service[];
+    neighborhoods: Neighborhood[];
+}) {
+    const firstNeighborhood = neighborhoods.find((n) => n.geometry);
+    const servicesWithCoords = services.filter((s) => s.location);
+    const center: [number, number] = firstNeighborhood?.geometry
+        ? centroidOf(firstNeighborhood.geometry)
+        : [48.8566, 2.3522];
+    return (
+        <Map center={center} zoom={13} className="h-[600px] w-full">
+            {neighborhoods.map((n) =>
+                n.geometry ? (
+                    <NeighborhoodPolygon
+                        key={n._id}
+                        geometry={n.geometry}
+                        label={n.name}
+                    />
+                ) : null,
+            )}
+            <MarkerCluster>
+                {servicesWithCoords.map((s) => (
+                    <Marker
+                        key={s._id}
+                        variant="service"
+                        position={pointToLatLng(s.location!)}
+                        popup={
+                            <div className="space-y-1">
+                                <p className="font-medium">{s.title}</p>
+                                <p className="text-xs">{s.category}</p>
+                            </div>
+                        }
+                    />
+                ))}
+            </MarkerCluster>
+        </Map>
     );
 }
 
@@ -219,14 +290,26 @@ function ServiceDialog({
     const [neighborhoodId, setNeighborhoodId] = useState(
         initial?.neighborhoodId ?? "",
     );
+    const initialCoords = initial?.location?.coordinates;
+    const [pickedLat, setPickedLat] = useState<number | null>(
+        initialCoords ? initialCoords[1] : null,
+    );
+    const [pickedLng, setPickedLng] = useState<number | null>(
+        initialCoords ? initialCoords[0] : null,
+    );
     const createService = useCreateService();
     const updateService = useUpdateService();
+    const firstNeighborhood = neighborhoods.find((n) => n.geometry);
 
     const isPending = createService.isPending || updateService.isPending;
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (!name.trim() || !category.trim()) return;
+        const location =
+            pickedLat !== null && pickedLng !== null
+                ? latLngToPoint(pickedLat, pickedLng)
+                : undefined;
         const payload = {
             title: name.trim(),
             category: category.trim(),
@@ -234,6 +317,7 @@ function ServiceDialog({
             description: description.trim() || undefined,
             address: address.trim() || undefined,
             neighborhoodId: neighborhoodId || undefined,
+            location,
         };
         if (initial) {
             updateService.mutate(
@@ -351,6 +435,41 @@ function ServiceDialog({
                             rows={3}
                         />
                     </div>
+                    {firstNeighborhood?.geometry && (
+                        <div className="space-y-2">
+                            <Label>
+                                Position — cliquez sur la carte
+                                {pickedLat !== null && pickedLng !== null
+                                    ? ` (${pickedLat.toFixed(4)}, ${pickedLng.toFixed(4)})`
+                                    : " (optionnel)"}
+                            </Label>
+                            <Map
+                                center={
+                                    pickedLat !== null && pickedLng !== null
+                                        ? [pickedLat, pickedLng]
+                                        : centroidOf(firstNeighborhood.geometry)
+                                }
+                                zoom={14}
+                                className="h-64"
+                            >
+                                <NeighborhoodPolygon
+                                    geometry={firstNeighborhood.geometry}
+                                />
+                                <MapClickHandler
+                                    onClick={(lat, lng) => {
+                                        setPickedLat(lat);
+                                        setPickedLng(lng);
+                                    }}
+                                />
+                                {pickedLat !== null && pickedLng !== null && (
+                                    <Marker
+                                        variant="service"
+                                        position={[pickedLat, pickedLng]}
+                                    />
+                                )}
+                            </Map>
+                        </div>
+                    )}
                     <div className="flex justify-end gap-2">
                         <Button
                             type="button"

@@ -1,13 +1,16 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
     IsArray,
     IsDateString,
     IsIn,
     IsNotEmpty,
+    IsNumber,
     IsOptional,
     IsString,
     IsUUID,
+    Max,
+    Min,
     ValidateNested,
 } from "class-validator";
 
@@ -69,6 +72,26 @@ export class SyncIncidentItemDto {
     @IsDateString()
     @IsOptional()
     updatedAt?: string;
+
+    @ApiPropertyOptional({
+        description: "Latitude (-90..90)",
+        example: 48.8566,
+    })
+    @IsOptional()
+    @IsNumber()
+    @Min(-90)
+    @Max(90)
+    lat?: number;
+
+    @ApiPropertyOptional({
+        description: "Longitude (-180..180)",
+        example: 2.3522,
+    })
+    @IsOptional()
+    @IsNumber()
+    @Min(-180)
+    @Max(180)
+    lng?: number;
 }
 
 export class SyncIncidentsDto {

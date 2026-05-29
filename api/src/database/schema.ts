@@ -2,6 +2,7 @@ import {
     index,
     integer,
     pgTable,
+    real,
     text,
     timestamp,
     uuid,
@@ -39,6 +40,8 @@ export const incidents = pgTable(
             .notNull()
             .references(() => users.id),
         neighborhoodId: varchar("neighborhood_id", { length: 255 }),
+        lat: real("lat"),
+        lng: real("lng"),
         deletedAt: timestamp("deleted_at"),
         createdAt: timestamp("created_at").notNull().defaultNow(),
         updatedAt: timestamp("updated_at").notNull().defaultNow(),

@@ -33,6 +33,12 @@ export class ServiceDto {
     @ApiProperty({ example: 1.0 })
     pointsMultiplier: number;
 
+    @ApiPropertyOptional({
+        example: { type: "Point", coordinates: [2.3522, 48.8566] },
+        nullable: true,
+    })
+    location?: { type: "Point"; coordinates: [number, number] } | null;
+
     @ApiProperty({ example: "2026-04-05T10:00:00.000Z" })
     createdAt: string;
 

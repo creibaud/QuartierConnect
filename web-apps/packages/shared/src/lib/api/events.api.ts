@@ -1,5 +1,5 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "../api";
-import type { Event } from "../types";
+import type { Event, GeoJsonPoint } from "../types";
 
 export function fetchEvents(limit = 100): Promise<Event[]> {
     return apiGet<Event[]>(`/events?limit=${limit}`);
@@ -10,7 +10,8 @@ export function createEvent(data: {
     date: string;
     category: string;
     description?: string;
-    location?: string;
+    address?: string;
+    location?: GeoJsonPoint;
     neighborhoodId?: string;
 }): Promise<Event> {
     return apiPost<Event>("/events", data);
@@ -23,7 +24,8 @@ export function updateEvent(
         date: string;
         category: string;
         description: string;
-        location: string;
+        address: string;
+        location: GeoJsonPoint;
         neighborhoodId: string;
     }>,
 ): Promise<Event> {

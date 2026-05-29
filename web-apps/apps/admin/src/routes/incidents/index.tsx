@@ -1,13 +1,20 @@
 import { useState } from "react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { ensureAuthenticated } from "@workspace/shared/lib/api";
+import { centroidOf } from "@workspace/shared/lib/geo";
 import {
     useInfiniteIncidents,
     useUpdateIncidentStatus,
 } from "@workspace/shared/lib/hooks/incidents.hooks";
-import type { Incident } from "@workspace/shared/lib/types";
+import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
+import type { Incident, Neighborhood } from "@workspace/shared/lib/types";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
+import {
+    Map,
+    Marker,
+    NeighborhoodPolygon,
+} from "@workspace/ui/components/map";
 import {
     Select,
     SelectContent,
@@ -24,6 +31,12 @@ import {
     TableHeader,
     TableRow,
 } from "@workspace/ui/components/table";
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from "@workspace/ui/components/tabs";
 import { toast } from "sonner";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -64,6 +77,7 @@ function AdminIncidentsPage() {
         useInfiniteIncidents(20, statusFilter);
     const updateStatus = useUpdateIncidentStatus();
     const incidents = data?.pages.flat() ?? [];
+    const { data: neighborhoods } = useNeighborhoods();
 
     return (
         <div className="min-h-screen bg-zinc-50 p-6 dark:bg-zinc-950">
@@ -98,6 +112,12 @@ function AdminIncidentsPage() {
                     </Select>
                 </header>
 
+                <Tabs defaultValue="list">
+                    <TabsList>
+                        <TabsTrigger value="list">Liste</TabsTrigger>
+                        <TabsTrigger value="map">Carte</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="list">
                 {isLoading ? (
                     <div className="space-y-2">
                         {Array.from({ length: 5 }).map((_, i) => (
@@ -209,7 +229,60 @@ function AdminIncidentsPage() {
                         )}
                     </div>
                 )}
+                    </TabsContent>
+                    <TabsContent value="map">
+                        <IncidentsMap
+                            incidents={incidents}
+                            neighborhoods={neighborhoods ?? []}
+                        />
+                    </TabsContent>
+                </Tabs>
             </div>
         </div>
+    );
+}
+
+function IncidentsMap({
+    incidents,
+    neighborhoods,
+}: {
+    incidents: Incident[];
+    neighborhoods: Neighborhood[];
+}) {
+    const firstNeighborhood = neighborhoods.find((n) => n.geometry);
+    const incidentsWithCoords = incidents.filter(
+        (i) => i.lat !== null && i.lng !== null,
+    );
+    const center: [number, number] = firstNeighborhood?.geometry
+        ? centroidOf(firstNeighborhood.geometry)
+        : [48.8566, 2.3522];
+    return (
+        <Map center={center} zoom={13} className="h-[600px] w-full">
+            {neighborhoods.map((n) =>
+                n.geometry ? (
+                    <NeighborhoodPolygon
+                        key={n._id}
+                        geometry={n.geometry}
+                        label={n.name}
+                    />
+                ) : null,
+            )}
+            {incidentsWithCoords.map((inc) => (
+                <Marker
+                    key={inc.id}
+                    variant="incident"
+                    position={[inc.lat!, inc.lng!]}
+                    popup={
+                        <div className="space-y-1">
+                            <p className="font-medium">{inc.title}</p>
+                            <p className="text-xs">
+                                Statut :{" "}
+                                {STATUS_LABELS[inc.status] ?? inc.status}
+                            </p>
+                        </div>
+                    }
+                />
+            ))}
+        </Map>
     );
 }
