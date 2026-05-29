@@ -1,7 +1,7 @@
 .PHONY: help \
         dev dev-api dev-client dev-admin dev-desktop \
         build build-api build-web build-desktop build-dsl \
-        test test-api test-desktop test-dsl \
+        test test-api test-web test-desktop test-dsl \
         test-cov test-e2e test-e2e-web test-watch \
 		format format-api format-web format-desktop format-dsl \
         lint lint-api lint-web lint-desktop lint-dsl \
@@ -134,11 +134,12 @@ build-dsl: ## Vérifier la syntaxe Python du DSL (ast.parse)
 	@echo "$(OK) DSL syntax OK"
 
 # ─── Tests ─────────────────────────────────────────────────────────────────────
-test: ## Tous les tests unitaires (API + Desktop + DSL)
+test: ## Tous les tests unitaires (API + Web + Desktop + DSL)
 	@echo ""
 	@echo "$(BOLD)  Tests unitaires — tous composants$(RESET)"
 	@echo ""
 	@make test-api
+	@make test-web
 	@make test-desktop
 	@make test-dsl
 	@echo ""
@@ -175,6 +176,12 @@ test-dsl: ## Tests Python DSL (pytest)
 	@echo "$(RUN) Tests DSL (pytest)..."
 	@cd dsl && uv run pytest; S=$$?; [ $$S -eq 0 ] || [ $$S -eq 5 ]
 	@echo "$(OK) Tests DSL OK"
+
+test-web: ## Tests Vitest web (shared hooks + UI components)
+	@echo "$(RUN) Tests Web (Vitest)..."
+	@cd web-apps && pnpm --filter @workspace/shared test
+	@cd web-apps && pnpm --filter @workspace/ui test
+	@echo "$(OK) Tests Web OK"
 
 test-watch: ## Tests API en mode watch interactif
 	@cd api && pnpm run test:watch
