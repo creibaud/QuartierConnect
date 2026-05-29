@@ -22,6 +22,8 @@ export function createIncident(data: {
     title: string;
     description?: string;
     neighborhoodId?: string;
+    lat?: number;
+    lng?: number;
 }): Promise<Incident> {
     return apiPost<Incident>("/incidents", data);
 }
