@@ -1,9 +1,16 @@
+export interface GeoJsonPoint {
+    type: "Point";
+    coordinates: [number, number];
+}
+
 export interface Incident {
     id: string;
     title: string;
     description: string | null;
     status: "open" | "in_progress" | "resolved";
     neighborhoodId: string | null;
+    lat: number | null;
+    lng: number | null;
     createdBy: string;
     createdAt: string;
     updatedAt: string;
@@ -38,6 +45,7 @@ export interface Service {
     address?: string;
     neighborhoodId?: string;
     pointsMultiplier?: number;
+    location?: GeoJsonPoint;
 }
 
 export interface Event {
@@ -46,8 +54,10 @@ export interface Event {
     description: string;
     category: string;
     date: string;
-    location: string;
+    address?: string;
+    location?: GeoJsonPoint;
     neighborhoodId: string;
+    interestedUserIds?: string[];
 }
 
 export interface PointBalance {
