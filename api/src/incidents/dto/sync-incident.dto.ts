@@ -73,14 +73,20 @@ export class SyncIncidentItemDto {
     @IsOptional()
     updatedAt?: string;
 
-    @ApiPropertyOptional({ description: "Latitude (-90..90)", example: 48.8566 })
+    @ApiPropertyOptional({
+        description: "Latitude (-90..90)",
+        example: 48.8566,
+    })
     @IsOptional()
     @IsNumber()
     @Min(-90)
     @Max(90)
     lat?: number;
 
-    @ApiPropertyOptional({ description: "Longitude (-180..180)", example: 2.3522 })
+    @ApiPropertyOptional({
+        description: "Longitude (-180..180)",
+        example: 2.3522,
+    })
     @IsOptional()
     @IsNumber()
     @Min(-180)

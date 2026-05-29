@@ -1,7 +1,7 @@
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
-import request from "supertest";
 import * as speakeasy from "speakeasy";
+import request from "supertest";
 import { AppModule } from "../src/app.module";
 
 const DEMO_PASSWORD = "Demo1234!";

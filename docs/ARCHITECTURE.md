@@ -721,3 +721,32 @@ sequenceDiagram
     Service-->>Controller: data
     Controller-->>Client: 200/201/4xx JSON
 ```
+
+---
+
+## 18. Cartographie partagée — composant `<Map>`
+
+`packages/ui/src/components/map.tsx` expose un wrapper React déclaratif autour
+de `react-leaflet@5` utilisé sur 6 surfaces (4 client + 2 admin) plus le
+refactor de `admin/neighborhoods`. Exports : `Map`, `Marker` (4 variants
+mappés sur la palette Civic Editorial), `NeighborhoodPolygon`,
+`MarkerCluster`, `DrawControl` (leaflet-draw), `UserLocation`, `useFitBounds`.
+
+| Surface | Usage |
+|---|---|
+| `client/dashboard` | Mini-carte du quartier (h-48) avec géolocalisation utilisateur |
+| `client/services` | Pins services groupés (MarkerCluster) + popup |
+| `client/events` | Onglet « Carte » : pins événements + date |
+| `client/incidents` | Click-to-place dans le dialog + carte des incidents |
+| `admin/services` | Onglet liste/carte + picker dans le dialog |
+| `admin/incidents` | Onglet liste/carte avec pins colorés par statut |
+| `admin/neighborhoods` | Dessin polygone via `<DrawControl>` (leaflet-draw) |
+
+**Helpers géo** : `packages/shared/src/lib/geo.ts` expose `centroidOf`,
+`pointToLatLng`, `latLngToPoint` (3 tests Vitest).
+
+**Schéma backend** : sous-document GeoJSON Point réutilisable
+`api/src/common/schemas/geo-point.schema.ts`. Services et Events utilisent
+ce sous-schéma Mongoose avec index `2dsphere` (sparse) ; les Incidents
+Postgres stockent simplement `lat REAL` + `lng REAL` (migration
+`0002_incident_coords.sql`).
