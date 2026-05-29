@@ -305,9 +305,9 @@ function SwipeView({ events }: { events: Event[] }) {
                         <CardTitle className="text-lg">
                             {current.title}
                         </CardTitle>
-                        {current.location && (
+                        {current.address && (
                             <CardDescription>
-                                {current.location}
+                                {current.address}
                             </CardDescription>
                         )}
                     </CardHeader>
@@ -399,8 +399,8 @@ function EventCard({ event }: { event: Event }) {
                         </span>
                     </div>
                 </div>
-                {event.location && (
-                    <CardDescription>{event.location}</CardDescription>
+                {event.address && (
+                    <CardDescription>{event.address}</CardDescription>
                 )}
             </CardHeader>
             {event.description && (
@@ -426,7 +426,7 @@ function CreateEventDialog({
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [date, setDate] = useState("");
-    const [location, setLocation] = useState("");
+    const [address, setAddress] = useState("");
     const [category, setCategory] = useState("other");
     const createEvent = useCreateEvent();
 
@@ -439,7 +439,7 @@ function CreateEventDialog({
                 description: description.trim() || undefined,
                 date,
                 category,
-                location: location.trim() || undefined,
+                address: address.trim() || undefined,
             },
             {
                 onSuccess: () => {
@@ -447,7 +447,7 @@ function CreateEventDialog({
                     setTitle("");
                     setDescription("");
                     setDate("");
-                    setLocation("");
+                    setAddress("");
                     setCategory("other");
                     onSuccess();
                 },
@@ -486,11 +486,11 @@ function CreateEventDialog({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="evt-location">Lieu</Label>
+                            <Label htmlFor="evt-address">Lieu</Label>
                             <Input
-                                id="evt-location"
-                                value={location}
-                                onChange={(e) => setLocation(e.target.value)}
+                                id="evt-address"
+                                value={address}
+                                onChange={(e) => setAddress(e.target.value)}
                                 placeholder="Ex : Place du marché"
                             />
                         </div>
