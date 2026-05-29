@@ -1,10 +1,16 @@
 import {
+    BadRequestException,
     ForbiddenException,
+    Inject,
     Injectable,
     NotFoundException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
+import { inArray } from "drizzle-orm";
+import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Model } from "mongoose";
+import { DRIZZLE_TOKEN } from "../database/drizzle.module";
+import * as schema from "../database/schema";
 import { CreateConversationDto } from "./dto/create-conversation.dto";
 import {
     Conversation,
@@ -23,6 +29,8 @@ export class MessagingService {
         private readonly conversationModel: Model<ConversationDocument>,
         @InjectModel(Message.name)
         private readonly messageModel: Model<MessageDocument>,
+        @Inject(DRIZZLE_TOKEN)
+        private readonly db: PostgresJsDatabase<typeof schema>,
     ) {}
 
     async isParticipant(
@@ -43,7 +51,27 @@ export class MessagingService {
     }
 
     async createConversation(dto: CreateConversationDto, userId: string) {
-        const participants = Array.from(new Set([userId, ...dto.participants]));
+        const resolvedIds = await this.resolveParticipantIds(dto, userId);
+        const participants = Array.from(new Set([userId, ...resolvedIds]));
+
+        if (participants.length === 1) {
+            throw new BadRequestException({
+                code: "NO_OTHER_PARTICIPANTS",
+                message:
+                    "Une conversation doit inclure au moins un autre participant.",
+            });
+        }
+
+        if (!dto.isGroup && participants.length === 2) {
+            const existing = await this.conversationModel
+                .findOne({
+                    isGroup: false,
+                    participants: { $all: participants, $size: 2 },
+                })
+                .exec();
+            if (existing) return existing;
+        }
+
         const conversation = new this.conversationModel({
             participants,
             isGroup: dto.isGroup ?? false,
@@ -51,6 +79,46 @@ export class MessagingService {
             neighborhoodId: dto.neighborhoodId ?? null,
         });
         return conversation.save();
+    }
+
+    private async resolveParticipantIds(
+        dto: CreateConversationDto,
+        currentUserId: string,
+    ): Promise<string[]> {
+        const ids = new Set<string>(dto.participants ?? []);
+
+        if (dto.participantEmails && dto.participantEmails.length > 0) {
+            const emails = dto.participantEmails.map((e) => e.toLowerCase());
+            const rows = await this.db
+                .select({
+                    id: schema.users.id,
+                    email: schema.users.email,
+                })
+                .from(schema.users)
+                .where(inArray(schema.users.email, emails));
+
+            const foundEmails = new Set(rows.map((r) => r.email.toLowerCase()));
+            const missing = emails.filter((e) => !foundEmails.has(e));
+            if (missing.length > 0) {
+                throw new NotFoundException({
+                    code: "USER_EMAIL_NOT_FOUND",
+                    message: `Aucun utilisateur pour : ${missing.join(", ")}`,
+                });
+            }
+            for (const row of rows) {
+                if (row.id !== currentUserId) ids.add(row.id);
+            }
+        }
+
+        if (ids.size === 0) {
+            throw new BadRequestException({
+                code: "PARTICIPANTS_REQUIRED",
+                message:
+                    "Fournir `participants` (UUIDs) ou `participantEmails` (emails).",
+            });
+        }
+
+        return Array.from(ids);
     }
 
     async getMessages(

@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { MongooseModule } from "@nestjs/mongoose";
 import { AuthModule } from "../auth/auth.module";
+import { DrizzleModule } from "../database/drizzle.module";
 import { MessagingController } from "./messaging.controller";
 import { MessagingGateway } from "./messaging.gateway";
 import { MessagingService } from "./messaging.service";
@@ -26,6 +27,7 @@ import { Message, MessageSchema } from "./schemas/message.schema";
             }),
         }),
         AuthModule,
+        DrizzleModule,
     ],
     controllers: [MessagingController],
     providers: [MessagingService, MessagingGateway],

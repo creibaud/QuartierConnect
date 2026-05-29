@@ -215,12 +215,13 @@ function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                     {[
                         { to: "/incidents", label: "Incidents" },
                         { to: "/services", label: "Services" },
                         { to: "/events", label: "Événements" },
                         { to: "/contracts", label: "Contrats" },
+                        { to: "/messages", label: "Messages" },
                     ].map(({ to, label }) => (
                         <Link key={to} to={to}>
                             <Card className="hover:bg-muted/50 cursor-pointer text-center transition-colors">

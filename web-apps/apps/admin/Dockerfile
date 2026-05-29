@@ -1,5 +1,5 @@
 FROM node:22-alpine AS builder
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9.15.9
 WORKDIR /app
 
 # Workspace root config
