@@ -1,10 +1,36 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsArray, IsBoolean, IsOptional, IsString } from "class-validator";
+import {
+    ArrayMinSize,
+    IsArray,
+    IsBoolean,
+    IsEmail,
+    IsOptional,
+    IsString,
+} from "class-validator";
 
 export class CreateConversationDto {
-    @ApiProperty({ example: ["user-uuid-1", "user-uuid-2"] })
+    @ApiProperty({
+        example: ["user-uuid-1"],
+        description:
+            "User IDs (Postgres UUIDs). Mutually exclusive with participantEmails.",
+        required: false,
+    })
+    @IsOptional()
     @IsArray()
-    participants: string[];
+    @IsString({ each: true })
+    participants?: string[];
+
+    @ApiProperty({
+        example: ["bob@demo.fr"],
+        description:
+            "User emails — resolved to IDs server-side. Mutually exclusive with participants.",
+        required: false,
+    })
+    @IsOptional()
+    @IsArray()
+    @ArrayMinSize(1)
+    @IsEmail({}, { each: true })
+    participantEmails?: string[];
 
     @ApiProperty({ required: false })
     @IsBoolean()

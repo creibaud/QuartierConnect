@@ -1,6 +1,7 @@
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
+import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import { MessagingService } from "./messaging.service";
 import { Conversation } from "./schemas/conversation.schema";
 import { Message, MessageType } from "./schemas/message.schema";
@@ -34,8 +35,17 @@ function makeMsgModel(overrides?: object) {
     return self;
 }
 
+function makeMockDb() {
+    const builder = {
+        from: jest.fn().mockReturnThis(),
+        where: jest.fn().mockResolvedValue([]),
+    };
+    return { select: jest.fn().mockReturnValue(builder), _builder: builder };
+}
+
 let convModel: ReturnType<typeof makeConvModel>;
 let msgModel: ReturnType<typeof makeMsgModel>;
+let mockDb: ReturnType<typeof makeMockDb>;
 
 describe("MessagingService", () => {
     let service: MessagingService;
@@ -44,6 +54,7 @@ describe("MessagingService", () => {
         jest.clearAllMocks();
         convModel = makeConvModel();
         msgModel = makeMsgModel();
+        mockDb = makeMockDb();
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -53,6 +64,7 @@ describe("MessagingService", () => {
                     useValue: convModel,
                 },
                 { provide: getModelToken(Message.name), useValue: msgModel },
+                { provide: DRIZZLE_TOKEN, useValue: mockDb },
             ],
         }).compile();
 
@@ -109,7 +121,11 @@ describe("MessagingService", () => {
             const ConvModelCtor = jest
                 .fn()
                 .mockImplementation(() => convInstance);
-            Object.assign(ConvModelCtor, convModel);
+            Object.assign(ConvModelCtor, convModel, {
+                findOne: jest.fn().mockReturnValue({
+                    exec: jest.fn().mockResolvedValue(null),
+                }),
+            });
 
             const module2: TestingModule = await Test.createTestingModule({
                 providers: [
@@ -122,6 +138,7 @@ describe("MessagingService", () => {
                         provide: getModelToken(Message.name),
                         useValue: msgModel,
                     },
+                    { provide: DRIZZLE_TOKEN, useValue: mockDb },
                 ],
             }).compile();
             const svc2 = module2.get<MessagingService>(MessagingService);
@@ -193,6 +210,7 @@ describe("MessagingService", () => {
                         provide: getModelToken(Message.name),
                         useValue: MsgModelCtor,
                     },
+                    { provide: DRIZZLE_TOKEN, useValue: mockDb },
                 ],
             }).compile();
             const svc3 = module3.get<MessagingService>(MessagingService);
@@ -277,6 +295,7 @@ describe("MessagingService", () => {
                         provide: getModelToken(Message.name),
                         useValue: MsgModelCtor,
                     },
+                    { provide: DRIZZLE_TOKEN, useValue: mockDb },
                 ],
             }).compile();
             const svc4 = module4.get<MessagingService>(MessagingService);

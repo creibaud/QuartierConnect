@@ -18,7 +18,8 @@ export function useCreateConversation() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (data: {
-            participants: string[];
+            participants?: string[];
+            participantEmails?: string[];
             isGroup?: boolean;
             groupName?: string;
         }) => apiPost<Conversation>("/messaging/conversations", data),
