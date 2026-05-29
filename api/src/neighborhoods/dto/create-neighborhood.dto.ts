@@ -1,6 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
+    IsArray,
     IsNotEmpty,
     IsObject,
     IsOptional,
@@ -26,6 +27,7 @@ export class GeoJsonPolygonDto {
         description:
             "Tableau de rings GeoJSON — premier ring = contour extérieur",
     })
+    @IsArray()
     coordinates: number[][][];
 }
 
