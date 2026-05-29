@@ -217,6 +217,11 @@ export function DrawControl({
     onDelete,
 }: DrawControlProps) {
     const map = useMap();
+    const callbacksRef = useRef({ onCreate, onEdit, onDelete });
+    useEffect(() => {
+        callbacksRef.current = { onCreate, onEdit, onDelete };
+    });
+
     useEffect(() => {
         let drawControl: L.Control | null = null;
         let cancelled = false;
@@ -229,7 +234,7 @@ export function DrawControl({
                 layer as L.Polygon
             ).toGeoJSON() as GeoJSON.Feature<GeoJSON.Polygon>;
             if (geojson.geometry.type === "Polygon") {
-                onCreate?.(geojson.geometry);
+                callbacksRef.current.onCreate?.(geojson.geometry);
             }
         };
         const handleEdited = (e: L.LeafletEvent) => {
@@ -239,11 +244,11 @@ export function DrawControl({
                     layer as L.Polygon
                 ).toGeoJSON() as GeoJSON.Feature<GeoJSON.Polygon>;
                 if (geojson.geometry.type === "Polygon") {
-                    onEdit?.(geojson.geometry);
+                    callbacksRef.current.onEdit?.(geojson.geometry);
                 }
             });
         };
-        const handleDeleted = () => onDelete?.();
+        const handleDeleted = () => callbacksRef.current.onDelete?.();
 
         void import("leaflet-draw").then(() => {
             if (cancelled) return;
@@ -278,7 +283,7 @@ export function DrawControl({
             if (drawControl) map.removeControl(drawControl);
             map.removeLayer(featureGroup);
         };
-    }, [map, mode, onCreate, onEdit, onDelete]);
+    }, [map, mode]);
     return null;
 }
 
