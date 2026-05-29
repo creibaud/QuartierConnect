@@ -162,6 +162,7 @@ function NeighborhoodsPage() {
 
                 <NeighborhoodDialog
                     open={createOpen}
+                    others={neighborhoods}
                     onOpenChange={setCreateOpen}
                     onSuccess={() => setCreateOpen(false)}
                 />
@@ -171,6 +172,9 @@ function NeighborhoodsPage() {
                         key={editTarget._id}
                         open
                         initial={editTarget}
+                        others={neighborhoods.filter(
+                            (n) => n._id !== editTarget._id,
+                        )}
                         onOpenChange={(open) => {
                             if (!open) setEditTarget(null);
                         }}
@@ -184,26 +188,48 @@ function NeighborhoodsPage() {
 
 function PolygonEditor({
     initialGeometry,
+    others,
+    currentGeometry,
     onChange,
 }: {
     initialGeometry?: GeoJSON.Polygon;
+    others: Neighborhood[];
+    currentGeometry: GeoJSON.Polygon | null;
     onChange: (geometry: GeoJSON.Polygon | null) => void;
 }) {
     return (
         <div className="space-y-2">
             <Label>Polygone sur la carte</Label>
             <p className="text-muted-foreground text-xs">
-                Utilisez l&apos;outil de dessin de polygone dans le coin
-                supérieur droit. Cliquez sur la carte pour ajouter des
-                sommets, double-cliquez pour fermer.
+                Quartiers existants en gris. Utilisez l&apos;outil polygone
+                en haut à droite, cliquez pour les sommets, double-cliquez
+                pour fermer.
             </p>
             <Map
                 center={[48.8566, 2.3522]}
                 zoom={13}
-                className="h-72 w-full"
+                className="h-80 w-full"
             >
-                {initialGeometry ? (
-                    <NeighborhoodPolygon geometry={initialGeometry} />
+                {others.map((n) =>
+                    n.geometry ? (
+                        <NeighborhoodPolygon
+                            key={n._id}
+                            geometry={n.geometry as GeoJSON.Polygon}
+                            color="#71717a"
+                            label={n.name}
+                        />
+                    ) : null,
+                )}
+                {currentGeometry ? (
+                    <NeighborhoodPolygon
+                        geometry={currentGeometry}
+                        color="#16a34a"
+                    />
+                ) : initialGeometry ? (
+                    <NeighborhoodPolygon
+                        geometry={initialGeometry}
+                        color="#16a34a"
+                    />
                 ) : null}
                 <DrawControl
                     mode="polygon"
@@ -219,11 +245,13 @@ function PolygonEditor({
 function NeighborhoodDialog({
     open,
     initial,
+    others,
     onOpenChange,
     onSuccess,
 }: {
     open: boolean;
     initial?: Neighborhood;
+    others: Neighborhood[];
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
 }) {
@@ -331,6 +359,8 @@ function NeighborhoodDialog({
                                     | GeoJSON.Polygon
                                     | undefined) ?? undefined
                             }
+                            others={others}
+                            currentGeometry={geometry}
                             onChange={setGeometry}
                         />
                     )}
