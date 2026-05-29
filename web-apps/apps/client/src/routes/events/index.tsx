@@ -3,10 +3,12 @@ import { useSwipeable } from "react-swipeable";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { apiPost, ensureAuthenticated } from "@workspace/shared/lib/api";
+import { centroidOf, pointToLatLng } from "@workspace/shared/lib/geo";
 import {
     useCreateEvent,
     useEvents,
 } from "@workspace/shared/lib/hooks/events.hooks";
+import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
 import type { Event } from "@workspace/shared/lib/types";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
@@ -18,6 +20,12 @@ import {
     CardHeader,
     CardTitle,
 } from "@workspace/ui/components/card";
+import {
+    Map,
+    Marker,
+    MarkerCluster,
+    NeighborhoodPolygon,
+} from "@workspace/ui/components/map";
 import {
     Dialog,
     DialogContent,
@@ -38,7 +46,7 @@ export const Route = createFileRoute("/events/")({
     component: EventsPage,
 });
 
-type ViewMode = "list" | "calendar" | "swipe";
+type ViewMode = "list" | "calendar" | "swipe" | "map";
 
 function EventsPage() {
     const [createOpen, setCreateOpen] = useState(false);
@@ -105,6 +113,13 @@ function EventsPage() {
                             >
                                 Swipe
                             </button>
+                            <button
+                                type="button"
+                                onClick={() => setViewMode("map")}
+                                className={`border-l px-3 py-1.5 transition-colors ${viewMode === "map" ? "bg-foreground text-background" : "bg-background hover:bg-muted"}`}
+                            >
+                                Carte
+                            </button>
                         </div>
                         <Button size="sm" onClick={() => setCreateOpen(true)}>
                             Créer
@@ -169,6 +184,8 @@ function EventsPage() {
                     </div>
                 ) : viewMode === "swipe" ? (
                     <SwipeView events={upcoming} />
+                ) : viewMode === "map" ? (
+                    <MapView events={events} />
                 ) : events.length === 0 ? (
                     <p className="text-muted-foreground text-sm">
                         Aucun événement prévu pour le moment.
@@ -507,5 +524,70 @@ function CreateEventDialog({
                 </form>
             </DialogContent>
         </Dialog>
+    );
+}
+
+function MapView({ events }: { events: Event[] }) {
+    const { data: neighborhoods } = useNeighborhoods();
+    const firstNeighborhood = neighborhoods?.find((n) => n.geometry);
+    const eventsWithCoords = events.filter((e) => e.location);
+
+    if (!firstNeighborhood?.geometry) {
+        return (
+            <p className="text-muted-foreground text-sm">
+                Aucun quartier cartographié pour le moment.
+            </p>
+        );
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-base">
+                    Événements à proximité
+                </CardTitle>
+                <CardDescription>
+                    {eventsWithCoords.length} événement(s) localisé(s)
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Map
+                    center={centroidOf(firstNeighborhood.geometry)}
+                    zoom={14}
+                    className="h-[480px] w-full"
+                >
+                    {neighborhoods?.map((n) =>
+                        n.geometry ? (
+                            <NeighborhoodPolygon
+                                key={n._id}
+                                geometry={n.geometry}
+                                label={n.name}
+                            />
+                        ) : null,
+                    )}
+                    <MarkerCluster>
+                        {eventsWithCoords.map((evt) => (
+                            <Marker
+                                key={evt._id}
+                                variant="event"
+                                position={pointToLatLng(evt.location!)}
+                                popup={
+                                    <div className="space-y-1">
+                                        <p className="font-medium">
+                                            {evt.title}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {new Date(
+                                                evt.date,
+                                            ).toLocaleString("fr-FR")}
+                                        </p>
+                                    </div>
+                                }
+                            />
+                        ))}
+                    </MarkerCluster>
+                </Map>
+            </CardContent>
+        </Card>
     );
 }
