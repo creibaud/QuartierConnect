@@ -162,6 +162,8 @@ export class IncidentsController {
                 title: dto.title,
                 description: dto.description,
                 neighborhoodId: dto.neighborhoodId,
+                lat: dto.lat,
+                lng: dto.lng,
                 createdBy: req.user.sub,
                 status: "open",
             })
@@ -300,6 +302,8 @@ export class IncidentsController {
                     status: item.status ?? "open",
                     createdBy: req.user.sub,
                     neighborhoodId: item.neighborhoodId,
+                    lat: item.lat,
+                    lng: item.lng,
                 })),
             )
             .onConflictDoUpdate({
@@ -308,6 +312,8 @@ export class IncidentsController {
                     title: sql`excluded.title`,
                     description: sql`excluded.description`,
                     status: sql`excluded.status`,
+                    lat: sql`excluded.lat`,
+                    lng: sql`excluded.lng`,
                     updatedAt: new Date(),
                 },
                 where: eq(schema.incidents.createdBy, req.user.sub),
