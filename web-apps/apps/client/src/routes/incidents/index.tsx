@@ -1,15 +1,19 @@
 import { useState } from "react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { useMapEvents } from "react-leaflet";
 import { ensureAuthenticated } from "@workspace/shared/lib/api";
+import { centroidOf } from "@workspace/shared/lib/geo";
 import {
     useCreateIncident,
     useInfiniteIncidents,
 } from "@workspace/shared/lib/hooks/incidents.hooks";
+import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
     Card,
     CardContent,
+    CardDescription,
     CardHeader,
     CardTitle,
 } from "@workspace/ui/components/card";
@@ -21,6 +25,11 @@ import {
 } from "@workspace/ui/components/dialog";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
+import {
+    Map,
+    Marker,
+    NeighborhoodPolygon,
+} from "@workspace/ui/components/map";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { toast } from "sonner";
@@ -45,11 +54,29 @@ export const Route = createFileRoute("/incidents/")({
     component: IncidentsPage,
 });
 
+function ClickToPlace({
+    onPlace,
+}: {
+    onPlace: (lat: number, lng: number) => void;
+}) {
+    useMapEvents({
+        click(e) {
+            onPlace(e.latlng.lat, e.latlng.lng);
+        },
+    });
+    return null;
+}
+
 function IncidentsPage() {
     const [createOpen, setCreateOpen] = useState(false);
     const { data, isLoading, isError, fetchNextPage, hasNextPage } =
         useInfiniteIncidents();
     const incidents = data?.pages.flat() ?? [];
+    const { data: neighborhoods } = useNeighborhoods();
+    const firstNeighborhood = neighborhoods?.find((n) => n.geometry);
+    const incidentsWithCoords = incidents.filter(
+        (i) => i.lat !== null && i.lng !== null,
+    );
 
     return (
         <div className="min-h-screen bg-zinc-50 p-6 dark:bg-zinc-950">
@@ -68,6 +95,57 @@ function IncidentsPage() {
                         Signaler un incident
                     </Button>
                 </header>
+
+                {firstNeighborhood?.geometry && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base">
+                                Carte des incidents
+                            </CardTitle>
+                            <CardDescription>
+                                {incidentsWithCoords.length} incident(s)
+                                localisé(s)
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Map
+                                center={centroidOf(firstNeighborhood.geometry)}
+                                zoom={14}
+                                className="h-[400px] w-full"
+                            >
+                                {neighborhoods?.map((n) =>
+                                    n.geometry ? (
+                                        <NeighborhoodPolygon
+                                            key={n._id}
+                                            geometry={n.geometry}
+                                            label={n.name}
+                                        />
+                                    ) : null,
+                                )}
+                                {incidentsWithCoords.map((inc) => (
+                                    <Marker
+                                        key={inc.id}
+                                        variant="incident"
+                                        position={[inc.lat!, inc.lng!]}
+                                        popup={
+                                            <div className="space-y-1">
+                                                <p className="font-medium">
+                                                    {inc.title}
+                                                </p>
+                                                <p className="text-xs">
+                                                    Statut :{" "}
+                                                    {STATUS_LABELS[
+                                                        inc.status
+                                                    ] ?? inc.status}
+                                                </p>
+                                            </div>
+                                        }
+                                    />
+                                ))}
+                            </Map>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {isLoading ? (
                     <div className="space-y-3">
@@ -157,7 +235,11 @@ function CreateIncidentDialog({
 }) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
+    const [pickedLat, setPickedLat] = useState<number | null>(null);
+    const [pickedLng, setPickedLng] = useState<number | null>(null);
     const createIncident = useCreateIncident();
+    const { data: neighborhoods } = useNeighborhoods();
+    const firstNeighborhood = neighborhoods?.find((n) => n.geometry);
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -166,12 +248,16 @@ function CreateIncidentDialog({
             {
                 title: title.trim(),
                 description: description.trim() || undefined,
+                lat: pickedLat ?? undefined,
+                lng: pickedLng ?? undefined,
             },
             {
                 onSuccess: () => {
                     toast.success("Incident signalé");
                     setTitle("");
                     setDescription("");
+                    setPickedLat(null);
+                    setPickedLng(null);
                     onSuccess();
                 },
                 onError: () => toast.error("Impossible de signaler l'incident"),
@@ -209,6 +295,37 @@ function CreateIncidentDialog({
                             rows={3}
                         />
                     </div>
+                    {firstNeighborhood?.geometry && (
+                        <div className="space-y-2">
+                            <Label>
+                                Lieu — cliquez sur la carte
+                                {pickedLat !== null && pickedLng !== null
+                                    ? ` (${pickedLat.toFixed(4)}, ${pickedLng.toFixed(4)})`
+                                    : " (optionnel)"}
+                            </Label>
+                            <Map
+                                center={centroidOf(firstNeighborhood.geometry)}
+                                zoom={15}
+                                className="h-64"
+                            >
+                                <NeighborhoodPolygon
+                                    geometry={firstNeighborhood.geometry}
+                                />
+                                <ClickToPlace
+                                    onPlace={(lat, lng) => {
+                                        setPickedLat(lat);
+                                        setPickedLng(lng);
+                                    }}
+                                />
+                                {pickedLat !== null && pickedLng !== null && (
+                                    <Marker
+                                        variant="incident"
+                                        position={[pickedLat, pickedLng]}
+                                    />
+                                )}
+                            </Map>
+                        </div>
+                    )}
                     <div className="flex justify-end gap-2">
                         <Button
                             type="button"
