@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { ensureAuthenticated } from "@workspace/shared/lib/api";
 import {
@@ -17,6 +17,11 @@ import {
 } from "@workspace/ui/components/dialog";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
+import {
+    DrawControl,
+    Map,
+    NeighborhoodPolygon,
+} from "@workspace/ui/components/map";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import {
     Table,
@@ -27,7 +32,6 @@ import {
     TableRow,
 } from "@workspace/ui/components/table";
 import { toast } from "sonner";
-import "leaflet/dist/leaflet.css";
 
 export const Route = createFileRoute("/neighborhoods/")({
     beforeLoad: async () => {
@@ -178,123 +182,36 @@ function NeighborhoodsPage() {
     );
 }
 
-interface GeoJsonPolygon {
-    type: "Polygon";
-    coordinates: number[][][];
-}
-
-function PolygonMap({
+function PolygonEditor({
     initialGeometry,
     onChange,
 }: {
-    initialGeometry?: GeoJsonPolygon;
-    onChange: (geometry: GeoJsonPolygon | null) => void;
+    initialGeometry?: GeoJSON.Polygon;
+    onChange: (geometry: GeoJSON.Polygon | null) => void;
 }) {
-    const mapRef = useRef<HTMLDivElement>(null);
-    const leafletMapRef = useRef<import("leaflet").Map | null>(null);
-    const drawnLayersRef = useRef<import("leaflet").LayerGroup | null>(null);
-    const [leafletReady, setLeafletReady] = useState(false);
-
-    useEffect(() => {
-        if (!mapRef.current || leafletMapRef.current) return;
-
-        void (async () => {
-            const L = (await import("leaflet")).default;
-            const { default: iconRetinaUrl } =
-                await import("leaflet/dist/images/marker-icon-2x.png");
-            const { default: iconUrl } =
-                await import("leaflet/dist/images/marker-icon.png");
-            const { default: shadowUrl } =
-                await import("leaflet/dist/images/marker-shadow.png");
-
-            L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl });
-
-            const map = L.map(mapRef.current!).setView([48.8566, 2.3522], 13);
-            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                attribution: "© OpenStreetMap contributors",
-            }).addTo(map);
-
-            const drawnLayers = L.layerGroup().addTo(map);
-            leafletMapRef.current = map;
-            drawnLayersRef.current = drawnLayers;
-
-            if (initialGeometry?.coordinates?.[0]) {
-                const latlngs = initialGeometry.coordinates[0].map(
-                    ([lng, lat]) => [lat, lng] as [number, number],
-                );
-                const polygon = L.polygon(latlngs, { color: "#2563eb" });
-                drawnLayers.addLayer(polygon);
-                map.fitBounds(polygon.getBounds());
-            }
-
-            let drawingPoints: import("leaflet").LatLng[] = [];
-            let previewLine: import("leaflet").Polyline | null = null;
-
-            map.on("click", (e) => {
-                drawingPoints.push(e.latlng);
-                if (previewLine) map.removeLayer(previewLine);
-                previewLine = L.polyline(drawingPoints, {
-                    color: "#2563eb",
-                    dashArray: "5,5",
-                }).addTo(map);
-            });
-
-            map.on("dblclick", (e) => {
-                e.originalEvent.preventDefault();
-                if (drawingPoints.length < 3) return;
-
-                if (previewLine) {
-                    map.removeLayer(previewLine);
-                    previewLine = null;
-                }
-
-                drawnLayers.clearLayers();
-                const polygon = L.polygon(drawingPoints, { color: "#2563eb" });
-                drawnLayers.addLayer(polygon);
-
-                const coordinates = [
-                    [
-                        ...drawingPoints.map((p) => [p.lng, p.lat]),
-                        [drawingPoints[0].lng, drawingPoints[0].lat],
-                    ],
-                ];
-                onChange({ type: "Polygon", coordinates });
-                drawingPoints = [];
-            });
-
-            setLeafletReady(true);
-        })();
-
-        return () => {
-            leafletMapRef.current?.remove();
-            leafletMapRef.current = null;
-        };
-    }, []);
-
     return (
         <div className="space-y-2">
-            <div className="flex items-center justify-between">
-                <Label>Polygone sur la carte</Label>
-                <button
-                    type="button"
-                    className="text-muted-foreground hover:text-destructive text-xs"
-                    onClick={() => {
-                        drawnLayersRef.current?.clearLayers();
-                        onChange(null);
-                    }}
-                >
-                    Effacer
-                </button>
-            </div>
+            <Label>Polygone sur la carte</Label>
             <p className="text-muted-foreground text-xs">
-                Cliquez pour placer des points. Double-cliquez pour fermer le
-                polygone.
+                Utilisez l&apos;outil de dessin de polygone dans le coin
+                supérieur droit. Cliquez sur la carte pour ajouter des
+                sommets, double-cliquez pour fermer.
             </p>
-            <div
-                ref={mapRef}
-                className="h-64 w-full overflow-hidden rounded-md border"
-                style={{ cursor: leafletReady ? "crosshair" : "default" }}
-            />
+            <Map
+                center={[48.8566, 2.3522]}
+                zoom={13}
+                className="h-72 w-full"
+            >
+                {initialGeometry ? (
+                    <NeighborhoodPolygon geometry={initialGeometry} />
+                ) : null}
+                <DrawControl
+                    mode="polygon"
+                    onCreate={onChange}
+                    onEdit={onChange}
+                    onDelete={() => onChange(null)}
+                />
+            </Map>
         </div>
     );
 }
@@ -313,8 +230,8 @@ function NeighborhoodDialog({
     const [name, setName] = useState(initial?.name ?? "");
     const [city, setCity] = useState(initial?.city ?? "");
     const [description, setDescription] = useState(initial?.description ?? "");
-    const [geometry, setGeometry] = useState<GeoJsonPolygon | null>(
-        (initial?.geometry as GeoJsonPolygon | undefined) ?? null,
+    const [geometry, setGeometry] = useState<GeoJSON.Polygon | null>(
+        (initial?.geometry as GeoJSON.Polygon | undefined) ?? null,
     );
 
     const createNeighborhood = useCreateNeighborhood();
@@ -408,10 +325,10 @@ function NeighborhoodDialog({
                     </div>
 
                     {open && (
-                        <PolygonMap
+                        <PolygonEditor
                             initialGeometry={
                                 (initial?.geometry as
-                                    | GeoJsonPolygon
+                                    | GeoJSON.Polygon
                                     | undefined) ?? undefined
                             }
                             onChange={setGeometry}
