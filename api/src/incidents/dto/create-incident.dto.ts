@@ -1,5 +1,12 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import {
+    IsNotEmpty,
+    IsNumber,
+    IsOptional,
+    IsString,
+    Max,
+    Min,
+} from "class-validator";
 
 export class CreateIncidentDto {
     @ApiProperty({
@@ -27,4 +34,24 @@ export class CreateIncidentDto {
     @IsString()
     @IsOptional()
     neighborhoodId?: string;
+
+    @ApiPropertyOptional({
+        description: "Latitude (-90..90)",
+        example: 48.8566,
+    })
+    @IsOptional()
+    @IsNumber()
+    @Min(-90)
+    @Max(90)
+    lat?: number;
+
+    @ApiPropertyOptional({
+        description: "Longitude (-180..180)",
+        example: 2.3522,
+    })
+    @IsOptional()
+    @IsNumber()
+    @Min(-180)
+    @Max(180)
+    lng?: number;
 }

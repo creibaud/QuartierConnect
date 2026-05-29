@@ -29,6 +29,12 @@ export class IncidentDto {
     })
     neighborhoodId: string | null;
 
+    @ApiPropertyOptional({ example: 48.8566, nullable: true })
+    lat: number | null;
+
+    @ApiPropertyOptional({ example: 2.3522, nullable: true })
+    lng: number | null;
+
     @ApiPropertyOptional({ example: null, nullable: true })
     deletedAt: string | null;
 

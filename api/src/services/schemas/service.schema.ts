@@ -1,5 +1,9 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument } from "mongoose";
+import {
+    GeoPoint,
+    GeoPointSchema,
+} from "../../common/schemas/geo-point.schema";
 
 export type ServiceDocument = HydratedDocument<Service>;
 
@@ -25,6 +29,10 @@ export class Service {
 
     @Prop({ default: 1.0, min: 0.1, max: 10.0 })
     pointsMultiplier: number;
+
+    @Prop({ type: GeoPointSchema, required: false })
+    location?: GeoPoint;
 }
 
 export const ServiceSchema = SchemaFactory.createForClass(Service);
+ServiceSchema.index({ location: "2dsphere" }, { sparse: true });

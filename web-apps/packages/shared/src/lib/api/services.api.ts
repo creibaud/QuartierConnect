@@ -1,5 +1,5 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "../api";
-import type { Service } from "../types";
+import type { GeoJsonPoint, Service } from "../types";
 
 export function fetchServices(params?: {
     neighborhoodId?: string;
@@ -22,6 +22,7 @@ export function createService(data: {
     description?: string;
     address?: string;
     neighborhoodId?: string;
+    location?: GeoJsonPoint;
 }): Promise<Service> {
     return apiPost<Service>("/services", data);
 }
@@ -35,6 +36,7 @@ export function updateService(
         description: string;
         address: string;
         neighborhoodId: string;
+        location: GeoJsonPoint;
     }>,
 ): Promise<Service> {
     return apiPatch<Service>(`/services/${id}`, data);

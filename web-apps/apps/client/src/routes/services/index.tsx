@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { ensureAuthenticated } from "@workspace/shared/lib/api";
+import { centroidOf, pointToLatLng } from "@workspace/shared/lib/geo";
 import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
 import { useInfiniteServices } from "@workspace/shared/lib/hooks/services.hooks";
 import {
@@ -15,6 +16,13 @@ import {
     CardHeader,
     CardTitle,
 } from "@workspace/ui/components/card";
+import {
+    Map,
+    Marker,
+    MarkerCluster,
+    NeighborhoodPolygon,
+    UserLocation,
+} from "@workspace/ui/components/map";
 import {
     Select,
     SelectContent,
@@ -42,6 +50,11 @@ function ServicesPage() {
     const { data, isLoading, isError, fetchNextPage, hasNextPage } =
         useInfiniteServices(selectedNeighborhood);
     const services = data?.pages.flat() ?? [];
+    const servicesWithCoords = services.filter((s) => s.location);
+    const focusedNeighborhood =
+        selectedNeighborhood !== "all"
+            ? neighborhoods.find((n) => n._id === selectedNeighborhood)
+            : neighborhoods.find((n) => n.geometry);
 
     function handleFilterChange(value: string) {
         setSelectedNeighborhood(value);
@@ -81,6 +94,58 @@ function ServicesPage() {
                         </Select>
                     )}
                 </header>
+
+                {focusedNeighborhood?.geometry && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base">
+                                Services à proximité
+                            </CardTitle>
+                            <CardDescription>
+                                {servicesWithCoords.length} service(s)
+                                localisé(s)
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Map
+                                center={centroidOf(
+                                    focusedNeighborhood.geometry,
+                                )}
+                                zoom={14}
+                                className="h-[420px] w-full"
+                            >
+                                <NeighborhoodPolygon
+                                    geometry={focusedNeighborhood.geometry}
+                                    label={focusedNeighborhood.name}
+                                />
+                                <UserLocation
+                                    fallbackCenter={centroidOf(
+                                        focusedNeighborhood.geometry,
+                                    )}
+                                />
+                                <MarkerCluster>
+                                    {servicesWithCoords.map((s) => (
+                                        <Marker
+                                            key={s._id}
+                                            variant="service"
+                                            position={pointToLatLng(s.location!)}
+                                            popup={
+                                                <div className="space-y-1">
+                                                    <p className="font-medium">
+                                                        {s.title}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {s.category}
+                                                    </p>
+                                                </div>
+                                            }
+                                        />
+                                    ))}
+                                </MarkerCluster>
+                            </Map>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {isLoading ? (
                     <div className="space-y-3">

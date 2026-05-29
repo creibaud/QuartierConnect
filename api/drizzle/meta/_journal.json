@@ -1,13 +1,27 @@
 {
-    "version": "7",
-    "dialect": "postgresql",
-    "entries": [
-        {
-            "idx": 0,
-            "version": "7",
-            "when": 1775482929347,
-            "tag": "0000_bouncy_talisman",
-            "breakpoints": true
-        }
-    ]
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1775482929347,
+      "tag": "0000_bouncy_talisman",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775500000000,
+      "tag": "0001_revoked_tokens",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780059443209,
+      "tag": "0002_incident_coords",
+      "breakpoints": true
+    }
+  ]
 }

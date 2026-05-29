@@ -9,4 +9,4 @@ test-results/
 !.env.example
 # PLY generated parser tables
 dsl/parsetab.py
-dsl/parser.out
+dsl/parser.out.claude/

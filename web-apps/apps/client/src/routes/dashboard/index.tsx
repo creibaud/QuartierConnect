@@ -7,7 +7,14 @@ import {
 } from "@tanstack/react-router";
 import { apiPost, ensureAuthenticated } from "@workspace/shared/lib/api";
 import { clearTokens, getCurrentUser } from "@workspace/shared/lib/auth";
+import { centroidOf } from "@workspace/shared/lib/geo";
+import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
 import { usePointBalance } from "@workspace/shared/lib/hooks/points.hooks";
+import {
+    Map,
+    NeighborhoodPolygon,
+    UserLocation,
+} from "@workspace/ui/components/map";
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
@@ -52,6 +59,8 @@ function DashboardPage() {
     const navigate = useNavigate();
     const user = getCurrentUser();
     const { data: pointData, isLoading: pointsLoading } = usePointBalance();
+    const { data: neighborhoods } = useNeighborhoods();
+    const primaryNeighborhood = neighborhoods?.find((n) => n.geometry);
 
     const [ssoToken, setSsoToken] = useState<SsoTokenResponse | null>(null);
     const [ssoLoading, setSsoLoading] = useState(false);
@@ -146,6 +155,43 @@ function DashboardPage() {
                         </p>
                     </CardContent>
                 </Card>
+
+                {primaryNeighborhood?.geometry && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base">
+                                Mon quartier — {primaryNeighborhood.name}
+                            </CardTitle>
+                            <CardDescription>
+                                {neighborhoods && neighborhoods.length > 1
+                                    ? `${neighborhoods.length} quartiers cartographiés`
+                                    : "Plan du quartier"}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Map
+                                center={centroidOf(primaryNeighborhood.geometry)}
+                                zoom={13}
+                                className="h-64 w-full"
+                            >
+                                {neighborhoods?.map((n) =>
+                                    n.geometry ? (
+                                        <NeighborhoodPolygon
+                                            key={n._id}
+                                            geometry={n.geometry}
+                                            label={n.name}
+                                        />
+                                    ) : null,
+                                )}
+                                <UserLocation
+                                    fallbackCenter={centroidOf(
+                                        primaryNeighborhood.geometry,
+                                    )}
+                                />
+                            </Map>
+                        </CardContent>
+                    </Card>
+                )}
 
                 <Card>
                     <CardHeader>
