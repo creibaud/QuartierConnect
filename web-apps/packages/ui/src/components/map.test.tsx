@@ -3,6 +3,7 @@ import { render } from "@testing-library/react";
 import {
     Map,
     Marker,
+    MarkerCluster,
     NeighborhoodPolygon,
     UserLocation,
     useFitBounds,
@@ -108,6 +109,26 @@ describe("<UserLocation>", () => {
             render(
                 <Map center={[48.85, 2.35]}>
                     <UserLocation fallbackCenter={[48.85, 2.35]} />
+                </Map>,
+            ),
+        ).not.toThrow();
+    });
+});
+
+describe("<MarkerCluster>", () => {
+    it("renders provided markers without throwing", () => {
+        expect(() =>
+            render(
+                <Map center={[48.85, 2.35]}>
+                    <MarkerCluster>
+                        {Array.from({ length: 12 }, (_, i) => (
+                            <Marker
+                                key={i}
+                                variant="service"
+                                position={[48.85 + i * 0.001, 2.35]}
+                            />
+                        ))}
+                    </MarkerCluster>
                 </Map>,
             ),
         ).not.toThrow();

@@ -18,7 +18,10 @@ import {
     useMap,
 } from "react-leaflet";
 import L from "leaflet";
+import MarkerClusterGroup from "react-leaflet-markercluster";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { cn } from "@workspace/ui/lib/utils";
 
 const OSM_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -162,6 +165,25 @@ export function UserLocation({ onLocate, fallbackCenter }: UserLocationProps) {
         );
     }, [map, onLocate, fallbackCenter]);
     return null;
+}
+
+interface MarkerClusterProps {
+    children: ReactNode;
+    maxClusterRadius?: number;
+}
+
+export function MarkerCluster({
+    children,
+    maxClusterRadius = 50,
+}: MarkerClusterProps) {
+    return (
+        <MarkerClusterGroup
+            chunkedLoading
+            maxClusterRadius={maxClusterRadius}
+        >
+            {children}
+        </MarkerClusterGroup>
+    );
 }
 
 export function useFitBounds(positions: LatLng[]): RefObject<L.Map | null> {
