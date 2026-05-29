@@ -131,7 +131,7 @@ function AdminEventsPage() {
                                             })}
                                         </TableCell>
                                         <TableCell className="text-muted-foreground text-sm">
-                                            {evt.location || "—"}
+                                            {evt.address || "—"}
                                         </TableCell>
                                         <TableCell className="text-muted-foreground text-sm">
                                             {nbhMap[evt.neighborhoodId] ?? "—"}
@@ -214,7 +214,7 @@ function EventDialog({
 
     const [title, setTitle] = useState(initial?.title ?? "");
     const [date, setDate] = useState(toLocalDatetime(initial?.date));
-    const [location, setLocation] = useState(initial?.location ?? "");
+    const [address, setAddress] = useState(initial?.address ?? "");
     const [category, setCategory] = useState(initial?.category ?? "");
     const [description, setDescription] = useState(initial?.description ?? "");
     const [neighborhoodId, setNeighborhoodId] = useState(
@@ -232,7 +232,7 @@ function EventDialog({
             title: title.trim(),
             date,
             category,
-            location: location.trim() || undefined,
+            address: address.trim() || undefined,
             description: description.trim() || undefined,
             neighborhoodId: neighborhoodId || undefined,
         };
@@ -293,11 +293,11 @@ function EventDialog({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="evt-location">Lieu</Label>
+                            <Label htmlFor="evt-address">Lieu</Label>
                             <Input
-                                id="evt-location"
-                                value={location}
-                                onChange={(e) => setLocation(e.target.value)}
+                                id="evt-address"
+                                value={address}
+                                onChange={(e) => setAddress(e.target.value)}
                                 placeholder="Ex : Place du marché"
                             />
                         </div>
