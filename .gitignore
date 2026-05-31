@@ -14,3 +14,4 @@ dsl/parser.out
 # Agent / workflow workspace state
 .claude/
 docs/superpowers/
+.gstack/
