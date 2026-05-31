@@ -1,35 +1,46 @@
 (security_headers) {
-    header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        X-Frame-Options "DENY"
-        X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        Permissions-Policy "geolocation=(), camera=(), microphone=()"
-    }
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), camera=(), microphone=()"
+	}
+}
+
+# Scalar API reference bootstraps the UI with an inline <script>, so its CSP
+# must allow 'unsafe-inline' for scripts (unlike the strict API/app CSP).
+(scalar_csp) {
+	header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' ws: wss: http://localhost:5000 http://localhost/api https://api.scalar.com; frame-ancestors 'none'; worker-src blob:"
 }
 
 :80 {
-    import security_headers
+	import security_headers
 
-    handle /api/* {
-        header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self' ws: wss:; font-src 'self'; frame-ancestors 'none'"
-        uri strip_prefix /api
-        reverse_proxy api:5000
-    }
-    handle /docs* {
-        header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' ws: wss: http://localhost:5000 http://localhost/api https://api.scalar.com; frame-ancestors 'none'; worker-src blob:"
-        reverse_proxy api:5000
-    }
-    handle /scalar* {
-        header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' ws: wss: http://localhost:5000 http://localhost/api https://api.scalar.com; frame-ancestors 'none'; worker-src blob:"
-        reverse_proxy api:5000
-    }
-    handle /admin* {
-        header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws: wss:; font-src 'self'; frame-ancestors 'none'"
-        reverse_proxy admin:3001
-    }
-    handle {
-        header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self' ws: wss:; font-src 'self'; frame-ancestors 'none'"
-        reverse_proxy client:3000
-    }
+	handle /api/docs* {
+		import scalar_csp
+		uri strip_prefix /api
+		reverse_proxy api:5000
+	}
+	handle /api/* {
+		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self' ws: wss:; font-src 'self'; frame-ancestors 'none'"
+		uri strip_prefix /api
+		reverse_proxy api:5000
+	}
+	handle /docs* {
+		import scalar_csp
+		reverse_proxy api:5000
+	}
+	handle /scalar* {
+		import scalar_csp
+		reverse_proxy api:5000
+	}
+	handle /admin* {
+		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws: wss:; font-src 'self'; frame-ancestors 'none'"
+		reverse_proxy admin:3001
+	}
+	handle {
+		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self' ws: wss:; font-src 'self'; frame-ancestors 'none'"
+		reverse_proxy client:3000
+	}
 }
