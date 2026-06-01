@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useHead } from "@unhead/react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { apiPost } from "@workspace/shared/lib/api";
 import { setTokens, type LoginResponse } from "@workspace/shared/lib/auth";
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
+    useHead({ title: "Connexion" });
     const navigate = useNavigate();
     const [step, setStep] = useState<"credentials" | "totp">("credentials");
     const [credentials, setCredentials] = useState({ email: "", password: "" });

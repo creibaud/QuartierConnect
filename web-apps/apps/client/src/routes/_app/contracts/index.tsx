@@ -1,0 +1,402 @@
+import { useState } from "react";
+import { Add01Icon, Agreement01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { createFileRoute } from "@tanstack/react-router";
+import { getCurrentUser } from "@workspace/shared/lib/auth";
+import {
+    useContracts,
+    useCreateContract,
+    useSignContract,
+} from "@workspace/shared/lib/hooks/useContracts";
+import type { Contract } from "@workspace/shared/lib/types";
+import { Badge } from "@workspace/ui/components/badge";
+import { Button } from "@workspace/ui/components/button";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@workspace/ui/components/card";
+import { DataState } from "@workspace/ui/components/data-state";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@workspace/ui/components/dialog";
+import {
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+} from "@workspace/ui/components/empty";
+import { Input } from "@workspace/ui/components/input";
+import { Label } from "@workspace/ui/components/label";
+import { PageHeader } from "@workspace/ui/components/page-header";
+import { Skeleton } from "@workspace/ui/components/skeleton";
+import { Textarea } from "@workspace/ui/components/textarea";
+import { toast } from "sonner";
+
+const STATUS_LABELS: Record<string, string> = {
+    draft: "Brouillon",
+    pending_signature: "En attente de signature",
+    signed: "Signé",
+    rejected: "Rejeté",
+};
+
+const STATUS_VARIANTS: Record<
+    string,
+    "default" | "secondary" | "outline" | "destructive"
+> = {
+    draft: "secondary",
+    pending_signature: "default",
+    signed: "outline",
+    rejected: "destructive",
+};
+
+export const Route = createFileRoute("/_app/contracts/")({
+    component: ContractsPage,
+});
+
+function ContractsPage() {
+    const user = getCurrentUser();
+    const [createOpen, setCreateOpen] = useState(false);
+    const [signTarget, setSignTarget] = useState<Contract | null>(null);
+
+    const { data, isLoading, isError, refetch } = useContracts();
+    const contracts = data ?? [];
+
+    const canSign = (contract: Contract) =>
+        user &&
+        contract.signatories.includes(user.sub) &&
+        !contract.signatures.some((s) => s.userId === user.sub) &&
+        contract.status !== "signed" &&
+        contract.status !== "rejected";
+
+    return (
+        <div className="p-6 md:p-8">
+            <div className="mx-auto flex max-w-5xl flex-col gap-6">
+                <PageHeader
+                    title="Contrats"
+                    description="Signez et suivez vos contrats de quartier."
+                    actions={
+                        <Button onClick={() => setCreateOpen(true)}>
+                            <HugeiconsIcon icon={Add01Icon} />
+                            Créer un contrat
+                        </Button>
+                    }
+                />
+
+                <DataState
+                    loading={isLoading}
+                    error={isError ? true : undefined}
+                    isEmpty={contracts.length === 0}
+                    onRetry={() => void refetch()}
+                    skeleton={
+                        <div className="flex flex-col gap-4">
+                            {Array.from({ length: 3 }).map((_, i) => (
+                                <Skeleton
+                                    key={i}
+                                    className="h-28 w-full rounded-xl"
+                                />
+                            ))}
+                        </div>
+                    }
+                    empty={
+                        <Empty className="border">
+                            <EmptyHeader>
+                                <EmptyMedia variant="icon">
+                                    <HugeiconsIcon icon={Agreement01Icon} />
+                                </EmptyMedia>
+                                <EmptyTitle>Aucun contrat pour l'instant</EmptyTitle>
+                                <EmptyDescription>
+                                    Créez un premier contrat pour le faire signer
+                                    par vos voisins.
+                                </EmptyDescription>
+                            </EmptyHeader>
+                            <EmptyContent>
+                                <Button onClick={() => setCreateOpen(true)}>
+                                    <HugeiconsIcon icon={Add01Icon} />
+                                    Créer un contrat
+                                </Button>
+                            </EmptyContent>
+                        </Empty>
+                    }
+                >
+                    <div className="flex flex-col gap-4">
+                        {contracts.map((contract) => (
+                            <Card key={contract._id}>
+                                <CardHeader>
+                                    <div className="flex items-start justify-between gap-3">
+                                        <CardTitle className="text-base">
+                                            {contract.title}
+                                        </CardTitle>
+                                        <Badge
+                                            variant={
+                                                STATUS_VARIANTS[
+                                                    contract.status
+                                                ] ?? "secondary"
+                                            }
+                                            className="shrink-0"
+                                        >
+                                            {STATUS_LABELS[contract.status] ??
+                                                contract.status}
+                                        </Badge>
+                                    </div>
+                                    <CardDescription>
+                                        {contract.signatures.length}/
+                                        {contract.signatories.length} signature
+                                        {contract.signatories.length !== 1
+                                            ? "s"
+                                            : ""}
+                                        {contract.signedAt && (
+                                            <span className="ml-2">
+                                                · signé le{" "}
+                                                {new Date(
+                                                    contract.signedAt,
+                                                ).toLocaleDateString("fr-FR")}
+                                            </span>
+                                        )}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="flex flex-col gap-4">
+                                    <p className="text-muted-foreground line-clamp-2 text-sm">
+                                        {contract.content}
+                                    </p>
+                                    {canSign(contract) && (
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="w-fit"
+                                            onClick={() =>
+                                                setSignTarget(contract)
+                                            }
+                                        >
+                                            Signer avec TOTP
+                                        </Button>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </DataState>
+
+                <CreateContractDialog
+                    open={createOpen}
+                    onOpenChange={setCreateOpen}
+                    onSuccess={() => setCreateOpen(false)}
+                />
+
+                {signTarget && (
+                    <SignContractDialog
+                        contract={signTarget}
+                        onOpenChange={(open) => {
+                            if (!open) setSignTarget(null);
+                        }}
+                        onSuccess={() => setSignTarget(null)}
+                    />
+                )}
+            </div>
+        </div>
+    );
+}
+
+function CreateContractDialog({
+    open,
+    onOpenChange,
+    onSuccess,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSuccess: () => void;
+}) {
+    const [title, setTitle] = useState("");
+    const [content, setContent] = useState("");
+    const [signatoriesRaw, setSignatoriesRaw] = useState("");
+    const createContract = useCreateContract();
+
+    function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        if (!title.trim() || !content.trim()) return;
+        const signatories = signatoriesRaw
+            .split(/[\n,]+/)
+            .map((s) => s.trim())
+            .filter(Boolean);
+        createContract.mutate(
+            {
+                title: title.trim(),
+                content: content.trim(),
+                signatories: signatories.length > 0 ? signatories : undefined,
+            },
+            {
+                onSuccess: () => {
+                    toast.success("Contrat créé");
+                    setTitle("");
+                    setContent("");
+                    setSignatoriesRaw("");
+                    onSuccess();
+                },
+                onError: () => toast.error("Impossible de créer le contrat"),
+            },
+        );
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Créer un contrat</DialogTitle>
+                    <DialogDescription>
+                        Le contrat sera hashé (SHA-256) à la création.
+                    </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="ct-title">Titre *</Label>
+                        <Input
+                            id="ct-title"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="Ex : Contrat de prestation"
+                            maxLength={255}
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="ct-content">Contenu *</Label>
+                        <Textarea
+                            id="ct-content"
+                            value={content}
+                            onChange={(e) => setContent(e.target.value)}
+                            placeholder="Le prestataire s'engage à…"
+                            rows={5}
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="ct-signatories">
+                            Signataires (UUID, un par ligne)
+                        </Label>
+                        <Textarea
+                            id="ct-signatories"
+                            value={signatoriesRaw}
+                            onChange={(e) => setSignatoriesRaw(e.target.value)}
+                            placeholder={
+                                "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\nyyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
+                            }
+                            rows={2}
+                        />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => onOpenChange(false)}
+                        >
+                            Annuler
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={
+                                createContract.isPending ||
+                                !title.trim() ||
+                                !content.trim()
+                            }
+                        >
+                            {createContract.isPending ? "Création…" : "Créer"}
+                        </Button>
+                    </div>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function SignContractDialog({
+    contract,
+    onOpenChange,
+    onSuccess,
+}: {
+    contract: Contract;
+    onOpenChange: (open: boolean) => void;
+    onSuccess: () => void;
+}) {
+    const [totpCode, setTotpCode] = useState("");
+    const signContract = useSignContract();
+
+    function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        if (totpCode.length !== 6) return;
+        signContract.mutate(
+            { id: contract._id, totpCode },
+            {
+                onSuccess: () => {
+                    toast.success("Contrat signé");
+                    onSuccess();
+                },
+                onError: () => toast.error("Code TOTP invalide ou déjà signé"),
+            },
+        );
+    }
+
+    return (
+        <Dialog open onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Signer le contrat</DialogTitle>
+                    <DialogDescription>
+                        "{contract.title}" — saisissez votre code TOTP pour
+                        apposer votre signature.
+                    </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="bg-muted text-muted-foreground line-clamp-4 rounded-md p-3 font-mono text-xs">
+                        {contract.content}
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="sign-totp">
+                            Code TOTP (6 chiffres) *
+                        </Label>
+                        <Input
+                            id="sign-totp"
+                            value={totpCode}
+                            onChange={(e) =>
+                                setTotpCode(
+                                    e.target.value
+                                        .replace(/\D/g, "")
+                                        .slice(0, 6),
+                                )
+                            }
+                            placeholder="123456"
+                            inputMode="numeric"
+                            maxLength={6}
+                            autoFocus
+                            required
+                        />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => onOpenChange(false)}
+                        >
+                            Annuler
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={
+                                signContract.isPending || totpCode.length !== 6
+                            }
+                        >
+                            {signContract.isPending ? "Signature…" : "Signer"}
+                        </Button>
+                    </div>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
