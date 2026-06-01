@@ -43,11 +43,33 @@ export class MessagingService {
         return !!conversation && conversation.participants.includes(userId);
     }
 
-    findConversations(userId: string) {
-        return this.conversationModel
+    async findConversations(userId: string) {
+        const conversations = await this.conversationModel
             .find({ participants: userId })
             .sort({ lastMessageAt: -1 })
             .exec();
+
+        const participantIds = Array.from(
+            new Set(conversations.flatMap((conv) => conv.participants)),
+        );
+        const users = participantIds.length
+            ? await this.db
+                  .select({
+                      id: schema.users.id,
+                      email: schema.users.email,
+                  })
+                  .from(schema.users)
+                  .where(inArray(schema.users.id, participantIds))
+            : [];
+        const emailById = new Map(users.map((user) => [user.id, user.email]));
+
+        return conversations.map((conv) => ({
+            ...conv.toObject(),
+            participantsInfo: conv.participants.map((id) => ({
+                id,
+                email: emailById.get(id) ?? null,
+            })),
+        }));
     }
 
     async createConversation(dto: CreateConversationDto, userId: string) {
