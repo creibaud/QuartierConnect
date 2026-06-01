@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useHead } from "@unhead/react";
 import {
     createFileRoute,
     useNavigate,
@@ -41,6 +42,7 @@ export const Route = createFileRoute("/login")({
 });
 
 function AdminLoginPage() {
+    useHead({ title: "Connexion" });
     const navigate = useNavigate();
     const { forbidden } = useSearch({ from: "/login" });
     const [step, setStep] = useState<"credentials" | "totp">("credentials");

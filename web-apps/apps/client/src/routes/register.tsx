@@ -1,5 +1,6 @@
 import { useState } from "react";
 import QRCode from "react-qr-code";
+import { useHead } from "@unhead/react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { apiPost } from "@workspace/shared/lib/api";
 import { setTokens, type LoginResponse } from "@workspace/shared/lib/auth";
@@ -41,6 +42,7 @@ export const Route = createFileRoute("/register")({
 });
 
 function RegisterPage() {
+    useHead({ title: "Inscription" });
     const navigate = useNavigate();
     const [step, setStep] = useState<"form" | "qrcode">("form");
     const [otpauthUrl, setOtpauthUrl] = useState("");
