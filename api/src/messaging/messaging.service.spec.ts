@@ -11,6 +11,13 @@ const mockConversation = {
     participants: ["user-1", "user-2"],
     isGroup: false,
     save: jest.fn(),
+    toObject() {
+        return {
+            _id: this._id,
+            participants: this.participants,
+            isGroup: this.isGroup,
+        };
+    },
 };
 
 const mockMessage = {

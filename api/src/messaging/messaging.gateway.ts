@@ -12,16 +12,19 @@ import {
 } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 import { MessagingService } from "./messaging.service";
-import { ConversationDocument } from "./schemas/conversation.schema";
 import { MessageType } from "./schemas/message.schema";
 
 interface AuthSocket extends Socket {
     userId: string;
 }
 
+const corsOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(",").map((origin) => origin.trim())
+    : ["http://localhost:3000", "http://localhost:3001"];
+
 @WebSocketGateway({
     namespace: "/messaging",
-    cors: { origin: process.env.CORS_ORIGIN ?? "http://localhost:3000" },
+    cors: { origin: corsOrigins, credentials: true },
 })
 export class MessagingGateway
     implements OnGatewayConnection, OnGatewayDisconnect
@@ -57,9 +60,7 @@ export class MessagingGateway
                 payload.sub,
             );
             for (const conv of conversations) {
-                void client.join(
-                    `conversation:${(conv as ConversationDocument)._id.toString()}`,
-                );
+                void client.join(`conversation:${String(conv._id)}`);
             }
 
             this.logger.log(`User ${payload.sub} connected`);
