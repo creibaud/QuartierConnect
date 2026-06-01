@@ -9,7 +9,7 @@ import {
     useMessages,
     useSocketMessages,
 } from "@workspace/shared/lib/hooks/useMessaging";
-import type { Message } from "@workspace/shared/lib/types";
+import type { Conversation, Message } from "@workspace/shared/lib/types";
 import { Button } from "@workspace/ui/components/button";
 import {
     Dialog,
@@ -43,10 +43,19 @@ export const Route = createFileRoute("/_app/messages/")({
     component: MessagesPage,
 });
 
-function ConversationName(participants: string[], currentUserId: string): string {
-    const others = participants.filter((id) => id !== currentUserId);
-    if (others.length === 0) return "Moi";
-    return `Conversation (${others.length + 1})`;
+function conversationLabel(
+    conv: Conversation,
+    currentUserId: string,
+): string {
+    if (conv.isGroup) {
+        return conv.groupName ?? "Groupe";
+    }
+    const others = (conv.participantsInfo ?? [])
+        .filter((p) => p.id !== currentUserId && p.email)
+        .map((p) => p.email as string);
+    if (others.length === 0) return "Conversation";
+    if (others.length <= 2) return others.join(", ");
+    return `${others[0]} +${others.length - 1}`;
 }
 
 function MessageBubble({
@@ -248,9 +257,7 @@ function ConversationList({
                             activeId === conv._id && "text-foreground",
                         )}
                     >
-                        {conv.isGroup && conv.groupName
-                            ? conv.groupName
-                            : ConversationName(conv.participants, currentUserId)}
+                        {conversationLabel(conv, currentUserId)}
                     </p>
                     {conv.lastMessageAt && (
                         <p className="text-muted-foreground text-xs tabular-nums">

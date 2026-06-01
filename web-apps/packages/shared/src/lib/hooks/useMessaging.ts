@@ -5,8 +5,6 @@ import { apiGet, apiPost, apiUpload } from "../api";
 import { getAccessToken } from "../auth";
 import type { Conversation, Message } from "../types";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
-
 export function useConversations() {
     return useQuery<Conversation[]>({
         queryKey: ["conversations"],
@@ -70,7 +68,8 @@ export function useSocketMessages(
         if (!conversationId) return;
 
         const token = getAccessToken();
-        const socket = io(`${BASE_URL}/messaging`, {
+        const socket = io("/messaging", {
+            path: "/api/socket.io",
             auth: { token },
             transports: ["websocket"],
         });

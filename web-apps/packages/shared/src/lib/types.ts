@@ -99,6 +99,7 @@ export interface Contract {
 export interface Conversation {
     _id: string;
     participants: string[];
+    participantsInfo?: { id: string; email: string | null }[];
     isGroup: boolean;
     groupName: string | null;
     neighborhoodId: string | null;

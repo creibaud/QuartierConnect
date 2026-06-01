@@ -1,6 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { MessageType } from "../schemas/message.schema";
 
+export class ParticipantInfoDto {
+    @ApiProperty({ example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890" })
+    id: string;
+
+    @ApiProperty({ example: "bob@demo.fr", nullable: true })
+    email: string | null;
+}
+
 export class ConversationDto {
     @ApiProperty({ example: "664f1a2b3c4d5e6f7a8b9c30" })
     _id: string;
@@ -14,6 +22,12 @@ export class ConversationDto {
         description: "UUIDs des participants",
     })
     participants: string[];
+
+    @ApiProperty({
+        type: [ParticipantInfoDto],
+        description: "Participants avec leur email résolu",
+    })
+    participantsInfo: ParticipantInfoDto[];
 
     @ApiPropertyOptional({
         example: "664f1a2b3c4d5e6f7a8b9c01",
