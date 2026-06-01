@@ -11,15 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as VotesIndexRouteImport } from './routes/votes/index'
-import { Route as ServicesIndexRouteImport } from './routes/services/index'
-import { Route as MessagesIndexRouteImport } from './routes/messages/index'
-import { Route as IncidentsIndexRouteImport } from './routes/incidents/index'
-import { Route as EventsIndexRouteImport } from './routes/events/index'
-import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
-import { Route as ContractsIndexRouteImport } from './routes/contracts/index'
-import { Route as IncidentsIdRouteImport } from './routes/incidents/$id'
+import { Route as AppVotesIndexRouteImport } from './routes/_app/votes/index'
+import { Route as AppServicesIndexRouteImport } from './routes/_app/services/index'
+import { Route as AppMessagesIndexRouteImport } from './routes/_app/messages/index'
+import { Route as AppIncidentsIndexRouteImport } from './routes/_app/incidents/index'
+import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
+import { Route as AppDashboardIndexRouteImport } from './routes/_app/dashboard/index'
+import { Route as AppContractsIndexRouteImport } from './routes/_app/contracts/index'
+import { Route as AppIncidentsIdRouteImport } from './routes/_app/incidents/$id'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -31,91 +32,96 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const VotesIndexRoute = VotesIndexRouteImport.update({
+const AppVotesIndexRoute = AppVotesIndexRouteImport.update({
   id: '/votes/',
   path: '/votes/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const ServicesIndexRoute = ServicesIndexRouteImport.update({
+const AppServicesIndexRoute = AppServicesIndexRouteImport.update({
   id: '/services/',
   path: '/services/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const MessagesIndexRoute = MessagesIndexRouteImport.update({
+const AppMessagesIndexRoute = AppMessagesIndexRouteImport.update({
   id: '/messages/',
   path: '/messages/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const IncidentsIndexRoute = IncidentsIndexRouteImport.update({
+const AppIncidentsIndexRoute = AppIncidentsIndexRouteImport.update({
   id: '/incidents/',
   path: '/incidents/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const EventsIndexRoute = EventsIndexRouteImport.update({
+const AppEventsIndexRoute = AppEventsIndexRouteImport.update({
   id: '/events/',
   path: '/events/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const DashboardIndexRoute = DashboardIndexRouteImport.update({
+const AppDashboardIndexRoute = AppDashboardIndexRouteImport.update({
   id: '/dashboard/',
   path: '/dashboard/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const ContractsIndexRoute = ContractsIndexRouteImport.update({
+const AppContractsIndexRoute = AppContractsIndexRouteImport.update({
   id: '/contracts/',
   path: '/contracts/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const IncidentsIdRoute = IncidentsIdRouteImport.update({
+const AppIncidentsIdRoute = AppIncidentsIdRouteImport.update({
   id: '/incidents/$id',
   path: '/incidents/$id',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/incidents/$id': typeof IncidentsIdRoute
-  '/contracts/': typeof ContractsIndexRoute
-  '/dashboard/': typeof DashboardIndexRoute
-  '/events/': typeof EventsIndexRoute
-  '/incidents/': typeof IncidentsIndexRoute
-  '/messages/': typeof MessagesIndexRoute
-  '/services/': typeof ServicesIndexRoute
-  '/votes/': typeof VotesIndexRoute
+  '/incidents/$id': typeof AppIncidentsIdRoute
+  '/contracts/': typeof AppContractsIndexRoute
+  '/dashboard/': typeof AppDashboardIndexRoute
+  '/events/': typeof AppEventsIndexRoute
+  '/incidents/': typeof AppIncidentsIndexRoute
+  '/messages/': typeof AppMessagesIndexRoute
+  '/services/': typeof AppServicesIndexRoute
+  '/votes/': typeof AppVotesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/incidents/$id': typeof IncidentsIdRoute
-  '/contracts': typeof ContractsIndexRoute
-  '/dashboard': typeof DashboardIndexRoute
-  '/events': typeof EventsIndexRoute
-  '/incidents': typeof IncidentsIndexRoute
-  '/messages': typeof MessagesIndexRoute
-  '/services': typeof ServicesIndexRoute
-  '/votes': typeof VotesIndexRoute
+  '/incidents/$id': typeof AppIncidentsIdRoute
+  '/contracts': typeof AppContractsIndexRoute
+  '/dashboard': typeof AppDashboardIndexRoute
+  '/events': typeof AppEventsIndexRoute
+  '/incidents': typeof AppIncidentsIndexRoute
+  '/messages': typeof AppMessagesIndexRoute
+  '/services': typeof AppServicesIndexRoute
+  '/votes': typeof AppVotesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/incidents/$id': typeof IncidentsIdRoute
-  '/contracts/': typeof ContractsIndexRoute
-  '/dashboard/': typeof DashboardIndexRoute
-  '/events/': typeof EventsIndexRoute
-  '/incidents/': typeof IncidentsIndexRoute
-  '/messages/': typeof MessagesIndexRoute
-  '/services/': typeof ServicesIndexRoute
-  '/votes/': typeof VotesIndexRoute
+  '/_app/incidents/$id': typeof AppIncidentsIdRoute
+  '/_app/contracts/': typeof AppContractsIndexRoute
+  '/_app/dashboard/': typeof AppDashboardIndexRoute
+  '/_app/events/': typeof AppEventsIndexRoute
+  '/_app/incidents/': typeof AppIncidentsIndexRoute
+  '/_app/messages/': typeof AppMessagesIndexRoute
+  '/_app/services/': typeof AppServicesIndexRoute
+  '/_app/votes/': typeof AppVotesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -147,30 +153,24 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/_app'
     | '/login'
     | '/register'
-    | '/incidents/$id'
-    | '/contracts/'
-    | '/dashboard/'
-    | '/events/'
-    | '/incidents/'
-    | '/messages/'
-    | '/services/'
-    | '/votes/'
+    | '/_app/incidents/$id'
+    | '/_app/contracts/'
+    | '/_app/dashboard/'
+    | '/_app/events/'
+    | '/_app/incidents/'
+    | '/_app/messages/'
+    | '/_app/services/'
+    | '/_app/votes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
-  IncidentsIdRoute: typeof IncidentsIdRoute
-  ContractsIndexRoute: typeof ContractsIndexRoute
-  DashboardIndexRoute: typeof DashboardIndexRoute
-  EventsIndexRoute: typeof EventsIndexRoute
-  IncidentsIndexRoute: typeof IncidentsIndexRoute
-  MessagesIndexRoute: typeof MessagesIndexRoute
-  ServicesIndexRoute: typeof ServicesIndexRoute
-  VotesIndexRoute: typeof VotesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -189,6 +189,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -196,77 +203,94 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/votes/': {
-      id: '/votes/'
+    '/_app/votes/': {
+      id: '/_app/votes/'
       path: '/votes'
       fullPath: '/votes/'
-      preLoaderRoute: typeof VotesIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppVotesIndexRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/services/': {
-      id: '/services/'
+    '/_app/services/': {
+      id: '/_app/services/'
       path: '/services'
       fullPath: '/services/'
-      preLoaderRoute: typeof ServicesIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppServicesIndexRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/messages/': {
-      id: '/messages/'
+    '/_app/messages/': {
+      id: '/_app/messages/'
       path: '/messages'
       fullPath: '/messages/'
-      preLoaderRoute: typeof MessagesIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppMessagesIndexRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/incidents/': {
-      id: '/incidents/'
+    '/_app/incidents/': {
+      id: '/_app/incidents/'
       path: '/incidents'
       fullPath: '/incidents/'
-      preLoaderRoute: typeof IncidentsIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppIncidentsIndexRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/events/': {
-      id: '/events/'
+    '/_app/events/': {
+      id: '/_app/events/'
       path: '/events'
       fullPath: '/events/'
-      preLoaderRoute: typeof EventsIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppEventsIndexRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/dashboard/': {
-      id: '/dashboard/'
+    '/_app/dashboard/': {
+      id: '/_app/dashboard/'
       path: '/dashboard'
       fullPath: '/dashboard/'
-      preLoaderRoute: typeof DashboardIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppDashboardIndexRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/contracts/': {
-      id: '/contracts/'
+    '/_app/contracts/': {
+      id: '/_app/contracts/'
       path: '/contracts'
       fullPath: '/contracts/'
-      preLoaderRoute: typeof ContractsIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppContractsIndexRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/incidents/$id': {
-      id: '/incidents/$id'
+    '/_app/incidents/$id': {
+      id: '/_app/incidents/$id'
       path: '/incidents/$id'
       fullPath: '/incidents/$id'
-      preLoaderRoute: typeof IncidentsIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppIncidentsIdRouteImport
+      parentRoute: typeof AppRoute
     }
   }
 }
 
+interface AppRouteChildren {
+  AppIncidentsIdRoute: typeof AppIncidentsIdRoute
+  AppContractsIndexRoute: typeof AppContractsIndexRoute
+  AppDashboardIndexRoute: typeof AppDashboardIndexRoute
+  AppEventsIndexRoute: typeof AppEventsIndexRoute
+  AppIncidentsIndexRoute: typeof AppIncidentsIndexRoute
+  AppMessagesIndexRoute: typeof AppMessagesIndexRoute
+  AppServicesIndexRoute: typeof AppServicesIndexRoute
+  AppVotesIndexRoute: typeof AppVotesIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppIncidentsIdRoute: AppIncidentsIdRoute,
+  AppContractsIndexRoute: AppContractsIndexRoute,
+  AppDashboardIndexRoute: AppDashboardIndexRoute,
+  AppEventsIndexRoute: AppEventsIndexRoute,
+  AppIncidentsIndexRoute: AppIncidentsIndexRoute,
+  AppMessagesIndexRoute: AppMessagesIndexRoute,
+  AppServicesIndexRoute: AppServicesIndexRoute,
+  AppVotesIndexRoute: AppVotesIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
-  IncidentsIdRoute: IncidentsIdRoute,
-  ContractsIndexRoute: ContractsIndexRoute,
-  DashboardIndexRoute: DashboardIndexRoute,
-  EventsIndexRoute: EventsIndexRoute,
-  IncidentsIndexRoute: IncidentsIndexRoute,
-  MessagesIndexRoute: MessagesIndexRoute,
-  ServicesIndexRoute: ServicesIndexRoute,
-  VotesIndexRoute: VotesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

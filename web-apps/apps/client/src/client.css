@@ -1,0 +1,19 @@
+/* Client accent: teal/sky primary (overrides base blue). See DESIGN.md §2. */
+
+:root {
+    --primary: oklch(0.58 0.13 215);
+    --primary-foreground: oklch(0.985 0 0);
+    --ring: oklch(0.58 0.13 215);
+    --sidebar-primary: oklch(0.6 0.13 210);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-ring: oklch(0.58 0.13 215);
+}
+
+.dark {
+    --primary: oklch(0.68 0.12 210);
+    --primary-foreground: oklch(0.18 0.02 230);
+    --ring: oklch(0.68 0.12 210);
+    --sidebar-primary: oklch(0.68 0.12 210);
+    --sidebar-primary-foreground: oklch(0.18 0.02 230);
+    --sidebar-ring: oklch(0.68 0.12 210);
+}

@@ -10,20 +10,25 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as UsersIndexRouteImport } from './routes/users/index'
-import { Route as ServicesIndexRouteImport } from './routes/services/index'
-import { Route as NeighborhoodsIndexRouteImport } from './routes/neighborhoods/index'
-import { Route as IncidentsIndexRouteImport } from './routes/incidents/index'
-import { Route as EventsIndexRouteImport } from './routes/events/index'
-import { Route as DslIndexRouteImport } from './routes/dsl/index'
-import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
-import { Route as CommunityVotesIndexRouteImport } from './routes/community-votes/index'
 import { Route as SsoAuthorizeRouteImport } from './routes/sso/authorize'
+import { Route as AppUsersIndexRouteImport } from './routes/_app/users/index'
+import { Route as AppServicesIndexRouteImport } from './routes/_app/services/index'
+import { Route as AppNeighborhoodsIndexRouteImport } from './routes/_app/neighborhoods/index'
+import { Route as AppIncidentsIndexRouteImport } from './routes/_app/incidents/index'
+import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
+import { Route as AppDslIndexRouteImport } from './routes/_app/dsl/index'
+import { Route as AppDashboardIndexRouteImport } from './routes/_app/dashboard/index'
+import { Route as AppCommunityVotesIndexRouteImport } from './routes/_app/community-votes/index'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -31,91 +36,92 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const UsersIndexRoute = UsersIndexRouteImport.update({
-  id: '/users/',
-  path: '/users/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ServicesIndexRoute = ServicesIndexRouteImport.update({
-  id: '/services/',
-  path: '/services/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NeighborhoodsIndexRoute = NeighborhoodsIndexRouteImport.update({
-  id: '/neighborhoods/',
-  path: '/neighborhoods/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IncidentsIndexRoute = IncidentsIndexRouteImport.update({
-  id: '/incidents/',
-  path: '/incidents/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EventsIndexRoute = EventsIndexRouteImport.update({
-  id: '/events/',
-  path: '/events/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DslIndexRoute = DslIndexRouteImport.update({
-  id: '/dsl/',
-  path: '/dsl/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardIndexRoute = DashboardIndexRouteImport.update({
-  id: '/dashboard/',
-  path: '/dashboard/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CommunityVotesIndexRoute = CommunityVotesIndexRouteImport.update({
-  id: '/community-votes/',
-  path: '/community-votes/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SsoAuthorizeRoute = SsoAuthorizeRouteImport.update({
   id: '/sso/authorize',
   path: '/sso/authorize',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppUsersIndexRoute = AppUsersIndexRouteImport.update({
+  id: '/users/',
+  path: '/users/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppServicesIndexRoute = AppServicesIndexRouteImport.update({
+  id: '/services/',
+  path: '/services/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNeighborhoodsIndexRoute = AppNeighborhoodsIndexRouteImport.update({
+  id: '/neighborhoods/',
+  path: '/neighborhoods/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIncidentsIndexRoute = AppIncidentsIndexRouteImport.update({
+  id: '/incidents/',
+  path: '/incidents/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEventsIndexRoute = AppEventsIndexRouteImport.update({
+  id: '/events/',
+  path: '/events/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDslIndexRoute = AppDslIndexRouteImport.update({
+  id: '/dsl/',
+  path: '/dsl/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardIndexRoute = AppDashboardIndexRouteImport.update({
+  id: '/dashboard/',
+  path: '/dashboard/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCommunityVotesIndexRoute = AppCommunityVotesIndexRouteImport.update({
+  id: '/community-votes/',
+  path: '/community-votes/',
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/sso/authorize': typeof SsoAuthorizeRoute
-  '/community-votes/': typeof CommunityVotesIndexRoute
-  '/dashboard/': typeof DashboardIndexRoute
-  '/dsl/': typeof DslIndexRoute
-  '/events/': typeof EventsIndexRoute
-  '/incidents/': typeof IncidentsIndexRoute
-  '/neighborhoods/': typeof NeighborhoodsIndexRoute
-  '/services/': typeof ServicesIndexRoute
-  '/users/': typeof UsersIndexRoute
+  '/community-votes/': typeof AppCommunityVotesIndexRoute
+  '/dashboard/': typeof AppDashboardIndexRoute
+  '/dsl/': typeof AppDslIndexRoute
+  '/events/': typeof AppEventsIndexRoute
+  '/incidents/': typeof AppIncidentsIndexRoute
+  '/neighborhoods/': typeof AppNeighborhoodsIndexRoute
+  '/services/': typeof AppServicesIndexRoute
+  '/users/': typeof AppUsersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/sso/authorize': typeof SsoAuthorizeRoute
-  '/community-votes': typeof CommunityVotesIndexRoute
-  '/dashboard': typeof DashboardIndexRoute
-  '/dsl': typeof DslIndexRoute
-  '/events': typeof EventsIndexRoute
-  '/incidents': typeof IncidentsIndexRoute
-  '/neighborhoods': typeof NeighborhoodsIndexRoute
-  '/services': typeof ServicesIndexRoute
-  '/users': typeof UsersIndexRoute
+  '/community-votes': typeof AppCommunityVotesIndexRoute
+  '/dashboard': typeof AppDashboardIndexRoute
+  '/dsl': typeof AppDslIndexRoute
+  '/events': typeof AppEventsIndexRoute
+  '/incidents': typeof AppIncidentsIndexRoute
+  '/neighborhoods': typeof AppNeighborhoodsIndexRoute
+  '/services': typeof AppServicesIndexRoute
+  '/users': typeof AppUsersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/sso/authorize': typeof SsoAuthorizeRoute
-  '/community-votes/': typeof CommunityVotesIndexRoute
-  '/dashboard/': typeof DashboardIndexRoute
-  '/dsl/': typeof DslIndexRoute
-  '/events/': typeof EventsIndexRoute
-  '/incidents/': typeof IncidentsIndexRoute
-  '/neighborhoods/': typeof NeighborhoodsIndexRoute
-  '/services/': typeof ServicesIndexRoute
-  '/users/': typeof UsersIndexRoute
+  '/_app/community-votes/': typeof AppCommunityVotesIndexRoute
+  '/_app/dashboard/': typeof AppDashboardIndexRoute
+  '/_app/dsl/': typeof AppDslIndexRoute
+  '/_app/events/': typeof AppEventsIndexRoute
+  '/_app/incidents/': typeof AppIncidentsIndexRoute
+  '/_app/neighborhoods/': typeof AppNeighborhoodsIndexRoute
+  '/_app/services/': typeof AppServicesIndexRoute
+  '/_app/users/': typeof AppUsersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -147,30 +153,24 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/_app'
     | '/login'
     | '/sso/authorize'
-    | '/community-votes/'
-    | '/dashboard/'
-    | '/dsl/'
-    | '/events/'
-    | '/incidents/'
-    | '/neighborhoods/'
-    | '/services/'
-    | '/users/'
+    | '/_app/community-votes/'
+    | '/_app/dashboard/'
+    | '/_app/dsl/'
+    | '/_app/events/'
+    | '/_app/incidents/'
+    | '/_app/neighborhoods/'
+    | '/_app/services/'
+    | '/_app/users/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   SsoAuthorizeRoute: typeof SsoAuthorizeRoute
-  CommunityVotesIndexRoute: typeof CommunityVotesIndexRoute
-  DashboardIndexRoute: typeof DashboardIndexRoute
-  DslIndexRoute: typeof DslIndexRoute
-  EventsIndexRoute: typeof EventsIndexRoute
-  IncidentsIndexRoute: typeof IncidentsIndexRoute
-  NeighborhoodsIndexRoute: typeof NeighborhoodsIndexRoute
-  ServicesIndexRoute: typeof ServicesIndexRoute
-  UsersIndexRoute: typeof UsersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -182,67 +182,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/users/': {
-      id: '/users/'
-      path: '/users'
-      fullPath: '/users/'
-      preLoaderRoute: typeof UsersIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/services/': {
-      id: '/services/'
-      path: '/services'
-      fullPath: '/services/'
-      preLoaderRoute: typeof ServicesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/neighborhoods/': {
-      id: '/neighborhoods/'
-      path: '/neighborhoods'
-      fullPath: '/neighborhoods/'
-      preLoaderRoute: typeof NeighborhoodsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/incidents/': {
-      id: '/incidents/'
-      path: '/incidents'
-      fullPath: '/incidents/'
-      preLoaderRoute: typeof IncidentsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/events/': {
-      id: '/events/'
-      path: '/events'
-      fullPath: '/events/'
-      preLoaderRoute: typeof EventsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dsl/': {
-      id: '/dsl/'
-      path: '/dsl'
-      fullPath: '/dsl/'
-      preLoaderRoute: typeof DslIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard/': {
-      id: '/dashboard/'
-      path: '/dashboard'
-      fullPath: '/dashboard/'
-      preLoaderRoute: typeof DashboardIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/community-votes/': {
-      id: '/community-votes/'
-      path: '/community-votes'
-      fullPath: '/community-votes/'
-      preLoaderRoute: typeof CommunityVotesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sso/authorize': {
@@ -252,21 +203,94 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SsoAuthorizeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/users/': {
+      id: '/_app/users/'
+      path: '/users'
+      fullPath: '/users/'
+      preLoaderRoute: typeof AppUsersIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/services/': {
+      id: '/_app/services/'
+      path: '/services'
+      fullPath: '/services/'
+      preLoaderRoute: typeof AppServicesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/neighborhoods/': {
+      id: '/_app/neighborhoods/'
+      path: '/neighborhoods'
+      fullPath: '/neighborhoods/'
+      preLoaderRoute: typeof AppNeighborhoodsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/incidents/': {
+      id: '/_app/incidents/'
+      path: '/incidents'
+      fullPath: '/incidents/'
+      preLoaderRoute: typeof AppIncidentsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/events/': {
+      id: '/_app/events/'
+      path: '/events'
+      fullPath: '/events/'
+      preLoaderRoute: typeof AppEventsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dsl/': {
+      id: '/_app/dsl/'
+      path: '/dsl'
+      fullPath: '/dsl/'
+      preLoaderRoute: typeof AppDslIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard/': {
+      id: '/_app/dashboard/'
+      path: '/dashboard'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof AppDashboardIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/community-votes/': {
+      id: '/_app/community-votes/'
+      path: '/community-votes'
+      fullPath: '/community-votes/'
+      preLoaderRoute: typeof AppCommunityVotesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppCommunityVotesIndexRoute: typeof AppCommunityVotesIndexRoute
+  AppDashboardIndexRoute: typeof AppDashboardIndexRoute
+  AppDslIndexRoute: typeof AppDslIndexRoute
+  AppEventsIndexRoute: typeof AppEventsIndexRoute
+  AppIncidentsIndexRoute: typeof AppIncidentsIndexRoute
+  AppNeighborhoodsIndexRoute: typeof AppNeighborhoodsIndexRoute
+  AppServicesIndexRoute: typeof AppServicesIndexRoute
+  AppUsersIndexRoute: typeof AppUsersIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppCommunityVotesIndexRoute: AppCommunityVotesIndexRoute,
+  AppDashboardIndexRoute: AppDashboardIndexRoute,
+  AppDslIndexRoute: AppDslIndexRoute,
+  AppEventsIndexRoute: AppEventsIndexRoute,
+  AppIncidentsIndexRoute: AppIncidentsIndexRoute,
+  AppNeighborhoodsIndexRoute: AppNeighborhoodsIndexRoute,
+  AppServicesIndexRoute: AppServicesIndexRoute,
+  AppUsersIndexRoute: AppUsersIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   SsoAuthorizeRoute: SsoAuthorizeRoute,
-  CommunityVotesIndexRoute: CommunityVotesIndexRoute,
-  DashboardIndexRoute: DashboardIndexRoute,
-  DslIndexRoute: DslIndexRoute,
-  EventsIndexRoute: EventsIndexRoute,
-  IncidentsIndexRoute: IncidentsIndexRoute,
-  NeighborhoodsIndexRoute: NeighborhoodsIndexRoute,
-  ServicesIndexRoute: ServicesIndexRoute,
-  UsersIndexRoute: UsersIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
