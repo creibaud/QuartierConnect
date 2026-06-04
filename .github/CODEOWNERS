@@ -1,0 +1,26 @@
+# Review automatique selon la zone touchée
+# Le dernier match dans le fichier gagne
+
+# Par défaut : Claudio review tout
+*                            @creibaud
+
+# Infrastructure et DevOps — Mouhamadou
+/.github/                    @MouhamadouNDIAYE @creibaud
+/docker/                     @MouhamadouNDIAYE @creibaud
+/scripts/                    @MouhamadouNDIAYE @creibaud
+/ops/                        @MouhamadouNDIAYE @creibaud
+/docs/DEPLOYMENT.md          @MouhamadouNDIAYE @creibaud
+/docs/RUNBOOK.md             @MouhamadouNDIAYE @creibaud
+Makefile                     @MouhamadouNDIAYE @creibaud
+
+# Documentation et tests — Andras
+/docs/                       @aschuller @creibaud
+/web-apps/e2e/               @aschuller @creibaud
+**/*.test.ts                 @aschuller @creibaud
+**/*.spec.ts                 @aschuller @creibaud
+
+# Back-end NestJS — Claudio
+/api/                        @creibaud
+
+# Desktop Java — Claudio
+/desktop-app/                @creibaud

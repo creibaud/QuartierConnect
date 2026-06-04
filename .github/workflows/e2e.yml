@@ -1,0 +1,124 @@
+name: E2E
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branche à tester"
+        required: false
+        default: "master"
+
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Playwright + API E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Préparer le .env de CI
+        run: |
+          cat > .env <<'EOF'
+          PORT=5000
+          JWT_SECRET=ci-test-secret-min-32-chars-long-xx
+          JWT_ACCESS_EXPIRES_IN=15m
+          JWT_REFRESH_EXPIRES_IN=7d
+          MONGO_ROOT_USER=root
+          MONGO_ROOT_PASSWORD=testpass
+          MONGO_URI=mongodb://root:testpass@mongo:27017/quartierconnect?authSource=admin
+          POSTGRES_USER=qc
+          POSTGRES_PASSWORD=testpass
+          POSTGRES_DB=quartierconnect
+          POSTGRES_URL=postgresql://qc:testpass@postgres:5432/quartierconnect
+          NEO4J_URI=bolt://neo4j:7687
+          NEO4J_AUTH=neo4j/testpass1234
+          NEO4J_USER=neo4j
+          NEO4J_PASSWORD=testpass1234
+          DEMO_TOTP_SECRET=JBSWY3DPEHPK3PXP
+          LOGIN_RATE_LIMIT=100
+          CORS_ORIGINS=http://localhost,http://localhost:3000,http://localhost:3001
+          EOF
+
+      - name: Démarrer la stack Docker
+        run: docker compose -f docker/docker-compose.yml up -d --build
+
+      - name: Attendre que l'API soit prête
+        run: |
+          for i in {1..90}; do
+            if curl -fs http://localhost/api/health > /dev/null 2>&1; then
+              echo "API ready après ${i} essais"; exit 0
+            fi
+            sleep 2
+          done
+          docker compose -f docker/docker-compose.yml logs api --tail=100
+          exit 1
+
+      - name: Install web deps
+        working-directory: web-apps
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        working-directory: web-apps
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Seed des comptes démo
+        run: |
+          cd api && pnpm install --frozen-lockfile
+          API_URL=http://localhost/api PG_CONTAINER=docker-postgres-1 \
+            pnpm exec ts-node ../scripts/seed-demo.ts || echo "Seed failed"
+
+      - name: Run Playwright
+        working-directory: web-apps
+        env:
+          PLAYWRIGHT_BASE_URL_CLIENT: http://localhost
+          PLAYWRIGHT_BASE_URL_ADMIN: http://localhost/admin
+        run: pnpm run test:e2e
+
+      - name: API E2E (Supertest)
+        if: always()
+        working-directory: api
+        run: pnpm run test:e2e
+        continue-on-error: true
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: web-apps/playwright-report/
+          retention-days: 14
+
+      - name: Dump logs en cas d'échec
+        if: failure()
+        run: docker compose -f docker/docker-compose.yml logs --tail=200
+
+      - name: Notification Discord
+        if: failure() && env.DISCORD_WEBHOOK != ''
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          curl -X POST -H 'Content-Type: application/json' \
+            -d '{"content":"🔴 **E2E nightly KO** — `${{ github.ref_name }}` — voir [run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"}' \
+            "$DISCORD_WEBHOOK"
