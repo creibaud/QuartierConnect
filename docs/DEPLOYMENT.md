@@ -1,185 +1,405 @@
-# Deployment Guide — QuartierConnect
+# Déploiement Production — QuartierConnect
+
+> Procédure complète pour mettre QuartierConnect en production sur un VPS Linux (Ubuntu 22.04+ / Debian 12). Rejouable from scratch par un tiers.
 
 ---
 
-## Prerequisites
+## Table des matières
 
-| Tool | Minimum version |
-|------|----------------|
-| Docker | 24.0 |
-| Docker Compose | v2 (plugin, not standalone) |
-| Java | 21 (JDK, for building the desktop JAR) |
-| Node.js | 20 |
-| pnpm | 9 |
-| Maven Wrapper | included (`./mvnw`) |
+1. [Prérequis VPS](#1-prérequis-vps)
+2. [Préparation du serveur](#2-préparation-du-serveur)
+3. [Clonage et configuration](#3-clonage-et-configuration)
+4. [Premier démarrage](#4-premier-démarrage)
+5. [Seed des comptes démo](#5-seed-des-comptes-démo)
+6. [Vérification end-to-end](#6-vérification-end-to-end)
+7. [Mises à jour (CI/CD)](#7-mises-à-jour-cicd)
+8. [Backups automatiques](#8-backups-automatiques)
+9. [Drill de restauration](#9-drill-de-restauration)
+10. [Monitoring uptime](#10-monitoring-uptime)
+11. [Rollback rapide](#11-rollback-rapide)
+12. [Checklist sécurité prod](#12-checklist-sécurité-prod)
+
+> Pour la gestion des **incidents** en production (DB down, certificat expiré, OOM, etc.), voir [`RUNBOOK.md`](RUNBOOK.md).
 
 ---
 
-## Configuration
+## 1. Prérequis VPS
 
-### 1. Copy the environment file
+| Ressource | Minimum recommandé |
+|-----------|-------------------|
+| CPU | 2 vCPU |
+| RAM | 4 Go (8 Go conseillé) |
+| Disque | 40 Go SSD |
+| OS | Ubuntu 22.04 LTS / Debian 12 |
+| Réseau | IP publique fixe, ports **80** et **443** ouverts |
+| DNS | Enregistrement A `quartierconnect.fr` → IP du VPS |
+
+---
+
+## 2. Préparation du serveur
+
+### En tant que root (one-shot)
 
 ```bash
-cp .env.example .env
+ssh root@<IP_VPS>
+
+# 1. Mise à jour
+apt update && apt upgrade -y
+
+# 2. Créer un user dédié non-root
+adduser --gecos "" deploy
+usermod -aG sudo deploy
+
+# 3. Désactiver le login root SSH
+sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
+sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+systemctl restart sshd
+
+# 4. Installer Docker + Docker Compose v2
+curl -fsSL https://get.docker.com | sh
+usermod -aG docker deploy
+
+# 5. Outils utiles
+apt install -y git make jq curl wget unzip awscli
 ```
 
-### 2. Fill in required values
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `JWT_SECRET` | HS256 signing key — **minimum 32 characters** | `openssl rand -base64 32` |
-| `JWT_ACCESS_EXPIRES_IN` | Access token TTL | `15m` |
-| `JWT_REFRESH_EXPIRES_IN` | Refresh token TTL | `7d` |
-| `MONGO_ROOT_USER` | MongoDB root username | `root` |
-| `MONGO_ROOT_PASSWORD` | MongoDB root password | strong password |
-| `MONGO_URI` | Full MongoDB connection string | `mongodb://root:<pw>@localhost:27017/quartierconnect?authSource=admin` |
-| `POSTGRES_USER` | PostgreSQL username | `qc` |
-| `POSTGRES_PASSWORD` | PostgreSQL password | strong password |
-| `POSTGRES_DB` | PostgreSQL database name | `quartierconnect` |
-| `POSTGRES_URL` | Full PostgreSQL connection string | `postgresql://qc:<pw>@localhost:5432/quartierconnect` |
-| `NEO4J_URI` | Bolt URI | `bolt://localhost:7687` |
-| `NEO4J_AUTH` | `user/password` format | `neo4j/<strong password>` |
-| `LOGIN_RATE_LIMIT` | Max login attempts per IP per 15 min | `5` (prod), `100` (dev) |
-| `CORS_ORIGINS` | Comma-separated allowed origins | `http://localhost,http://localhost:3000,http://localhost:3001` |
-
----
-
-## Development — Start All Services
+### Firewall + fail2ban
 
 ```bash
-# Start all 7 containers (Caddy, client, admin, API, MongoDB, Neo4j, PostgreSQL)
-docker compose -f docker/docker-compose.yml up -d
+# Côté repo on a tout ce qu'il faut :
+git clone https://github.com/creibaud/QuartierConnect.git /opt/qc-bootstrap
+cd /opt/qc-bootstrap
 
-# Check container status
-docker compose -f docker/docker-compose.yml ps
+# UFW
+sudo bash ops/ufw-rules.sh
 
-# View API logs
-docker compose -f docker/docker-compose.yml logs -f api
+# fail2ban
+apt install -y fail2ban
+cp ops/fail2ban-jail.local /etc/fail2ban/jail.local
+cp ops/fail2ban-filter-caddy-auth.conf /etc/fail2ban/filter.d/caddy-auth.conf
+systemctl enable --now fail2ban
+
+# Cron quotidien
+cp ops/cron.d/quartierconnect /etc/cron.d/quartierconnect
+chmod 644 /etc/cron.d/quartierconnect
+
+# Logrotate Caddy
+cp ops/logrotate-caddy /etc/logrotate.d/caddy
+
+# Bootstrap fini, on peut nettoyer
+rm -rf /opt/qc-bootstrap
 ```
 
-### Start services individually (hot reload)
+### Repasser en `deploy`
 
 ```bash
-# API with hot reload
-cd api && pnpm run start:dev
-
-# All web apps in parallel (Turbo)
-cd web-apps && pnpm run dev
-
-# Client app only
-cd web-apps && pnpm run dev --filter client
-
-# Admin app only
-cd web-apps && pnpm run dev --filter admin
-```
-
----
-
-## Production
-
-```bash
-docker compose -f docker/docker-compose.yml up -d --build
-```
-
-Caddy handles TLS termination automatically (via Let's Encrypt or a provided certificate). Ensure ports 80 and 443 are open on the host.
-
----
-
-## Verify the Installation
-
-After startup, check these URLs:
-
-| Service | URL | Expected response |
-|---------|-----|-------------------|
-| Client app | `http://localhost:3000` | Login page |
-| Admin app | `http://localhost:3001` | Admin login page |
-| API health | `http://localhost:5000/health` | `{"status":"ok"}` |
-| API docs | `http://localhost:5000/docs` | Scalar interactive docs |
-| MongoDB | `localhost:27017` | Accessible from host (dev only) |
-| PostgreSQL | `localhost:5432` | Accessible from host (dev only) |
-| Neo4j browser | `http://localhost:7474` | Neo4j web UI |
-
----
-
-## Demo Seed
-
-Populate the database with demo users (TOTP secret: `JBSWY3DPEHPK3PXP`):
-
-```bash
-npx ts-node scripts/seed-demo.ts
-```
-
-Demo accounts:
-
-| Email | Role | Password |
-|-------|------|----------|
-| `alice@demo.fr` | resident | `Demo1234!` |
-| `bob@demo.fr` | moderator | `Demo1234!` |
-| `admin@demo.fr` | admin | `Demo1234!` |
-
-Generate a TOTP code for any demo account:
-
-```bash
-# Requires oathtool
-oathtool --totp --base32 JBSWY3DPEHPK3PXP
+exit
+ssh deploy@<IP_VPS>
 ```
 
 ---
 
-## Build the Desktop JAR
+## 3. Clonage et configuration
 
 ```bash
-cd desktop-app
-./mvnw clean package -q
-java -jar target/quartierconnect-desktop.jar
+cd ~
+git clone https://github.com/creibaud/QuartierConnect.git
+cd QuartierConnect
+
+# Copier le template prod
+cp docker/.env.prod.example .env
+chmod 600 .env
+
+# Générer les secrets avec openssl
+nano .env
 ```
 
-The fat JAR is approximately 25 MB and includes all dependencies (JavaFX, SQLite JDBC).
+Valeurs à remplir avec `openssl rand -base64 32 | tr -d '/+='` :
+- `JWT_SECRET` (≥ 48 chars)
+- `MONGO_ROOT_PASSWORD`
+- `POSTGRES_PASSWORD`
+- `NEO4J_PASSWORD` (et copier la même valeur dans `NEO4J_AUTH=neo4j/<password>`)
+
+**Vérification** :
+
+```bash
+# Aucune valeur ne doit contenir "<generate" ou "<password>"
+grep -E '<(generate|password|same|strong)' .env && echo "⚠ Encore des placeholders" || echo "✓"
+
+# Permissions
+ls -la .env  # doit afficher -rw-------
+```
 
 ---
 
-## Troubleshooting
-
-### Port already in use
+## 4. Premier démarrage
 
 ```bash
-# Find the process using port 5000
-lsof -i :5000
-kill <PID>
+# Préparer les répertoires logs et backups
+sudo mkdir -p /var/log/quartierconnect /var/backups/quartierconnect
+sudo chown deploy:deploy /var/log/quartierconnect /var/backups/quartierconnect
+
+# Build et démarrage
+docker compose \
+  -f docker/docker-compose.yml \
+  -f docker/docker-compose.prod.yml \
+  up -d --build
+
+# Suivre le démarrage (Caddy met 30-60s à obtenir le certif Let's Encrypt)
+docker compose \
+  -f docker/docker-compose.yml \
+  -f docker/docker-compose.prod.yml \
+  logs -f caddy
 ```
 
-Or change the port in `docker/docker-compose.yml` and update `CORS_ORIGINS`.
-
-### MongoDB connection refused
-
-Ensure the `mongo` container is healthy before the `api` container starts. The `docker-compose.yml` includes a `healthcheck` and `depends_on: condition: service_healthy`.
+Vérifier que tous les services passent `Up (healthy)` :
 
 ```bash
-docker compose -f docker/docker-compose.yml logs mongo
+docker compose \
+  -f docker/docker-compose.yml \
+  -f docker/docker-compose.prod.yml \
+  ps
 ```
 
-### PostgreSQL migrations not applied
+---
 
-The API runs Drizzle migrations on startup. Check the API logs:
+## 5. Seed des comptes démo
 
 ```bash
-docker compose -f docker/docker-compose.yml logs api | grep -i drizzle
+# Depuis le VPS, depuis le repo
+docker exec docker-api-1 sh -c "cd /app && node -r ts-node/register /app/scripts/seed-demo.ts" || \
+  API_URL=https://quartierconnect.fr/api \
+  PG_CONTAINER=docker-postgres-1 \
+  pnpm --filter api exec ts-node scripts/seed-demo.ts
 ```
 
-If the database is empty, run:
+---
+
+## 6. Vérification end-to-end
 
 ```bash
-cd api && pnpm run db:migrate
+# Smoke test complet (depuis n'importe où)
+./scripts/smoke-test.sh https://quartierconnect.fr
 ```
 
-### Neo4j authentication error
+Devrait afficher :
 
-Ensure `NEO4J_AUTH` in `.env` matches the format `username/password` (e.g. `neo4j/mypassword`). The Neo4j container uses this value directly.
+```
+✓ GET /api/health → 200
+✓ GET /api/health retourne status:ok
+✓ MongoDB up dans /health
+✓ PostgreSQL up dans /health
+✓ Neo4j up dans /health
+✓ GET / (client) → 200
+✓ GET /admin → 200
+✓ GET /docs (Scalar) → 200
+✓ POST /api/auth/login creds invalides → 401
+✓ HSTS header présent
+✓ CSP header présent
+✓ Pas de header Server
+✓ HTTPS valide
+✓ WS /api/messaging répond (pas 5xx)
+```
 
-### TOTP code rejected
+Test additionnel SSL Labs (cible : note A+) :
 
-TOTP codes are time-based. Ensure the server clock is synchronised (NTP). The API accepts codes in a ±30-second window.
+```bash
+curl https://api.ssllabs.com/api/v3/analyze?host=quartierconnect.fr
+```
 
-### Desktop JAR — JavaFX not found
+---
 
-Java 21 does not bundle JavaFX. The Maven Shade Plugin includes the JavaFX platform jars in the fat JAR. Ensure you are using the JAR produced by `./mvnw clean package`, not a raw class run.
+## 7. Mises à jour (CI/CD)
+
+### Manuel depuis le VPS
+
+```bash
+cd ~/QuartierConnect
+./scripts/deploy-vps.sh main
+```
+
+Le script :
+1. Capture le SHA actuel pour rollback
+2. `git pull`
+3. Rebuild + redémarrage
+4. Smoke test
+5. Rollback auto si KO
+
+### Automatique via GitHub Actions
+
+Configuration dans GitHub → Settings → **Environments** → **production** :
+
+| Élément | Valeur |
+|---------|--------|
+| Required reviewers | Claudio (chef de projet) |
+| Wait timer | 0 min (ou 5 min en mode prudent) |
+| Branch/tag restrictions | `v*.*.*` uniquement |
+
+**Secrets GitHub** (Settings → Secrets → Actions) :
+
+| Secret | Description |
+|--------|-------------|
+| `VPS_SSH_PRIVATE_KEY` | Clé SSH privée du user `deploy` |
+| `VPS_HOST` | IP ou hostname du VPS |
+| `VPS_USER` | `deploy` |
+| `VPS_DEPLOY_PATH` | `/home/deploy/QuartierConnect` |
+| `PROD_DOMAIN` | `quartierconnect.fr` (sans https://) |
+| `DISCORD_WEBHOOK` | URL webhook Discord pour notifications |
+
+Génération de la clé SSH dédiée au deploy :
+
+```bash
+# Sur ta machine locale (PAS sur le VPS)
+ssh-keygen -t ed25519 -C "github-actions-deploy" -f deploy_key -N ""
+
+# Ajouter la pubkey sur le VPS pour le user deploy
+ssh-copy-id -i deploy_key.pub deploy@<IP_VPS>
+
+# Coller deploy_key (privée) dans VPS_SSH_PRIVATE_KEY sur GitHub
+cat deploy_key
+
+# Détruire la copie locale immédiatement après
+shred -u deploy_key
+```
+
+Workflow `deploy.yml` se déclenche sur :
+- push de tag `v*.*.*`
+- `workflow_dispatch` manuel (avec saisie de la branche)
+
+---
+
+## 8. Backups automatiques
+
+Le cron installé en section 2 lance `backup-all.sh` chaque nuit à 2h :
+
+```
+0 2 * * *   deploy   cd /home/deploy/QuartierConnect && ./scripts/backup-all.sh
+```
+
+Contenu :
+
+| Base | Outil | Rétention locale | Rétention S3 |
+|------|-------|------------------|--------------|
+| MongoDB | `mongodump --gzip --archive` | 7j | 7j + 4 sem + 12 mois |
+| PostgreSQL | `pg_dumpall | gzip` | 7j | 7j + 4 sem + 12 mois |
+| Neo4j | `neo4j-admin database dump` (cold, ~30s downtime) | 7j | 7j + 4 sem + 12 mois |
+| Caddy certs | `tar.gz` (lundi seulement) | 28j | 12 sem |
+
+Configuration S3 : remplir `BACKUP_S3_*` dans `.env`. Compatible Scaleway, Backblaze B2, AWS S3.
+
+Logs : `/var/log/quartierconnect/backup-summary-YYYY-MM-DD.log`
+
+Notification Discord en cas d'échec (uniquement).
+
+---
+
+## 9. Drill de restauration
+
+> **À effectuer au moins une fois avant la soutenance.** Backup non testé = backup inexistant.
+
+### Scénario 1 — Perte de MongoDB
+
+```bash
+# 1. Vérifier qu'un backup récent existe
+ls -lh /var/backups/quartierconnect/mongo-*.tar.gz | tail -3
+
+# 2. Simuler une perte (sur un VPS de staging, PAS prod !)
+docker exec docker-mongo-1 mongosh --quiet \
+  -u root -p "$MONGO_ROOT_PASSWORD" \
+  --eval "db.getSiblingDB('quartierconnect').dropDatabase()"
+
+# 3. Vérifier que c'est bien vide
+docker exec docker-mongo-1 mongosh --quiet \
+  -u root -p "$MONGO_ROOT_PASSWORD" --authenticationDatabase admin \
+  --eval "db.getSiblingDB('quartierconnect').neighborhoods.countDocuments()"
+
+# 4. Restaurer
+./scripts/restore-mongo.sh /var/backups/quartierconnect/mongo-<DATE>.tar.gz
+
+# 5. Vérifier
+docker exec docker-mongo-1 mongosh --quiet \
+  -u root -p "$MONGO_ROOT_PASSWORD" --authenticationDatabase admin \
+  --eval "db.getSiblingDB('quartierconnect').neighborhoods.countDocuments()"
+# → doit afficher > 0
+```
+
+### Scénario 2 — Perte de PostgreSQL
+
+```bash
+./scripts/restore-postgres.sh /var/backups/quartierconnect/postgres-<DATE>.sql.gz
+```
+
+### Scénario 3 — Perte de Neo4j
+
+```bash
+./scripts/restore-neo4j.sh /var/backups/quartierconnect/neo4j-<DATE>.tar.gz
+```
+
+Après chaque drill, **noter la date + le temps de restauration** dans le RUNBOOK.
+
+---
+
+## 10. Monitoring uptime
+
+### Minimum acceptable — UptimeRobot (gratuit)
+
+1. Créer un compte sur https://uptimerobot.com
+2. Ajouter un monitor :
+   - Type : HTTPS
+   - URL : `https://quartierconnect.fr/api/health`
+   - Intervalle : 5 min
+   - Keyword monitoring : "ok"
+3. Configurer une alerte :
+   - Discord webhook → channel `#alerts`
+   - Email équipe
+   - Déclencheur : 2 fails consécutifs
+
+### Bonus — endpoint `/metrics` Prometheus
+
+Si temps, exposer `/metrics` côté NestJS (`nest-prometheus` ou `prom-client`) et scraper depuis Grafana Cloud (tier gratuit).
+
+---
+
+## 11. Rollback rapide
+
+### Via script
+
+```bash
+cd ~/QuartierConnect
+git log --oneline -10                    # Identifier le commit cible
+./scripts/rollback.sh <git-sha>
+```
+
+### Manuel d'urgence
+
+```bash
+cd ~/QuartierConnect
+git checkout <commit-sha>
+docker compose \
+  -f docker/docker-compose.yml \
+  -f docker/docker-compose.prod.yml \
+  up -d --build
+```
+
+---
+
+## 12. Checklist sécurité prod
+
+- [ ] `.env` avec `chmod 600`
+- [ ] `JWT_SECRET` ≥ 48 caractères, généré aléatoirement
+- [ ] Mots de passe DB générés aléatoirement (jamais réutilisés)
+- [ ] Ports DB (5432, 27017, 7474, 7687) **non exposés** publiquement (vérifier avec `nmap <IP_VPS>`)
+- [ ] `LOGIN_RATE_LIMIT=5` en production
+- [ ] `CORS_ORIGINS` ne contient que le domaine HTTPS de prod
+- [ ] HSTS actif (`curl -I https://quartierconnect.fr | grep -i strict`)
+- [ ] CSP avec `frame-ancestors 'none'`
+- [ ] SSL Labs note ≥ A
+- [ ] Backup quotidien automatisé via cron
+- [ ] **Drill de restauration effectué** (au moins une fois)
+- [ ] UFW activé (80/443/22 uniquement)
+- [ ] fail2ban actif (jails SSH + caddy-auth)
+- [ ] SSH root désactivé
+- [ ] SSH password désactivé (clé uniquement)
+- [ ] UptimeRobot configuré + alerte testée
+- [ ] Mises à jour OS automatiques activées (`unattended-upgrades`)
+- [ ] Discord webhook configuré pour deploy + backups + uptime
