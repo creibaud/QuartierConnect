@@ -1,7 +1,7 @@
 # DESIGN.md — QuartierConnect
 
 > Source de vérité pour toutes les décisions design front-end (web client + web admin + desktop themes).
-> Inférée du code existant le 4 mai 2026 par /plan-design-review.
+> Inférée du code existant le 4 mai 2026.
 > **Refonte esthétique 2026-05-11 : direction "Civic Editorial" (noir éditorial + vert communauté + Newsreader/Inter).**
 > Toute nouvelle UI doit s'aligner sur ce document. Si une décision n'y figure pas, c'est qu'elle reste à prendre — flagger et discuter.
 
@@ -472,6 +472,6 @@ Si une page développée commet 1+ de ces patterns, refactor immédiat.
 
 ---
 
-*Document inféré et calibré le 4 mai 2026 par /plan-design-review (DD7).*
+*Document inféré et calibré le 4 mai 2026 (DD7).*
 *Refonte esthétique Civic Editorial appliquée le 11 mai 2026 via /ui-ux-pro-max (palette + typographie + slop blacklist).*
 *Prochaine relecture : Phase B semaine 6 (8-14 juin) pour audit complet et corrections page-by-page via `/impeccable polish`.*
