@@ -11,6 +11,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { apiPost } from "@workspace/shared/lib/api";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import { centroidOf } from "@workspace/shared/lib/geo";
@@ -48,24 +49,18 @@ interface SsoTokenResponse {
     expiresIn: number;
 }
 
-const ROLE_LABELS: Record<string, string> = {
-    resident: "Résident",
-    moderator: "Modérateur",
-    admin: "Administrateur",
-};
-
 interface QuickLink {
     to: string;
-    label: string;
+    labelKey: string;
     icon: IconSvgElement;
 }
 
 const QUICK_LINKS: QuickLink[] = [
-    { to: "/incidents", label: "Incidents", icon: Alert01Icon },
-    { to: "/services", label: "Services", icon: CustomerServiceIcon },
-    { to: "/events", label: "Événements", icon: Calendar01Icon },
-    { to: "/contracts", label: "Contrats", icon: Coins01Icon },
-    { to: "/messages", label: "Messages", icon: Message01Icon },
+    { to: "/incidents", labelKey: "incidents.title", icon: Alert01Icon },
+    { to: "/services", labelKey: "pages.services.title", icon: CustomerServiceIcon },
+    { to: "/events", labelKey: "pages.events.title", icon: Calendar01Icon },
+    { to: "/contracts", labelKey: "contracts.title", icon: Coins01Icon },
+    { to: "/messages", labelKey: "pages.messages.title", icon: Message01Icon },
 ];
 
 export const Route = createFileRoute("/_app/dashboard/")({
@@ -73,6 +68,7 @@ export const Route = createFileRoute("/_app/dashboard/")({
 });
 
 function DashboardPage() {
+    const { t } = useTranslation();
     const user = getCurrentUser();
     const { data: pointData, isLoading: pointsLoading } = usePointBalance();
     const { data: neighborhoods } = useNeighborhoods();
@@ -109,7 +105,7 @@ function DashboardPage() {
             setCountdown(data.expiresIn);
             setSsoDialogOpen(true);
         } catch {
-            toast.error("Impossible de générer le token SSO");
+            toast.error(t("pages.dashboard.ssoGenerateError"));
         } finally {
             setSsoLoading(false);
         }
@@ -118,7 +114,7 @@ function DashboardPage() {
     function handleCopySsoToken() {
         if (!ssoToken) return;
         navigator.clipboard.writeText(ssoToken.ssoToken);
-        toast.success("Token copié dans le presse-papier");
+        toast.success(t("pages.dashboard.tokenCopied"));
     }
 
     function handleCloseDialog() {
@@ -128,28 +124,33 @@ function DashboardPage() {
 
     if (!user) return null;
 
-    const roleLabel = ROLE_LABELS[user.role] ?? user.role;
+    const roleLabels: Record<string, string> = {
+        resident: t("roles.resident"),
+        moderator: t("roles.moderator"),
+        admin: t("roles.admin"),
+    };
+    const roleLabel = roleLabels[user.role] ?? user.role;
 
     return (
         <div className="p-6 md:p-8">
             <div className="mx-auto max-w-5xl space-y-6">
                 <PageHeader
-                    title="Bonjour"
+                    title={t("pages.dashboard.welcome")}
                     description={user.email}
                     actions={<Badge variant="secondary">{roleLabel}</Badge>}
                 />
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <StatCard
-                        label="Vos points"
+                        label={t("pages.dashboard.yourPoints")}
                         value={pointData?.balance ?? "—"}
-                        hint="Points de participation"
+                        hint={t("pages.dashboard.participationPoints")}
                         loading={pointsLoading}
                     />
                     <StatCard
-                        label="Quartiers cartographiés"
+                        label={t("pages.dashboard.mappedNeighborhoods")}
                         value={neighborhoods?.length ?? "—"}
-                        hint="Autour de chez vous"
+                        hint={t("pages.dashboard.aroundYou")}
                     />
                 </div>
 
@@ -161,12 +162,17 @@ function DashboardPage() {
                                     icon={Location01Icon}
                                     className="text-primary size-5"
                                 />
-                                Mon quartier — {primaryNeighborhood.name}
+                                {t("pages.dashboard.myNeighborhood", {
+                                    name: primaryNeighborhood.name,
+                                })}
                             </CardTitle>
                             <CardDescription>
                                 {neighborhoods && neighborhoods.length > 1
-                                    ? `${neighborhoods.length} quartiers cartographiés`
-                                    : "Plan du quartier"}
+                                    ? t(
+                                          "pages.dashboard.mappedNeighborhoodsCount",
+                                          { count: neighborhoods.length },
+                                      )
+                                    : t("pages.dashboard.neighborhoodMap")}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -206,7 +212,7 @@ function DashboardPage() {
                                         />
                                     </div>
                                     <p className="text-sm font-medium">
-                                        {item.label}
+                                        {t(item.labelKey)}
                                     </p>
                                 </CardContent>
                             </Card>
@@ -221,12 +227,10 @@ function DashboardPage() {
                                 icon={ComputerIcon}
                                 className="text-primary size-5"
                             />
-                            Application desktop
+                            {t("pages.dashboard.desktopApp")}
                         </CardTitle>
                         <CardDescription>
-                            Générez un token SSO pour vous connecter à
-                            l&apos;application Java sans ressaisir vos
-                            identifiants.
+                            {t("pages.dashboard.desktopAppDescription")}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -237,8 +241,8 @@ function DashboardPage() {
                         >
                             {ssoLoading ? <Spinner className="mr-2" /> : null}
                             {ssoLoading
-                                ? "Génération…"
-                                : "Générer un token SSO"}
+                                ? t("pages.dashboard.generating")
+                                : t("pages.dashboard.generateSsoToken")}
                         </Button>
                     </CardContent>
                 </Card>
@@ -247,13 +251,16 @@ function DashboardPage() {
                     {ssoToken && (
                         <DialogContent className="sm:max-w-md">
                             <DialogHeader>
-                                <DialogTitle>Token SSO</DialogTitle>
+                                <DialogTitle>
+                                    {t("pages.dashboard.ssoTokenTitle")}
+                                </DialogTitle>
                                 <DialogDescription>
-                                    Valide{" "}
                                     {countdown > 0
-                                        ? `encore ${countdown}s`
-                                        : "(expiré)"}
-                                    . Usage unique.
+                                        ? t(
+                                              "pages.dashboard.ssoValidFor",
+                                              { count: countdown },
+                                          )
+                                        : t("pages.dashboard.ssoExpired")}
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
@@ -267,19 +274,20 @@ function DashboardPage() {
                                         disabled={countdown === 0}
                                     >
                                         <HugeiconsIcon icon={Copy01Icon} />
-                                        Copier le token
+                                        {t("pages.dashboard.copyToken")}
                                     </Button>
                                     <Button
                                         variant="outline"
                                         onClick={handleCloseDialog}
                                     >
-                                        Fermer
+                                        {t("common.close")}
                                     </Button>
                                 </div>
                                 {countdown <= 60 && countdown > 0 && (
                                     <p className="text-destructive text-xs">
-                                        Le token expire dans {countdown}{" "}
-                                        secondes.
+                                        {t("pages.dashboard.tokenExpiresIn", {
+                                            count: countdown,
+                                        })}
                                     </p>
                                 )}
                             </div>

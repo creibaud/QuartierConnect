@@ -7,6 +7,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { centroidOf, latLngToPoint, pointToLatLng } from "@workspace/shared/lib/geo";
 import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
 import {
@@ -85,6 +86,7 @@ export const Route = createFileRoute("/_app/services/")({
 });
 
 function AdminServicesPage() {
+    const { t } = useTranslation();
     const [createOpen, setCreateOpen] = useState(false);
     const [editTarget, setEditTarget] = useState<Service | null>(null);
 
@@ -112,8 +114,8 @@ function AdminServicesPage() {
 
     function handleDelete(id: string) {
         deleteService.mutate(id, {
-            onSuccess: () => toast.success("Service supprimé"),
-            onError: () => toast.error("Impossible de supprimer"),
+            onSuccess: () => toast.success(t("adminPages.services.deleted")),
+            onError: () => toast.error(t("adminPages.common.deleteError")),
         });
     }
 
@@ -121,12 +123,12 @@ function AdminServicesPage() {
         <div className="p-6">
             <div className="mx-auto max-w-6xl space-y-6">
                 <PageHeader
-                    title="Services"
-                    description="Annuaire des services de quartier."
+                    title={t("adminPages.services.title")}
+                    description={t("adminPages.services.description")}
                     actions={
                         <Button onClick={() => setCreateOpen(true)}>
                             <HugeiconsIcon icon={Add01Icon} />
-                            Ajouter
+                            {t("adminPages.common.add")}
                         </Button>
                     }
                 />
@@ -134,8 +136,12 @@ function AdminServicesPage() {
                 <Tabs defaultValue="list" className="gap-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <TabsList>
-                            <TabsTrigger value="list">Liste</TabsTrigger>
-                            <TabsTrigger value="map">Carte</TabsTrigger>
+                            <TabsTrigger value="list">
+                                {t("adminPages.common.listTab")}
+                            </TabsTrigger>
+                            <TabsTrigger value="map">
+                                {t("adminPages.common.mapTab")}
+                            </TabsTrigger>
                         </TabsList>
                         {categories.length > 0 && (
                             <Select
@@ -147,7 +153,7 @@ function AdminServicesPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">
-                                        Toutes les catégories
+                                        {t("adminPages.services.allCategories")}
                                     </SelectItem>
                                     {categories.map((category) => (
                                         <SelectItem
@@ -185,11 +191,14 @@ function AdminServicesPage() {
                                             />
                                         </EmptyMedia>
                                         <EmptyTitle>
-                                            Aucun service pour l'instant
+                                            {t(
+                                                "adminPages.services.emptyTitle",
+                                            )}
                                         </EmptyTitle>
                                         <EmptyDescription>
-                                            Ajoutez un premier service pour
-                                            enrichir l'annuaire de quartier.
+                                            {t(
+                                                "adminPages.services.emptyDescription",
+                                            )}
                                         </EmptyDescription>
                                     </EmptyHeader>
                                     <EmptyContent>
@@ -197,7 +206,7 @@ function AdminServicesPage() {
                                             onClick={() => setCreateOpen(true)}
                                         >
                                             <HugeiconsIcon icon={Add01Icon} />
-                                            Ajouter un service
+                                            {t("adminPages.services.addCta")}
                                         </Button>
                                     </EmptyContent>
                                 </Empty>
@@ -207,11 +216,21 @@ function AdminServicesPage() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Nom</TableHead>
-                                            <TableHead>Catégorie</TableHead>
-                                            <TableHead>Quartier</TableHead>
+                                            <TableHead>
+                                                {t("adminPages.common.name")}
+                                            </TableHead>
+                                            <TableHead>
+                                                {t(
+                                                    "adminPages.services.category",
+                                                )}
+                                            </TableHead>
+                                            <TableHead>
+                                                {t(
+                                                    "incidents.fields.neighborhood",
+                                                )}
+                                            </TableHead>
                                             <TableHead className="text-right">
-                                                Actions
+                                                {t("adminPages.common.actions")}
                                             </TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -248,7 +267,9 @@ function AdminServicesPage() {
                                                             <HugeiconsIcon
                                                                 icon={Edit01Icon}
                                                             />
-                                                            Modifier
+                                                            {t(
+                                                                "adminPages.common.edit",
+                                                            )}
                                                         </Button>
                                                         <AlertDialog>
                                                             <AlertDialogTrigger
@@ -267,30 +288,32 @@ function AdminServicesPage() {
                                                                             Delete01Icon
                                                                         }
                                                                     />
-                                                                    Supprimer
+                                                                    {t(
+                                                                        "common.delete",
+                                                                    )}
                                                                 </Button>
                                                             </AlertDialogTrigger>
                                                             <AlertDialogContent>
                                                                 <AlertDialogHeader>
                                                                     <AlertDialogTitle>
-                                                                        Supprimer
-                                                                        ce service
-                                                                        ?
+                                                                        {t(
+                                                                            "adminPages.services.deleteConfirmTitle",
+                                                                        )}
                                                                     </AlertDialogTitle>
                                                                     <AlertDialogDescription>
-                                                                        «{" "}
-                                                                        {
-                                                                            svc.title
-                                                                        }{" "}
-                                                                        » sera
-                                                                        définitivement
-                                                                        retiré de
-                                                                        l'annuaire.
+                                                                        {t(
+                                                                            "adminPages.services.deleteConfirmDescription",
+                                                                            {
+                                                                                title: svc.title,
+                                                                            },
+                                                                        )}
                                                                     </AlertDialogDescription>
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
                                                                     <AlertDialogCancel>
-                                                                        Annuler
+                                                                        {t(
+                                                                            "common.cancel",
+                                                                        )}
                                                                     </AlertDialogCancel>
                                                                     <AlertDialogAction
                                                                         variant="destructive"
@@ -300,7 +323,9 @@ function AdminServicesPage() {
                                                                             )
                                                                         }
                                                                     >
-                                                                        Supprimer
+                                                                        {t(
+                                                                            "common.delete",
+                                                                        )}
                                                                     </AlertDialogAction>
                                                                 </AlertDialogFooter>
                                                             </AlertDialogContent>
@@ -401,6 +426,7 @@ function ServiceDialog({
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
 }) {
+    const { t } = useTranslation();
     const [name, setName] = useState(initial?.title ?? "");
     const [category, setCategory] = useState(initial?.category ?? "");
     const [type, setType] = useState<"free" | "paid" | "exchange">(
@@ -445,20 +471,20 @@ function ServiceDialog({
                 { id: initial._id, data: payload },
                 {
                     onSuccess: () => {
-                        toast.success("Service modifié");
+                        toast.success(t("adminPages.services.updated"));
                         onSuccess();
                     },
                     onError: () =>
-                        toast.error("Erreur lors de l'enregistrement"),
+                        toast.error(t("adminPages.common.saveError")),
                 },
             );
         } else {
             createService.mutate(payload, {
                 onSuccess: () => {
-                    toast.success("Service créé");
+                    toast.success(t("adminPages.services.created"));
                     onSuccess();
                 },
-                onError: () => toast.error("Erreur lors de l'enregistrement"),
+                onError: () => toast.error(t("adminPages.common.saveError")),
             });
         }
     }
@@ -468,35 +494,45 @@ function ServiceDialog({
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>
-                        {initial ? "Modifier le service" : "Ajouter un service"}
+                        {initial
+                            ? t("adminPages.services.editTitle")
+                            : t("adminPages.services.addCta")}
                     </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="svc-name">Nom *</Label>
+                        <Label htmlFor="svc-name">
+                            {t("adminPages.services.nameLabel")}
+                        </Label>
                         <Input
                             id="svc-name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="Ex : Bibliothèque"
+                            placeholder={t(
+                                "adminPages.services.namePlaceholder",
+                            )}
                             maxLength={255}
                             required
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="svc-category">Catégorie *</Label>
+                            <Label htmlFor="svc-category">
+                                {t("adminPages.services.categoryLabel")}
+                            </Label>
                             <Input
                                 id="svc-category"
                                 value={category}
                                 onChange={(e) => setCategory(e.target.value)}
-                                placeholder="Ex : gardening"
+                                placeholder={t(
+                                    "adminPages.services.categoryPlaceholder",
+                                )}
                                 maxLength={100}
                                 required
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Type *</Label>
+                            <Label>{t("adminPages.services.typeLabel")}</Label>
                             <Select
                                 value={type}
                                 onValueChange={(v) =>
@@ -508,34 +544,44 @@ function ServiceDialog({
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="free">
-                                        Gratuit
+                                        {t("adminPages.services.types.free")}
                                     </SelectItem>
-                                    <SelectItem value="paid">Payant</SelectItem>
+                                    <SelectItem value="paid">
+                                        {t("adminPages.services.types.paid")}
+                                    </SelectItem>
                                     <SelectItem value="exchange">
-                                        Échange
+                                        {t("adminPages.services.types.exchange")}
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="svc-address">Adresse</Label>
+                        <Label htmlFor="svc-address">
+                            {t("adminPages.services.addressLabel")}
+                        </Label>
                         <Input
                             id="svc-address"
                             value={address}
                             onChange={(e) => setAddress(e.target.value)}
-                            placeholder="Ex : 12 rue de la Paix"
+                            placeholder={t(
+                                "adminPages.services.addressPlaceholder",
+                            )}
                         />
                     </div>
                     {neighborhoods.length > 0 && (
                         <div className="space-y-2">
-                            <Label>Quartier</Label>
+                            <Label>{t("incidents.fields.neighborhood")}</Label>
                             <Select
                                 value={neighborhoodId}
                                 onValueChange={setNeighborhoodId}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Choisir un quartier" />
+                                    <SelectValue
+                                        placeholder={t(
+                                            "adminPages.common.chooseNeighborhood",
+                                        )}
+                                    />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {neighborhoods.map((n) => (
@@ -548,7 +594,9 @@ function ServiceDialog({
                         </div>
                     )}
                     <div className="space-y-2">
-                        <Label htmlFor="svc-desc">Description</Label>
+                        <Label htmlFor="svc-desc">
+                            {t("incidents.fields.description")}
+                        </Label>
                         <Textarea
                             id="svc-desc"
                             value={description}
@@ -559,10 +607,10 @@ function ServiceDialog({
                     {firstNeighborhood?.geometry && (
                         <div className="space-y-2">
                             <Label>
-                                Position — cliquez sur la carte
+                                {t("adminPages.services.positionLabel")}
                                 {pickedLat !== null && pickedLng !== null
                                     ? ` (${pickedLat.toFixed(4)}, ${pickedLng.toFixed(4)})`
-                                    : " (optionnel)"}
+                                    : ` ${t("adminPages.services.optional")}`}
                             </Label>
                             <Map
                                 center={
@@ -597,7 +645,7 @@ function ServiceDialog({
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                         >
-                            Annuler
+                            {t("common.cancel")}
                         </Button>
                         <Button
                             type="submit"
@@ -608,8 +656,8 @@ function ServiceDialog({
                             {isPending
                                 ? "…"
                                 : initial
-                                  ? "Enregistrer"
-                                  : "Créer"}
+                                  ? t("common.save")
+                                  : t("adminPages.common.create")}
                         </Button>
                     </div>
                 </form>
