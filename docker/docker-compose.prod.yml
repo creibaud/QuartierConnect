@@ -1,0 +1,45 @@
+# Overrides production — appliqués par-dessus docker-compose.yml :
+#   docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml up -d --build
+#
+# Objectif : redémarrage automatique des conteneurs et logs bornés.
+# Ce fichier n'ajoute que des réglages d'exploitation ; la topologie reste
+# définie dans docker-compose.yml.
+
+services:
+  api:
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  client:
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  admin:
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mongo:
+    restart: unless-stopped
+
+  neo4j:
+    restart: unless-stopped
+
+  postgres:
+    restart: unless-stopped
+
+  caddy:
+    restart: unless-stopped

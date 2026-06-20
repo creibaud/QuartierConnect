@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Pre-commit QuartierConnect — applique les règles du CDC §13.1 sur le code stagé
+# et bloque toute trace d'outillage IA.
+#
+# Activer une fois par clone :  make hooks
+# Forcer un commit malgré tout :  git commit --no-verify
+
+fail=0
+note() { printf '  \033[31m✗\033[0m %s\n' "$1"; fail=1; }
+
+files=$(git diff --cached --name-only --diff-filter=ACM \
+  | grep -vE '(^|/)(node_modules|dist|target|\.venv|\.githooks)/' \
+  | grep -vE '(pnpm-lock\.yaml|uv\.lock)$')
+
+[ -z "$files" ] && exit 0
+
+code_files=$(echo "$files" | grep -E '\.(ts|tsx|js|jsx|java|py)$' || true)
+
+if [ -n "$code_files" ]; then
+  added_code=$(git diff --cached -U0 -- $code_files | grep -E '^\+[^+]' || true)
+  if echo "$added_code" | grep -qE 'console\.log|System\.out\.println|System\.err\.println|debugger'; then
+    note "console.log / System.out.println / debugger interdits (CDC §13.1)"
+  fi
+  if echo "$added_code" | grep -qE '(TODO|FIXME)'; then
+    note "TODO / FIXME interdits dans le code (CDC §13.1)"
+  fi
+fi
+
+added_all=$(git diff --cached -U0 -- $files | grep -E '^\+[^+]' || true)
+if echo "$added_all" | grep -qiE 'co-authored-by|generated with claude|anthropic|gstack|superpowers|/(plan-[a-z-]+|design-consultation|design-review)'; then
+  note "trace d'outillage IA détectée dans le diff stagé"
+fi
+
+if [ "$fail" -ne 0 ]; then
+  printf '\nCommit bloqué. Corrige les points ci-dessus (ou « git commit --no-verify » pour forcer).\n'
+  exit 1
+fi
+exit 0

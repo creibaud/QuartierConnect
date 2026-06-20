@@ -80,15 +80,15 @@ graph TB
 
 ## 2. Conteneurs Docker
 
-| # | Conteneur | Image | Port(s) | Rôle |
-|---|-----------|-------|---------|------|
-| 1 | `caddy` | `caddy:2-alpine` | 80, 443 | Reverse proxy HTTPS + Let's Encrypt automatique |
-| 2 | `client` | Node 20 + Vite | 3000 | SPA React — interface habitant |
-| 3 | `admin` | Node 20 + Vite | 3001 | SPA React — back-office admin |
-| 4 | `api` | Node 20 | 5000 | NestJS REST + WebSocket + DSL bridge |
-| 5 | `mongodb` | `mongo:7` | 27017 | Documents flexibles, GeoJSON, GridFS |
-| 6 | `postgres` | `postgres:16` | 5432 | Données ACID — users, incidents, points |
-| 7 | `neo4j` | `neo4j:5` | 7474, 7687 | Graphe social — recommandations Cypher |
+| #   | Conteneur  | Image            | Port(s)    | Rôle                                            |
+| --- | ---------- | ---------------- | ---------- | ----------------------------------------------- |
+| 1   | `caddy`    | `caddy:2-alpine` | 80, 443    | Reverse proxy HTTPS + Let's Encrypt automatique |
+| 2   | `client`   | Node 20 + Vite   | 3000       | SPA React — interface habitant                  |
+| 3   | `admin`    | Node 20 + Vite   | 3001       | SPA React — back-office admin                   |
+| 4   | `api`      | Node 20          | 5000       | NestJS REST + WebSocket + DSL bridge            |
+| 5   | `mongodb`  | `mongo:7`        | 27017      | Documents flexibles, GeoJSON, GridFS            |
+| 6   | `postgres` | `postgres:16`    | 5432       | Données ACID — users, incidents, points         |
+| 7   | `neo4j`    | `neo4j:5`        | 7474, 7687 | Graphe social — recommandations Cypher          |
 
 ### Routage Caddy
 
@@ -305,12 +305,12 @@ graph LR
 
 ### 7.2 Justification du tri-base
 
-| Critère | PostgreSQL | MongoDB | Neo4j |
-|---------|-----------|---------|-------|
-| Transactions ACID | Obligatoire (points, auth) | Non critique | Non applicable |
-| Schéma flexible | Non | Oui (GeoJSON, subdocs) | Propriétés libres |
-| Géolocalisation | Non | Index `2dsphere` natif | Non |
-| Recommandations | Non | Non | Cypher traversals |
+| Critère           | PostgreSQL                 | MongoDB                | Neo4j             |
+| ----------------- | -------------------------- | ---------------------- | ----------------- |
+| Transactions ACID | Obligatoire (points, auth) | Non critique           | Non applicable    |
+| Schéma flexible   | Non                        | Oui (GeoJSON, subdocs) | Propriétés libres |
+| Géolocalisation   | Non                        | Index `2dsphere` natif | Non               |
+| Recommandations   | Non                        | Non                    | Cypher traversals |
 
 ---
 
@@ -370,13 +370,13 @@ sequenceDiagram
 
 Le Three-Way Merger compare trois versions de chaque champ (titre, description, statut) :
 
-| Cas | Base | Local | Remote | Résultat |
-|-----|------|-------|--------|----------|
-| Pas de base (1er sync) | null | L | R | LWW — remote gagne si plus récent |
-| Local inchangé | B | B | R | Auto-merge — applique remote |
-| Remote inchangé | B | L | B | Auto-merge — conserve local |
-| Même changement | B | X | X | Auto-merge — les deux convergent |
-| Conflit vrai | B | L | R | `is_conflict=1` — résolution manuelle requise |
+| Cas                    | Base | Local | Remote | Résultat                                      |
+| ---------------------- | ---- | ----- | ------ | --------------------------------------------- |
+| Pas de base (1er sync) | null | L     | R      | LWW — remote gagne si plus récent             |
+| Local inchangé         | B    | B     | R      | Auto-merge — applique remote                  |
+| Remote inchangé        | B    | L     | B      | Auto-merge — conserve local                   |
+| Même changement        | B    | X     | X      | Auto-merge — les deux convergent              |
+| Conflit vrai           | B    | L     | R      | `is_conflict=1` — résolution manuelle requise |
 
 ### 8.3 Gestion des conflits dans l'UI
 
@@ -606,23 +606,23 @@ classDiagram
 
 Le `PluginEventBus` implémente un pattern publish/subscribe thread-safe (`CopyOnWriteArrayList`) avec 5 types d'événements :
 
-| Événement | Émetteur | Payload |
-|-----------|----------|---------|
-| `INCIDENTS_CHANGED` | SyncService, IncidentsView | null |
-| `SYNC_STARTED` | SyncService | null |
-| `SYNC_COMPLETED` | SyncService | null |
-| `SYNC_FAILED` | SyncService | Exception message |
-| `ONLINE_STATUS_CHANGED` | SyncService | Boolean (online) |
+| Événement               | Émetteur                   | Payload           |
+| ----------------------- | -------------------------- | ----------------- |
+| `INCIDENTS_CHANGED`     | SyncService, IncidentsView | null              |
+| `SYNC_STARTED`          | SyncService                | null              |
+| `SYNC_COMPLETED`        | SyncService                | null              |
+| `SYNC_FAILED`           | SyncService                | Exception message |
+| `ONLINE_STATUS_CHANGED` | SyncService                | Boolean (online)  |
 
 ### 14.3 Plugins intégrés
 
-| Plugin | Type | Rôle |
-|--------|------|------|
-| ThemePlugin | ContextAware | Thèmes CSS (Primer Dark par défaut), appliqué au `onLoad()` |
-| CompactModePlugin | ContextAware | Mode compact UI |
-| NotificationPlugin | ContextAware | Notifications event-driven via EventBus (plus de polling) |
-| ExportPlugin | ContextAware | Export de données incidents via AppContext |
-| OfflineModePlugin | ContextAware | Toggle hors-ligne dans AppTopBar.pluginSlot |
+| Plugin             | Type         | Rôle                                                        |
+| ------------------ | ------------ | ----------------------------------------------------------- |
+| ThemePlugin        | ContextAware | Thèmes CSS (Primer Dark par défaut), appliqué au `onLoad()` |
+| CompactModePlugin  | ContextAware | Mode compact UI                                             |
+| NotificationPlugin | ContextAware | Notifications event-driven via EventBus (plus de polling)   |
+| ExportPlugin       | ContextAware | Export de données incidents via AppContext                  |
+| OfflineModePlugin  | ContextAware | Toggle hors-ligne dans AppTopBar.pluginSlot                 |
 
 ---
 
@@ -732,15 +732,15 @@ refactor de `admin/neighborhoods`. Exports : `Map`, `Marker` (4 variants
 mappés sur la palette Civic Editorial), `NeighborhoodPolygon`,
 `MarkerCluster`, `DrawControl` (leaflet-draw), `UserLocation`, `useFitBounds`.
 
-| Surface | Usage |
-|---|---|
-| `client/dashboard` | Mini-carte du quartier (h-48) avec géolocalisation utilisateur |
-| `client/services` | Pins services groupés (MarkerCluster) + popup |
-| `client/events` | Onglet « Carte » : pins événements + date |
-| `client/incidents` | Click-to-place dans le dialog + carte des incidents |
-| `admin/services` | Onglet liste/carte + picker dans le dialog |
-| `admin/incidents` | Onglet liste/carte avec pins colorés par statut |
-| `admin/neighborhoods` | Dessin polygone via `<DrawControl>` (leaflet-draw) |
+| Surface               | Usage                                                          |
+| --------------------- | -------------------------------------------------------------- |
+| `client/dashboard`    | Mini-carte du quartier (h-48) avec géolocalisation utilisateur |
+| `client/services`     | Pins services groupés (MarkerCluster) + popup                  |
+| `client/events`       | Onglet « Carte » : pins événements + date                      |
+| `client/incidents`    | Click-to-place dans le dialog + carte des incidents            |
+| `admin/services`      | Onglet liste/carte + picker dans le dialog                     |
+| `admin/incidents`     | Onglet liste/carte avec pins colorés par statut                |
+| `admin/neighborhoods` | Dessin polygone via `<DrawControl>` (leaflet-draw)             |
 
 **Helpers géo** : `packages/shared/src/lib/geo.ts` expose `centroidOf`,
 `pointToLatLng`, `latLngToPoint` (3 tests Vitest).
@@ -750,3 +750,139 @@ mappés sur la palette Civic Editorial), `NeighborhoodPolygon`,
 ce sous-schéma Mongoose avec index `2dsphere` (sparse) ; les Incidents
 Postgres stockent simplement `lat REAL` + `lng REAL` (migration
 `0002_incident_coords.sql`).
+
+---
+
+## 18. Architecture de déploiement production
+
+> Section ajoutée pour la livraison DevOps. Décrit l'infrastructure réelle en production sur le VPS, distincte de l'environnement de développement local.
+
+### 18.1 Vue réseau production
+
+```mermaid
+graph TB
+    subgraph Internet
+        U1[Habitant<br/>navigateur HTTPS]
+        U2[Admin<br/>navigateur HTTPS]
+        U3[Admin/Moderator<br/>JavaFX Desktop]
+        LE[Let's Encrypt<br/>ACME]
+        UR[UptimeRobot<br/>monitoring]
+    end
+
+    subgraph VPS["VPS Ubuntu — UFW (22/80/443 only) + fail2ban"]
+        CADDY["Caddy 2<br/>:80 / :443 / :443/udp<br/>HTTPS auto + HSTS + CSP"]
+
+        subgraph DockerNet["Réseau Docker interne — quartierconnect_prod"]
+            CLIENT["client<br/>:3000<br/>Caddy static"]
+            ADMIN["admin<br/>:3001<br/>Caddy static"]
+            API["api<br/>:5000<br/>NestJS + Python PLY"]
+
+            MONGO[("mongo<br/>:27017<br/>127.0.0.1 only")]
+            PG[("postgres<br/>:5432<br/>127.0.0.1 only")]
+            NEO[("neo4j<br/>:7474/:7687<br/>127.0.0.1 only")]
+        end
+    end
+
+    subgraph Cloud["Stockage distant"]
+        S3[("S3 / Backblaze<br/>backups chiffrés")]
+    end
+
+    U1 -->|HTTPS| CADDY
+    U2 -->|HTTPS| CADDY
+    U3 -->|HTTPS REST| CADDY
+    LE -.->|challenge :80| CADDY
+    UR -.->|GET /api/health| CADDY
+
+    CADDY -->|"/"| CLIENT
+    CADDY -->|"/admin"| ADMIN
+    CADDY -->|"/api → strip prefix"| API
+    CADDY -->|"/docs Scalar"| API
+    CADDY -->|"/api WSS → Socket.io"| API
+
+    API --> MONGO
+    API --> PG
+    API --> NEO
+
+    MONGO -.->|cron 2h| S3
+    PG -.->|cron 2h| S3
+    NEO -.->|cron 2h| S3
+
+    style CADDY fill:#1D4ED8,color:#fff
+    style API fill:#E0234E,color:#fff
+    style S3 fill:#16a34a,color:#fff
+```
+
+**Points clés de sécurité réseau** :
+
+- Seuls les ports **22, 80, 443** sont exposés à Internet (UFW)
+- Les 3 bases sont bindées sur `127.0.0.1` → accessibles uniquement via le réseau Docker interne, jamais depuis l'extérieur
+- Caddy est le **seul** point d'entrée HTTP/HTTPS — il termine le TLS et proxifie en interne
+- Le WebSocket (Socket.io messagerie) passe par le même `/api` avec upgrade `wss://`
+
+### 18.2 Flux CI/CD
+
+```mermaid
+graph LR
+    DEV[Développeur] -->|push PR| GH[GitHub]
+    GH -->|déclenche| CI[CI workflow]
+
+    CI --> J1[api: lint+build+test]
+    CI --> J2[web: lint+typecheck+build]
+    CI --> J3[desktop: mvn test+package]
+    CI --> J4[dsl: ruff+pytest]
+    CI --> J5[make validate-fast]
+
+    J1 & J2 & J3 & J4 & J5 --> OK{tous verts ?}
+    OK -->|non| BLOCK[Merge bloqué]
+    OK -->|oui| MERGE[Merge vers master]
+
+    MERGE -->|tag v*.*.*| DEPLOY[deploy workflow]
+    MERGE -->|tag v*.*.*| REL[release-desktop:<br/>JAR sur Releases]
+
+    DEPLOY -->|environment: production<br/>approbation Claudio| SSH[SSH VPS]
+    SSH --> BUILD[docker compose up --build]
+    BUILD --> SMOKE{smoke-test ?}
+    SMOKE -->|OK| DISCORD1[Discord ✅]
+    SMOKE -->|KO| RB[rollback auto]
+    RB --> DISCORD2[Discord 🔴]
+
+    style CI fill:#1D4ED8,color:#fff
+    style DEPLOY fill:#E0234E,color:#fff
+    style SMOKE fill:#f59e0b,color:#fff
+```
+
+### 18.3 Conteneurs production vs développement
+
+| Aspect           | Dev (`docker-compose.yml`) | Prod (`+ docker-compose.prod.yml`)         |
+| ---------------- | -------------------------- | ------------------------------------------ |
+| Caddy            | HTTP `:80`, Caddyfile dev  | HTTPS `:443` Let's Encrypt, Caddyfile.prod |
+| `restart`        | non                        | `unless-stopped` partout                   |
+| Healthchecks     | partiels                   | api + mongo + postgres + neo4j + caddy     |
+| `depends_on`     | basique                    | `condition: service_healthy`               |
+| Resource limits  | aucune                     | mémoire + CPU cappés                       |
+| Neo4j heap       | défaut (~4G)               | cappée à 1G                                |
+| Rate limit login | 100 (dev)                  | 5 (prod)                                   |
+| CORS             | localhost                  | `https://quartierconnect.fr` uniquement    |
+| Réseau           | défaut                     | `quartierconnect_prod` nommé               |
+| Logs Caddy       | stdout                     | JSON fichier + rotation 100Mo/10           |
+
+### 18.4 Stratégie de backup
+
+```mermaid
+graph TB
+    CRON["cron VPS<br/>2h du matin"] --> ALL[backup-all.sh]
+
+    ALL --> M[backup-mongo.sh<br/>mongodump --gzip]
+    ALL --> P[backup-postgres.sh<br/>pg_dumpall | gzip]
+    ALL --> N[backup-neo4j.sh<br/>cold dump ~30s]
+    ALL --> C{lundi ?}
+    C -->|oui| CD[Caddy certs tar.gz]
+
+    M & P & N & CD --> LOCAL["/var/backups<br/>rétention 7j"]
+    LOCAL --> REMOTE["S3/Backblaze<br/>7j + 4 sem + 12 mois"]
+
+    ALL -->|échec| DISC[Discord 🔴]
+
+    style ALL fill:#16a34a,color:#fff
+    style REMOTE fill:#1D4ED8,color:#fff
+```
