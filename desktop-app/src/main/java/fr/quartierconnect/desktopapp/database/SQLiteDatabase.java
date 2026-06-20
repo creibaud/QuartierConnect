@@ -11,7 +11,10 @@ import java.util.UUID;
 
 public class SQLiteDatabase {
 
-    private static final String DB_URL = System.getProperty("sqlite.url", "jdbc:sqlite:quartierconnect.db");
+    /** Read fresh each call so a test-set sqlite.url is always honored, regardless of class-load order. */
+    private static String dbUrl() {
+        return System.getProperty("sqlite.url", "jdbc:sqlite:quartierconnect.db");
+    }
 
     /** Cached session for offline-resume. Stores email only — tokens are in the OS keychain via TokenVault. */
     public record SessionRecord(String email, String savedAt) {}
@@ -290,6 +293,6 @@ public class SQLiteDatabase {
     }
 
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DB_URL);
+        return DriverManager.getConnection(dbUrl());
     }
 }
