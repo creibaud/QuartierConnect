@@ -1,44 +1,44 @@
 # QuartierConnect
 
-Plateforme communautaire de quartier — ESGI 3AL2 · Étape 4 (95%)
+Neighborhood community platform — ESGI 3AL2 · Stage 4 (95%)
 
-> **Rendu final** : 19 juillet 2026 · **Enseignant** : Frédéric SANANES
-> **v0.2.0** · **736 tests automatisés** · 7 conteneurs Docker · 3 bases de données · 4 surfaces
+> **Final submission**: 19 July 2026 · **Instructor**: Frédéric SANANES
+> **v0.2.0** · **736 automated tests** · 7 Docker containers · 3 databases · 4 surfaces
 
 ---
 
-## Prérequis
+## Prerequisites
 
 - Docker + Docker Compose
 - Make
-- Node.js 20+ (pour le seed)
-- Java 21 (pour le desktop)
-- oathtool (`sudo apt install oathtool`) ou Google Authenticator
+- Node.js 20+ (for seeding)
+- Java 21 (for the desktop app)
+- oathtool (`sudo apt install oathtool`) or Google Authenticator
 
-## Démarrage rapide
+## Quick start
 
 ```bash
-# 1. Configurer l'environnement
+# 1. Configure the environment
 cp .env.example .env
-# Éditer .env : POSTGRES_PASSWORD, MONGO_ROOT_PASSWORD, JWT_SECRET, NEO4J_AUTH
+# Edit .env: POSTGRES_PASSWORD, MONGO_ROOT_PASSWORD, JWT_SECRET, NEO4J_AUTH
 
-# 2. Lancer les 7 services Docker
+# 2. Start the 7 Docker services
 make docker-up
 
-# 3. Créer les comptes de démo + peupler Neo4j
+# 3. Create the demo accounts + populate Neo4j
 make seed
 ```
 
 | Surface               | URL                       |
 | --------------------- | ------------------------- |
-| **Client habitant**   | http://localhost          |
+| **Resident client**   | http://localhost          |
 | **Admin back-office** | http://localhost/admin    |
 | **API docs (Scalar)** | http://localhost/api/docs |
 | **Neo4j Browser**     | http://localhost:7474     |
 
-## Comptes démo
+## Demo accounts
 
-| Email         | Mot de passe | Rôle      | TOTP               |
+| Email         | Password     | Role      | TOTP               |
 | ------------- | ------------ | --------- | ------------------ |
 | alice@demo.fr | Demo1234!    | resident  | `JBSWY3DPEHPK3PXP` |
 | bob@demo.fr   | Demo1234!    | moderator | `JBSWY3DPEHPK3PXP` |
@@ -46,43 +46,43 @@ make seed
 
 ```bash
 make totp
-# Ou : oathtool --totp --base32 JBSWY3DPEHPK3PXP
+# Or: oathtool --totp --base32 JBSWY3DPEHPK3PXP
 ```
 
-## Développement local
+## Local development
 
 ```bash
-make dev              # API + client + admin en parallèle (hot reload)
-make dev-api          # API seule (port 5000)
-make dev-client       # Client React (port 3000)
-make dev-admin        # Admin React (port 3001)
+make dev              # API + client + admin in parallel (hot reload)
+make dev-api          # API only (port 5000)
+make dev-client       # React client (port 3000)
+make dev-admin        # React admin (port 3001)
 make dev-desktop      # JavaFX (javafx:run)
 ```
 
 ## Tests
 
 ```bash
-make test             # Unitaires API (260) + Web shared hooks (73) + Desktop (139) + DSL (21)
-make test-cov         # + rapport coverage (stmts 95.7%, branches 86.1%)
-make test-e2e         # E2E API Supertest (148) — nécessite Docker
-make test-e2e-web     # E2E Playwright (79) — nécessite apps lancées
-make validate         # Tout en séquence : lint + typecheck + tests + build
+make test             # Unit API (260) + Web shared hooks (73) + Desktop (139) + DSL (21)
+make test-cov         # + coverage report (stmts 95.7%, branches 86.1%)
+make test-e2e         # E2E API Supertest (148) — requires Docker
+make test-e2e-web     # E2E Playwright (79) — requires apps running
+make validate         # Everything in sequence: lint + typecheck + tests + build
 ```
 
 ## Format
 
 ```bash
-make format           # Formate les 4 composants (Prettier + Ruff)
-make format-api       # API NestJS uniquement
-make format-web       # Monorepo web uniquement
+make format           # Formats all 4 components (Prettier + Ruff)
+make format-api       # NestJS API only
+make format-web       # Web monorepo only
 make format-desktop   # Desktop Java (compile -q)
-make format-dsl       # DSL Python (ruff format)
+make format-dsl       # Python DSL (ruff format)
 ```
 
 ## Build
 
 ```bash
-make build            # Tous les composants
+make build            # All components
 make build-desktop    # Fat JAR (~25 MB)
 java -jar desktop-app/target/quartierconnect-desktop.jar
 ```
@@ -90,36 +90,36 @@ java -jar desktop-app/target/quartierconnect-desktop.jar
 ## Docker
 
 ```bash
-make docker-up        # Démarrer
-make docker-down      # Arrêter
-make docker-reset     # Reset complet (⚠️ supprime volumes)
-make docker-logs      # Logs temps réel
-make status           # État des services
+make docker-up        # Start
+make docker-down      # Stop
+make docker-reset     # Full reset (⚠️ removes volumes)
+make docker-logs      # Real-time logs
+make status           # Service status
 ```
 
 ## Documentation
 
-| Document                                               | Contenu                                                   |
+| Document                                               | Contents                                                  |
 | ------------------------------------------------------ | --------------------------------------------------------- |
-| [docs/RAPPORT-TECHNIQUE.md](docs/RAPPORT-TECHNIQUE.md) | Rapport complet pour la soutenance — tous les algorithmes |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)           | Diagrammes Mermaid — modules, flux, sécurité              |
-| [docs/DATABASE.md](docs/DATABASE.md)                   | Schémas PostgreSQL, MongoDB, Neo4j, SQLite                |
-| [docs/SECURITY.md](docs/SECURITY.md)                   | Argon2id, TOTP, JWT, SSO, SHA-256, RGPD                   |
-| [docs/TEST.md](docs/TEST.md)                           | Rapport QA — 736 tests, coverage, stratégie               |
-| [docs/DSL.md](docs/DSL.md)                             | Micro-langage PLY — grammaire, pipeline, sécurité         |
-| [docs/GUIDE-SOUTENANCE.md](docs/GUIDE-SOUTENANCE.md)   | Scénarios démo, questions/réponses, chiffres clés         |
-| [docs/API.md](docs/API.md)                             | Référence complète des 50+ endpoints                      |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)               | Déploiement VPS + Caddy HTTPS                             |
+| [docs/RAPPORT-TECHNIQUE.md](docs/RAPPORT-TECHNIQUE.md) | Full report for the defense — all the algorithms           |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)           | Mermaid diagrams — modules, flows, security                |
+| [docs/DATABASE.md](docs/DATABASE.md)                   | PostgreSQL, MongoDB, Neo4j, SQLite schemas                 |
+| [docs/SECURITY.md](docs/SECURITY.md)                   | Argon2id, TOTP, JWT, SSO, SHA-256, GDPR                    |
+| [docs/TEST.md](docs/TEST.md)                           | QA report — 736 tests, coverage, strategy                  |
+| [docs/DSL.md](docs/DSL.md)                             | PLY micro-language — grammar, pipeline, security            |
+| [docs/GUIDE-SOUTENANCE.md](docs/GUIDE-SOUTENANCE.md)   | Demo scenarios, Q&A, key figures                           |
+| [docs/API.md](docs/API.md)                             | Full reference for the 50+ endpoints                       |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)               | VPS deployment + Caddy HTTPS                                |
 
 ## Stack
 
-| Couche      | Technologie                                                                |
+| Layer       | Technology                                                                 |
 | ----------- | -------------------------------------------------------------------------- |
 | **API**     | NestJS 11, TypeScript, Drizzle ORM, Mongoose, JWT HS256, argon2, speakeasy |
 | **Client**  | React 19, TanStack Router/Query/Form, Shadcn/ui, Tailwind v4               |
-| **Admin**   | React 19 (même stack), DSL editor, Mermaid                                 |
+| **Admin**   | React 19 (same stack), DSL editor, Mermaid                                 |
 | **Desktop** | JavaFX 21, Maven Shade JAR, SQLite JDBC, java.net.http                     |
-| **Bases**   | PostgreSQL 16, MongoDB 7, Neo4j 5, SQLite 3                                |
-| **Proxy**   | Caddy 2 (HTTPS Let's Encrypt automatique)                                  |
+| **Databases** | PostgreSQL 16, MongoDB 7, Neo4j 5, SQLite 3                              |
+| **Proxy**   | Caddy 2 (automatic Let's Encrypt HTTPS)                                    |
 | **CI/CD**   | GitHub Actions (lint + test + build), Turbo monorepo                       |
 | **DSL**     | Python PLY + pythonia bridge                                               |

@@ -1,146 +1,146 @@
-# Rapport de Projet — Étape 3
+# Project Report — Stage 3
 ## QuartierConnect — *Connected Neighbours*
 
 ---
 
 |                    |                                                                            |
 | ------------------ | -------------------------------------------------------------------------- |
-| **Groupe**         | 1 — 3AL2                                                                   |
-| **Membres**        | Claudio REIBAUD · Andras SCHULLER · Mouhamadou N'DIAYE                     |
-| **Enseignant**     | Frédéric SANANES                                                          |
-| **Date de remise** | 31 mai 2026                                                                |
-| **Réunion**        | 4 juin 2026                                                                |
-| **Avancement**     | Étape 3 — 60 % réalisé (avance partielle sur certains points de l'Étape 4) |
+| **Group**          | 1 — 3AL2                                                                   |
+| **Members**        | Claudio REIBAUD · Andras SCHULLER · Mouhamadou N'DIAYE                     |
+| **Instructor**     | Frédéric SANANES                                                          |
+| **Submission date**| 31 May 2026                                                                |
+| **Meeting**        | 4 June 2026                                                                |
+| **Progress**       | Stage 3 — 60% complete (partial progress on some Stage 4 items)            |
 
 ---
 
-## Table des matières
+## Table of contents
 
-1. [Descriptif fonctionnel](#1-descriptif-fonctionnel)
-2. [Cas d'utilisation](#2-cas-dutilisation)
-3. [Modèle Conceptuel de Données](#3-modèle-conceptuel-de-données)
-4. [Modélisation géographique du quartier](#4-modélisation-géographique-du-quartier)
-5. [Architecture logicielle](#5-architecture-logicielle)
-6. [Algorithmes complexes](#6-algorithmes-complexes)
-7. [APIs et frameworks utilisés](#7-apis-et-frameworks-utilisés)
+1. [Functional overview](#1-functional-overview)
+2. [Use cases](#2-use-cases)
+3. [Conceptual data model](#3-conceptual-data-model)
+4. [Geographic modelling of the neighbourhood](#4-geographic-modelling-of-the-neighbourhood)
+5. [Software architecture](#5-software-architecture)
+6. [Complex algorithms](#6-complex-algorithms)
+7. [APIs and frameworks used](#7-apis-and-frameworks-used)
 8. [Tests](#8-tests)
-9. [Démonstration](#9-démonstration)
+9. [Demonstration](#9-demonstration)
 
 ---
 
-## 1. Descriptif fonctionnel
+## 1. Functional overview
 
-### 1.1 Rappel du projet
+### 1.1 Project recap
 
-QuartierConnect est une plateforme collaborative destinée aux habitants d'un quartier résidentiel. Elle permet d'échanger des services valorisés par un système de points, de signer des documents numériques, de participer à des événements communautaires, de communiquer en temps réel et de voter sur la vie du quartier. Une application desktop JavaFX complète l'ensemble pour la gestion offline-first des incidents et des statistiques.
+QuartierConnect is a collaborative platform for the residents of a residential neighbourhood. It lets them exchange services valued through a points system, sign digital documents, take part in community events, communicate in real time and vote on neighbourhood matters. A JavaFX desktop application rounds out the suite for offline-first management of incidents and statistics.
 
-La plateforme reste accessible sur trois surfaces :
+The platform is available across three surfaces:
 
-- **React Client** (port 3000) — interface habitant ;
-- **React Admin** (port 3001) — back-office administrateur ;
-- **Java Desktop** — application lourde JavaFX, fonctionnant hors-ligne via SQLite.
+- **React Client** (port 3000) — resident interface;
+- **React Admin** (port 3001) — administrator back office;
+- **Java Desktop** — JavaFX rich-client application, working offline through SQLite.
 
-### 1.2 Objectif de l'Étape 3 (60 %)
+### 1.2 Objective of Stage 3 (60%)
 
-L'Étape 2 (30 %) avait livré l'authentification complète, le SSO cross-surface et les CRUD backend sans interface. L'Étape 3 vise les **60 %** : exposer l'ensemble des modules métier via une **API complète documentée (Scalar)**, brancher **toutes les pages React sur des données réelles**, finaliser la **synchronisation bidirectionnelle** du client Java et livrer la **modélisation géographique du quartier** (outil de dessin de polygones).
+Stage 2 (30%) had delivered full authentication, cross-surface SSO and the backend CRUD operations without any interface. Stage 3 targets **60%**: exposing all business modules through a **complete documented API (Scalar)**, wiring **every React page to real data**, finalising the **two-way synchronisation** of the Java client and delivering the **geographic modelling of the neighbourhood** (polygon drawing tool).
 
-### 1.3 État d'avancement
+### 1.3 Progress status
 
-#### Cible Étape 3 — ✅ Complète
+#### Stage 3 target — ✅ Complete
 
-| Livrable (CDC §14.3)                                            | Statut                                  |
+| Deliverable (CDC §14.3)                                          | Status                                  |
 | --------------------------------------------------------------- | --------------------------------------- |
-| ServicesModule + ContractsModule + PointsModule (ACID)          | ✅ Terminé                               |
-| DocumentsModule (signature SHA-256, GridFS, audit)              | ✅ Terminé                               |
-| SocialModule (Neo4j, recommandations)                           | ✅ Terminé                               |
-| MessagingModule (WebSocket Socket.io)                           | ✅ Terminé                               |
-| VotesModule + CommunityVotesModule (4 types, Strategy)          | ✅ Terminé                               |
-| IncidentsModule (PostgreSQL, machine d'états)                   | ✅ Terminé                               |
-| Modélisation géographique (GeoJSON + outil de dessin Leaflet)   | ✅ Terminé                               |
-| React Client — toutes les pages avec données réelles            | ✅ Terminé                               |
-| Java Desktop — sync offline/online LWW bidirectionnelle         | ✅ Terminé                               |
-| Documentation API Scalar (`GET /api/docs`)                      | ✅ Terminé                               |
-| Tests E2E (auth, services, contrats, points, neo4j, messagerie) | ✅ Terminé                               |
-| Coverage ≥ 60 %                                                 | ✅ Dépassé (statements 95,7 %)           |
+| ServicesModule + ContractsModule + PointsModule (ACID)          | ✅ Done                                  |
+| DocumentsModule (SHA-256 signature, GridFS, audit)              | ✅ Done                                  |
+| SocialModule (Neo4j, recommendations)                           | ✅ Done                                  |
+| MessagingModule (WebSocket Socket.io)                           | ✅ Done                                  |
+| VotesModule + CommunityVotesModule (4 types, Strategy)          | ✅ Done                                  |
+| IncidentsModule (PostgreSQL, state machine)                     | ✅ Done                                  |
+| Geographic modelling (GeoJSON + Leaflet drawing tool)           | ✅ Done                                  |
+| React Client — all pages backed by real data                   | ✅ Done                                  |
+| Java Desktop — two-way offline/online LWW sync                 | ✅ Done                                  |
+| Scalar API documentation (`GET /api/docs`)                      | ✅ Done                                  |
+| E2E tests (auth, services, contracts, points, neo4j, messaging) | ✅ Done                                  |
+| Coverage ≥ 60%                                                  | ✅ Exceeded (statements 95.7%)           |
 
-#### Avance partielle sur l'Étape 4
+#### Partial progress on Stage 4
 
-| Module                                          | Statut                                      |
+| Module                                          | Status                                      |
 | ----------------------------------------------- | ------------------------------------------- |
-| DSL PLY (lex/yacc) + bridge pythonia            | ✅ Terminé — *consolidation tests prévue*    |
-| Recommandations Neo4j (sync temps réel)         | ✅ Terminé — *affinage du scoring à venir*   |
-| Export RGPD JSON                                | ✅ Terminé — *parcours suppression à finir*  |
-| React Admin — vues de gestion                   | 🟡 Avancé — *vues principales livrées*      |
+| PLY DSL (lex/yacc) + pythonia bridge            | ✅ Done — *test consolidation planned*       |
+| Neo4j recommendations (real-time sync)          | ✅ Done — *scoring refinement to come*       |
+| GDPR JSON export                                | ✅ Done — *deletion flow to finish*          |
+| React Admin — management views                  | 🟡 Advanced — *main views delivered*        |
 
-#### Reste à faire — Étape 4 (95 %)
+#### Remaining work — Stage 4 (95%)
 
-| Module                                                | Cible   |
+| Module                                                | Target  |
 | ----------------------------------------------------- | ------- |
-| React Admin — toutes les vues + statistiques réelles  | Étape 4 |
-| Système de plugins Java + 4 plugins                   | Étape 4 |
-| Système de thèmes Java + 3 thèmes                     | Étape 4 |
-| i18n API FR/EN complet                                | Étape 4 |
-| RGPD complet (accès, rectification, suppression)      | Étape 4 |
+| React Admin — all views + real statistics             | Stage 4 |
+| Java plugin system + 4 plugins                        | Stage 4 |
+| Java theme system + 3 themes                          | Stage 4 |
+| Full FR/EN API i18n                                   | Stage 4 |
+| Full GDPR (access, rectification, erasure)            | Stage 4 |
 
 ---
 
-## 2. Cas d'utilisation
+## 2. Use cases
 
-### 2.1 Diagramme général
+### 2.1 Overview diagram
 
 ```mermaid
 graph TD
-    Habitant([Habitant])
-    Moderateur([Modérateur])
-    Admin([Administrateur])
+    Habitant([Resident])
+    Moderateur([Moderator])
+    Admin([Administrator])
 
-    Habitant --> UC_SVC[Publier / consulter un service]
-    Habitant --> UC_PTS[Transférer des points]
-    Habitant --> UC_CTR[Signer un contrat]
-    Habitant --> UC_EVT[Participer à un événement]
-    Habitant --> UC_MSG[Échanger des messages]
-    Habitant --> UC_VOTE[Voter sur un scrutin]
-    Habitant --> UC_RECO[Recevoir des recommandations]
-    Habitant --> UC_INC[Signaler un incident]
+    Habitant --> UC_SVC[Publish / browse a service]
+    Habitant --> UC_PTS[Transfer points]
+    Habitant --> UC_CTR[Sign a contract]
+    Habitant --> UC_EVT[Attend an event]
+    Habitant --> UC_MSG[Exchange messages]
+    Habitant --> UC_VOTE[Vote in a ballot]
+    Habitant --> UC_RECO[Receive recommendations]
+    Habitant --> UC_INC[Report an incident]
 
-    Moderateur --> UC_MOD[Modérer les incidents]
+    Moderateur --> UC_MOD[Moderate incidents]
 
-    Admin --> UC_DRAW[Dessiner un quartier sur la carte]
-    Admin --> UC_USERS[Gérer les utilisateurs]
-    Admin --> UC_DSL[Interroger via le DSL]
-    Admin --> UC_JAVA[Gérer incidents et stats desktop]
+    Admin --> UC_DRAW[Draw a neighbourhood on the map]
+    Admin --> UC_USERS[Manage users]
+    Admin --> UC_DSL[Query through the DSL]
+    Admin --> UC_JAVA[Manage desktop incidents and stats]
 
-    UC_CTR --> UC_TOTP[Vérifier le code TOTP]
-    UC_RECO -.->|graphe| Neo4j[(Neo4j)]
+    UC_CTR --> UC_TOTP[Verify the TOTP code]
+    UC_RECO -.->|graph| Neo4j[(Neo4j)]
 
-    Moderateur -.->|hérite| Habitant
-    Admin -.->|hérite| Moderateur
+    Moderateur -.->|inherits| Habitant
+    Admin -.->|inherits| Moderateur
 ```
 
-### 2.2 UC-07 — Transfert de points entre voisins
+### 2.2 UC-07 — Point transfer between neighbours
 
 ```mermaid
 sequenceDiagram
-    actor E as Expéditeur
+    actor E as Sender
     participant C as React Client
-    participant A as API NestJS
+    participant A as NestJS API
     participant PG as PostgreSQL
 
-    E->>C: Saisit destinataire + montant + note
+    E->>C: Enters recipient + amount + note
     C->>A: POST /points/transfer { recipientId, amount, note }
 
-    alt Expéditeur == Destinataire
+    alt Sender == Recipient
         A-->>C: 400 SELF_TRANSFER
     end
 
     A->>PG: BEGIN TRANSACTION
-    A->>PG: SELECT balance ... FOR UPDATE (verrou exclusif)
+    A->>PG: SELECT balance ... FOR UPDATE (exclusive lock)
     PG-->>A: { balance: B }
 
     alt B - amount < -10
         A->>PG: ROLLBACK
         A-->>C: 400 INSUFFICIENT_BALANCE
-    else Solde suffisant
+    else Sufficient balance
         A->>PG: UPSERT sender (balance - amount)
         A->>PG: UPSERT recipient (balance + amount)
         A->>PG: INSERT points_transactions
@@ -149,21 +149,21 @@ sequenceDiagram
     end
 ```
 
-### 2.3 UC-08 — Signature d'un contrat (MFA obligatoire)
+### 2.3 UC-08 — Signing a contract (MFA required)
 
 ```mermaid
 sequenceDiagram
-    actor S as Signataire
+    actor S as Signatory
     participant C as React Client
-    participant A as API NestJS
+    participant A as NestJS API
     participant M as MongoDB
 
-    S->>C: Ouvre le contrat à signer
-    S->>C: Saisit son code TOTP
+    S->>C: Opens the contract to sign
+    S->>C: Enters their TOTP code
     C->>A: POST /contracts/:id/sign { totpCode }
 
     A->>A: totpService.verify(secret, totpCode)
-    alt Code TOTP invalide
+    alt Invalid TOTP code
         A-->>C: 400 INVALID_TOTP
     end
 
@@ -171,10 +171,10 @@ sequenceDiagram
     A->>M: $push signatures { userId, signedAt, hash }
     A->>A: allSigned ? status = 'signed' : 'pending_signature'
     A->>M: save()
-    A-->>C: 200 — contrat mis à jour
+    A-->>C: 200 — contract updated
 ```
 
-### 2.4 UC-09 — Messagerie temps réel
+### 2.4 UC-09 — Real-time messaging
 
 ```mermaid
 sequenceDiagram
@@ -194,80 +194,80 @@ sequenceDiagram
     GW->>SVC: sendMessage(convId, aliceId, content)
     SVC->>M: INSERT message + UPDATE lastMessage
     GW->>GW: server.to("conversation:convId").emit("new_message")
-    Note over GW: Tous les participants connectés sont notifiés
+    Note over GW: All connected participants are notified
 ```
 
-### 2.5 UC-10 — Scrutin communautaire pondéré
+### 2.5 UC-10 — Weighted community ballot
 
 ```mermaid
 flowchart TD
-    A([POST /community-votes/:id/cast]) --> B{Type de scrutin ?}
-    B -->|binary / single_choice| C[1 choix retenu]
-    B -->|multiple_choice| D[1 à N choix retenus]
-    B -->|weighted| E[Poids 1-10 par option]
-    C --> F[Enregistrer le bulletin dans casts]
+    A([POST /community-votes/:id/cast]) --> B{Ballot type?}
+    B -->|binary / single_choice| C[1 choice kept]
+    B -->|multiple_choice| D[1 to N choices kept]
+    B -->|weighted| E[Weight 1-10 per option]
+    C --> F[Record the ballot in casts]
     D --> F
     E --> F
-    F --> G{Lecture des résultats}
-    G --> H{endsAt dépassé ?}
-    H -->|Oui| I[status = 'closed']
-    H -->|Non| J[status = 'open']
-    I --> K[Calcul : somme des poids ou comptage]
+    F --> G{Reading the results}
+    G --> H{endsAt passed?}
+    H -->|Yes| I[status = 'closed']
+    H -->|No| J[status = 'open']
+    I --> K[Compute: sum of weights or count]
     J --> K
-    K --> L{casts >= quorum ?}
-    L -->|Oui| M[quorumReached = true]
-    L -->|Non| N[quorumReached = false]
+    K --> L{casts >= quorum?}
+    L -->|Yes| M[quorumReached = true]
+    L -->|No| N[quorumReached = false]
 ```
 
-### 2.6 UC-11 — Recommandation sociale (Neo4j)
+### 2.6 UC-11 — Social recommendation (Neo4j)
 
 ```mermaid
 sequenceDiagram
-    actor U as Utilisateur
+    actor U as User
     participant C as React Client
-    participant A as API NestJS
+    participant A as NestJS API
     participant N as Neo4j
 
-    U->>C: Ouvre le dashboard
+    U->>C: Opens the dashboard
     C->>A: GET /social/recommendations
     A->>N: MATCH (u:User)-[:LIVES_IN]->(n) ...
-    Note over N: Services du quartier non utilisés<br/>+ événements à venir non rejoints
+    Note over N: Unused neighbourhood services<br/>+ upcoming events not yet joined
     N-->>A: [{ id, name, type, score, reason }]
-    A-->>C: Liste triée par score DESC LIMIT 10
-    C-->>U: Suggestions personnalisées
+    A-->>C: List sorted by score DESC LIMIT 10
+    C-->>U: Personalised suggestions
 ```
 
-### 2.7 UC-12 — Définition géographique d'un quartier (admin)
+### 2.7 UC-12 — Geographic definition of a neighbourhood (admin)
 
 ```mermaid
 sequenceDiagram
     actor Admin
     participant W as React Admin
     participant L as Leaflet DrawControl
-    participant A as API NestJS
+    participant A as NestJS API
     participant M as MongoDB
 
-    Admin->>W: Ouvre la fiche quartier (onglet carte)
-    W->>L: Affiche les polygones existants
-    Admin->>L: Trace un polygone (clics successifs)
+    Admin->>W: Opens the neighbourhood record (map tab)
+    W->>L: Displays existing polygons
+    Admin->>L: Draws a polygon (successive clicks)
     L-->>W: GeoJSON Polygon [[lng,lat], ...]
     W->>A: POST /neighborhoods { name, city, geometry }
-    A->>M: $geoIntersects — détection de chevauchement
-    alt Chevauche un quartier existant
-        A-->>W: 409 Conflict (liste des quartiers en conflit)
-    else Aucun chevauchement
-        A->>M: INSERT neighborhood (index 2dsphere)
-        A-->>W: 201 — quartier créé
+    A->>M: $geoIntersects — overlap detection
+    alt Overlaps an existing neighbourhood
+        A-->>W: 409 Conflict (list of conflicting neighbourhoods)
+    else No overlap
+        A->>M: INSERT neighborhood (2dsphere index)
+        A-->>W: 201 — neighbourhood created
     end
 ```
 
 ---
 
-## 3. Modèle Conceptuel de Données
+## 3. Conceptual data model
 
-L'Étape 3 confirme la répartition tri-base : **PostgreSQL** pour les données transactionnelles (auth, incidents, points), **MongoDB** pour les documents flexibles et géospatiaux, **Neo4j** pour le graphe social, **SQLite** pour le cache offline desktop.
+Stage 3 confirms the three-database split: **PostgreSQL** for transactional data (auth, incidents, points), **MongoDB** for flexible and geospatial documents, **Neo4j** for the social graph, **SQLite** for the desktop offline cache.
 
-### 3.1 PostgreSQL — Données relationnelles
+### 3.1 PostgreSQL — Relational data
 
 ```mermaid
 erDiagram
@@ -287,8 +287,8 @@ erDiagram
         VARCHAR   title            "NOT NULL"
         TEXT      description
         VARCHAR   status           "open|in_progress|resolved"
-        DOUBLE    lat              "nullable — géolocalisation"
-        DOUBLE    lng              "nullable — géolocalisation"
+        DOUBLE    lat              "nullable — geolocation"
+        DOUBLE    lng              "nullable — geolocation"
         UUID      neighborhood_id  FK
         UUID      created_by       FK
         TIMESTAMP deleted_at       "soft-delete, nullable"
@@ -312,13 +312,13 @@ erDiagram
         TIMESTAMP created_at
     }
 
-    users ||--|| points_balances     : "possède"
-    users ||--o{ points_transactions : "envoie (sender)"
-    users ||--o{ points_transactions : "reçoit (recipient)"
-    users ||--o{ incidents           : "signale"
+    users ||--|| points_balances     : "owns"
+    users ||--o{ points_transactions : "sends (sender)"
+    users ||--o{ points_transactions : "receives (recipient)"
+    users ||--o{ incidents           : "reports"
 ```
 
-### 3.2 MongoDB — Documents flexibles et géospatiaux
+### 3.2 MongoDB — Flexible and geospatial documents
 
 ```mermaid
 erDiagram
@@ -361,7 +361,7 @@ erDiagram
 
     documents {
         ObjectId _id        PK
-        ObjectId gridfsId   "FK GridFS — PDF / média"
+        ObjectId gridfsId   "GridFS FK — PDF / media"
         String   ownerId
         Array    auditTrail  "{ action, userId, at }[]"
     }
@@ -396,15 +396,15 @@ erDiagram
         String   token     "UUID v4, index UNIQUE"
         String   userId
         Date     expiresAt "TTL index"
-        Date     usedAt    "null = disponible"
+        Date     usedAt    "null = available"
     }
 
-    conversations ||--o{ messages : "contient"
+    conversations ||--o{ messages : "contains"
 ```
 
-> Les collections `contracts`, `events`, `messages` et les fichiers `documents` (PDF, vocaux, photos) sont stockés conformément au sujet sur MongoDB, avec **GridFS** pour les binaires volumineux.
+> The `contracts`, `events` and `messages` collections, along with the `documents` files (PDFs, voice notes, photos), are stored on MongoDB in line with the brief, using **GridFS** for large binaries.
 
-### 3.3 Neo4j — Graphe social
+### 3.3 Neo4j — Social graph
 
 ```mermaid
 graph LR
@@ -421,72 +421,72 @@ graph LR
     User -->|HELPED| User
 ```
 
-### 3.4 SQLite — Cache offline desktop
+### 3.4 SQLite — Desktop offline cache
 
 ```mermaid
 erDiagram
     incidents {
         TEXT    id          PK
-        TEXT    remote_id   "id API, nullable tant que non synchronisé"
+        TEXT    remote_id   "API id, nullable until synced"
         TEXT    title       "NOT NULL"
         TEXT    description
         TEXT    status      "DEFAULT open"
-        INTEGER is_dirty    "0=synchronisé, 1=à pousser"
+        INTEGER is_dirty    "0=synced, 1=to push"
         TEXT    created_at  "ISO 8601"
-        TEXT    updated_at  "arbitre LWW"
+        TEXT    updated_at  "LWW tie-breaker"
     }
 
     session {
         INTEGER id            PK
         TEXT    access_token
         TEXT    refresh_token
-        TEXT    email         "extrait du JWT pour affichage offline"
+        TEXT    email         "extracted from the JWT for offline display"
     }
 
     sync_log {
         INTEGER id        PK
         TEXT    synced_at "ISO 8601"
-        INTEGER success   "1=OK, 0=échec"
+        INTEGER success   "1=OK, 0=failure"
     }
 ```
 
 ---
 
-## 4. Modélisation géographique du quartier
+## 4. Geographic modelling of the neighbourhood
 
-La modélisation géographique est le livrable phare de l'Étape 3. Elle répond directement à l'exigence du sujet : *« permettre à l'administrateur de définir un quartier géographiquement, à l'aide d'un outil de dessin. Prévoir les problèmes de limites. »*
+Geographic modelling is the flagship deliverable of Stage 3. It directly addresses the requirement of the brief: *"allow the administrator to define a neighbourhood geographically, using a drawing tool. Account for boundary problems."*
 
-### 4.1 Composant carte partagé
+### 4.1 Shared map component
 
-Un composant `Map` mutualisé a été extrait dans `packages/ui` afin d'être réutilisé par le client et l'admin sans duplication :
+A shared `Map` component was extracted into `packages/ui` so that both the client and the admin can reuse it without duplication:
 
 ```mermaid
 graph TD
     Map["Map (core)<br/>react-leaflet + OpenStreetMap"]
-    Draw["DrawControl<br/>leaflet-draw — dessin de polygones"]
-    Cluster["MarkerCluster<br/>regroupement des marqueurs denses"]
+    Draw["DrawControl<br/>leaflet-draw — polygon drawing"]
+    Cluster["MarkerCluster<br/>clustering of dense markers"]
 
     Map --> Draw
     Map --> Cluster
 
-    Draw --> AdminN["Admin — fiche quartier<br/>tracer / éditer le polygone"]
-    Cluster --> CliS["Client — services (vue carte)"]
-    Cluster --> CliE["Client — événements (vue carte)"]
-    Cluster --> CliI["Client — incidents (clic pour placer)"]
-    Map --> Dash["Client — mini-carte du quartier (dashboard)"]
+    Draw --> AdminN["Admin — neighbourhood record<br/>draw / edit the polygon"]
+    Cluster --> CliS["Client — services (map view)"]
+    Cluster --> CliE["Client — events (map view)"]
+    Cluster --> CliI["Client — incidents (click to place)"]
+    Map --> Dash["Client — neighbourhood mini-map (dashboard)"]
 ```
 
-| Surface       | Page                | Usage de la carte                                       |
+| Surface       | Page                | Map usage                                               |
 | ------------- | ------------------- | ------------------------------------------------------- |
-| React Admin   | Quartiers           | Tracer / éditer un polygone, voir les quartiers voisins |
-| React Admin   | Services, Incidents | Onglet carte + sélecteur de coordonnées                 |
-| React Client  | Dashboard           | Mini-carte du quartier de l'habitant                    |
-| React Client  | Services, Événements| Vue carte des annonces géolocalisées                    |
-| React Client  | Incidents           | Clic sur la carte pour placer un signalement            |
+| React Admin   | Neighbourhoods      | Draw / edit a polygon, see neighbouring neighbourhoods  |
+| React Admin   | Services, Incidents | Map tab + coordinate picker                             |
+| React Client  | Dashboard           | Mini-map of the resident's neighbourhood               |
+| React Client  | Services, Events    | Map view of geolocated listings                         |
+| React Client  | Incidents           | Click on the map to place a report                      |
 
-### 4.2 Gestion des limites — détection de chevauchement
+### 4.2 Boundary handling — overlap detection
 
-Chaque quartier est un **polygone GeoJSON** indexé `2dsphere` dans MongoDB. À la création comme à la modification, le service refuse tout polygone qui en chevaucherait un autre :
+Each neighbourhood is a **GeoJSON polygon** indexed with `2dsphere` in MongoDB. On both creation and update, the service rejects any polygon that would overlap another:
 
 ```typescript
 // neighborhoods.service.ts
@@ -498,23 +498,23 @@ async assertNoOverlap(geometry: GeoJsonPolygon, excludeId?: string): Promise<voi
   const conflicts = overlapping.filter(n => n._id.toString() !== excludeId);
   if (conflicts.length > 0) {
     throw new ConflictException(
-      `Le polygone chevauche ${conflicts.length} quartier(s) : ${conflicts.map(n => n.name).join(', ')}`
+      `The polygon overlaps ${conflicts.length} neighbourhood(s): ${conflicts.map(n => n.name).join(', ')}`
     );
   }
 }
 ```
 
-La requête `$geoIntersects` s'appuie sur l'algorithme géodésique natif de MongoDB et détecte tout recouvrement, même partiel. C'est la réponse aux « problèmes de limites » du sujet : aucun habitant ne peut appartenir à deux quartiers simultanément.
+The `$geoIntersects` query relies on MongoDB's native geodesic algorithm and detects any overlap, even partial. This is the answer to the "boundary problems" of the brief: no resident can belong to two neighbourhoods at once.
 
-### 4.3 Données de démonstration
+### 4.3 Demonstration data
 
-Le seed peuple plusieurs quartiers de **Paris** avec des polygones réels et des services / événements / incidents géolocalisés à l'intérieur, afin que les vues carte soient immédiatement parlantes lors de la soutenance.
+The seed populates several **Paris** neighbourhoods with real polygons and with geolocated services / events / incidents inside them, so that the map views are immediately meaningful during the defence.
 
 ---
 
-## 5. Architecture logicielle
+## 5. Software architecture
 
-### 5.1 Architecture NestJS — modules de l'Étape 3
+### 5.1 NestJS architecture — Stage 3 modules
 
 ```mermaid
 graph TD
@@ -544,11 +544,11 @@ graph TD
     DslModule --> Pythonia["pythonia → PLY"]
 ```
 
-### 5.2 Infrastructure Docker — 7 conteneurs
+### 5.2 Docker infrastructure — 7 containers
 
 ```mermaid
 graph TD
-    Browser(["🌐 Navigateur"])
+    Browser(["🌐 Browser"])
     Desktop(["🖥 Java Desktop"])
 
     Browser --> Caddy["Caddy :80/:443<br/>Reverse proxy + TLS"]
@@ -558,13 +558,13 @@ graph TD
     Caddy -->|"/admin/*"| Admin["React Admin :3001"]
     Caddy -->|"/*"| Client["React Client :3000"]
 
-    API --> MongoDB[("MongoDB :27017<br/>quartiers · contrats · messages<br/>votes · documents GridFS · SSO")]
+    API --> MongoDB[("MongoDB :27017<br/>neighbourhoods · contracts · messages<br/>votes · GridFS documents · SSO")]
     API --> PostgreSQL[("PostgreSQL :5432<br/>users · incidents · points")]
-    API --> Neo4j[("Neo4j :7474/:7687<br/>graphe social · recommandations")]
-    Desktop --> SQLite[("SQLite local<br/>incidents · session · sync_log")]
+    API --> Neo4j[("Neo4j :7474/:7687<br/>social graph · recommendations")]
+    Desktop --> SQLite[("Local SQLite<br/>incidents · session · sync_log")]
 ```
 
-### 5.3 Monorepo web — composant carte mutualisé
+### 5.3 Web monorepo — shared map component
 
 ```mermaid
 graph TD
@@ -582,26 +582,26 @@ graph TD
 
 ---
 
-## 6. Algorithmes complexes
+## 6. Complex algorithms
 
-### 6.1 Transfert de points — Transaction ACID
+### 6.1 Point transfer — ACID transaction
 
-**Problème :** deux transferts simultanés depuis le même compte pourraient tous deux passer la vérification de solde avant débit, produisant un solde sous le plancher de -10.
+**Problem:** two simultaneous transfers from the same account could both pass the balance check before being debited, producing a balance below the -10 floor.
 
-**Solution :** `SELECT ... FOR UPDATE` verrouille la ligne jusqu'au `COMMIT`.
+**Solution:** `SELECT ... FOR UPDATE` locks the row until `COMMIT`.
 
 ```mermaid
 sequenceDiagram
-    participant A as API NestJS
+    participant A as NestJS API
     participant PG as PostgreSQL
 
     A->>PG: BEGIN
     A->>PG: SELECT balance FROM points_balances<br/>WHERE user_id = senderId FOR UPDATE
-    Note over PG: Ligne verrouillée — tout transfert concurrent attend
+    Note over PG: Row locked — any concurrent transfer waits
     PG-->>A: { balance: B }
     alt B - amount < -10
         A->>PG: ROLLBACK
-    else Solde suffisant
+    else Sufficient balance
         A->>PG: UPSERT sender (- amount)
         A->>PG: UPSERT recipient (+ amount)
         A->>PG: INSERT points_transactions
@@ -609,28 +609,28 @@ sequenceDiagram
     end
 ```
 
-> La contrainte `CHECK (balance >= -10)` au niveau PostgreSQL est un filet de sécurité indépendant du code applicatif.
+> The `CHECK (balance >= -10)` constraint at the PostgreSQL level is a safety net independent of the application code.
 
-### 6.2 Signature de contrat — SHA-256 + TOTP
+### 6.2 Contract signing — SHA-256 + TOTP
 
-**Principe :** chaque signataire prouve son identité via TOTP, puis sa signature scelle un hash combinant le contenu, son identité et l'horodatage. Le contrat passe à `signed` uniquement lorsque tous les signataires ont signé.
+**Principle:** each signatory proves their identity via TOTP, then their signature seals a hash combining the content, their identity and the timestamp. The contract moves to `signed` only once every signatory has signed.
 
 ```mermaid
 flowchart TD
-    A[Signataire soumet totpCode] --> B{TOTP valide ?}
-    B -->|Non| C[400 INVALID_TOTP]
-    B -->|Oui| D{Déjà signé ?}
-    D -->|Oui| E[400 ALREADY_SIGNED]
-    D -->|Non| F[hash = SHA-256 content+userId+timestamp]
-    F --> G[Ajouter la signature]
-    G --> H{Tous ont signé ?}
-    H -->|Oui| I[status = signed]
-    H -->|Non| J[status = pending_signature]
+    A[Signatory submits totpCode] --> B{Valid TOTP?}
+    B -->|No| C[400 INVALID_TOTP]
+    B -->|Yes| D{Already signed?}
+    D -->|Yes| E[400 ALREADY_SIGNED]
+    D -->|No| F[hash = SHA-256 content+userId+timestamp]
+    F --> G[Add the signature]
+    G --> H{Everyone signed?}
+    H -->|Yes| I[status = signed]
+    H -->|No| J[status = pending_signature]
 ```
 
 ### 6.3 Votes — Strategy Pattern
 
-Les votes simples ont des modes distincts (`up/down` pour les incidents, `like/dislike` pour les services). Le **Strategy Pattern** isole chaque mode dans une classe, évitant une cascade de `switch` :
+Simple votes have distinct modes (`up/down` for incidents, `like/dislike` for services). The **Strategy Pattern** isolates each mode in a class, avoiding a cascade of `switch` statements:
 
 ```mermaid
 classDiagram
@@ -649,11 +649,11 @@ classDiagram
     VoteStrategyFactory --> VoteStrategy
 ```
 
-Un même vote soumis deux fois s'annule (toggle off) ; un vote différent remplace l'ancien.
+The same vote submitted twice cancels itself out (toggle off); a different vote replaces the previous one.
 
-### 6.4 Recommandation sociale — traversal Cypher
+### 6.4 Social recommendation — Cypher traversal
 
-**Pourquoi Neo4j ?** Une recommandation « services proches non encore utilisés + événements à venir du quartier » exigerait en SQL plusieurs jointures récursives. En Cypher, un seul `MATCH` suffit :
+**Why Neo4j?** A recommendation of "nearby services not yet used + upcoming neighbourhood events" would require several recursive joins in SQL. In Cypher, a single `MATCH` is enough:
 
 ```cypher
 MATCH (u:User {id: $userId})-[:LIVES_IN]->(n:Neighborhood)
@@ -670,27 +670,27 @@ RETURN e.id AS id, e.name AS name, 'event' AS type, 2 AS score,
 ORDER BY score DESC LIMIT 10
 ```
 
-La synchronisation MongoDB → Neo4j est **fire-and-forget** (`void socialService.syncX()`) : elle ne bloque jamais la réponse HTTP, et un Neo4j indisponible est simplement journalisé.
+The MongoDB → Neo4j synchronisation is **fire-and-forget** (`void socialService.syncX()`): it never blocks the HTTP response, and an unavailable Neo4j is simply logged.
 
-### 6.5 Détection de chevauchement géospatial
+### 6.5 Geospatial overlap detection
 
-Décrite en [§4.2](#42-gestion-des-limites--détection-de-chevauchement) : `$geoIntersects` sur index `2dsphere` rejette tout polygone recouvrant un quartier existant — c'est la gestion des limites exigée par le sujet.
+Described in [§4.2](#42-boundary-handling--overlap-detection): `$geoIntersects` on a `2dsphere` index rejects any polygon overlapping an existing neighbourhood — this is the boundary handling required by the brief.
 
-### 6.6 Synchronisation desktop — Last-Write-Wins bidirectionnelle
+### 6.6 Desktop synchronisation — two-way Last-Write-Wins
 
-L'Étape 2 ne poussait que les incidents créés hors-ligne. L'Étape 3 livre une synchronisation **bidirectionnelle** : selon l'horodatage `updated_at`, le client pousse (PUT) ou tire (GET) la version la plus récente.
+Stage 2 only pushed incidents created offline. Stage 3 delivers **two-way** synchronisation: based on the `updated_at` timestamp, the client pushes (PUT) or pulls (GET) the most recent version.
 
 ```mermaid
 flowchart TD
-    A[SyncService — toutes les 30s] --> B[GET /health]
-    B --> C{Réseau ?}
-    C -->|Non| D[Attendre le prochain cycle]
-    C -->|Oui| E[SELECT incidents WHERE is_dirty=1]
-    E --> F{remote_id présent ?}
-    F -->|Non — nouveau local| G[POST /incidents → récupère remote_id]
-    F -->|Oui — mise à jour| H{updated_at local > API ?}
-    H -->|Oui| I[PUT /incidents/:id — pousser]
-    H -->|Non| J[GET /incidents/:id — tirer]
+    A[SyncService — every 30s] --> B[GET /health]
+    B --> C{Network?}
+    C -->|No| D[Wait for the next cycle]
+    C -->|Yes| E[SELECT incidents WHERE is_dirty=1]
+    E --> F{remote_id present?}
+    F -->|No — new local| G[POST /incidents → get remote_id]
+    F -->|Yes — update| H{local updated_at > API?}
+    H -->|Yes| I[PUT /incidents/:id — push]
+    H -->|No| J[GET /incidents/:id — pull]
     G --> K[UPDATE SQLite is_dirty=0]
     I --> K
     J --> K
@@ -699,153 +699,153 @@ flowchart TD
 
 ---
 
-## 7. APIs et frameworks utilisés
+## 7. APIs and frameworks used
 
-### 7.1 Backend NestJS — nouveautés de l'Étape 3
+### 7.1 NestJS backend — Stage 3 additions
 
-| Bibliothèque       | Version | Rôle ajouté à l'Étape 3                                              |
+| Library            | Version | Role added in Stage 3                                               |
 | ------------------ | ------- | ------------------------------------------------------------------- |
-| **Socket.io**      | —       | Messagerie temps réel — namespace `/messaging`, rooms par conversation |
-| **neo4j-driver**   | 5       | Graphe social — sessions managées, requêtes Cypher de recommandation |
-| **GridFS** (Mongo) | —       | Stockage des binaires de documents (PDF, photos, vocaux)            |
-| **crypto** (Node)  | natif   | Hash SHA-256 du contenu des contrats et des signatures              |
-| **pythonia**       | —       | Bridge Node.js ↔ Python pour exécuter le DSL PLY                    |
+| **Socket.io**      | —       | Real-time messaging — `/messaging` namespace, rooms per conversation |
+| **neo4j-driver**   | 5       | Social graph — managed sessions, Cypher recommendation queries      |
+| **GridFS** (Mongo) | —       | Storage of document binaries (PDFs, photos, voice notes)            |
+| **crypto** (Node)  | native  | SHA-256 hash of contract content and signatures                     |
+| **pythonia**       | —       | Node.js ↔ Python bridge to run the PLY DSL                          |
 
-(Pour rappel Étape 2 : NestJS 11, Drizzle ORM, Mongoose, Passport-JWT, argon2, speakeasy, @nestjs/throttler, Zod.)
+(For reference, Stage 2: NestJS 11, Drizzle ORM, Mongoose, Passport-JWT, argon2, speakeasy, @nestjs/throttler, Zod.)
 
-### 7.2 Frontend React — pages métier branchées sur des données réelles
+### 7.2 React frontend — business pages wired to real data
 
-> **Évolution majeure depuis l'Étape 2 :** toutes les pages métier sont désormais alimentées par l'API réelle via TanStack Query.
+> **Major change since Stage 2:** all business pages are now fed by the real API through TanStack Query.
 
-| Application          | Routes livrées                                                            |
+| Application          | Routes delivered                                                          |
 | -------------------- | ------------------------------------------------------------------------- |
 | React Client (:3000) | `/dashboard`, `/services`, `/events`, `/votes`, `/contracts`, `/incidents`, `/messages` |
 | React Admin (:3001)  | `/users`, `/neighborhoods`, `/services`, `/events`, `/incidents`, `/community-votes`, `/dsl`, `/sso`, `/dashboard` |
 
-| Bibliothèque         | Version | Rôle ajouté à l'Étape 3                                       |
+| Library              | Version | Role added in Stage 3                                         |
 | -------------------- | ------- | ------------------------------------------------------------- |
-| **react-leaflet**    | —       | Carte interactive (composant `Map` partagé)                   |
-| **leaflet-draw**     | —       | Dessin / édition de polygones de quartier (`DrawControl`)     |
-| **leaflet.markercluster** | —  | Regroupement des marqueurs sur les vues denses (`MarkerCluster`) |
-| **TanStack Query**   | 5       | Désormais utilisé sur toutes les pages (cache + invalidation) |
+| **react-leaflet**    | —       | Interactive map (shared `Map` component)                      |
+| **leaflet-draw**     | —       | Drawing / editing of neighbourhood polygons (`DrawControl`)   |
+| **leaflet.markercluster** | —  | Clustering of markers on dense views (`MarkerCluster`)        |
+| **TanStack Query**   | 5       | Now used on every page (cache + invalidation)                 |
 
 ### 7.3 Java Desktop
 
-| API / Bibliothèque                  | Rôle ajouté à l'Étape 3                                     |
+| API / Library                       | Role added in Stage 3                                       |
 | ----------------------------------- | ----------------------------------------------------------- |
-| **StatisticsService**               | Statistiques live des participations depuis l'API           |
-| **Session SQLite**                  | Reprise de session offline (tokens + email mis en cache)    |
-| **Sync bidirectionnelle**           | PUT/GET selon arbitrage LWW sur `updated_at`                |
+| **StatisticsService**               | Live participation statistics from the API                  |
+| **SQLite session**                  | Offline session resume (cached tokens + email)              |
+| **Two-way sync**                    | PUT/GET based on LWW arbitration over `updated_at`          |
 
 ---
 
 ## 8. Tests
 
-### 8.1 Bilan global
+### 8.1 Overall summary
 
-| Suite                       | Résultat | Outil                                        |
+| Suite                       | Result   | Tool                                         |
 | --------------------------- | -------- | -------------------------------------------- |
-| Tests unitaires API         | **261**  | Jest + ts-jest                               |
-| Tests E2E API               | **149**  | Jest + Supertest (MongoDB + PostgreSQL réels) |
-| Tests Desktop               | **139**  | JUnit 5 + Mockito                            |
-| Tests Web (hooks partagés)  | **73**   | Vitest                                       |
-| Tests E2E Web               | **87**   | Playwright (Chrome headless)                 |
-| Tests DSL                   | **21**   | pytest                                       |
+| API unit tests              | **261**  | Jest + ts-jest                               |
+| API E2E tests               | **149**  | Jest + Supertest (real MongoDB + PostgreSQL) |
+| Desktop tests               | **139**  | JUnit 5 + Mockito                            |
+| Web tests (shared hooks)    | **73**   | Vitest                                       |
+| Web E2E tests               | **87**   | Playwright (headless Chrome)                 |
+| DSL tests                   | **21**   | pytest                                       |
 | **Total**                   | **~730** | —                                            |
 
-**Couverture API :** statements **95,7 %**, branches **86,1 %** — bien au-delà du seuil Étape 3 (≥ 60 %).
+**API coverage:** statements **95.7%**, branches **86.1%** — well beyond the Stage 3 threshold (≥ 60%).
 
-### 8.2 Nouvelles suites E2E de l'Étape 3
+### 8.2 New Stage 3 E2E suites
 
-| Fichier E2E                                    | Couvre                                            |
+| E2E file                                       | Covers                                            |
 | ---------------------------------------------- | ------------------------------------------------- |
-| `api/test/contracts.e2e-spec.ts`               | Création, signature TOTP, statut `signed`         |
-| `api/test/points.e2e-spec.ts`                  | Transfert ACID, solde plancher, auto-transfert    |
-| `api/test/neighborhoods.e2e-spec.ts`           | CRUD GeoJSON + chevauchement `$geoIntersects`     |
-| `api/test/messaging-ws.e2e-spec.ts`            | WebSocket : auth JWT, `join`, `send_message`      |
-| `api/test/modules.e2e-spec.ts`                 | Services, événements, votes communautaires        |
-| `e2e/admin/neighborhoods-draw.spec.ts`         | Rendu carte + barre d'outils de dessin de polygone |
-| `e2e/client/services-map.spec.ts`              | Vue carte côté client, marqueurs                  |
-| `e2e/client/messages.spec.ts`                  | Page messagerie : garde `/login`, rendu authentifié |
+| `api/test/contracts.e2e-spec.ts`               | Creation, TOTP signing, `signed` status           |
+| `api/test/points.e2e-spec.ts`                  | ACID transfer, floor balance, self-transfer       |
+| `api/test/neighborhoods.e2e-spec.ts`           | GeoJSON CRUD + `$geoIntersects` overlap            |
+| `api/test/messaging-ws.e2e-spec.ts`            | WebSocket: JWT auth, `join`, `send_message`        |
+| `api/test/modules.e2e-spec.ts`                 | Services, events, community votes                  |
+| `e2e/admin/neighborhoods-draw.spec.ts`         | Map rendering + polygon drawing toolbar           |
+| `e2e/client/services-map.spec.ts`              | Client-side map view, markers                     |
+| `e2e/client/messages.spec.ts`                  | Messaging page: `/login` guard, authenticated render |
 
-### 8.3 Stratégie
+### 8.3 Strategy
 
 ```mermaid
 graph TD
-    T1["Unitaires API (Jest)<br/>Mock BDD — logique métier isolée"]
-    T2["E2E API (Supertest)<br/>Bases réelles — zéro mock"]
-    T3["E2E WebSocket<br/>Client Socket.io réel"]
+    T1["API unit (Jest)<br/>Mocked DB — isolated business logic"]
+    T2["API E2E (Supertest)<br/>Real databases — zero mocks"]
+    T3["WebSocket E2E<br/>Real Socket.io client"]
     T4["Desktop (JUnit 5 + Mockito)<br/>Sync + auth + session"]
-    T5["Web E2E (Playwright)<br/>Navigateur réel — carte, formulaires"]
-    T6["DSL (pytest)<br/>Lexer / parser / sécurité"]
+    T5["Web E2E (Playwright)<br/>Real browser — map, forms"]
+    T6["DSL (pytest)<br/>Lexer / parser / security"]
 
-    T1 --> OK([Confiance unitaire])
-    T2 --> OK2([Confiance intégration])
+    T1 --> OK([Unit confidence])
+    T2 --> OK2([Integration confidence])
     T3 --> OK2
-    T4 --> OK3([Confiance desktop])
-    T5 --> OK4([Confiance UI])
-    T6 --> OK5([Confiance DSL])
+    T4 --> OK3([Desktop confidence])
+    T5 --> OK4([UI confidence])
+    T6 --> OK5([DSL confidence])
 ```
 
-> **Principe des tests E2E API :** aucun mock sur les bases. Les tests utilisent MongoDB et PostgreSQL réels, peuplés via l'API dans un `beforeAll`.
+> **Principle of the API E2E tests:** no mocks on the databases. The tests use real MongoDB and PostgreSQL, seeded via the API in a `beforeAll`.
 
-### 8.4 Commandes
+### 8.4 Commands
 
 ```bash
-make test          # Unitaires API (261) + hooks web (73) + Desktop (139) + DSL (21)
-make test-cov      # + rapport coverage (stmts 95,7 % / branches 86,1 %)
-make test-e2e      # E2E API Supertest (149) — nécessite Docker
-make test-e2e-web  # E2E Playwright (87) — nécessite les apps lancées
-make validate      # lint + typecheck + tests + build, en séquence
+make test          # API unit (261) + web hooks (73) + Desktop (139) + DSL (21)
+make test-cov      # + coverage report (stmts 95.7% / branches 86.1%)
+make test-e2e      # API E2E Supertest (149) — requires Docker
+make test-e2e-web  # Playwright E2E (87) — requires the apps running
+make validate      # lint + typecheck + tests + build, in sequence
 ```
 
 ---
 
-## 9. Démonstration
+## 9. Demonstration
 
-### 9.1 Lancer la plateforme
+### 9.1 Starting the platform
 
 ```bash
-cp .env.example .env      # renseigner les secrets
-make docker-up            # 7 conteneurs
-make seed                 # comptes démo + quartiers Paris + Neo4j
+cp .env.example .env      # fill in the secrets
+make docker-up            # 7 containers
+make seed                 # demo accounts + Paris neighbourhoods + Neo4j
 ```
 
 | Surface               | URL                       |
 | --------------------- | ------------------------- |
-| Client habitant       | http://localhost          |
-| Admin back-office     | http://localhost/admin    |
+| Resident client       | http://localhost          |
+| Admin back office      | http://localhost/admin    |
 | API docs (Scalar)     | http://localhost/api/docs |
 | Neo4j Browser         | http://localhost:7474     |
 
-### 9.2 Comptes de démonstration
+### 9.2 Demonstration accounts
 
-| Email         | Mot de passe | Rôle      | TOTP               |
+| Email         | Password     | Role      | TOTP               |
 | ------------- | ------------ | --------- | ------------------ |
 | alice@demo.fr | Demo1234!    | resident  | `JBSWY3DPEHPK3PXP` |
 | bob@demo.fr   | Demo1234!    | moderator | `JBSWY3DPEHPK3PXP` |
 | admin@demo.fr | Demo1234!    | admin     | `JBSWY3DPEHPK3PXP` |
 
 ```bash
-make totp   # ou : oathtool --totp --base32 JBSWY3DPEHPK3PXP
+make totp   # or: oathtool --totp --base32 JBSWY3DPEHPK3PXP
 ```
 
-### 9.3 Scénarios de démonstration prévus
+### 9.3 Planned demonstration scenarios
 
-| Point                    | Scénario                                                                   |
+| Item                     | Scenario                                                                   |
 | ------------------------ | -------------------------------------------------------------------------- |
-| Dessin de quartier       | Admin → fiche quartier → tracer un polygone → enregistrer                  |
-| Gestion des limites      | Tracer un polygone qui chevauche un quartier existant → `409 Conflict`     |
-| Transfert de points      | Alice → Bob, vérifier les soldes ; tenter un dépassement → `400`           |
-| Signature de contrat     | Ouvrir un contrat, signer avec un mauvais TOTP (refus) puis le bon (signé) |
-| Messagerie temps réel    | Deux navigateurs (Alice / Bob) → message instantané via WebSocket          |
-| Recommandation Neo4j     | Dashboard d'Alice → services et événements suggérés de son quartier        |
-| Scrutin pondéré          | Créer un scrutin `weighted`, voter, lire les résultats et le quorum        |
-| Vue carte client         | Services / événements / incidents géolocalisés sur la carte                |
-| Sync offline bidirect.   | `docker stop` API → créer un incident → relancer → vérifier la sync        |
-| Documentation API        | Parcourir Scalar sur `/api/docs`                                           |
+| Neighbourhood drawing    | Admin → neighbourhood record → draw a polygon → save                       |
+| Boundary handling        | Draw a polygon that overlaps an existing neighbourhood → `409 Conflict`    |
+| Point transfer           | Alice → Bob, check the balances; attempt to exceed the limit → `400`       |
+| Contract signing         | Open a contract, sign with a wrong TOTP (rejected) then the correct one (signed) |
+| Real-time messaging      | Two browsers (Alice / Bob) → instant message over WebSocket                |
+| Neo4j recommendation     | Alice's dashboard → suggested services and events from her neighbourhood   |
+| Weighted ballot          | Create a `weighted` ballot, vote, read the results and the quorum          |
+| Client map view          | Geolocated services / events / incidents on the map                        |
+| Two-way offline sync     | `docker stop` API → create an incident → restart → check the sync          |
+| API documentation        | Browse Scalar at `/api/docs`                                               |
 
 ---
 
-*Rapport de projet — QuartierConnect · Groupe 1 · 3AL2 · ESGI 2025-2026*
-*Rendu Étape 3 — 31 mai 2026 — Enseignant : Frédéric SANANES*
+*Project report — QuartierConnect · Group 1 · 3AL2 · ESGI 2025-2026*
+*Stage 3 submission — 31 May 2026 — Instructor: Frédéric SANANES*
