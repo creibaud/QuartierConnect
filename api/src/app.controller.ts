@@ -28,7 +28,7 @@ export class AppController {
     @ApiOperation({
         summary: "Health check",
         description:
-            "Retourne le statut du serveur. Utilisé par SyncService Java toutes les 30s.",
+            "Returns the server status. Used by the Java SyncService every 30s.",
     })
     @ApiResponse({ status: 200, type: HealthResponseDto })
     health() {
@@ -44,19 +44,19 @@ export class AppController {
     @Roles("admin")
     @ApiBearerAuth()
     @ApiOperation({
-        summary: "Statistiques globales (admin)",
+        summary: "Global statistics (admin)",
         description:
-            "Retourne des compteurs agrégés depuis PostgreSQL (users, incidents) et MongoDB (neighborhoods). Chaque compteur est isolé dans un try/catch.",
+            "Returns aggregated counters from PostgreSQL (users, incidents) and MongoDB (neighborhoods). Each counter is isolated in its own try/catch.",
     })
     @ApiResponse({
         status: 200,
         type: StatsResponseDto,
         description:
-            "Compteurs agrégés. Chaque valeur peut être null si la base de données est temporairement indisponible.",
+            "Aggregated counters. Each value may be null if the database is temporarily unavailable.",
     })
     @ApiResponse({
         status: 403,
-        description: "Rôle insuffisant (admin requis)",
+        description: "Insufficient role (admin required)",
     })
     async getStats() {
         const safe = async <T>(fn: () => Promise<T>): Promise<T | null> => {

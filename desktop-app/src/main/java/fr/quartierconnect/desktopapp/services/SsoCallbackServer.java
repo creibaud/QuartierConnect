@@ -19,7 +19,7 @@ public class SsoCallbackServer {
 
     private static final String SUCCESS_HTML = """
             <!DOCTYPE html>
-            <html lang="fr">
+            <html lang="en">
             <head>
               <meta charset="UTF-8">
               <title>QuartierConnect</title>
@@ -30,15 +30,15 @@ public class SsoCallbackServer {
               </style>
             </head>
             <body>
-              <h2>Connexion réussie</h2>
-              <p>Vous pouvez fermer cette fenêtre et revenir à l'application.</p>
+              <h2>Login successful</h2>
+              <p>You can close this window and return to the application.</p>
             </body>
             </html>
             """;
 
     private static final String ERROR_HTML = """
             <!DOCTYPE html>
-            <html lang="fr">
+            <html lang="en">
             <head>
               <meta charset="UTF-8">
               <title>QuartierConnect</title>
@@ -49,8 +49,8 @@ public class SsoCallbackServer {
               </style>
             </head>
             <body>
-              <h2>Erreur d'authentification</h2>
-              <p>La connexion a échoué. Relancez le flux depuis l'application.</p>
+              <h2>Authentication error</h2>
+              <p>Login failed. Restart the flow from the application.</p>
             </body>
             </html>
             """;

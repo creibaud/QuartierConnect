@@ -44,21 +44,21 @@ export class EventsController {
 
     @Get()
     @ApiOperation({
-        summary: "Lister les événements",
+        summary: "List events",
         description:
-            "Retourne les événements communautaires, filtrables par catégorie et date (format YYYY-MM-DD — retourne tous les événements de la journée).",
+            "Returns community events, filterable by category and date (YYYY-MM-DD format — returns all events for the day).",
     })
     @ApiQuery({
         name: "category",
         required: false,
         example: "culture",
-        description: "Catégorie de l'événement",
+        description: "Event category",
     })
     @ApiQuery({
         name: "date",
         required: false,
         example: "2026-05-15",
-        description: "Date ISO YYYY-MM-DD (filtre sur la journée entière)",
+        description: "ISO date YYYY-MM-DD (filters over the entire day)",
     })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
@@ -85,14 +85,14 @@ export class EventsController {
     }
 
     @Get(":id")
-    @ApiOperation({ summary: "Détail d'un événement" })
+    @ApiOperation({ summary: "Event details" })
     @ApiParam({
         name: "id",
-        description: "ID MongoDB de l'événement",
+        description: "MongoDB ID of the event",
         example: "664f1a2b3c4d5e6f7a8b9c0e",
     })
     @ApiResponse({ status: 200, type: EventDto })
-    @ApiResponse({ status: 404, description: "Événement introuvable" })
+    @ApiResponse({ status: 404, description: "Event not found" })
     async findOne(@Param("id") id: string) {
         const event = await this.eventModel.findById(id).exec();
         if (!event) throw new NotFoundException("Event not found");
@@ -103,12 +103,12 @@ export class EventsController {
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     @ApiOperation({
-        summary: "Créer un événement",
+        summary: "Create an event",
         description:
-            "Crée un événement communautaire. `createdBy` est renseigné automatiquement depuis le JWT.",
+            "Creates a community event. `createdBy` is automatically populated from the JWT.",
     })
-    @ApiResponse({ status: 201, type: EventDto, description: "Événement créé" })
-    @ApiResponse({ status: 401, description: "Non authentifié" })
+    @ApiResponse({ status: 201, type: EventDto, description: "Event created" })
+    @ApiResponse({ status: 401, description: "Not authenticated" })
     async create(@Body() dto: CreateEventDto, @Request() req: AuthRequest) {
         const created = await this.eventModel.create({
             ...dto,
@@ -127,13 +127,13 @@ export class EventsController {
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     @ApiOperation({
-        summary: "Marquer son intérêt pour un événement",
+        summary: "Mark interest in an event",
         description:
-            "Ajoute l'utilisateur courant à `interestedUserIds` (idempotent via `$addToSet`).",
+            "Adds the current user to `interestedUserIds` (idempotent via `$addToSet`).",
     })
-    @ApiParam({ name: "id", description: "ID MongoDB de l'événement" })
+    @ApiParam({ name: "id", description: "MongoDB ID of the event" })
     @ApiResponse({ status: 201, type: EventInterestResponseDto })
-    @ApiResponse({ status: 404, description: "Événement introuvable" })
+    @ApiResponse({ status: 404, description: "Event not found" })
     async markInterest(@Param("id") id: string, @Request() req: AuthRequest) {
         const event = await this.eventModel
             .findByIdAndUpdate(
@@ -150,14 +150,14 @@ export class EventsController {
     @Patch(":id")
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    @ApiOperation({ summary: "Modifier un événement" })
-    @ApiParam({ name: "id", description: "ID MongoDB de l'événement" })
+    @ApiOperation({ summary: "Update an event" })
+    @ApiParam({ name: "id", description: "MongoDB ID of the event" })
     @ApiResponse({
         status: 200,
         type: EventDto,
-        description: "Événement modifié",
+        description: "Event updated",
     })
-    @ApiResponse({ status: 404, description: "Événement introuvable" })
+    @ApiResponse({ status: 404, description: "Event not found" })
     async update(@Param("id") id: string, @Body() dto: UpdateEventDto) {
         const event = await this.eventModel
             .findByIdAndUpdate(id, dto, { new: true })
@@ -170,10 +170,10 @@ export class EventsController {
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     @HttpCode(204)
-    @ApiOperation({ summary: "Supprimer un événement" })
-    @ApiParam({ name: "id", description: "ID MongoDB de l'événement" })
-    @ApiResponse({ status: 204, description: "Événement supprimé" })
-    @ApiResponse({ status: 404, description: "Événement introuvable" })
+    @ApiOperation({ summary: "Delete an event" })
+    @ApiParam({ name: "id", description: "MongoDB ID of the event" })
+    @ApiResponse({ status: 204, description: "Event deleted" })
+    @ApiResponse({ status: 404, description: "Event not found" })
     async remove(@Param("id") id: string) {
         const result = await this.eventModel.findByIdAndDelete(id).exec();
         if (!result) throw new NotFoundException("Event not found");

@@ -40,7 +40,7 @@ export class PointsTransactionDto {
     @ApiProperty({ example: 10 })
     amount: number;
 
-    @ApiPropertyOptional({ example: "Merci pour le jardinage !" })
+    @ApiPropertyOptional({ example: "Thanks for the gardening!" })
     note: string | null;
 
     @ApiProperty({ example: "2026-04-05T12:00:00.000Z" })
@@ -75,8 +75,7 @@ export class GdprExportDto {
 export class DeleteAccountBodyDto {
     @ApiProperty({
         example: "123456",
-        description:
-            "Code TOTP 6 chiffres requis pour confirmer la suppression",
+        description: "6-digit TOTP code required to confirm the deletion",
     })
     @IsString()
     totpCode: string;

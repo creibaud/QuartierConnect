@@ -1,5 +1,6 @@
 package fr.quartierconnect.desktopapp.ui.layout;
 
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.plugin.PluginRegistry;
 import fr.quartierconnect.desktopapp.services.ApiService;
 import javafx.application.Platform;
@@ -17,8 +18,8 @@ import java.util.concurrent.TimeUnit;
 
 public class AppTopBar extends HBox {
 
-    private final Label breadcrumb    = new Label("Tableau de bord");
-    private final Label connectBadge  = new Label("● …");
+    private final Label breadcrumb    = new Label(I18n.get("nav.dashboard"));
+    private final Label connectBadge  = new Label(I18n.get("topbar.checking"));
     private final HBox  pluginSlot    = new HBox(8);
 
     private final ScheduledExecutorService poller = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -83,7 +84,7 @@ public class AppTopBar extends HBox {
     }
 
     private void applyConnectState(boolean online) {
-        connectBadge.setText(online ? "● API connectée" : "● API hors ligne");
+        connectBadge.setText(online ? I18n.get("status.apiOnline") : I18n.get("status.apiOffline"));
         connectBadge.getStyleClass().setAll(
             online ? "topbar-connect-online" : "topbar-connect-offline"
         );

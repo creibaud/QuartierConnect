@@ -8,12 +8,12 @@ import {
 } from "class-validator";
 
 export class CreateContractDto {
-    @ApiProperty({ example: "Contrat de prestation de service" })
+    @ApiProperty({ example: "Service provision contract" })
     @IsString()
     @IsNotEmpty()
     title: string;
 
-    @ApiProperty({ example: "Le prestataire s'engage à..." })
+    @ApiProperty({ example: "The provider agrees to..." })
     @IsString()
     @IsNotEmpty()
     content: string;

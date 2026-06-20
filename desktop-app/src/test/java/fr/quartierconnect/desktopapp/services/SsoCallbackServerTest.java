@@ -39,7 +39,7 @@ class SsoCallbackServerTest {
         HttpResponse<String> response = get(port, "/cb?token=" + expectedToken + "&state=" + state);
 
         assertEquals(200, response.statusCode());
-        assertTrue(response.body().contains("Connexion réussie"));
+        assertTrue(response.body().contains("Login successful"));
         assertEquals(expectedToken, future.get(2, TimeUnit.SECONDS));
         server.stop();
     }

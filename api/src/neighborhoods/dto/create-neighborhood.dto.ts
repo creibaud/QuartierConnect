@@ -24,26 +24,25 @@ export class GeoJsonPolygonDto {
                 [2.35, 48.87],
             ],
         ],
-        description:
-            "Tableau de rings GeoJSON — premier ring = contour extérieur",
+        description: "Array of GeoJSON rings — first ring = outer boundary",
     })
     @IsArray()
     coordinates: number[][][];
 }
 
 export class CreateNeighborhoodDto {
-    @ApiProperty({ description: "Nom du quartier", example: "Belleville" })
+    @ApiProperty({ description: "Neighborhood name", example: "Belleville" })
     @IsString()
     @IsNotEmpty()
     name: string;
 
-    @ApiProperty({ description: "Ville", example: "Paris" })
+    @ApiProperty({ description: "City", example: "Paris" })
     @IsString()
     @IsNotEmpty()
     city: string;
 
     @ApiProperty({
-        description: "Description du quartier",
+        description: "Neighborhood description",
         required: false,
     })
     @IsString()
@@ -51,7 +50,7 @@ export class CreateNeighborhoodDto {
     description?: string;
 
     @ApiProperty({
-        description: "Polygone GeoJSON délimitant le quartier",
+        description: "GeoJSON polygon delimiting the neighborhood",
         required: false,
         example: {
             type: "Polygon",

@@ -102,51 +102,51 @@ async function bootstrap() {
             )
             .setTitle("QuartierConnect API")
             .setDescription(
-                `API REST de la plateforme QuartierConnect — gestion de quartier (ESGI Étape 3).
+                `REST API for the QuartierConnect platform — neighborhood management (ESGI Step 3).
 
-## Authentification
+## Authentication
 
-Toutes les routes protégées utilisent un **JWT Bearer** (HS256, durée 15 min).
+All protected routes use a **JWT Bearer** (HS256, 15 min lifetime).
 
-1. Inscrivez-vous via \`POST /auth/register\` → récupérez votre **secret TOTP** dans \`otpauthUrl\`
-2. Connectez-vous via \`POST /auth/login\` avec email + mot de passe + code TOTP 6 chiffres
-3. Copiez l'\`accessToken\` retourné et cliquez sur **Authorize** (🔒) en haut de la page
+1. Register via \`POST /auth/register\` → retrieve your **TOTP secret** from \`otpauthUrl\`
+2. Log in via \`POST /auth/login\` with email + password + 6-digit TOTP code
+3. Copy the returned \`accessToken\` and click **Authorize** (🔒) at the top of the page
 
-Le token expire après 15 min. Utilisez \`POST /auth/refresh\` pour en obtenir un nouveau silencieusement.
+The token expires after 15 min. Use \`POST /auth/refresh\` to obtain a new one silently.
 
-## Utilisateurs démo (seed)
+## Demo users (seed)
 
-| Email | Mot de passe | Rôle | TOTP secret |
+| Email | Password | Role | TOTP secret |
 |-------|-------------|------|-------------|
 | alice@demo.fr | Demo1234! | resident | JBSWY3DPEHPK3PXP |
 | bob@demo.fr | Demo1234! | moderator | JBSWY3DPEHPK3PXP |
 | admin@demo.fr | Demo1234! | admin | JBSWY3DPEHPK3PXP |
 
-Générer un code TOTP : \`oathtool --totp --base32 JBSWY3DPEHPK3PXP\`
+Generate a TOTP code: \`oathtool --totp --base32 JBSWY3DPEHPK3PXP\`
 
-## Modèle de données
+## Data model
 
-| Entité | Base | Description |
+| Entity | Database | Description |
 |--------|------|-------------|
-| users | PostgreSQL | Comptes utilisateurs — email, passwordHash (argon2), totpSecret, role |
-| incidents | PostgreSQL | Incidents signalés — machine d'états open→in_progress→resolved, soft delete |
-| point_balances | PostgreSQL | Solde de points par utilisateur |
-| point_transactions | PostgreSQL | Historique des transferts ACID |
-| neighborhoods | MongoDB | Quartiers avec coordonnées géographiques |
-| services | MongoDB | Annonces de services entre voisins |
-| events | MongoDB | Événements communautaires |
-| ssoTokens | MongoDB | Tokens SSO UUID v4 (TTL 5 min, usage unique) |
+| users | PostgreSQL | User accounts — email, passwordHash (argon2), totpSecret, role |
+| incidents | PostgreSQL | Reported incidents — state machine open→in_progress→resolved, soft delete |
+| point_balances | PostgreSQL | Point balance per user |
+| point_transactions | PostgreSQL | ACID transfer history |
+| neighborhoods | MongoDB | Neighborhoods with geographic coordinates |
+| services | MongoDB | Service listings between neighbors |
+| events | MongoDB | Community events |
+| ssoTokens | MongoDB | SSO UUID v4 tokens (TTL 5 min, single use) |
 
 ## Pagination
 
-Les endpoints qui retournent des listes acceptent \`?page=1&limit=20\` (max 100).
+Endpoints that return lists accept \`?page=1&limit=20\` (max 100).
 
-## Rôles
+## Roles
 
 \`resident\` → \`moderator\` → \`admin\` → \`banned\`
-- **resident** : créer incidents, services, events, transférer des points
-- **moderator** : + changer le statut des incidents, supprimer
-- **admin** : accès total, gestion utilisateurs, stats`,
+- **resident**: create incidents, services, events, transfer points
+- **moderator**: + change incident status, delete
+- **admin**: full access, user management, stats`,
             )
             .setVersion("3.0")
             .addServer("http://localhost:5000", "Local API (direct)")

@@ -1,5 +1,6 @@
 package fr.quartierconnect.desktopapp.plugin;
 
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -35,9 +36,9 @@ public class CompactModePlugin implements QuartierConnectPlugin, PluginRegistry.
     private String compactDataUri;
 
     @Override public String getId()      { return "fr.quartierconnect.plugin.compact"; }
-    @Override public String getName()    { return "Mode compact"; }
+    @Override public String getName()    { return I18n.get("plugin.compact.name"); }
     @Override public String getVersion() { return "1.0.0"; }
-    @Override public String getDescription() { return "Réduit les espacements et tailles de police pour afficher plus d'informations."; }
+    @Override public String getDescription() { return I18n.get("plugin.compact.description"); }
     @Override public void setContext(AppContext ctx) { this.context = ctx; }
 
     @Override
@@ -55,25 +56,25 @@ public class CompactModePlugin implements QuartierConnectPlugin, PluginRegistry.
 
     @Override
     public Node getPanel() {
-        Label desc = new Label("Réduit les espacements, taille des polices et hauteur des lignes pour afficher plus d'informations à l'écran.");
+        Label desc = new Label(I18n.get("plugin.compact.panelDesc"));
         desc.setStyle("-fx-font-size: 11.5px; -fx-text-fill: -color-fg-muted;");
         desc.setWrapText(true);
 
-        ToggleButton toggle = new ToggleButton(compactActive ? "Mode compact activé" : "Activer le mode compact");
+        ToggleButton toggle = new ToggleButton(compactActive ? I18n.get("plugin.compact.enabled") : I18n.get("plugin.compact.enable"));
         toggle.setSelected(compactActive);
         toggle.setStyle("-fx-background-radius: 6; -fx-border-radius: 6; -fx-padding: 5 14; "
                 + "-fx-font-size: 12px; -fx-cursor: hand;");
         toggle.setOnAction(e -> {
             if (toggle.isSelected()) {
                 activate();
-                toggle.setText("Mode compact activé");
+                toggle.setText(I18n.get("plugin.compact.enabled"));
             } else {
                 deactivate();
-                toggle.setText("Activer le mode compact");
+                toggle.setText(I18n.get("plugin.compact.enable"));
             }
         });
 
-        Label note = new Label("Rechargez la vue courante après activation pour voir l'effet complet.");
+        Label note = new Label(I18n.get("plugin.compact.note"));
         note.setStyle("-fx-font-size: 10.5px; -fx-text-fill: -color-fg-subtle;");
 
         HBox toggleRow = new HBox(10, toggle);

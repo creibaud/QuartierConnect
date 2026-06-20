@@ -16,6 +16,7 @@ export default {
         creating: "Création…",
         loadMore: "Voir plus",
         optional: "optionnel",
+        loadError: "Impossible de charger les données",
     },
     auth: {
         login: "Se connecter",

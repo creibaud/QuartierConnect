@@ -12,24 +12,24 @@ import {
 
 export class CreateServiceDto {
     @ApiProperty({
-        description: "Titre de l'annonce de service",
-        example: "Aide au jardinage le week-end",
+        description: "Title of the service listing",
+        example: "Gardening help on weekends",
     })
     @IsString()
     @IsNotEmpty()
     title: string;
 
     @ApiProperty({
-        description: "Description complète du service proposé",
+        description: "Full description of the offered service",
         example:
-            "Je propose mon aide pour désherber, tailler les haies et entretenir votre jardin les samedis matin.",
+            "I offer my help to weed, trim hedges, and maintain your garden on Saturday mornings.",
     })
     @IsString()
     @IsNotEmpty()
     description: string;
 
     @ApiProperty({
-        description: "Catégorie du service",
+        description: "Service category",
         example: "gardening",
         enum: [
             "gardening",
@@ -46,7 +46,7 @@ export class CreateServiceDto {
     category: string;
 
     @ApiProperty({
-        description: "Type de service : gratuit, payant ou échange de services",
+        description: "Service type: free, paid, or service exchange",
         enum: ["free", "paid", "exchange"],
         example: "free",
     })
@@ -55,7 +55,7 @@ export class CreateServiceDto {
     type: string;
 
     @ApiProperty({
-        description: "Identifiant MongoDB du quartier (optionnel)",
+        description: "MongoDB identifier of the neighborhood (optional)",
         example: "664f1a2b3c4d5e6f7a8b9c0d",
         required: false,
     })
@@ -64,8 +64,7 @@ export class CreateServiceDto {
     neighborhoodId?: string;
 
     @ApiProperty({
-        description:
-            "Coefficient multiplicateur de points par catégorie (admin)",
+        description: "Points multiplier coefficient per category (admin)",
         example: 1.5,
         required: false,
         minimum: 0.1,
@@ -78,7 +77,7 @@ export class CreateServiceDto {
     pointsMultiplier?: number;
 
     @ApiPropertyOptional({
-        description: "Position GeoJSON (coordinates = [lng, lat])",
+        description: "GeoJSON position (coordinates = [lng, lat])",
         example: { type: "Point", coordinates: [2.3522, 48.8566] },
     })
     @IsOptional()

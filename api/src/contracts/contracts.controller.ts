@@ -33,9 +33,9 @@ export class ContractsController {
 
     @Get()
     @ApiOperation({
-        summary: "Lister mes contrats (créés ou à signer)",
+        summary: "List my contracts (created or to be signed)",
         description:
-            "Retourne tous les contrats dont l'utilisateur est créateur ou signataire.",
+            "Returns all contracts where the user is the creator or a signatory.",
     })
     @ApiResponse({ status: 200, type: [ContractDto] })
     findAll(@Request() req: AuthRequest) {
@@ -43,23 +43,23 @@ export class ContractsController {
     }
 
     @Get(":id")
-    @ApiOperation({ summary: "Détail d'un contrat" })
-    @ApiParam({ name: "id", description: "MongoDB ObjectId du contrat" })
+    @ApiOperation({ summary: "Contract details" })
+    @ApiParam({ name: "id", description: "MongoDB ObjectId of the contract" })
     @ApiResponse({ status: 200, type: ContractDto })
     @ApiResponse({
         status: 403,
-        description: "Accès refusé (créateur ou signataire uniquement)",
+        description: "Access denied (creator or signatory only)",
     })
-    @ApiResponse({ status: 404, description: "Contrat introuvable" })
+    @ApiResponse({ status: 404, description: "Contract not found" })
     findOne(@Param("id") id: string, @Request() req: AuthRequest) {
         return this.contractsService.findOne(id, req.user.sub);
     }
 
     @Post()
     @ApiOperation({
-        summary: "Créer un contrat (hash SHA-256 auto-calculé)",
+        summary: "Create a contract (SHA-256 hash auto-computed)",
         description:
-            "Crée un contrat. Le `contentHash` est calculé automatiquement (SHA-256 du champ `content`). Statut initial : PENDING_SIGNATURE.",
+            "Creates a contract. The `contentHash` is computed automatically (SHA-256 of the `content` field). Initial status: PENDING_SIGNATURE.",
     })
     @ApiResponse({ status: 201, type: ContractDto })
     create(@Body() dto: CreateContractDto, @Request() req: AuthRequest) {
@@ -68,24 +68,24 @@ export class ContractsController {
 
     @Post(":id/sign")
     @ApiOperation({
-        summary: "Signer un contrat avec validation TOTP",
+        summary: "Sign a contract with TOTP validation",
         description:
-            "Valide le code TOTP de l'utilisateur et ajoute sa signature. Passe automatiquement en statut SIGNED quand tous les signataires ont signé.",
+            "Validates the user's TOTP code and adds their signature. Automatically switches to SIGNED status when all signatories have signed.",
     })
-    @ApiParam({ name: "id", description: "MongoDB ObjectId du contrat" })
+    @ApiParam({ name: "id", description: "MongoDB ObjectId of the contract" })
     @ApiResponse({
         status: 201,
         type: ContractDto,
-        description: "Signature ajoutée",
+        description: "Signature added",
     })
     @ApiResponse({
         status: 400,
         description:
-            "Code TOTP invalide ou contrat déjà signé par cet utilisateur",
+            "Invalid TOTP code or contract already signed by this user",
     })
     @ApiResponse({
         status: 403,
-        description: "Utilisateur non listé comme signataire",
+        description: "User not listed as a signatory",
     })
     sign(
         @Param("id") id: string,

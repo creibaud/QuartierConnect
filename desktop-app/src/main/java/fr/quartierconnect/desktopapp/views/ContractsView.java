@@ -1,5 +1,6 @@
 package fr.quartierconnect.desktopapp.views;
 
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.services.ContractsService;
 import fr.quartierconnect.desktopapp.ui.components.AppBadge;
 import fr.quartierconnect.desktopapp.ui.components.AppButton;
@@ -40,13 +41,13 @@ public class ContractsView {
     }
 
     private VBox buildLayout() {
-        Label pageTitle = new Label("Contrats");
+        Label pageTitle = new Label(I18n.get("contracts.title"));
         pageTitle.getStyleClass().add("content-title");
 
-        Label pageSubtitle = new Label("Gestion et signature des contrats du quartier");
+        Label pageSubtitle = new Label(I18n.get("contracts.subtitle"));
         pageSubtitle.getStyleClass().add("content-subtitle");
 
-        AppButton refreshBtn = new AppButton("↺ Actualiser", AppButton.Variant.SECONDARY);
+        AppButton refreshBtn = new AppButton(I18n.get("contracts.refresh"), AppButton.Variant.SECONDARY);
         refreshBtn.setOnAction(e -> loadAsync());
 
         HBox header = new HBox(12, new VBox(4, pageTitle, pageSubtitle), refreshBtn);
@@ -83,8 +84,8 @@ public class ContractsView {
         listContainer.getChildren().clear();
         if (contracts.isEmpty()) {
             listContainer.getChildren().add(
-                    new EmptyState("Aucun contrat disponible.",
-                            "Les contrats apparaîtront ici une fois créés.")
+                    new EmptyState(I18n.get("contracts.empty.title"),
+                            I18n.get("contracts.empty.subtitle"))
             );
             return;
         }
@@ -101,8 +102,7 @@ public class ContractsView {
         HBox titleRow = new HBox(8, titleLbl, statusBadge);
         titleRow.setAlignment(Pos.CENTER_LEFT);
 
-        String sigText = contract.signatureCount() + " / " + contract.signatoryCount() + " signature(s)";
-        Label sigLbl = new Label(sigText);
+        Label sigLbl = new Label(I18n.get("contracts.signatures", contract.signatureCount(), contract.signatoryCount()));
         sigLbl.getStyleClass().add("incident-desc");
 
         AppCard card = new AppCard();
@@ -111,7 +111,7 @@ public class ContractsView {
         card.getChildren().addAll(titleRow, sigLbl);
 
         if (contract.canSign()) {
-            AppButton signBtn = new AppButton("✍ Signer", AppButton.Variant.PRIMARY);
+            AppButton signBtn = new AppButton(I18n.get("contracts.sign"), AppButton.Variant.PRIMARY);
             signBtn.setOnAction(e -> openSignForm(contract));
             HBox signRow = new HBox(signBtn);
             signRow.setAlignment(Pos.CENTER_RIGHT);
@@ -126,15 +126,15 @@ public class ContractsView {
         Label titleLbl = new Label(contract.title());
         titleLbl.getStyleClass().add("incident-title");
 
-        Label instruction = new Label("Entrez votre code TOTP pour confirmer la signature.");
+        Label instruction = new Label(I18n.get("contracts.sign.instruction"));
         instruction.getStyleClass().add("content-subtitle");
         instruction.setWrapText(true);
 
-        Label totpFormLabel = new Label("Code TOTP *");
+        Label totpFormLabel = new Label(I18n.get("contracts.sign.totpLabel"));
         totpFormLabel.getStyleClass().add("form-label");
 
         PasswordField totpField = new PasswordField();
-        totpField.setPromptText("6 chiffres");
+        totpField.setPromptText(I18n.get("contracts.sign.totpPrompt"));
         totpField.setMaxWidth(200);
 
         Label errorMsg = new Label("");
@@ -144,8 +144,8 @@ public class ContractsView {
 
         int[] attempts = {0};
 
-        AppButton submitBtn = new AppButton("Confirmer", AppButton.Variant.PRIMARY);
-        AppButton cancelBtn = new AppButton("Annuler", AppButton.Variant.SECONDARY);
+        AppButton submitBtn = new AppButton(I18n.get("contracts.sign.confirm"), AppButton.Variant.PRIMARY);
+        AppButton cancelBtn = new AppButton(I18n.get("contracts.sign.cancel"), AppButton.Variant.SECONDARY);
         cancelBtn.setOnAction(e -> {
             totpField.clear();
             appModal.hide();
@@ -154,17 +154,17 @@ public class ContractsView {
         submitBtn.setOnAction(e -> {
             String code = totpField.getText().trim();
             if (code.isEmpty()) {
-                showError(errorMsg, "Le code TOTP est obligatoire.");
+                showError(errorMsg, I18n.get("contracts.sign.totpRequired"));
                 return;
             }
             if (code.length() != 6 || !code.matches("\\d+")) {
-                showError(errorMsg, "Le code doit être composé de 6 chiffres.");
+                showError(errorMsg, I18n.get("contracts.sign.totpFormat"));
                 return;
             }
 
             attempts[0]++;
             submitBtn.setDisable(true);
-            submitBtn.setText("Signature…");
+            submitBtn.setText(I18n.get("contracts.sign.signing"));
             String capturedCode = code;
             totpField.clear();
 
@@ -173,18 +173,18 @@ public class ContractsView {
                     service.signContract(contract.id(), capturedCode);
                     Platform.runLater(() -> {
                         appModal.hide();
-                        toast.showSuccess("Contrat signé avec succès ✓");
+                        toast.showSuccess(I18n.get("contracts.sign.success"));
                         loadAsync();
                     });
                 } catch (Exception ex) {
                     Platform.runLater(() -> {
                         submitBtn.setDisable(false);
-                        submitBtn.setText("Confirmer");
+                        submitBtn.setText(I18n.get("contracts.sign.confirm"));
                         String msg = ex.getMessage() != null && ex.getMessage().contains("401")
-                                ? "Code invalide. Réessayez."
-                                : "Erreur réseau — réessayez.";
+                                ? I18n.get("contracts.sign.invalidCode")
+                                : I18n.get("contracts.sign.networkError");
                         if (attempts[0] >= 3) {
-                            msg = "Trop de tentatives. Fermez et réessayez.";
+                            msg = I18n.get("contracts.sign.tooManyAttempts");
                             submitBtn.setDisable(true);
                         }
                         showError(errorMsg, msg);
@@ -199,7 +199,7 @@ public class ContractsView {
         VBox content = new VBox(12, titleLbl, instruction, totpFormLabel, totpField, errorMsg, buttons);
         content.setPadding(new Insets(20, 20, 20, 20));
 
-        appModal.show("Signer le contrat", content);
+        appModal.show(I18n.get("contracts.sign.modalTitle"), content);
     }
 
     private void showError(Label errorMsg, String message) {
