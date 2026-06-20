@@ -10,6 +10,7 @@
         seed seed-demo seed-neo4j totp \
         install install-api install-web install-dsl \
         validate validate-fast \
+        hooks \
         status clean clean-modules info
 
 # ─── Couleurs & Styles ─────────────────────────────────────────────────────────
@@ -343,6 +344,12 @@ totp: ## Générer un code TOTP pour les comptes démo (secret JBSWY3DPEHPK3PXP)
 	@oathtool --totp --base32 JBSWY3DPEHPK3PXP 2>/dev/null \
 		&& echo "" \
 		|| echo "  $(YELLOW)oathtool non disponible. Installer : sudo apt install oathtool$(RESET)"
+
+# ─── Git hooks ───────────────────────────────────────────────────────────────
+hooks: ## Activer les git hooks partagés (pre-commit) — à lancer une fois par clone
+	@git config core.hooksPath .githooks
+	@chmod +x .githooks/* 2>/dev/null || true
+	@echo "$(OK) Hooks activés (core.hooksPath = .githooks)"
 
 # ─── Installation ──────────────────────────────────────────────────────────────
 install: install-api install-web install-dsl ## Installer toutes les dépendances (pnpm + uv)
