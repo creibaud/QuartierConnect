@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://${{ secrets.PROD_DOMAIN }}
+      url: https://${{ vars.PROD_DOMAIN }}
     timeout-minutes: 25
 
     steps:
@@ -75,7 +75,7 @@ jobs:
       - name: Smoke test
         id: smoke
         env:
-          PROD_URL: https://${{ secrets.PROD_DOMAIN }}
+          PROD_URL: https://${{ vars.PROD_DOMAIN }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           DEPLOY_PATH: ${{ secrets.VPS_DEPLOY_PATH }}
@@ -101,7 +101,7 @@ jobs:
         if: success()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          PROD_URL: https://${{ secrets.PROD_DOMAIN }}
+          PROD_URL: https://${{ vars.PROD_DOMAIN }}
           REF: ${{ github.event.inputs.ref || github.ref_name }}
         run: |
           if [ -z "${DISCORD_WEBHOOK:-}" ]; then exit 0; fi
