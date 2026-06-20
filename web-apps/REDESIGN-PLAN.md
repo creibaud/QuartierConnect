@@ -71,7 +71,7 @@ Plus secondary: **Form/dialog** (Field groups), **Chat** (messages), **Editor** 
 
 - New features/flows (redesign only reskins/restructures existing pages).
 - Dark-mode-specific art direction beyond the token pairs already defined.
-- Mockups (blocked: no OpenAI key for the gstack designer; revisit if wanted).
+- Mockups (deferred; revisit if wanted).
 
 ## Open decisions
 
