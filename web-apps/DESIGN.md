@@ -129,6 +129,5 @@ place (a card = a real grouping or an interaction, not decoration).
 
 ## 11. Mockups
 
-Visual mockups deferred: the gstack designer needs an OpenAI API key (not configured).
-This doc + the per-page plan drive implementation. Add a key (`~/.gstack/openai.json`)
-to generate mockups later if desired.
+Visual mockups deferred. This doc and the per-page plan drive implementation; mockups
+can be produced later if desired.

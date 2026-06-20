@@ -699,27 +699,8 @@ Après **chaque** modification :
 
 1. `pnpm run build` → zéro erreur TypeScript
 2. `pnpm run test` → vert
-3. `/qa [url]` → zéro erreur console
+3. QA navigateur de la page → zéro erreur console
 4. Coverage ne descend pas
-
-### 13.3 Utilisation de gstack
-
-| Situation               | Commande               |
-| ----------------------- | ---------------------- |
-| Décision d'architecture | `/plan-eng-review`     |
-| Nouvelle page React     | `/design-consultation` |
-| Après chaque sprint     | `/review`              |
-| Bug                     | `/investigate` d'abord |
-| Audit sécurité          | `/cso`                 |
-| Valider une page        | `/qa [url]`            |
-| Committer               | `/ship`                |
-| Mise à jour docs        | `/document-release`    |
-| Analyse globale         | `/autoplan`            |
-| Rétrospective           | `/retro`               |
-
-### 13.4 Sessions Claude Code
-
-**Une session = un prompt = une branche.**
 
 ---
 
@@ -769,7 +750,7 @@ Après **chaque** modification :
 - [ ] Système thèmes Java + 3 thèmes
 - [ ] i18n API FR/EN
 - [ ] RGPD complet
-- [ ] Audit `/cso` → zéro CRITICAL/HIGH
+- [ ] Audit sécurité → zéro CRITICAL/HIGH
 - [ ] Coverage >= 70%
 - [ ] Design score >= 7/10
 
