@@ -10,7 +10,7 @@ on:
       branch:
         description: "Branche à tester"
         required: false
-        default: "master"
+        default: "main"
 
 concurrency:
   group: e2e-${{ github.workflow }}-${{ github.ref }}
@@ -37,6 +37,9 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          cache-dependency-path: |
+            api/pnpm-lock.yaml
+            web-apps/pnpm-lock.yaml
 
       - name: Préparer le .env de CI
         run: |
