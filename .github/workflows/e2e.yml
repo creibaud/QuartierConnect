@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: "Branche à tester"
+        description: "Branche à tester (défaut : la branche du dispatch)"
         required: false
-        default: "main"
+        default: ""
 
 concurrency:
   group: e2e-${{ github.workflow }}-${{ github.ref }}
