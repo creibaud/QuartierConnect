@@ -7,7 +7,7 @@ import {
     uniqueEmail,
 } from "../helpers/auth";
 
-test.use({ baseURL: "http://localhost:3001" });
+test.use({ baseURL: process.env.PLAYWRIGHT_BASE_URL_ADMIN ?? "http://localhost:3001/" });
 
 test.describe("Admin — Dashboard", () => {
     let adminAccessToken: string;
@@ -41,14 +41,14 @@ test.describe("Admin — Dashboard", () => {
             adminAccessToken,
             adminRefreshToken,
         );
-        await page.goto("/dashboard");
+        await page.goto("dashboard");
         await expect(page).toHaveURL(/\/dashboard/);
     });
 
     test("shows admin heading", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         await expect(
-            page.getByRole("heading", { name: /administration/i }),
+            page.getByRole("heading", { name: /tableau de bord/i }),
         ).toBeVisible();
     });
 

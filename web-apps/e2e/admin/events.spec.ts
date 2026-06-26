@@ -7,7 +7,7 @@ import {
     uniqueEmail,
 } from "../helpers/auth";
 
-test.use({ baseURL: "http://localhost:3001" });
+test.use({ baseURL: process.env.PLAYWRIGHT_BASE_URL_ADMIN ?? "http://localhost:3001/" });
 
 test.describe("Admin — Événements (CRUD)", () => {
     let adminAccessToken: string;
@@ -41,7 +41,7 @@ test.describe("Admin — Événements (CRUD)", () => {
             adminAccessToken,
             adminRefreshToken,
         );
-        await page.goto("/events");
+        await page.goto("events");
         await expect(page).toHaveURL(/\/events/);
     });
 
@@ -55,14 +55,14 @@ test.describe("Admin — Événements (CRUD)", () => {
     test("shows add event button", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         await expect(
-            page.getByRole("button", { name: /ajouter/i }),
+            page.getByRole("button", { name: /créer/i }),
         ).toBeVisible();
     });
 
     test("creates a new event", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         const title = `Événement E2E ${Date.now()}`;
-        await page.getByRole("button", { name: /ajouter/i }).click();
+        await page.getByRole("button", { name: /créer/i }).click();
         await expect(page.getByRole("dialog")).toBeVisible();
         await page.getByLabel(/titre/i).fill(title);
         await page.locator("#evt-date").fill("2026-12-01T10:00");
@@ -86,7 +86,7 @@ test.describe("Admin — Événements (CRUD)", () => {
         const original = `Événement Edit ${Date.now()}`;
         const updated = `${original} MAJ`;
 
-        await page.getByRole("button", { name: /ajouter/i }).click();
+        await page.getByRole("button", { name: /créer/i }).click();
         await page.getByLabel(/titre/i).fill(original);
         await page.locator("#evt-date").fill("2026-12-01T10:00");
         await page
@@ -120,7 +120,7 @@ test.describe("Admin — Événements (CRUD)", () => {
     test("deletes an event", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         const title = `Événement Delete ${Date.now()}`;
-        await page.getByRole("button", { name: /ajouter/i }).click();
+        await page.getByRole("button", { name: /créer/i }).click();
         await page.getByLabel(/titre/i).fill(title);
         await page.locator("#evt-date").fill("2026-12-01T10:00");
         await page
@@ -159,7 +159,7 @@ test.describe("Admin — Événements (CRUD)", () => {
             tokens.accessToken,
             tokens.refreshToken,
         );
-        await page.goto("/events");
+        await page.goto("events");
         await expect(page).toHaveURL(/\/login/);
     });
 });
