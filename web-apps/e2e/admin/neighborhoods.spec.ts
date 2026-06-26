@@ -55,7 +55,7 @@ test.describe("Admin — Quartiers (CRUD)", () => {
     test("shows create neighborhood button", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         await expect(
-            page.getByRole("button", { name: /créer|ajouter|nouveau/i }),
+            page.getByRole("button", { name: /créer|ajouter|nouveau/i }).first(),
         ).toBeVisible();
     });
 
@@ -63,7 +63,7 @@ test.describe("Admin — Quartiers (CRUD)", () => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         const name = `Quartier E2E ${Date.now()}`;
         await page
-            .getByRole("button", { name: /créer|ajouter|nouveau/i })
+            .getByRole("button", { name: /créer|ajouter|nouveau/i }).first()
             .click();
         await expect(page.getByRole("dialog")).toBeVisible();
         await page.getByLabel(/nom/i).first().fill(name);
@@ -84,7 +84,7 @@ test.describe("Admin — Quartiers (CRUD)", () => {
         const updated = `${original} MAJ`;
 
         await page
-            .getByRole("button", { name: /créer|ajouter|nouveau/i })
+            .getByRole("button", { name: /créer|ajouter|nouveau/i }).first()
             .click();
         await page.getByLabel(/nom/i).first().fill(original);
         await page.getByLabel(/ville/i).fill("Paris");
@@ -119,7 +119,7 @@ test.describe("Admin — Quartiers (CRUD)", () => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         const name = `Quartier Delete ${Date.now()}`;
         await page
-            .getByRole("button", { name: /créer|ajouter|nouveau/i })
+            .getByRole("button", { name: /créer|ajouter|nouveau/i }).first()
             .click();
         await page.getByLabel(/nom/i).first().fill(name);
         await page.getByLabel(/ville/i).fill("Paris");
