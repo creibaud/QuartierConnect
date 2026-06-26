@@ -89,7 +89,8 @@ test.describe("Admin — Gestion utilisateurs", () => {
 
     test("changes user role to moderator", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
-        const combobox = page.getByRole("combobox").first();
+        // .nth(1): skip the role-FILTER combobox (.first()); target a user row's role select
+        const combobox = page.getByRole("combobox").nth(1);
         await expect(combobox).toBeVisible({ timeout: 8000 });
         // Read current role to pick a different target (avoid no-op select)
         const currentText = (await combobox.textContent()) ?? "";

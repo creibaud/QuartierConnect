@@ -115,13 +115,16 @@ test.describe("Admin — Services (CRUD)", () => {
 
         const row = page.getByRole("row").filter({ hasText: name });
         await row.getByRole("button", { name: /supprimer/i }).click();
-        const confirmBtn = page.getByRole("button", {
-            name: /confirmer|oui|yes/i,
-        });
-        if (await confirmBtn.isVisible({ timeout: 500 }))
-            await confirmBtn.click();
+        // The row button opens an AlertDialog whose confirm action is also "Supprimer"
+        await page
+            .getByRole("alertdialog")
+            .getByRole("button", { name: /supprimer/i })
+            .click();
 
-        await expect(page.getByText(name)).not.toBeVisible({ timeout: 5000 });
+        // exact:true matches only the table cell, not the AlertDialog description that embeds the name
+        await expect(page.getByText(name, { exact: true })).not.toBeVisible({
+            timeout: 5000,
+        });
     });
 
     test("redirects non-admin to login", async ({ page }) => {

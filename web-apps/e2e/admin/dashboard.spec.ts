@@ -48,7 +48,7 @@ test.describe("Admin — Dashboard", () => {
     test("shows admin heading", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         await expect(
-            page.getByRole("heading", { name: /administration/i }),
+            page.getByRole("heading", { name: /tableau de bord/i }),
         ).toBeVisible();
     });
 

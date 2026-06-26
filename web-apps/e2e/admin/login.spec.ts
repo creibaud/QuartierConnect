@@ -81,7 +81,7 @@ test.describe("Admin — Login parcours", () => {
         );
         await page.goto("dashboard");
         await expect(
-            page.getByRole("heading", { name: /administration/i }),
+            page.getByRole("heading", { name: /tableau de bord/i }),
         ).toBeVisible();
     });
 });

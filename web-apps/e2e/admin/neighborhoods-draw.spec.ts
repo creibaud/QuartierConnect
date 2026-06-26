@@ -46,7 +46,7 @@ test.describe("Admin — Neighborhoods polygon draw", () => {
         await page.goto("neighborhoods");
         await expect(page).toHaveURL(/\/neighborhoods/);
 
-        await page.getByRole("button", { name: "Ajouter" }).click();
+        await page.getByRole("button", { name: "Créer", exact: true }).click();
         await expect(
             page.getByRole("heading", { name: /Ajouter un quartier/i }),
         ).toBeVisible();
@@ -61,7 +61,8 @@ test.describe("Admin — Neighborhoods polygon draw", () => {
         ).toContainText("OpenStreetMap");
 
         // leaflet-draw injects a polygon draw button via DrawControl
-        const drawToolbar = page.locator(".leaflet-draw-toolbar");
+        // leaflet-draw renders two toolbars (draw + edit/delete); assert the first
+        const drawToolbar = page.locator(".leaflet-draw-toolbar").first();
         await expect(drawToolbar).toBeVisible({ timeout: 5000 });
     });
 });
