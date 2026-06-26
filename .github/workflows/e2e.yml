@@ -65,7 +65,7 @@ jobs:
           EOF
 
       - name: Démarrer la stack Docker
-        run: docker compose -f docker/docker-compose.yml up -d --build
+        run: docker compose -f docker/docker-compose.yml --env-file .env up -d --build
 
       - name: Attendre que l'API soit prête
         run: |
@@ -75,7 +75,7 @@ jobs:
             fi
             sleep 2
           done
-          docker compose -f docker/docker-compose.yml logs api --tail=100
+          docker compose -f docker/docker-compose.yml --env-file .env logs api --tail=100
           exit 1
 
       - name: Install web deps
@@ -115,7 +115,7 @@ jobs:
 
       - name: Dump logs en cas d'échec
         if: failure()
-        run: docker compose -f docker/docker-compose.yml logs --tail=200
+        run: docker compose -f docker/docker-compose.yml --env-file .env logs --tail=200
 
       - name: Notification Discord
         if: failure() && env.DISCORD_WEBHOOK != ''
