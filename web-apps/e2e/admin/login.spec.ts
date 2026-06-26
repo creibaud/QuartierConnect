@@ -9,7 +9,7 @@ import {
     uniqueEmail,
 } from "../helpers/auth";
 
-test.use({ baseURL: "http://localhost:3001" });
+test.use({ baseURL: process.env.PLAYWRIGHT_BASE_URL_ADMIN ?? "http://localhost:3001/" });
 
 test.describe("Admin — Login parcours", () => {
     let residentEmail: string;
@@ -47,7 +47,7 @@ test.describe("Admin — Login parcours", () => {
         page,
     }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
-        await page.goto("/login");
+        await page.goto("login");
         await page.getByLabel("Email").fill(residentEmail);
         await page.getByLabel("Mot de passe").fill(DEMO_PASSWORD);
         await page.getByRole("button", { name: /continuer/i }).click();
@@ -62,7 +62,7 @@ test.describe("Admin — Login parcours", () => {
         page,
     }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
-        await page.goto("/login");
+        await page.goto("login");
         await page.getByLabel("Email").fill(adminEmail);
         await page.getByLabel("Mot de passe").fill(DEMO_PASSWORD);
         await page.getByRole("button", { name: /continuer/i }).click();
@@ -79,7 +79,7 @@ test.describe("Admin — Login parcours", () => {
             savedAdminAccessToken,
             savedAdminRefreshToken,
         );
-        await page.goto("/dashboard");
+        await page.goto("dashboard");
         await expect(
             page.getByRole("heading", { name: /administration/i }),
         ).toBeVisible();

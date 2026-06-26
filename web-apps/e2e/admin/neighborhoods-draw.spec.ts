@@ -7,7 +7,7 @@ import {
     uniqueEmail,
 } from "../helpers/auth";
 
-test.use({ baseURL: "http://localhost:3001" });
+test.use({ baseURL: process.env.PLAYWRIGHT_BASE_URL_ADMIN ?? "http://localhost:3001/" });
 
 test.describe("Admin — Neighborhoods polygon draw", () => {
     let adminAccessToken: string;
@@ -43,7 +43,7 @@ test.describe("Admin — Neighborhoods polygon draw", () => {
             adminAccessToken,
             adminRefreshToken,
         );
-        await page.goto("/neighborhoods");
+        await page.goto("neighborhoods");
         await expect(page).toHaveURL(/\/neighborhoods/);
 
         await page.getByRole("button", { name: "Ajouter" }).click();

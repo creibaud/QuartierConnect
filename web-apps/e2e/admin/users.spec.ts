@@ -7,7 +7,7 @@ import {
     uniqueEmail,
 } from "../helpers/auth";
 
-test.use({ baseURL: "http://localhost:3001" });
+test.use({ baseURL: process.env.PLAYWRIGHT_BASE_URL_ADMIN ?? "http://localhost:3001/" });
 
 test.describe("Admin — Gestion utilisateurs", () => {
     let adminAccessToken: string;
@@ -45,7 +45,7 @@ test.describe("Admin — Gestion utilisateurs", () => {
             adminAccessToken,
             adminRefreshToken,
         );
-        await page.goto("/users");
+        await page.goto("users");
         await expect(page).toHaveURL(/\/users/);
     });
 
@@ -60,7 +60,7 @@ test.describe("Admin — Gestion utilisateurs", () => {
             tokens.accessToken,
             tokens.refreshToken,
         );
-        await page.goto("/users");
+        await page.goto("users");
         await expect(page).toHaveURL(/\/login/);
     });
 
