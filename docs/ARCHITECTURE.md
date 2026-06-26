@@ -23,6 +23,8 @@
 15. [Auto-reconnect and token auto-refresh](#15-auto-reconnect-and-token-auto-refresh)
 16. [Layered security](#16-layered-security)
 17. [Request lifecycle](#17-request-lifecycle)
+18. [Shared mapping — `<Map>` component](#18-shared-mapping--map-component)
+19. [Production deployment architecture](#19-production-deployment-architecture)
 
 ---
 
@@ -750,3 +752,137 @@ mapped onto the Civic Editorial palette), `NeighborhoodPolygon`,
 this Mongoose subschema with a `2dsphere` (sparse) index; Postgres
 Incidents simply store `lat REAL` + `lng REAL` (migration
 `0002_incident_coords.sql`).
+
+## 19. Production deployment architecture
+
+> Section added for the DevOps delivery. Describes the real production infrastructure on the VPS, distinct from the local development environment.
+
+### 19.1 Production network view
+
+```mermaid
+graph TB
+    subgraph Internet
+        U1[Resident<br/>HTTPS browser]
+        U2[Admin<br/>HTTPS browser]
+        U3[Admin/Moderator<br/>JavaFX Desktop]
+        LE[Let's Encrypt<br/>ACME]
+        UR[UptimeRobot<br/>monitoring]
+    end
+
+    subgraph VPS["Ubuntu VPS — UFW (22/80/443 only) + fail2ban"]
+        CADDY["Caddy 2<br/>:80 / :443 / :443/udp<br/>auto HTTPS + HSTS + CSP"]
+
+        subgraph DockerNet["Internal Docker network — quartierconnect_prod"]
+            CLIENT["client<br/>:3000<br/>Caddy static"]
+            ADMIN["admin<br/>:3001<br/>Caddy static"]
+            API["api<br/>:5000<br/>NestJS + Python PLY"]
+
+            MONGO[("mongo<br/>:27017<br/>127.0.0.1 only")]
+            PG[("postgres<br/>:5432<br/>127.0.0.1 only")]
+            NEO[("neo4j<br/>:7474/:7687<br/>127.0.0.1 only")]
+        end
+    end
+
+    subgraph Cloud["Remote storage"]
+        S3[("S3 / Backblaze<br/>encrypted backups")]
+    end
+
+    U1 -->|HTTPS| CADDY
+    U2 -->|HTTPS| CADDY
+    U3 -->|HTTPS REST| CADDY
+    LE -.->|challenge :80| CADDY
+    UR -.->|GET /api/health| CADDY
+
+    CADDY -->|"/"| CLIENT
+    CADDY -->|"/admin"| ADMIN
+    CADDY -->|"/api → strip prefix"| API
+    CADDY -->|"/docs Scalar"| API
+    CADDY -->|"/api WSS → Socket.io"| API
+
+    API --> MONGO
+    API --> PG
+    API --> NEO
+
+    MONGO -.->|cron 2h| S3
+    PG -.->|cron 2h| S3
+    NEO -.->|cron 2h| S3
+
+    style CADDY fill:#1D4ED8,color:#fff
+    style API fill:#E0234E,color:#fff
+    style S3 fill:#16a34a,color:#fff
+```
+
+**Network security key points:**
+
+- Only ports **22, 80, 443** are exposed to the Internet (UFW)
+- The three databases are bound to `127.0.0.1` → reachable only through the internal Docker network, never from outside
+- Caddy is the **only** HTTP/HTTPS entry point — it terminates TLS and proxies internally
+- The WebSocket (Socket.io messaging) goes through the same `/api` with a `wss://` upgrade
+
+### 19.2 CI/CD flow
+
+```mermaid
+graph LR
+    DEV[Developer] -->|push PR| GH[GitHub]
+    GH -->|triggers| CI[CI workflow]
+
+    CI --> J1[api: lint+build+test]
+    CI --> J2[web: lint+typecheck+build]
+    CI --> J3[desktop: mvn test+package]
+    CI --> J4[dsl: ruff+pytest]
+    CI --> J5[make validate-fast]
+
+    J1 & J2 & J3 & J4 & J5 --> OK{all green?}
+    OK -->|no| BLOCK[Merge blocked]
+    OK -->|yes| MERGE[Merge to master]
+
+    MERGE -->|tag v*.*.*| DEPLOY[deploy workflow]
+    MERGE -->|tag v*.*.*| REL[release-desktop:<br/>JAR on Releases]
+
+    DEPLOY -->|environment: production<br/>Claudio approval| SSH[SSH VPS]
+    SSH --> BUILD[docker compose up --build]
+    BUILD --> SMOKE{smoke-test?}
+    SMOKE -->|OK| DISCORD1[Discord ✅]
+    SMOKE -->|KO| RB[auto rollback]
+    RB --> DISCORD2[Discord 🔴]
+
+    style CI fill:#1D4ED8,color:#fff
+    style DEPLOY fill:#E0234E,color:#fff
+    style SMOKE fill:#f59e0b,color:#fff
+```
+
+### 19.3 Production vs development containers
+
+| Aspect           | Dev (`docker-compose.yml`) | Prod (`+ docker-compose.prod.yml`)         |
+| ---------------- | -------------------------- | ------------------------------------------ |
+| Caddy            | HTTP `:80`, dev Caddyfile  | HTTPS `:443` Let's Encrypt, Caddyfile.prod |
+| `restart`        | no                         | `unless-stopped` everywhere                |
+| Healthchecks     | partial                    | api + mongo + postgres + neo4j + caddy     |
+| `depends_on`     | basic                      | `condition: service_healthy`               |
+| Resource limits  | none                       | memory + CPU capped                        |
+| Neo4j heap       | default (~4G)              | capped at 1G                               |
+| Login rate limit | 100 (dev)                  | 5 (prod)                                   |
+| CORS             | localhost                  | `https://quartierconnect.fr` only          |
+| Network          | default                    | named `quartierconnect_prod`               |
+| Caddy logs       | stdout                     | JSON file + rotation 100MB/10              |
+
+### 19.4 Backup strategy
+
+```mermaid
+graph TB
+    CRON["VPS cron<br/>2am"] --> ALL[backup-all.sh]
+
+    ALL --> M[backup-mongo.sh<br/>mongodump --gzip]
+    ALL --> P[backup-postgres.sh<br/>pg_dumpall gzip]
+    ALL --> N[backup-neo4j.sh<br/>cold dump ~30s]
+    ALL --> C{Monday?}
+    C -->|yes| CD[Caddy certs tar.gz]
+
+    M & P & N & CD --> LOCAL["/var/backups<br/>7-day retention"]
+    LOCAL --> REMOTE["S3/Backblaze<br/>7d + 4 weeks + 12 months"]
+
+    ALL -->|failure| DISC[Discord 🔴]
+
+    style ALL fill:#16a34a,color:#fff
+    style REMOTE fill:#1D4ED8,color:#fff
+```

@@ -1,0 +1,123 @@
+name: Deploy
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branche / tag à déployer"
+        required: true
+        default: "main"
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://${{ vars.PROD_DOMAIN }}
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+          fetch-depth: 0
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+      - name: Add VPS to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Capture SHA actuel (pour rollback)
+        id: rollback
+        env:
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          DEPLOY_PATH: ${{ secrets.VPS_DEPLOY_PATH }}
+        run: |
+          PREV_SHA=$(ssh "$VPS_USER@$VPS_HOST" "cd '$DEPLOY_PATH' && git rev-parse HEAD")
+          echo "previous_sha=$PREV_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy
+        id: deploy
+        env:
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          DEPLOY_PATH: ${{ secrets.VPS_DEPLOY_PATH }}
+          GIT_REF: ${{ github.event.inputs.ref || github.ref_name }}
+        run: |
+          ssh "$VPS_USER@$VPS_HOST" bash <<EOF
+            set -euo pipefail
+            cd "$DEPLOY_PATH"
+            git fetch --all --tags --prune
+            git checkout "$GIT_REF"
+            git pull --ff-only origin "$GIT_REF" 2>/dev/null || true
+            docker compose \
+              -f docker/docker-compose.yml \
+              -f docker/docker-compose.prod.yml \
+              up -d --build --remove-orphans
+          EOF
+
+      - name: Smoke test
+        id: smoke
+        env:
+          PROD_URL: https://${{ vars.PROD_DOMAIN }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          DEPLOY_PATH: ${{ secrets.VPS_DEPLOY_PATH }}
+        run: |
+          ssh "$VPS_USER@$VPS_HOST" \
+            "cd '$DEPLOY_PATH' && ./scripts/smoke-test.sh '$PROD_URL'"
+
+      - name: Rollback si smoke test KO
+        if: failure() && steps.deploy.outcome == 'success'
+        env:
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          DEPLOY_PATH: ${{ secrets.VPS_DEPLOY_PATH }}
+          PREVIOUS_SHA: ${{ steps.rollback.outputs.previous_sha }}
+        run: |
+          ssh "$VPS_USER@$VPS_HOST" bash <<EOF
+            set -euo pipefail
+            cd "$DEPLOY_PATH"
+            ./scripts/rollback.sh "$PREVIOUS_SHA"
+          EOF
+
+      - name: Notification Discord — succès
+        if: success()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          PROD_URL: https://${{ vars.PROD_DOMAIN }}
+          REF: ${{ github.event.inputs.ref || github.ref_name }}
+        run: |
+          if [ -z "${DISCORD_WEBHOOK:-}" ]; then exit 0; fi
+          curl -X POST -H 'Content-Type: application/json' \
+            -d "{\"content\":\"✅ **Deploy OK** — \`${REF}\` en prod sur ${PROD_URL}\"}" \
+            "$DISCORD_WEBHOOK"
+
+      - name: Notification Discord — échec
+        if: failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          REF: ${{ github.event.inputs.ref || github.ref_name }}
+          PREVIOUS_SHA: ${{ steps.rollback.outputs.previous_sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "${DISCORD_WEBHOOK:-}" ]; then exit 0; fi
+          curl -X POST -H 'Content-Type: application/json' \
+            -d "{\"content\":\"🔴 **Deploy KO** — \`${REF}\` — rollback vers \`${PREVIOUS_SHA:0:7}\` — [run](${RUN_URL})\"}" \
+            "$DISCORD_WEBHOOK"

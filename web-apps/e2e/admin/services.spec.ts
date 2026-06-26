@@ -7,7 +7,7 @@ import {
     uniqueEmail,
 } from "../helpers/auth";
 
-test.use({ baseURL: "http://localhost:3001" });
+test.use({ baseURL: process.env.PLAYWRIGHT_BASE_URL_ADMIN ?? "http://localhost:3001/" });
 
 test.describe("Admin — Services (CRUD)", () => {
     let adminAccessToken: string;
@@ -41,7 +41,7 @@ test.describe("Admin — Services (CRUD)", () => {
             adminAccessToken,
             adminRefreshToken,
         );
-        await page.goto("/services");
+        await page.goto("services");
         await expect(page).toHaveURL(/\/services/);
     });
 
@@ -55,14 +55,14 @@ test.describe("Admin — Services (CRUD)", () => {
     test("shows add service button", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         await expect(
-            page.getByRole("button", { name: /ajouter/i }),
+            page.getByRole("button", { name: /ajouter/i }).first(),
         ).toBeVisible();
     });
 
     test("creates a new service", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         const name = `Service E2E ${Date.now()}`;
-        await page.getByRole("button", { name: /ajouter/i }).click();
+        await page.getByRole("button", { name: /ajouter/i }).first().click();
         await expect(page.getByRole("dialog")).toBeVisible();
         await page.getByLabel(/nom/i).fill(name);
         await page.getByLabel(/catégorie/i).fill("other");
@@ -79,7 +79,7 @@ test.describe("Admin — Services (CRUD)", () => {
         const original = `Service Edit ${Date.now()}`;
         const updated = `${original} MAJ`;
 
-        await page.getByRole("button", { name: /ajouter/i }).click();
+        await page.getByRole("button", { name: /ajouter/i }).first().click();
         await page.getByLabel(/nom/i).fill(original);
         await page.getByLabel(/catégorie/i).fill("other");
         await page.getByLabel(/description/i).fill("Description de test E2E");
@@ -103,7 +103,7 @@ test.describe("Admin — Services (CRUD)", () => {
     test("deletes a service", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         const name = `Service Delete ${Date.now()}`;
-        await page.getByRole("button", { name: /ajouter/i }).click();
+        await page.getByRole("button", { name: /ajouter/i }).first().click();
         await page.getByLabel(/nom/i).fill(name);
         await page.getByLabel(/catégorie/i).fill("other");
         await page.getByLabel(/description/i).fill("Description de test E2E");
@@ -115,13 +115,16 @@ test.describe("Admin — Services (CRUD)", () => {
 
         const row = page.getByRole("row").filter({ hasText: name });
         await row.getByRole("button", { name: /supprimer/i }).click();
-        const confirmBtn = page.getByRole("button", {
-            name: /confirmer|oui|yes/i,
-        });
-        if (await confirmBtn.isVisible({ timeout: 500 }))
-            await confirmBtn.click();
+        // The row button opens an AlertDialog whose confirm action is also "Supprimer"
+        await page
+            .getByRole("alertdialog")
+            .getByRole("button", { name: /supprimer/i })
+            .click();
 
-        await expect(page.getByText(name)).not.toBeVisible({ timeout: 5000 });
+        // exact:true matches only the table cell, not the AlertDialog description that embeds the name
+        await expect(page.getByText(name, { exact: true })).not.toBeVisible({
+            timeout: 5000,
+        });
     });
 
     test("redirects non-admin to login", async ({ page }) => {
@@ -135,7 +138,7 @@ test.describe("Admin — Services (CRUD)", () => {
             tokens.accessToken,
             tokens.refreshToken,
         );
-        await page.goto("/services");
+        await page.goto("services");
         await expect(page).toHaveURL(/\/login/);
     });
 });

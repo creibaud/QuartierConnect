@@ -1,0 +1,319 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "9"
+  JAVA_VERSION: "21"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  # API — NestJS 11 / TypeScript / Jest
+  api:
+    name: API (NestJS)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      mongo:
+        image: mongo:7
+        ports: [27017:27017]
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: testpass
+        options: >-
+          --health-cmd "mongosh --quiet -u root -p testpass --eval 'db.adminCommand({ping:1})'"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+      postgres:
+        image: postgres:16-alpine
+        ports: [5432:5432]
+        env:
+          POSTGRES_USER: qc
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: quartierconnect
+        options: >-
+          --health-cmd "pg_isready -U qc"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+      neo4j:
+        image: neo4j:5
+        ports: [7474:7474, 7687:7687]
+        env:
+          NEO4J_AUTH: neo4j/testpass1234
+        options: >-
+          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"
+          --health-interval 10s --health-timeout 5s --health-retries 15
+
+    env:
+      MONGO_URI: mongodb://root:testpass@localhost:27017/quartierconnect?authSource=admin
+      POSTGRES_URL: postgresql://qc:testpass@localhost:5432/quartierconnect
+      NEO4J_URI: bolt://localhost:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: testpass1234
+      NEO4J_AUTH: neo4j/testpass1234
+      JWT_SECRET: ci-test-secret-min-32-chars-long-xx
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      DEMO_TOTP_SECRET: JBSWY3DPEHPK3PXP
+      LOGIN_RATE_LIMIT: "100"
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001
+      PORT: "5000"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: api/pnpm-lock.yaml
+
+      - name: Setup Python (bridge PLY)
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install PLY
+        run: pip install "ply>=3.11"
+
+      - name: Install dependencies
+        working-directory: api
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        working-directory: api
+        run: pnpm run lint
+
+      - name: Build
+        working-directory: api
+        run: pnpm run build
+
+      - name: Tests + coverage
+        working-directory: api
+        run: pnpm run test:cov
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-coverage
+          path: api/coverage/
+          retention-days: 7
+
+      - name: Commentaire coverage en PR
+        if: github.event_name == 'pull_request'
+        uses: romeovs/lcov-reporter-action@v0.4.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          lcov-file: api/coverage/lcov.info
+          title: "API Coverage"
+        continue-on-error: true
+
+  # WEB — Monorepo React via Turbo
+  web:
+    name: Web (React monorepo)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: web-apps/pnpm-lock.yaml
+
+      - name: Cache Turbo
+        uses: actions/cache@v4
+        with:
+          path: web-apps/.turbo
+          key: turbo-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ github.ref_name }}-
+            turbo-
+
+      - name: Install dependencies
+        working-directory: web-apps
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        working-directory: web-apps
+        run: pnpm run lint
+
+      - name: Typecheck
+        working-directory: web-apps
+        run: pnpm run typecheck
+
+      - name: Build
+        working-directory: web-apps
+        run: pnpm run build
+
+      - name: Upload client build
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-client-dist
+          path: web-apps/apps/client/dist/
+          retention-days: 3
+
+      - name: Upload admin build
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-admin-dist
+          path: web-apps/apps/admin/dist/
+          retention-days: 3
+
+  # DESKTOP — JavaFX 21 / Maven
+  desktop:
+    name: Desktop (JavaFX)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Tests
+        working-directory: desktop-app
+        run: ./mvnw -B test
+
+      - name: Build JAR
+        working-directory: desktop-app
+        run: ./mvnw -B package -DskipTests
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-jar
+          path: desktop-app/target/quartierconnect-desktop.jar
+          retention-days: 7
+
+  # DSL — Python 3.12 / PLY / pytest
+  dsl:
+    name: DSL (Python PLY)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('dsl/uv.lock') }}
+          restore-keys: uv-${{ runner.os }}-
+
+      - name: Sync dependencies
+        working-directory: dsl
+        run: uv sync --frozen
+
+      - name: Lint
+        working-directory: dsl
+        run: uv run ruff check .
+
+      - name: Tests
+        working-directory: dsl
+        run: uv run pytest -v
+
+  # Vérifie que make validate-fast passe (source de vérité locale)
+  make-validate:
+    name: make validate-fast
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: |
+            api/pnpm-lock.yaml
+            web-apps/pnpm-lock.yaml
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv + PLY
+        run: pip install uv "ply>=3.11"
+
+      - name: Install all deps
+        run: make install
+
+      - name: Validate
+        run: make validate-fast
+
+  # Job de synthèse pour la branch protection
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [api, web, desktop, dsl, make-validate]
+    if: always()
+    steps:
+      - name: Check all jobs succeeded
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ] || \
+             [ "${{ contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            echo "::error::Au moins un job CI a échoué"
+            exit 1
+          fi
+          echo "✓ Tous les jobs ont réussi"
