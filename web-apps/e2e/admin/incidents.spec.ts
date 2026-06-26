@@ -27,6 +27,22 @@ test.describe("Admin — Modération incidents", () => {
             const tokens = await apiLogin(adminEmail, adminSecret, -30);
             adminAccessToken = tokens.accessToken;
             adminRefreshToken = tokens.refreshToken;
+            // Seed one incident so the moderation table (and its column headers)
+            // render — CI starts with an empty DB and otherwise shows the empty state.
+            await fetch(
+                `${process.env.API_URL ?? "http://localhost:5000"}/incidents`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${adminAccessToken}`,
+                    },
+                    body: JSON.stringify({
+                        title: "Incident Modération E2E",
+                        description: "Seed for admin incidents table",
+                    }),
+                },
+            );
             apiAvailable = true;
         } catch (err) {
             // API or Docker not available — API-dependent tests will be skipped
