@@ -55,14 +55,14 @@ test.describe("Admin — Services (CRUD)", () => {
     test("shows add service button", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         await expect(
-            page.getByRole("button", { name: /ajouter/i }),
+            page.getByRole("button", { name: /ajouter/i }).first(),
         ).toBeVisible();
     });
 
     test("creates a new service", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         const name = `Service E2E ${Date.now()}`;
-        await page.getByRole("button", { name: /ajouter/i }).click();
+        await page.getByRole("button", { name: /ajouter/i }).first().click();
         await expect(page.getByRole("dialog")).toBeVisible();
         await page.getByLabel(/nom/i).fill(name);
         await page.getByLabel(/catégorie/i).fill("other");
@@ -79,7 +79,7 @@ test.describe("Admin — Services (CRUD)", () => {
         const original = `Service Edit ${Date.now()}`;
         const updated = `${original} MAJ`;
 
-        await page.getByRole("button", { name: /ajouter/i }).click();
+        await page.getByRole("button", { name: /ajouter/i }).first().click();
         await page.getByLabel(/nom/i).fill(original);
         await page.getByLabel(/catégorie/i).fill("other");
         await page.getByLabel(/description/i).fill("Description de test E2E");
@@ -103,7 +103,7 @@ test.describe("Admin — Services (CRUD)", () => {
     test("deletes a service", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         const name = `Service Delete ${Date.now()}`;
-        await page.getByRole("button", { name: /ajouter/i }).click();
+        await page.getByRole("button", { name: /ajouter/i }).first().click();
         await page.getByLabel(/nom/i).fill(name);
         await page.getByLabel(/catégorie/i).fill("other");
         await page.getByLabel(/description/i).fill("Description de test E2E");
