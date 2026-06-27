@@ -3,6 +3,7 @@ import { Add01Icon, Agreement01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import {
     apiGet,
     apiPost,
@@ -61,14 +62,21 @@ interface CommunityVote {
     casts: unknown[];
 }
 
-const VOTE_TYPE_LABELS: Record<VoteType, string> = {
-    binary: "Binaire (Oui/Non)",
-    single_choice: "Choix unique",
-    multiple_choice: "Choix multiple",
-    weighted: "Vote pondéré",
-};
+type TranslateFn = ReturnType<typeof useTranslation>["t"];
+
+const VOTE_TYPES: VoteType[] = [
+    "binary",
+    "single_choice",
+    "multiple_choice",
+    "weighted",
+];
+
+function voteTypeLabel(t: TranslateFn, voteType: VoteType): string {
+    return t(`adminPages.communityVotes.voteTypes.${voteType}`);
+}
 
 function CommunityVotesPage() {
+    const { t } = useTranslation();
     const [createOpen, setCreateOpen] = useState(false);
     const queryClient = useQueryClient();
 
@@ -80,12 +88,12 @@ function CommunityVotesPage() {
     const closeVote = useMutation({
         mutationFn: (id: string) => apiPost(`/community-votes/${id}/close`, {}),
         onSuccess: () => {
-            toast.success("Vote fermé");
+            toast.success(t("adminPages.communityVotes.closed"));
             void queryClient.invalidateQueries({
                 queryKey: ["admin-community-votes"],
             });
         },
-        onError: () => toast.error("Erreur"),
+        onError: () => toast.error(t("common.error")),
     });
 
     const votes = data ?? [];
@@ -94,12 +102,12 @@ function CommunityVotesPage() {
         <div className="p-6">
             <div className="mx-auto max-w-6xl space-y-6">
                 <PageHeader
-                    title="Votes communautaires"
-                    description="Consultations et décisions du quartier"
+                    title={t("adminPages.communityVotes.title")}
+                    description={t("adminPages.communityVotes.description")}
                     actions={
                         <Button onClick={() => setCreateOpen(true)}>
                             <HugeiconsIcon icon={Add01Icon} />
-                            Créer
+                            {t("adminPages.common.create")}
                         </Button>
                     }
                 />
@@ -109,7 +117,7 @@ function CommunityVotesPage() {
                     error={isError ? true : undefined}
                     isEmpty={votes.length === 0}
                     onRetry={() => void refetch()}
-                    errorTitle="Impossible de charger les votes"
+                    errorTitle={t("adminPages.communityVotes.loadError")}
                     skeleton={
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {Array.from({ length: 3 }).map((_, i) => (
@@ -126,16 +134,19 @@ function CommunityVotesPage() {
                                 <EmptyMedia variant="icon">
                                     <HugeiconsIcon icon={Agreement01Icon} />
                                 </EmptyMedia>
-                                <EmptyTitle>Aucun vote</EmptyTitle>
+                                <EmptyTitle>
+                                    {t("adminPages.communityVotes.emptyTitle")}
+                                </EmptyTitle>
                                 <EmptyDescription>
-                                    Lancez une consultation pour recueillir
-                                    l'avis des habitants.
+                                    {t(
+                                        "adminPages.communityVotes.emptyDescription",
+                                    )}
                                 </EmptyDescription>
                             </EmptyHeader>
                             <EmptyContent>
                                 <Button onClick={() => setCreateOpen(true)}>
                                     <HugeiconsIcon icon={Add01Icon} />
-                                    Créer
+                                    {t("adminPages.common.create")}
                                 </Button>
                             </EmptyContent>
                         </Empty>
@@ -157,19 +168,25 @@ function CommunityVotesPage() {
                                             }
                                         >
                                             {vote.status === "open"
-                                                ? "En cours"
-                                                : "Fermé"}
+                                                ? t(
+                                                      "adminPages.communityVotes.statusOpen",
+                                                  )
+                                                : t(
+                                                      "adminPages.communityVotes.statusClosed",
+                                                  )}
                                         </Badge>
                                     </div>
                                     <p className="text-muted-foreground text-xs">
-                                        {VOTE_TYPE_LABELS[vote.voteType]}
+                                        {voteTypeLabel(t, vote.voteType)}
                                     </p>
                                 </CardHeader>
                                 <CardContent className="flex flex-1 flex-col justify-end gap-4">
                                     <dl className="grid grid-cols-2 gap-3 text-sm">
                                         <div className="space-y-0.5">
                                             <dt className="text-muted-foreground text-xs">
-                                                Participants
+                                                {t(
+                                                    "adminPages.communityVotes.participants",
+                                                )}
                                             </dt>
                                             <dd className="font-medium tabular-nums">
                                                 {vote.casts.length}
@@ -177,7 +194,9 @@ function CommunityVotesPage() {
                                         </div>
                                         <div className="space-y-0.5">
                                             <dt className="text-muted-foreground text-xs">
-                                                Fin
+                                                {t(
+                                                    "adminPages.communityVotes.endsAt",
+                                                )}
                                             </dt>
                                             <dd className="font-medium tabular-nums">
                                                 {new Date(
@@ -196,7 +215,9 @@ function CommunityVotesPage() {
                                                 closeVote.mutate(vote._id)
                                             }
                                         >
-                                            Fermer le vote
+                                            {t(
+                                                "adminPages.communityVotes.closeVote",
+                                            )}
                                         </Button>
                                     )}
                                 </CardContent>
@@ -229,30 +250,32 @@ function CreateVoteDialog({
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
 }) {
+    const { t } = useTranslation();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [voteType, setVoteType] = useState<VoteType>("binary");
     const [endsAt, setEndsAt] = useState("");
     const [options, setOptions] = useState<VoteOption[]>([
-        { id: "yes", label: "Oui" },
-        { id: "no", label: "Non" },
+        { id: "yes", label: "Yes" },
+        { id: "no", label: "No" },
     ]);
 
     const create = useMutation({
         mutationFn: (payload: unknown) => apiPost("/community-votes", payload),
         onSuccess: () => {
-            toast.success("Vote créé");
+            toast.success(t("adminPages.communityVotes.created"));
             onSuccess();
         },
-        onError: (err: Error) => toast.error(err.message ?? "Erreur"),
+        onError: (err: Error) =>
+            toast.error(err.message ?? t("common.error")),
     });
 
     function handleVoteTypeChange(type: VoteType) {
         setVoteType(type);
         if (type === "binary") {
             setOptions([
-                { id: "yes", label: "Oui" },
-                { id: "no", label: "Non" },
+                { id: "yes", label: "Yes" },
+                { id: "no", label: "No" },
             ]);
         } else if (options.length < 2) {
             setOptions([
@@ -293,30 +316,38 @@ function CreateVoteDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Créer un vote communautaire</DialogTitle>
+                    <DialogTitle>
+                        {t("adminPages.communityVotes.createTitle")}
+                    </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label>Titre *</Label>
+                        <Label>{t("adminPages.communityVotes.titleLabel")}</Label>
                         <Input
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Question du vote"
+                            placeholder={t(
+                                "adminPages.communityVotes.titlePlaceholder",
+                            )}
                             required
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Description</Label>
+                        <Label>{t("incidents.fields.description")}</Label>
                         <Input
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Contexte optionnel"
+                            placeholder={t(
+                                "adminPages.communityVotes.descriptionPlaceholder",
+                            )}
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Type de vote *</Label>
+                        <Label>
+                            {t("adminPages.communityVotes.voteTypeLabel")}
+                        </Label>
                         <Select
                             value={voteType}
                             onValueChange={(v) =>
@@ -327,14 +358,9 @@ function CreateVoteDialog({
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                {(
-                                    Object.entries(VOTE_TYPE_LABELS) as [
-                                        VoteType,
-                                        string,
-                                    ][]
-                                ).map(([val, label]) => (
+                                {VOTE_TYPES.map((val) => (
                                     <SelectItem key={val} value={val}>
-                                        {label}
+                                        {voteTypeLabel(t, val)}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -343,14 +369,16 @@ function CreateVoteDialog({
 
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                            <Label>Options *</Label>
+                            <Label>
+                                {t("adminPages.communityVotes.optionsLabel")}
+                            </Label>
                             {voteType !== "binary" && (
                                 <button
                                     type="button"
                                     className="text-primary text-xs hover:underline"
                                     onClick={addOption}
                                 >
-                                    + Ajouter
+                                    {t("adminPages.communityVotes.addOption")}
                                 </button>
                             )}
                         </div>
@@ -362,7 +390,10 @@ function CreateVoteDialog({
                                         onChange={(e) =>
                                             updateOption(i, e.target.value)
                                         }
-                                        placeholder={`Option ${i + 1}`}
+                                        placeholder={t(
+                                            "adminPages.communityVotes.optionPlaceholder",
+                                            { number: i + 1 },
+                                        )}
                                         disabled={voteType === "binary"}
                                         required
                                     />
@@ -383,7 +414,9 @@ function CreateVoteDialog({
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Date de fin *</Label>
+                        <Label>
+                            {t("adminPages.communityVotes.endDateLabel")}
+                        </Label>
                         <Input
                             type="datetime-local"
                             value={endsAt}
@@ -398,10 +431,12 @@ function CreateVoteDialog({
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                         >
-                            Annuler
+                            {t("common.cancel")}
                         </Button>
                         <Button type="submit" disabled={create.isPending}>
-                            {create.isPending ? "Création…" : "Créer"}
+                            {create.isPending
+                                ? t("adminPages.communityVotes.creating")
+                                : t("adminPages.common.create")}
                         </Button>
                     </div>
                 </form>

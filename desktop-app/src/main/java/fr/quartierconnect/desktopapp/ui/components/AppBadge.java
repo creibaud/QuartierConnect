@@ -1,5 +1,6 @@
 package fr.quartierconnect.desktopapp.ui.components;
 
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.util.UiHelper;
 import javafx.scene.control.Label;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
@@ -32,25 +33,25 @@ public class AppBadge extends Label {
 
     public static AppBadge fromStatus(String status) {
         return switch (status == null ? "" : status) {
-            case "in_progress" -> withIcon("En cours", Variant.IN_PROGRESS, FontAwesomeSolid.SPINNER);
-            case "resolved"    -> withIcon("Résolu",   Variant.RESOLVED,    FontAwesomeSolid.CHECK_CIRCLE);
-            default            -> withIcon("Ouvert",   Variant.OPEN,        FontAwesomeSolid.CIRCLE);
+            case "in_progress" -> withIcon(I18n.get("badge.status.inProgress"), Variant.IN_PROGRESS, FontAwesomeSolid.SPINNER);
+            case "resolved"    -> withIcon(I18n.get("badge.status.resolved"),   Variant.RESOLVED,    FontAwesomeSolid.CHECK_CIRCLE);
+            default            -> withIcon(I18n.get("badge.status.open"),        Variant.OPEN,        FontAwesomeSolid.CIRCLE);
         };
     }
 
     public static AppBadge fromRole(String role) {
         return switch (role == null ? "" : role) {
-            case "admin"     -> withIcon("Admin",       Variant.CONFLICT,    FontAwesomeSolid.SHIELD_ALT);
-            case "moderator" -> withIcon("Modérateur",  Variant.IN_PROGRESS, FontAwesomeSolid.USER_SHIELD);
-            default          -> withIcon("Utilisateur", Variant.NEUTRAL,     FontAwesomeSolid.USER);
+            case "admin"     -> withIcon(I18n.get("badge.role.admin"),     Variant.CONFLICT,    FontAwesomeSolid.SHIELD_ALT);
+            case "moderator" -> withIcon(I18n.get("badge.role.moderator"), Variant.IN_PROGRESS, FontAwesomeSolid.USER_SHIELD);
+            default          -> withIcon(I18n.get("badge.role.user"),      Variant.NEUTRAL,     FontAwesomeSolid.USER);
         };
     }
 
     public static AppBadge fromContractStatus(String status) {
         return switch (status == null ? "" : status) {
-            case "partial"      -> withIcon("Partiel",   Variant.IN_PROGRESS, FontAwesomeSolid.PEN_FANCY);
-            case "fully_signed" -> withIcon("Signé",     Variant.RESOLVED,    FontAwesomeSolid.FILE_SIGNATURE);
-            default             -> withIcon("Brouillon", Variant.NEUTRAL,     FontAwesomeSolid.FILE_ALT);
+            case "partial"      -> withIcon(I18n.get("badge.contract.partial"),     Variant.IN_PROGRESS, FontAwesomeSolid.PEN_FANCY);
+            case "fully_signed" -> withIcon(I18n.get("badge.contract.fullySigned"), Variant.RESOLVED,    FontAwesomeSolid.FILE_SIGNATURE);
+            default             -> withIcon(I18n.get("badge.contract.draft"),       Variant.NEUTRAL,     FontAwesomeSolid.FILE_ALT);
         };
     }
 

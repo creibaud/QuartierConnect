@@ -36,22 +36,22 @@ export class VotesController {
 
     @Post()
     @ApiOperation({
-        summary: "Voter (cast/toggle/change)",
+        summary: "Vote (cast/toggle/change)",
         description:
-            "Voter ou retirer un vote. Revoter sur le même type retire le vote (toggle). Changer de type met à jour. Stratégie LikeDislike pour services/events, UpDown pour incidents/comments.",
+            "Cast or remove a vote. Voting again with the same type removes the vote (toggle). Voting with a different type updates it. LikeDislike strategy for services/events, UpDown for incidents/comments.",
     })
     @ApiResponse({ status: 201, type: VoteActionResponseDto })
     @ApiResponse({
         status: 400,
         description:
-            "Type de vote non autorisé pour cette cible (ex: UP sur un service)",
+            "Vote type not allowed for this target (e.g. UP on a service)",
     })
     cast(@Body() dto: CastVoteDto, @Request() req: AuthRequest) {
         return this.votesService.cast(dto, req.user.sub);
     }
 
     @Get("score")
-    @ApiOperation({ summary: "Score agrégé pour une cible" })
+    @ApiOperation({ summary: "Aggregated score for a target" })
     @ApiQuery({ name: "targetId", required: true })
     @ApiQuery({ name: "targetType", enum: VoteTargetType, required: true })
     @ApiResponse({ status: 200, type: VoteScoreResponseDto })

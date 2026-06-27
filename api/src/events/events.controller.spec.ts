@@ -95,7 +95,7 @@ describe("EventsController", () => {
     it("POST /events creates event with createdBy from JWT", async () => {
         await controller.create(
             {
-                title: "Fête",
+                title: "Party",
                 description: "Desc",
                 category: "community",
                 date: "2026-06-15",

@@ -23,9 +23,9 @@ class VotesServiceTest {
 
     @Test
     void voteResult_fail_hasErrorMessage() {
-        VotesService.VoteResult fail = VotesService.VoteResult.fail("Erreur réseau");
+        VotesService.VoteResult fail = VotesService.VoteResult.fail("Network error");
         assertFalse(fail.success());
-        assertEquals("Erreur réseau", fail.error());
+        assertEquals("Network error", fail.error());
     }
 
     @Test

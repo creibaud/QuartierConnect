@@ -1,5 +1,6 @@
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import { Link, useLocation } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import {
     SidebarGroup,
     SidebarGroupLabel,
@@ -20,6 +21,7 @@ function isItemActive(pathname: string, to: string): boolean {
 
 export function NavMain({ items }: { items: NavItem[] }) {
     const { pathname } = useLocation();
+    const { t } = useTranslation();
 
     return (
         <SidebarGroup>
@@ -30,11 +32,11 @@ export function NavMain({ items }: { items: NavItem[] }) {
                         <SidebarMenuButton
                             asChild
                             isActive={isItemActive(pathname, item.to)}
-                            tooltip={item.title}
+                            tooltip={t(item.title)}
                         >
                             <Link to={item.to}>
                                 <HugeiconsIcon icon={item.icon} />
-                                <span>{item.title}</span>
+                                <span>{t(item.title)}</span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

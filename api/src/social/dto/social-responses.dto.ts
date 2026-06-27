@@ -10,12 +10,12 @@ export class RecommendationItemDto {
     @ApiProperty({ example: "664f1a2b3c4d5e6f7a8b9c0d" })
     id: string;
 
-    @ApiProperty({ example: "Bibliothèque municipale" })
+    @ApiProperty({ example: "Municipal library" })
     name: string;
 
     @ApiProperty({
         example: 3,
-        description: "Score de recommandation (chemins Neo4j)",
+        description: "Recommendation score (Neo4j paths)",
     })
     score: number;
 

@@ -2,6 +2,7 @@ package fr.quartierconnect.desktopapp.views;
 
 import fr.quartierconnect.desktopapp.database.IncidentRepository;
 import fr.quartierconnect.desktopapp.database.SQLiteDatabase;
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.plugin.PluginRegistry;
 import fr.quartierconnect.desktopapp.services.ApiService;
 import fr.quartierconnect.desktopapp.services.AuthService;
@@ -93,7 +94,7 @@ public class IncidentsView {
                 });
             } catch (SQLException e) {
                 Platform.runLater(() ->
-                    table.setPlaceholder(new Label("Erreur de chargement."))
+                    table.setPlaceholder(new Label(I18n.get("incidents.loadError")))
                 );
             }
         }, "incidents-refresh").start();
@@ -102,10 +103,10 @@ public class IncidentsView {
     // ── Layout ───────────────────────────────────────────────────────────────
 
     private VBox buildLayout() {
-        Label pageTitle = new Label("Incidents");
+        Label pageTitle = new Label(I18n.get("incidents.title"));
         pageTitle.getStyleClass().add("content-title");
 
-        Label pageSubtitle = new Label("Gestion locale · sync bidirectionnelle · Three-Way Merge");
+        Label pageSubtitle = new Label(I18n.get("incidents.subtitle"));
         pageSubtitle.getStyleClass().add("content-subtitle");
 
         VBox titleBlock = new VBox(3, pageTitle, pageSubtitle);
@@ -156,12 +157,12 @@ public class IncidentsView {
     }
 
     private HBox buildHeaderActions() {
-        AppButton syncBtn = new AppButton("Synchroniser", AppButton.Variant.SECONDARY);
+        AppButton syncBtn = new AppButton(I18n.get("incidents.sync"), AppButton.Variant.SECONDARY);
         syncBtn.setGraphic(UiHelper.icon(FontAwesomeSolid.CLOUD_UPLOAD_ALT, 11));
         syncBtn.setGraphicTextGap(6);
         syncBtn.setOnAction(e -> triggerSync(syncBtn));
 
-        AppButton createBtn = new AppButton("Nouvel incident", AppButton.Variant.PRIMARY);
+        AppButton createBtn = new AppButton(I18n.get("incidents.new"), AppButton.Variant.PRIMARY);
         createBtn.setGraphic(UiHelper.icon(FontAwesomeSolid.PLUS, 11));
         createBtn.setGraphicTextGap(6);
         createBtn.setOnAction(e -> openCreateForm());
@@ -177,7 +178,7 @@ public class IncidentsView {
                 })
         );
 
-        AppButton demoBtn = new AppButton("Démo conflits", AppButton.Variant.SECONDARY);
+        AppButton demoBtn = new AppButton(I18n.get("incidents.demoConflicts"), AppButton.Variant.SECONDARY);
         demoBtn.setGraphic(UiHelper.icon(FontAwesomeSolid.EXCLAMATION_TRIANGLE, 11));
         demoBtn.setGraphicTextGap(6);
         demoBtn.setOnAction(e -> {
@@ -185,9 +186,9 @@ public class IncidentsView {
                 SQLiteDatabase.insertDemoConflicts();
                 refresh();
                 notifyLocalChange();
-                toast.showSuccess("2 conflits de démonstration insérés");
+                toast.showSuccess(I18n.get("incidents.demoConflictsInserted"));
             } catch (Exception ex) {
-                toast.showError("Erreur — " + ex.getMessage());
+                toast.showError(I18n.get("incidents.error", ex.getMessage()));
             }
         });
 
@@ -198,31 +199,31 @@ public class IncidentsView {
 
     private void triggerSync(AppButton syncBtn) {
         syncBtn.setDisable(true);
-        syncBtn.setText("Sync…");
+        syncBtn.setText(I18n.get("incidents.syncing"));
         new Thread(() -> {
             boolean ok = false;
             try { syncService.syncNowAndWait(); ok = true; } catch (Exception ignored) {}
             final boolean success = ok;
             Platform.runLater(() -> {
                 syncBtn.setDisable(false);
-                syncBtn.setText("Synchroniser");
-                if (success) { toast.showSuccess("Synchronisation réussie"); refresh(); }
-                else           toast.showError("Échec de la synchronisation");
+                syncBtn.setText(I18n.get("incidents.sync"));
+                if (success) { toast.showSuccess(I18n.get("incidents.syncSuccess")); refresh(); }
+                else           toast.showError(I18n.get("incidents.syncFailed"));
             });
         }, "incidents-sync").start();
     }
 
     private HBox buildFilterRow() {
-        searchField.setPromptText("Rechercher…");
+        searchField.setPromptText(I18n.get("incidents.search"));
         searchField.textProperty().addListener((obs, o, n) -> applyFilter());
         searchField.getStyleClass().add("filter-search");
         HBox.setHgrow(searchField, Priority.ALWAYS);
 
-        filterButtons[0] = filterBtn("Tous",      "all");
-        filterButtons[1] = filterBtn("Ouverts",   "open");
-        filterButtons[2] = filterBtn("En cours",  "in_progress");
-        filterButtons[3] = filterBtn("Résolus",   "resolved");
-        filterButtons[4] = filterBtn("⚠ Conflits", "conflict");
+        filterButtons[0] = filterBtn(I18n.get("incidents.filter.all"),        "all");
+        filterButtons[1] = filterBtn(I18n.get("incidents.filter.open"),       "open");
+        filterButtons[2] = filterBtn(I18n.get("incidents.filter.inProgress"), "in_progress");
+        filterButtons[3] = filterBtn(I18n.get("incidents.filter.resolved"),   "resolved");
+        filterButtons[4] = filterBtn(I18n.get("incidents.filter.conflicts"),  "conflict");
         filterButtons[4].getStyleClass().add("filter-btn-conflict");
         filterButtons[0].getStyleClass().add("filter-btn-active");
 
@@ -252,11 +253,13 @@ public class IncidentsView {
         warnIcon.setIconSize(13);
         warnIcon.getStyleClass().add("conflict-banner-icon");
 
-        Label msg = new Label(conflicts + (conflicts > 1 ? " conflits nécessitent" : " conflit nécessite") + " votre attention");
+        Label msg = new Label(conflicts > 1
+                ? I18n.get("incidents.conflict.needAttentionMany", conflicts)
+                : I18n.get("incidents.conflict.needAttentionOne", conflicts));
         msg.getStyleClass().add("conflict-banner-text");
         HBox.setHgrow(msg, Priority.ALWAYS);
 
-        AppButton resolveBtn = new AppButton("Résoudre maintenant", AppButton.Variant.SECONDARY);
+        AppButton resolveBtn = new AppButton(I18n.get("incidents.conflict.resolveNow"), AppButton.Variant.SECONDARY);
         resolveBtn.getStyleClass().add("conflict-banner-btn");
         resolveBtn.setOnAction(e -> {
             activeFilter = "conflict";
@@ -291,7 +294,7 @@ public class IncidentsView {
         });
 
         // Statut
-        TableColumn<IncidentRepository.Incident, String> statusCol = new TableColumn<>("Statut");
+        TableColumn<IncidentRepository.Incident, String> statusCol = new TableColumn<>(I18n.get("incidents.col.status"));
         statusCol.setPrefWidth(95);
         statusCol.setMinWidth(95);
         statusCol.setMaxWidth(95);
@@ -305,7 +308,7 @@ public class IncidentsView {
         });
 
         // Titre + description
-        TableColumn<IncidentRepository.Incident, IncidentRepository.Incident> titleCol = new TableColumn<>("Titre");
+        TableColumn<IncidentRepository.Incident, IncidentRepository.Incident> titleCol = new TableColumn<>(I18n.get("incidents.col.title"));
         titleCol.setCellValueFactory(c -> new javafx.beans.property.SimpleObjectProperty<>(c.getValue()));
         titleCol.setCellFactory(col -> new TableCell<>() {
             private final Label titleLbl = new Label();
@@ -325,19 +328,19 @@ public class IncidentsView {
                 if (empty || item == null) {
                     titleLbl.setText(null); descLbl.setText(null);
                 } else {
-                    titleLbl.setText(item.title() != null ? item.title() : "Sans titre");
+                    titleLbl.setText(item.title() != null ? item.title() : I18n.get("incidents.untitled"));
                     String desc = item.description();
                     if (desc != null && !desc.isBlank()) {
                         descLbl.setText(desc.length() > 80 ? desc.substring(0, 80) + "…" : desc);
                     } else {
-                        descLbl.setText("Aucune description");
+                        descLbl.setText(I18n.get("incidents.noDescription"));
                     }
                 }
             }
         });
 
         // Sync state
-        TableColumn<IncidentRepository.Incident, IncidentRepository.Incident> syncCol = new TableColumn<>("État");
+        TableColumn<IncidentRepository.Incident, IncidentRepository.Incident> syncCol = new TableColumn<>(I18n.get("incidents.col.syncState"));
         syncCol.setPrefWidth(90);
         syncCol.setMinWidth(90);
         syncCol.setMaxWidth(90);
@@ -347,14 +350,14 @@ public class IncidentsView {
             @Override protected void updateItem(IncidentRepository.Incident item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) { setGraphic(null); return; }
-                if (item.isConflict())     setGraphic(new AppBadge("⚠ Conflit",  AppBadge.Variant.CONFLICT));
-                else if (item.isDirty())   setGraphic(new AppBadge("↑ En attente", AppBadge.Variant.DIRTY));
+                if (item.isConflict())     setGraphic(new AppBadge(I18n.get("incidents.state.conflict"),  AppBadge.Variant.CONFLICT));
+                else if (item.isDirty())   setGraphic(new AppBadge(I18n.get("incidents.state.pending"), AppBadge.Variant.DIRTY));
                 else                       setGraphic(null);
             }
         });
 
         // Date
-        TableColumn<IncidentRepository.Incident, String> dateCol = new TableColumn<>("Modifié");
+        TableColumn<IncidentRepository.Incident, String> dateCol = new TableColumn<>(I18n.get("incidents.col.modified"));
         dateCol.setPrefWidth(82);
         dateCol.setMinWidth(82);
         dateCol.setMaxWidth(82);
@@ -409,13 +412,13 @@ public class IncidentsView {
 
         // Conflict resolution — top priority
         if (item.isConflict()) {
-            menu.getItems().add(menuItem("Résoudre le conflit", FontAwesomeSolid.CODE_BRANCH, false,
+            menu.getItems().add(menuItem(I18n.get("incidents.menu.resolveConflict"), FontAwesomeSolid.CODE_BRANCH, false,
                 () -> openConflictForm(item)));
             menu.getItems().add(new SeparatorMenuItem());
         }
 
         // Edit
-        menu.getItems().add(menuItem("Modifier", FontAwesomeSolid.EDIT, false,
+        menu.getItems().add(menuItem(I18n.get("incidents.menu.edit"), FontAwesomeSolid.EDIT, false,
             () -> openDetailForm(item)));
 
         // Status transitions
@@ -424,19 +427,19 @@ public class IncidentsView {
 
             switch (item.status()) {
                 case "open" -> {
-                    menu.getItems().add(menuItem("Mettre en cours", FontAwesomeSolid.ARROW_RIGHT, false,
+                    menu.getItems().add(menuItem(I18n.get("incidents.menu.setInProgress"), FontAwesomeSolid.ARROW_RIGHT, false,
                         () -> changeStatus(item, "in_progress")));
-                    menu.getItems().add(menuItem("Marquer résolu", FontAwesomeSolid.CHECK, false,
+                    menu.getItems().add(menuItem(I18n.get("incidents.menu.markResolved"), FontAwesomeSolid.CHECK, false,
                         () -> changeStatus(item, "resolved")));
                 }
                 case "in_progress" -> {
-                    menu.getItems().add(menuItem("Marquer résolu", FontAwesomeSolid.CHECK, false,
+                    menu.getItems().add(menuItem(I18n.get("incidents.menu.markResolved"), FontAwesomeSolid.CHECK, false,
                         () -> changeStatus(item, "resolved")));
-                    menu.getItems().add(menuItem("Réouvrir", FontAwesomeSolid.UNDO, false,
+                    menu.getItems().add(menuItem(I18n.get("incidents.menu.reopen"), FontAwesomeSolid.UNDO, false,
                         () -> changeStatus(item, "open")));
                 }
                 default -> {
-                    menu.getItems().add(menuItem("Réouvrir", FontAwesomeSolid.UNDO, false,
+                    menu.getItems().add(menuItem(I18n.get("incidents.menu.reopen"), FontAwesomeSolid.UNDO, false,
                         () -> changeStatus(item, "open")));
                 }
             }
@@ -444,7 +447,7 @@ public class IncidentsView {
 
         // Delete
         menu.getItems().add(new SeparatorMenuItem());
-        menu.getItems().add(menuItem("Supprimer", FontAwesomeSolid.TRASH_ALT, true,
+        menu.getItems().add(menuItem(I18n.get("incidents.menu.delete"), FontAwesomeSolid.TRASH_ALT, true,
             () -> deleteIncident(item)));
 
         return menu;
@@ -460,9 +463,9 @@ public class IncidentsView {
     }
 
     private VBox buildEmptyPlaceholder() {
-        Label lbl = new Label("Aucun incident");
+        Label lbl = new Label(I18n.get("incidents.empty"));
         lbl.getStyleClass().add("muted-label");
-        Label hint = new Label("Créez un incident ou lancez une synchronisation.");
+        Label hint = new Label(I18n.get("incidents.emptyHint"));
         hint.getStyleClass().add("caption");
         VBox box = new VBox(6, lbl, hint);
         box.setAlignment(Pos.CENTER);
@@ -509,11 +512,11 @@ public class IncidentsView {
         long inProg    = allIncidents.stream().filter(i -> "in_progress".equals(i.status())).count();
         long resolved  = allIncidents.stream().filter(i -> "resolved".equals(i.status())).count();
         long conflicts = allIncidents.stream().filter(IncidentRepository.Incident::isConflict).count();
-        filterButtons[0].setText("Tous · " + total);
-        filterButtons[1].setText("Ouverts · " + open);
-        filterButtons[2].setText("En cours · " + inProg);
-        filterButtons[3].setText("Résolus · " + resolved);
-        filterButtons[4].setText("⚠ Conflits · " + conflicts);
+        filterButtons[0].setText(I18n.get("incidents.filter.allCount", total));
+        filterButtons[1].setText(I18n.get("incidents.filter.openCount", open));
+        filterButtons[2].setText(I18n.get("incidents.filter.inProgressCount", inProg));
+        filterButtons[3].setText(I18n.get("incidents.filter.resolvedCount", resolved));
+        filterButtons[4].setText(I18n.get("incidents.filter.conflictsCount", conflicts));
         filterButtons[4].setVisible(conflicts > 0);
         filterButtons[4].setManaged(conflicts > 0);
         refreshConflictBanner();
@@ -523,9 +526,11 @@ public class IncidentsView {
         long conflicts = allIncidents.stream().filter(IncidentRepository.Incident::isConflict).count();
         long dirty     = allIncidents.stream().filter(i -> i.isDirty() && !i.isConflict()).count();
         StringBuilder sb = new StringBuilder();
-        sb.append(displayed).append(" / ").append(allIncidents.size()).append(" incidents");
-        if (conflicts > 0) sb.append(" · ").append(conflicts).append(conflicts > 1 ? " conflits" : " conflit");
-        if (dirty     > 0) sb.append(" · ").append(dirty).append(" en attente de sync");
+        sb.append(I18n.get("incidents.footer.count", displayed, allIncidents.size()));
+        if (conflicts > 0) sb.append(" ").append(conflicts > 1
+                ? I18n.get("incidents.footer.conflictMany", conflicts)
+                : I18n.get("incidents.footer.conflictOne", conflicts));
+        if (dirty     > 0) sb.append(" ").append(I18n.get("incidents.footer.pendingSync", dirty));
         footerInfo.setText(sb.toString());
     }
 
@@ -535,9 +540,9 @@ public class IncidentsView {
         new Thread(() -> {
             try {
                 repo.updateStatusLocally(incident.localId(), newStatus);
-                Platform.runLater(() -> { refresh(); notifyLocalChange(); toast.showSuccess("Statut mis à jour"); });
+                Platform.runLater(() -> { refresh(); notifyLocalChange(); toast.showSuccess(I18n.get("incidents.statusUpdated")); });
             } catch (Exception ex) {
-                Platform.runLater(() -> toast.showError("Impossible — " + ex.getMessage()));
+                Platform.runLater(() -> toast.showError(I18n.get("incidents.statusFailed", ex.getMessage())));
                 return;
             }
             if (incident.remoteId() != null) {
@@ -560,9 +565,9 @@ public class IncidentsView {
             }
             try {
                 repo.deleteByLocalId(incident.localId());
-                Platform.runLater(() -> { refresh(); notifyLocalChange(); toast.showSuccess("Incident supprimé"); });
+                Platform.runLater(() -> { refresh(); notifyLocalChange(); toast.showSuccess(I18n.get("incidents.deleted")); });
             } catch (Exception ex) {
-                Platform.runLater(() -> toast.showError("Erreur — " + ex.getMessage()));
+                Platform.runLater(() -> toast.showError(I18n.get("incidents.error", ex.getMessage())));
             }
         }, "incident-delete").start();
     }
@@ -572,26 +577,26 @@ public class IncidentsView {
             repo.resolveConflict(localId, acceptRemote);
             refresh();
             notifyLocalChange();
-            toast.showSuccess(acceptRemote ? "Version serveur acceptée" : "Version locale conservée");
+            toast.showSuccess(acceptRemote ? I18n.get("incidents.conflict.acceptedRemote") : I18n.get("incidents.conflict.keptLocal"));
         } catch (SQLException e) {
-            toast.showError("Erreur de résolution");
+            toast.showError(I18n.get("incidents.conflict.resolveError"));
         }
     }
 
     // ── Modals ────────────────────────────────────────────────────────────────
 
     public void openCreateForm() {
-        Label titleLbl = new Label("TITRE *");
+        Label titleLbl = new Label(I18n.get("incidents.form.titleLabel"));
         titleLbl.getStyleClass().add("detail-card-title");
         VBox.setMargin(titleLbl, new Insets(6, 0, 8, 0));
         TextField titleField = new TextField();
-        titleField.setPromptText("Ex : Nid de poule rue Victor Hugo");
+        titleField.setPromptText(I18n.get("incidents.form.titlePrompt"));
 
-        Label descLbl = new Label("DESCRIPTION");
+        Label descLbl = new Label(I18n.get("incidents.form.descLabel"));
         descLbl.getStyleClass().add("detail-card-title");
         VBox.setMargin(descLbl, new Insets(16, 0, 8, 0));
         TextArea descField = new TextArea();
-        descField.setPromptText("Décrivez le problème…");
+        descField.setPromptText(I18n.get("incidents.form.descPrompt"));
         descField.setPrefRowCount(4);
         descField.setWrapText(true);
 
@@ -600,37 +605,37 @@ public class IncidentsView {
         errorMsg.setVisible(false);
         errorMsg.setManaged(false);
 
-        Label infoNote = new Label("Sauvegardé localement · synchronisé au prochain cycle.");
+        Label infoNote = new Label(I18n.get("incidents.form.savedNote"));
         infoNote.getStyleClass().add("content-subtitle");
         VBox.setMargin(infoNote, new Insets(10, 0, 0, 0));
 
-        AppButton submitBtn = new AppButton("Créer", AppButton.Variant.PRIMARY);
-        AppButton cancelBtn = new AppButton("Annuler", AppButton.Variant.GHOST);
+        AppButton submitBtn = new AppButton(I18n.get("incidents.form.create"), AppButton.Variant.PRIMARY);
+        AppButton cancelBtn = new AppButton(I18n.get("incidents.form.cancel"), AppButton.Variant.GHOST);
         cancelBtn.setOnAction(e -> appModal.hide());
 
         submitBtn.setOnAction(e -> {
             String t = titleField.getText().trim();
             if (t.isEmpty()) {
-                errorMsg.setText("Le titre est obligatoire.");
+                errorMsg.setText(I18n.get("incidents.form.titleRequired"));
                 errorMsg.setVisible(true); errorMsg.setManaged(true);
                 return;
             }
             if (t.length() > 200) {
-                errorMsg.setText("Le titre ne peut pas dépasser 200 caractères.");
+                errorMsg.setText(I18n.get("incidents.form.titleTooLong"));
                 errorMsg.setVisible(true); errorMsg.setManaged(true);
                 return;
             }
             if (descField.getText().trim().length() > 2000) {
-                errorMsg.setText("La description ne peut pas dépasser 2000 caractères.");
+                errorMsg.setText(I18n.get("incidents.form.descTooLong"));
                 errorMsg.setVisible(true); errorMsg.setManaged(true);
                 return;
             }
             try {
                 repo.insertDirty(t, descField.getText().trim());
                 appModal.hide(); refresh(); notifyLocalChange();
-                toast.showSuccess("Incident créé");
+                toast.showSuccess(I18n.get("incidents.created"));
             } catch (SQLException ex) {
-                errorMsg.setText("Erreur — réessayez.");
+                errorMsg.setText(I18n.get("incidents.form.retryError"));
                 errorMsg.setVisible(true); errorMsg.setManaged(true);
             }
         });
@@ -645,7 +650,7 @@ public class IncidentsView {
             infoNote, buttons
         );
         content.getStyleClass().add("edit-form-content");
-        appModal.show("Nouvel incident", content);
+        appModal.show(I18n.get("incidents.new"), content);
     }
 
     void openConflictForm(IncidentRepository.Incident item) {
@@ -653,11 +658,9 @@ public class IncidentsView {
         warnIcon.setIconSize(15);
         warnIcon.getStyleClass().add("conflict-modal-warn-icon");
 
-        Label warnTitle = new Label("Conflit de synchronisation");
+        Label warnTitle = new Label(I18n.get("incidents.conflict.title"));
         warnTitle.getStyleClass().add("conflict-modal-warn-title");
-        Label warnDesc = new Label(
-            "Les versions locale et serveur ont divergé depuis la base commune. "
-            + "Les champs modifiés sont surlignés.");
+        Label warnDesc = new Label(I18n.get("incidents.conflict.desc"));
         warnDesc.getStyleClass().add("conflict-modal-warn-desc");
         warnDesc.setWrapText(true);
         VBox warnText = new VBox(2, warnTitle, warnDesc);
@@ -673,7 +676,7 @@ public class IncidentsView {
 
         FontIcon localIcon = new FontIcon(FontAwesomeSolid.LAPTOP);
         localIcon.setIconSize(12);
-        AppButton keepLocalBtn = new AppButton("Garder locale", AppButton.Variant.SECONDARY);
+        AppButton keepLocalBtn = new AppButton(I18n.get("incidents.conflict.keepLocal"), AppButton.Variant.SECONDARY);
         keepLocalBtn.setGraphic(localIcon);
         keepLocalBtn.setGraphicTextGap(6);
         keepLocalBtn.getStyleClass().add("merge-btn-local");
@@ -681,13 +684,13 @@ public class IncidentsView {
 
         FontIcon serverIcon = new FontIcon(FontAwesomeSolid.CLOUD);
         serverIcon.setIconSize(12);
-        AppButton keepRemoteBtn = new AppButton("Accepter serveur", AppButton.Variant.PRIMARY);
+        AppButton keepRemoteBtn = new AppButton(I18n.get("incidents.conflict.acceptServer"), AppButton.Variant.PRIMARY);
         keepRemoteBtn.setGraphic(serverIcon);
         keepRemoteBtn.setGraphicTextGap(6);
         keepRemoteBtn.getStyleClass().add("merge-btn-remote");
         keepRemoteBtn.setOnAction(e -> { resolveConflict(item.localId(), true); appModal.hide(); });
 
-        AppButton cancelBtn = new AppButton("Plus tard", AppButton.Variant.GHOST);
+        AppButton cancelBtn = new AppButton(I18n.get("incidents.conflict.later"), AppButton.Variant.GHOST);
         cancelBtn.setOnAction(e -> appModal.hide());
 
         Region spacer = new Region();
@@ -697,7 +700,7 @@ public class IncidentsView {
         buttons.setAlignment(Pos.CENTER_LEFT);
 
         VBox content = new VBox(0, warning, grid, buttons);
-        appModal.showWide("Résolution de conflit — Three-Way Merge", content);
+        appModal.showWide(I18n.get("incidents.conflict.modalTitle"), content);
     }
 
     private GridPane buildMergeGrid(IncidentRepository.Incident item) {
@@ -735,9 +738,9 @@ public class IncidentsView {
         boolean titleDiff  = !java.util.Objects.equals(item.title(), item.remoteTitle());
         boolean descDiff   = !java.util.Objects.equals(item.description(), item.remoteDescription());
 
-        addMergeRowStatus(grid, 1, "Statut", baseStatus, item.status(), item.remoteStatus(), statusDiff);
-        addMergeRowText(grid, 2, "Titre", baseTitle, item.title(), item.remoteTitle(), titleDiff);
-        addMergeRowText(grid, 3, "Description", baseDesc, item.description(), item.remoteDescription(), descDiff);
+        addMergeRowStatus(grid, 1, I18n.get("incidents.merge.status"), baseStatus, item.status(), item.remoteStatus(), statusDiff);
+        addMergeRowText(grid, 2, I18n.get("incidents.merge.title"), baseTitle, item.title(), item.remoteTitle(), titleDiff);
+        addMergeRowText(grid, 3, I18n.get("incidents.merge.description"), baseDesc, item.description(), item.remoteDescription(), descDiff);
 
         return grid;
     }
@@ -750,7 +753,7 @@ public class IncidentsView {
         FontIcon baseIcon = new FontIcon(FontAwesomeSolid.CODE_BRANCH);
         baseIcon.setIconSize(10);
         baseIcon.getStyleClass().add("merge-header-icon-base");
-        Label baseH = new Label("  Base (ancêtre)");
+        Label baseH = new Label(I18n.get("incidents.merge.base"));
         baseH.setGraphic(baseIcon);
         baseH.getStyleClass().add("merge-grid-header");
         baseH.getStyleClass().add("merge-grid-header-base");
@@ -759,7 +762,7 @@ public class IncidentsView {
         FontIcon localIcon = new FontIcon(FontAwesomeSolid.LAPTOP);
         localIcon.setIconSize(10);
         localIcon.getStyleClass().add("merge-header-icon-local");
-        Label localH = new Label("  Locale");
+        Label localH = new Label(I18n.get("incidents.merge.local"));
         localH.setGraphic(localIcon);
         localH.getStyleClass().add("merge-grid-header");
         localH.getStyleClass().add("merge-grid-header-local");
@@ -768,7 +771,7 @@ public class IncidentsView {
         FontIcon remoteIcon = new FontIcon(FontAwesomeSolid.CLOUD);
         remoteIcon.setIconSize(10);
         remoteIcon.getStyleClass().add("merge-header-icon-remote");
-        Label remoteH = new Label("  Serveur");
+        Label remoteH = new Label(I18n.get("incidents.merge.server"));
         remoteH.setGraphic(remoteIcon);
         remoteH.getStyleClass().add("merge-grid-header");
         remoteH.getStyleClass().add("merge-grid-header-remote");
@@ -840,12 +843,12 @@ public class IncidentsView {
     }
 
     private void openDetailForm(IncidentRepository.Incident item) {
-        Label titleSec = new Label("TITRE");
+        Label titleSec = new Label(I18n.get("incidents.detail.titleSection"));
         titleSec.getStyleClass().add("detail-card-title");
         VBox.setMargin(titleSec, new Insets(10, 0, 8, 0));
         TextField titleField = new TextField(item.title() != null ? item.title() : "");
 
-        Label statusSec = new Label("STATUT");
+        Label statusSec = new Label(I18n.get("incidents.detail.statusSection"));
         statusSec.getStyleClass().add("detail-card-title");
         VBox.setMargin(statusSec, new Insets(18, 0, 8, 0));
 
@@ -856,21 +859,21 @@ public class IncidentsView {
         statusActions.setAlignment(Pos.CENTER_LEFT);
         switch (item.status()) {
             case "open" -> {
-                AppButton btn = new AppButton("→ En cours", AppButton.Variant.SECONDARY);
+                AppButton btn = new AppButton(I18n.get("incidents.detail.toInProgress"), AppButton.Variant.SECONDARY);
                 btn.setOnAction(e -> { changeStatus(item, "in_progress"); appModal.hide(); });
-                AppButton btn2 = new AppButton("→ Résolu", AppButton.Variant.SECONDARY);
+                AppButton btn2 = new AppButton(I18n.get("incidents.detail.toResolved"), AppButton.Variant.SECONDARY);
                 btn2.setOnAction(e -> { changeStatus(item, "resolved"); appModal.hide(); });
                 statusActions.getChildren().addAll(btn, btn2);
             }
             case "in_progress" -> {
-                AppButton btn = new AppButton("→ Résolu", AppButton.Variant.SECONDARY);
+                AppButton btn = new AppButton(I18n.get("incidents.detail.toResolved"), AppButton.Variant.SECONDARY);
                 btn.setOnAction(e -> { changeStatus(item, "resolved"); appModal.hide(); });
-                AppButton btn2 = new AppButton("← Réouvrir", AppButton.Variant.SECONDARY);
+                AppButton btn2 = new AppButton(I18n.get("incidents.detail.reopen"), AppButton.Variant.SECONDARY);
                 btn2.setOnAction(e -> { changeStatus(item, "open"); appModal.hide(); });
                 statusActions.getChildren().addAll(btn, btn2);
             }
             default -> {
-                AppButton btn = new AppButton("← Réouvrir", AppButton.Variant.SECONDARY);
+                AppButton btn = new AppButton(I18n.get("incidents.detail.reopen"), AppButton.Variant.SECONDARY);
                 btn.setOnAction(e -> { changeStatus(item, "open"); appModal.hide(); });
                 statusActions.getChildren().add(btn);
             }
@@ -879,7 +882,7 @@ public class IncidentsView {
         Region divider = UiHelper.separator();
         VBox.setMargin(divider, new Insets(16, 0, 16, 0));
 
-        Label descSec = new Label("DESCRIPTION");
+        Label descSec = new Label(I18n.get("incidents.detail.descSection"));
         descSec.getStyleClass().add("detail-card-title");
         VBox.setMargin(descSec, new Insets(0, 0, 8, 0));
         TextArea descField = new TextArea(item.description() != null ? item.description() : "");
@@ -890,24 +893,24 @@ public class IncidentsView {
         syncInfo.getStyleClass().add("content-subtitle");
         VBox.setMargin(syncInfo, new Insets(14, 0, 0, 0));
 
-        AppButton saveBtn  = new AppButton("Enregistrer", AppButton.Variant.PRIMARY);
-        AppButton closeBtn = new AppButton("Fermer", AppButton.Variant.GHOST);
+        AppButton saveBtn  = new AppButton(I18n.get("incidents.detail.save"), AppButton.Variant.PRIMARY);
+        AppButton closeBtn = new AppButton(I18n.get("incidents.detail.close"), AppButton.Variant.GHOST);
         closeBtn.setOnAction(e -> appModal.hide());
 
         saveBtn.setOnAction(e -> {
             String t = titleField.getText().trim();
-            if (t.isEmpty()) { toast.showError("Le titre est obligatoire."); return; }
-            if (t.length() > 200) { toast.showError("Titre trop long (200 caractères max)."); return; }
-            if (descField.getText().trim().length() > 2000) { toast.showError("Description trop longue (2000 caractères max)."); return; }
+            if (t.isEmpty()) { toast.showError(I18n.get("incidents.detail.titleRequired")); return; }
+            if (t.length() > 200) { toast.showError(I18n.get("incidents.detail.titleTooLong")); return; }
+            if (descField.getText().trim().length() > 2000) { toast.showError(I18n.get("incidents.detail.descTooLong")); return; }
             new Thread(() -> {
                 try {
                     repo.updateLocally(item.localId(), t, descField.getText().trim(), item.status());
                     Platform.runLater(() -> {
                         refresh(); notifyLocalChange();
-                        toast.showSuccess("Modifications enregistrées"); appModal.hide();
+                        toast.showSuccess(I18n.get("incidents.detail.saved")); appModal.hide();
                     });
                 } catch (Exception ex) {
-                    Platform.runLater(() -> toast.showError("Erreur — " + ex.getMessage()));
+                    Platform.runLater(() -> toast.showError(I18n.get("incidents.error", ex.getMessage())));
                 }
             }, "incident-save").start();
         });
@@ -923,14 +926,15 @@ public class IncidentsView {
             syncInfo, buttons
         );
         content.getStyleClass().add("edit-form-content");
-        appModal.show("Modifier — " + item.title(), content);
+        appModal.show(I18n.get("incidents.detail.modalTitle", item.title()), content);
     }
 
     private String buildSyncInfoText(IncidentRepository.Incident item) {
         StringBuilder sb = new StringBuilder();
-        sb.append(item.isDirty()    ? "↑ En attente de sync" : "✓ Synchronisé");
-        if (item.isConflict()) sb.append(" · ⚠ Conflit");
-        if (item.remoteId() != null) sb.append(" · remote " + item.remoteId().substring(0, Math.min(8, item.remoteId().length())) + "…");
+        sb.append(item.isDirty()    ? I18n.get("incidents.syncInfo.pending") : I18n.get("incidents.syncInfo.synced"));
+        if (item.isConflict()) sb.append(" ").append(I18n.get("incidents.syncInfo.conflict"));
+        if (item.remoteId() != null) sb.append(" ").append(I18n.get("incidents.syncInfo.remote",
+                item.remoteId().substring(0, Math.min(8, item.remoteId().length()))));
         return sb.toString();
     }
 

@@ -21,11 +21,11 @@ function createWrapper() {
 
 const mockEvent = {
     _id: "evt-1",
-    title: "Fête de quartier",
-    description: "Grande fête annuelle",
+    title: "Neighborhood party",
+    description: "Big annual party",
     category: "community",
     date: "2026-06-21T18:00:00Z",
-    location: "Place du marché",
+    location: "Market square",
     neighborhoodId: "nbh-1",
 };
 
@@ -68,13 +68,13 @@ describe("useCreateEvent", () => {
             wrapper: createWrapper(),
         });
         result.current.mutate({
-            title: "Fête",
+            title: "Party",
             date: "2026-06-21T18:00:00Z",
             category: "community",
         });
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
         expect(api.createEvent).toHaveBeenCalledWith({
-            title: "Fête",
+            title: "Party",
             date: "2026-06-21T18:00:00Z",
             category: "community",
         });

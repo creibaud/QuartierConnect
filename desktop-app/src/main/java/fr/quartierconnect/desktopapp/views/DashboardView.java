@@ -1,6 +1,7 @@
 package fr.quartierconnect.desktopapp.views;
 
 import fr.quartierconnect.desktopapp.database.IncidentRepository;
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.ui.components.AppBadge;
 import fr.quartierconnect.desktopapp.ui.components.AppButton;
 import fr.quartierconnect.desktopapp.ui.components.EmptyState;
@@ -44,13 +45,13 @@ public class DashboardView {
     private final IncidentRepository incidentRepo = new IncidentRepository();
     private final VBox root;
 
-    private final StatCard totalCard      = new StatCard("TOTAL LOCAL",  StatCard.Accent.MUTED);
-    private final StatCard openCard       = new StatCard("OUVERTS",      StatCard.Accent.AMBER);
-    private final StatCard inProgressCard = new StatCard("EN COURS",     StatCard.Accent.BLUE);
-    private final StatCard conflictsCard  = new StatCard("CONFLITS",     StatCard.Accent.RED);
+    private final StatCard totalCard      = new StatCard(I18n.get("dashboard.stat.totalLocal"),  StatCard.Accent.MUTED);
+    private final StatCard openCard       = new StatCard(I18n.get("dashboard.stat.open"),        StatCard.Accent.AMBER);
+    private final StatCard inProgressCard = new StatCard(I18n.get("dashboard.stat.inProgress"),  StatCard.Accent.BLUE);
+    private final StatCard conflictsCard  = new StatCard(I18n.get("dashboard.stat.conflicts"),   StatCard.Accent.RED);
 
     private final VBox  recentContainer = new VBox(0);
-    private final Label lastSyncLabel   = new Label("Jamais synchronisé");
+    private final Label lastSyncLabel   = new Label(I18n.get("time.never"));
     private final Label dirtyLabel      = new Label("—");
 
     // Breakdown bar — proportions bound to actual container width
@@ -113,10 +114,10 @@ public class DashboardView {
     }
 
     private HBox buildHeader() {
-        Label pageTitle = new Label("Tableau de bord");
+        Label pageTitle = new Label(I18n.get("dashboard.title"));
         pageTitle.getStyleClass().add("content-title");
 
-        Label pageSubtitle = new Label("Incidents locaux · synchronisation");
+        Label pageSubtitle = new Label(I18n.get("dashboard.subtitle"));
         pageSubtitle.getStyleClass().add("content-subtitle");
 
         VBox titleBlock = new VBox(3, pageTitle, pageSubtitle);
@@ -124,7 +125,7 @@ public class DashboardView {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        AppButton incidentsBtn = new AppButton("Voir les incidents", AppButton.Variant.SECONDARY);
+        AppButton incidentsBtn = new AppButton(I18n.get("dashboard.viewIncidents"), AppButton.Variant.SECONDARY);
         incidentsBtn.setGraphic(UiHelper.icon(FontAwesomeSolid.CLIPBOARD_LIST, 12));
         incidentsBtn.setGraphicTextGap(6);
         incidentsBtn.setOnAction(e -> navigateTo.accept("incidents"));
@@ -136,7 +137,7 @@ public class DashboardView {
     }
 
     private HBox buildSyncCard() {
-        Label syncKey = new Label("Dernière sync");
+        Label syncKey = new Label(I18n.get("dashboard.lastSync"));
         syncKey.getStyleClass().add("sync-card-key");
         lastSyncLabel.getStyleClass().add("sync-card-val");
         VBox syncBlock = new VBox(2, syncKey, lastSyncLabel);
@@ -144,7 +145,7 @@ public class DashboardView {
         Region sep = new Region();
         sep.getStyleClass().add("sync-card-sep");
 
-        Label dirtyKey = new Label("Non synchronisés");
+        Label dirtyKey = new Label(I18n.get("dashboard.notSynced"));
         dirtyKey.getStyleClass().add("sync-card-key");
         dirtyLabel.getStyleClass().add("sync-card-val");
         VBox dirtyBlock = new VBox(2, dirtyKey, dirtyLabel);
@@ -152,7 +153,7 @@ public class DashboardView {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        AppButton syncBtn = new AppButton("Synchroniser", AppButton.Variant.PRIMARY);
+        AppButton syncBtn = new AppButton(I18n.get("dashboard.sync"), AppButton.Variant.PRIMARY);
         syncBtn.setGraphic(UiHelper.icon(FontAwesomeSolid.SYNC_ALT, 12));
         syncBtn.setGraphicTextGap(6);
         syncBtn.setOnAction(e -> triggerSync(syncBtn));
@@ -167,7 +168,7 @@ public class DashboardView {
     private void triggerSync(AppButton syncBtn) {
         syncBtn.setDisable(true);
         syncBtn.setGraphic(UiHelper.icon(FontAwesomeSolid.CIRCLE_NOTCH, 12));
-        syncBtn.setText("Sync…");
+        syncBtn.setText(I18n.get("dashboard.syncing"));
 
         new Thread(() -> {
             boolean success = false;
@@ -179,13 +180,13 @@ public class DashboardView {
             final boolean ok = success;
             Platform.runLater(() -> {
                 syncBtn.setDisable(false);
-                syncBtn.setText("Synchroniser");
+                syncBtn.setText(I18n.get("dashboard.sync"));
                 syncBtn.setGraphic(UiHelper.icon(FontAwesomeSolid.SYNC_ALT, 12));
                 if (ok) {
-                    toast.showSuccess("Synchronisation réussie");
+                    toast.showSuccess(I18n.get("dashboard.syncSuccess"));
                     loadAsync();
                 } else {
-                    toast.showError("Échec de la synchronisation");
+                    toast.showError(I18n.get("dashboard.syncFailed"));
                 }
             });
         }, "manual-sync").start();
@@ -233,10 +234,10 @@ public class DashboardView {
         HBox.setHgrow(barContainer, Priority.ALWAYS);
 
         HBox legend = new HBox(14,
-            legendDot("#b45309", "Ouverts"),
-            legendDot("#2563eb", "En cours"),
-            legendDot("#15803d", "Résolus"),
-            legendDot("#dc2626", "Conflits")
+            legendDot("#b45309", I18n.get("dashboard.legend.open")),
+            legendDot("#2563eb", I18n.get("dashboard.legend.inProgress")),
+            legendDot("#15803d", I18n.get("dashboard.legend.resolved")),
+            legendDot("#dc2626", I18n.get("dashboard.legend.conflicts"))
         );
         legend.setAlignment(Pos.CENTER_LEFT);
 
@@ -252,19 +253,19 @@ public class DashboardView {
     }
 
     private VBox buildRecentSection() {
-        Label recentLabel = new Label("Incidents récents");
+        Label recentLabel = new Label(I18n.get("dashboard.recent"));
         recentLabel.getStyleClass().add("section-label");
         VBox.setMargin(recentLabel, new Insets(20, 0, 8, 0));
 
         HBox recentHead = new HBox();
         recentHead.getStyleClass().add("recent-card-head");
-        Label recentTitle = new Label("SIGNALEMENTS");
+        Label recentTitle = new Label(I18n.get("dashboard.reports"));
         recentTitle.getStyleClass().add("recent-card-title");
 
         Region headSpacer = new Region();
         HBox.setHgrow(headSpacer, Priority.ALWAYS);
 
-        AppButton viewAllBtn = new AppButton("Tout voir →", AppButton.Variant.GHOST);
+        AppButton viewAllBtn = new AppButton(I18n.get("dashboard.viewAll"), AppButton.Variant.GHOST);
         viewAllBtn.setOnAction(e -> navigateTo.accept("incidents"));
         viewAllBtn.setStyle("-fx-font-size: 11px; -fx-padding: 2 6;");
 
@@ -320,7 +321,7 @@ public class DashboardView {
         recentContainer.getChildren().clear();
         if (incidents.isEmpty()) {
             recentContainer.getChildren().add(
-                new EmptyState("Aucun incident.", "Les incidents synchronisés apparaîtront ici.")
+                new EmptyState(I18n.get("dashboard.empty.title"), I18n.get("dashboard.empty.subtitle"))
             );
             return;
         }
@@ -346,7 +347,7 @@ public class DashboardView {
         row.setOnMouseClicked(e -> navigateTo.accept("incidents"));
 
         if (i.isConflict()) {
-            Label conflictTag = new Label("⚠ conflit");
+            Label conflictTag = new Label(I18n.get("dashboard.conflictTag"));
             conflictTag.setStyle("-fx-font-size: 9.5px; -fx-text-fill: #dc2626; "
                     + "-fx-background-color: rgba(220,38,38,0.12); -fx-padding: 1 5; "
                     + "-fx-background-radius: 4;");

@@ -46,21 +46,21 @@ export class ServicesController {
 
     @Get()
     @ApiOperation({
-        summary: "Lister les services",
+        summary: "List services",
         description:
-            "Retourne les annonces de services, filtrables par catégorie et type.",
+            "Returns service listings, filterable by category and type.",
     })
     @ApiQuery({
         name: "category",
         required: false,
         example: "gardening",
-        description: "Catégorie du service",
+        description: "Service category",
     })
     @ApiQuery({
         name: "type",
         required: false,
         enum: ["free", "paid", "exchange"],
-        description: "Type de service",
+        description: "Service type",
     })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
@@ -72,8 +72,8 @@ export class ServicesController {
         @Query("limit") limit = "20",
     ) {
         const filter: Record<string, string> = {};
-        if (category) filter.category = category;
-        if (type) filter.type = type;
+        if (category) filter.category = String(category);
+        if (type) filter.type = String(type);
 
         const pageNum = Math.max(1, parseInt(page) || 1);
         const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
@@ -82,14 +82,14 @@ export class ServicesController {
     }
 
     @Get(":id")
-    @ApiOperation({ summary: "Détail d'un service" })
+    @ApiOperation({ summary: "Service details" })
     @ApiParam({
         name: "id",
-        description: "ID MongoDB du service",
+        description: "MongoDB ID of the service",
         example: "664f1a2b3c4d5e6f7a8b9c0d",
     })
     @ApiResponse({ status: 200, type: ServiceDto })
-    @ApiResponse({ status: 404, description: "Service introuvable" })
+    @ApiResponse({ status: 404, description: "Service not found" })
     async findOne(@Param("id") id: string) {
         const service = await this.serviceModel.findById(id).exec();
         if (!service) throw new NotFoundException("Service not found");
@@ -100,12 +100,16 @@ export class ServicesController {
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     @ApiOperation({
-        summary: "Créer une annonce de service",
+        summary: "Create a service listing",
         description:
-            "Crée une annonce de service. Le champ `createdBy` est automatiquement renseigné depuis le JWT.",
+            "Creates a service listing. The `createdBy` field is automatically populated from the JWT.",
     })
-    @ApiResponse({ status: 201, type: ServiceDto, description: "Service créé" })
-    @ApiResponse({ status: 401, description: "Non authentifié" })
+    @ApiResponse({
+        status: 201,
+        type: ServiceDto,
+        description: "Service created",
+    })
+    @ApiResponse({ status: 401, description: "Not authenticated" })
     async create(@Body() dto: CreateServiceDto, @Request() req: AuthRequest) {
         const created = await this.serviceModel.create({
             ...dto,
@@ -123,26 +127,27 @@ export class ServicesController {
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     @ApiOperation({
-        summary: "Modifier un service",
-        description: "Le propriétaire ou un admin peut modifier.",
+        summary: "Update a service",
+        description: "The owner or an admin can update it.",
     })
-    @ApiParam({ name: "id", description: "ID MongoDB du service" })
+    @ApiParam({ name: "id", description: "MongoDB ID of the service" })
     @ApiResponse({
         status: 200,
         type: ServiceDto,
-        description: "Service mis à jour",
+        description: "Service updated",
     })
     @ApiResponse({
         status: 403,
-        description: "Accès refusé (propriétaire ou admin uniquement)",
+        description: "Access denied (owner or admin only)",
     })
-    @ApiResponse({ status: 404, description: "Service introuvable" })
+    @ApiResponse({ status: 404, description: "Service not found" })
     async update(
         @Param("id") id: string,
         @Body() dto: UpdateServiceDto,
         @Request() req: AuthRequest,
     ) {
-        const service = await this.serviceModel.findById(id).exec();
+        const serviceId = String(id);
+        const service = await this.serviceModel.findById(serviceId).exec();
         if (!service) throw new NotFoundException("Service not found");
 
         if (service.createdBy !== req.user.sub && req.user.role !== "admin") {
@@ -151,8 +156,24 @@ export class ServicesController {
             );
         }
 
+        const changes: Record<string, unknown> = {};
+        if (dto.title !== undefined) changes.title = dto.title;
+        if (dto.description !== undefined)
+            changes.description = dto.description;
+        if (dto.category !== undefined) changes.category = dto.category;
+        if (dto.type !== undefined) changes.type = dto.type;
+        if (dto.neighborhoodId !== undefined)
+            changes.neighborhoodId = dto.neighborhoodId;
+        if (dto.pointsMultiplier !== undefined)
+            changes.pointsMultiplier = dto.pointsMultiplier;
+        if (dto.location !== undefined)
+            changes.location = {
+                type: dto.location.type,
+                coordinates: dto.location.coordinates,
+            };
+
         const updated = await this.serviceModel
-            .findByIdAndUpdate(id, dto, { new: true })
+            .findByIdAndUpdate(serviceId, { $set: changes }, { new: true })
             .exec();
         if (updated) {
             void this.socialService.syncService(
@@ -168,18 +189,18 @@ export class ServicesController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles("admin")
     @ApiBearerAuth()
-    @ApiOperation({ summary: "Supprimer un service (admin uniquement)" })
-    @ApiParam({ name: "id", description: "ID MongoDB du service" })
+    @ApiOperation({ summary: "Delete a service (admin only)" })
+    @ApiParam({ name: "id", description: "MongoDB ID of the service" })
     @ApiResponse({
         status: 200,
         schema: { example: { success: true } },
-        description: "Service supprimé",
+        description: "Service deleted",
     })
     @ApiResponse({
         status: 403,
-        description: "Rôle insuffisant (admin requis)",
+        description: "Insufficient role (admin required)",
     })
-    @ApiResponse({ status: 404, description: "Service introuvable" })
+    @ApiResponse({ status: 404, description: "Service not found" })
     async remove(@Param("id") id: string) {
         const deleted = await this.serviceModel.findByIdAndDelete(id).exec();
         if (!deleted) throw new NotFoundException("Service not found");

@@ -2,6 +2,7 @@ import * as React from "react";
 import { DashboardSquare01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import {
     Sidebar,
     SidebarContent,
@@ -18,6 +19,8 @@ import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    const { t } = useTranslation();
+
     return (
         <Sidebar collapsible="icon" {...props}>
             <SidebarHeader>
@@ -36,7 +39,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                         QuartierConnect
                                     </span>
                                     <span className="truncate text-xs">
-                                        Espace résident
+                                        {t("pages.sidebar.residentSpace")}
                                     </span>
                                 </div>
                             </Link>

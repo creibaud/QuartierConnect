@@ -6,6 +6,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import {
     useCreateNeighborhood,
     useDeleteNeighborhood,
@@ -54,6 +55,7 @@ export const Route = createFileRoute("/_app/neighborhoods/")({
 });
 
 function NeighborhoodsPage() {
+    const { t } = useTranslation();
     const [createOpen, setCreateOpen] = useState(false);
     const [editTarget, setEditTarget] = useState<Neighborhood | null>(null);
 
@@ -63,8 +65,9 @@ function NeighborhoodsPage() {
 
     function handleDelete(id: string) {
         deleteNeighborhood.mutate(id, {
-            onSuccess: () => toast.success("Quartier supprimé"),
-            onError: () => toast.error("Impossible de supprimer"),
+            onSuccess: () =>
+                toast.success(t("adminPages.neighborhoods.deleted")),
+            onError: () => toast.error(t("adminPages.common.deleteError")),
         });
     }
 
@@ -72,12 +75,12 @@ function NeighborhoodsPage() {
         <div className="p-6">
             <div className="mx-auto flex max-w-6xl flex-col gap-6">
                 <PageHeader
-                    title="Quartiers"
-                    description="Gérez les quartiers et leurs périmètres sur la carte"
+                    title={t("adminPages.neighborhoods.title")}
+                    description={t("adminPages.neighborhoods.description")}
                     actions={
                         <Button onClick={() => setCreateOpen(true)}>
                             <HugeiconsIcon icon={Add01Icon} />
-                            Créer
+                            {t("adminPages.common.create")}
                         </Button>
                     }
                 />
@@ -87,7 +90,7 @@ function NeighborhoodsPage() {
                     error={isError ? true : undefined}
                     isEmpty={neighborhoods.length === 0}
                     onRetry={() => refetch()}
-                    errorTitle="Impossible de charger les quartiers"
+                    errorTitle={t("adminPages.neighborhoods.loadError")}
                     skeleton={
                         <div className="flex flex-col gap-2">
                             {Array.from({ length: 4 }).map((_, i) => (
@@ -105,17 +108,18 @@ function NeighborhoodsPage() {
                                     <HugeiconsIcon icon={Building01Icon} />
                                 </EmptyMedia>
                                 <EmptyTitle>
-                                    Aucun quartier pour l&apos;instant
+                                    {t("adminPages.neighborhoods.emptyTitle")}
                                 </EmptyTitle>
                                 <EmptyDescription>
-                                    Créez votre premier quartier et tracez son
-                                    périmètre sur la carte.
+                                    {t(
+                                        "adminPages.neighborhoods.emptyDescription",
+                                    )}
                                 </EmptyDescription>
                             </EmptyHeader>
                             <EmptyContent>
                                 <Button onClick={() => setCreateOpen(true)}>
                                     <HugeiconsIcon icon={Add01Icon} />
-                                    Créer un quartier
+                                    {t("adminPages.neighborhoods.createCta")}
                                 </Button>
                             </EmptyContent>
                         </Empty>
@@ -125,11 +129,17 @@ function NeighborhoodsPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Nom</TableHead>
-                                    <TableHead>Ville</TableHead>
-                                    <TableHead>Polygone</TableHead>
+                                    <TableHead>
+                                        {t("adminPages.common.name")}
+                                    </TableHead>
+                                    <TableHead>
+                                        {t("adminPages.neighborhoods.city")}
+                                    </TableHead>
+                                    <TableHead>
+                                        {t("adminPages.neighborhoods.polygon")}
+                                    </TableHead>
                                     <TableHead className="text-right">
-                                        Actions
+                                        {t("adminPages.common.actions")}
                                     </TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -150,11 +160,15 @@ function NeighborhoodsPage() {
                                                             CheckmarkCircle01Icon
                                                         }
                                                     />
-                                                    Défini
+                                                    {t(
+                                                        "adminPages.neighborhoods.defined",
+                                                    )}
                                                 </Badge>
                                             ) : (
                                                 <Badge variant="secondary">
-                                                    Non défini
+                                                    {t(
+                                                        "adminPages.neighborhoods.notDefined",
+                                                    )}
                                                 </Badge>
                                             )}
                                         </TableCell>
@@ -167,7 +181,7 @@ function NeighborhoodsPage() {
                                                         setEditTarget(nbh)
                                                     }
                                                 >
-                                                    Modifier
+                                                    {t("adminPages.common.edit")}
                                                 </Button>
                                                 <Button
                                                     variant="ghost"
@@ -182,7 +196,7 @@ function NeighborhoodsPage() {
                                                 >
                                                     {deleteNeighborhood.isPending
                                                         ? "…"
-                                                        : "Supprimer"}
+                                                        : t("common.delete")}
                                                 </Button>
                                             </div>
                                         </TableCell>
@@ -230,13 +244,12 @@ function PolygonEditor({
     currentGeometry: GeoJSON.Polygon | null;
     onChange: (geometry: GeoJSON.Polygon | null) => void;
 }) {
+    const { t } = useTranslation();
     return (
         <div className="space-y-2">
-            <Label>Polygone sur la carte</Label>
+            <Label>{t("adminPages.neighborhoods.polygonOnMap")}</Label>
             <p className="text-muted-foreground text-xs">
-                Quartiers existants en gris. Utilisez l&apos;outil polygone
-                en haut à droite, cliquez pour les sommets, double-cliquez
-                pour fermer.
+                {t("adminPages.neighborhoods.polygonHint")}
             </p>
             <Map
                 center={[48.8566, 2.3522]}
@@ -288,6 +301,7 @@ function NeighborhoodDialog({
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
 }) {
+    const { t } = useTranslation();
     const [name, setName] = useState(initial?.name ?? "");
     const [city, setCity] = useState(initial?.city ?? "");
     const [description, setDescription] = useState(initial?.description ?? "");
@@ -316,23 +330,27 @@ function NeighborhoodDialog({
                 { id: initial._id, data: payload },
                 {
                     onSuccess: () => {
-                        toast.success("Quartier modifié");
+                        toast.success(t("adminPages.neighborhoods.updated"));
                         onSuccess();
                     },
                     onError: (err: Error) =>
                         toast.error(
-                            err.message ?? "Erreur lors de la modification",
+                            err.message ??
+                                t("adminPages.neighborhoods.updateError"),
                         ),
                 },
             );
         } else {
             createNeighborhood.mutate(payload, {
                 onSuccess: () => {
-                    toast.success("Quartier créé");
+                    toast.success(t("adminPages.neighborhoods.created"));
                     onSuccess();
                 },
                 onError: (err: Error) =>
-                    toast.error(err.message ?? "Erreur lors de la création"),
+                    toast.error(
+                        err.message ??
+                            t("adminPages.neighborhoods.createError"),
+                    ),
             });
         }
     }
@@ -343,31 +361,39 @@ function NeighborhoodDialog({
                 <DialogHeader>
                     <DialogTitle>
                         {initial
-                            ? "Modifier le quartier"
-                            : "Ajouter un quartier"}
+                            ? t("adminPages.neighborhoods.editTitle")
+                            : t("adminPages.neighborhoods.createTitle")}
                     </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="nbh-name">Nom *</Label>
+                            <Label htmlFor="nbh-name">
+                                {t("adminPages.neighborhoods.nameLabel")}
+                            </Label>
                             <Input
                                 id="nbh-name"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                placeholder="Ex : Montmartre"
+                                placeholder={t(
+                                    "adminPages.neighborhoods.namePlaceholder",
+                                )}
                                 maxLength={100}
                                 required
                                 autoFocus
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="nbh-city">Ville *</Label>
+                            <Label htmlFor="nbh-city">
+                                {t("adminPages.neighborhoods.cityLabel")}
+                            </Label>
                             <Input
                                 id="nbh-city"
                                 value={city}
                                 onChange={(e) => setCity(e.target.value)}
-                                placeholder="Ex : Paris"
+                                placeholder={t(
+                                    "adminPages.neighborhoods.cityPlaceholder",
+                                )}
                                 maxLength={100}
                                 required
                             />
@@ -375,12 +401,16 @@ function NeighborhoodDialog({
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="nbh-desc">Description</Label>
+                        <Label htmlFor="nbh-desc">
+                            {t("incidents.fields.description")}
+                        </Label>
                         <Input
                             id="nbh-desc"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Description optionnelle"
+                            placeholder={t(
+                                "adminPages.neighborhoods.descriptionPlaceholder",
+                            )}
                             maxLength={500}
                         />
                     </div>
@@ -404,8 +434,9 @@ function NeighborhoodDialog({
                                 icon={CheckmarkCircle01Icon}
                                 className="text-primary size-4"
                             />
-                            Polygone défini (
-                            {geometry.coordinates[0].length - 1} points)
+                            {t("adminPages.neighborhoods.polygonPoints", {
+                                count: geometry.coordinates[0].length - 1,
+                            })}
                         </p>
                     )}
 
@@ -415,7 +446,7 @@ function NeighborhoodDialog({
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                         >
-                            Annuler
+                            {t("common.cancel")}
                         </Button>
                         <Button
                             type="submit"
@@ -424,8 +455,8 @@ function NeighborhoodDialog({
                             {isPending
                                 ? "…"
                                 : initial
-                                  ? "Enregistrer"
-                                  : "Créer"}
+                                  ? t("common.save")
+                                  : t("adminPages.common.create")}
                         </Button>
                     </div>
                 </form>

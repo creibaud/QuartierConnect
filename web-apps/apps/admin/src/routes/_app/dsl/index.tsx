@@ -6,6 +6,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { apiPost } from "@workspace/shared/lib/api";
 import {
     Alert,
@@ -42,6 +43,7 @@ const EXAMPLES = [
 ];
 
 function DslPage() {
+    const { t } = useTranslation();
     const [query, setQuery] = useState(EXAMPLES[0]);
     const [result, setResult] = useState<unknown>(null);
     const [error, setError] = useState<string | null>(null);
@@ -62,7 +64,10 @@ function DslPage() {
             setResult(res);
             setElapsed(Date.now() - start);
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : "Erreur inconnue";
+            const msg =
+                err instanceof Error
+                    ? err.message
+                    : t("adminPages.dsl.unknownError");
             setError(msg);
         } finally {
             setLoading(false);
@@ -82,15 +87,17 @@ function DslPage() {
         <div className="p-6">
             <div className="space-y-6">
                 <PageHeader
-                    title="Éditeur DSL"
-                    description="Interrogez les données en langage naturel"
+                    title={t("adminPages.dsl.title")}
+                    description={t("adminPages.dsl.description")}
                     actions={
                         <Button
                             onClick={handleRun}
                             disabled={loading || !query.trim()}
                         >
                             <HugeiconsIcon icon={PlayIcon} />
-                            {loading ? "Exécution…" : "Exécuter"}
+                            {loading
+                                ? t("adminPages.dsl.running")
+                                : t("adminPages.dsl.run")}
                         </Button>
                     }
                 />
@@ -100,10 +107,10 @@ function DslPage() {
                         <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-base">
-                                    Requête
+                                    {t("adminPages.dsl.queryTitle")}
                                 </CardTitle>
                                 <p className="text-muted-foreground text-xs">
-                                    Ctrl+Entrée pour exécuter
+                                    {t("adminPages.dsl.runHint")}
                                 </p>
                             </div>
                         </CardHeader>
@@ -126,7 +133,7 @@ function DslPage() {
                                         setError(null);
                                     }}
                                 >
-                                    Effacer
+                                    {t("adminPages.dsl.clear")}
                                 </Button>
                                 <span className="text-muted-foreground ml-1 text-xs tabular-nums">
                                     {query.length}/500
@@ -153,14 +160,18 @@ function DslPage() {
                         <CardHeader className="pb-3">
                             <div className="flex items-center gap-3">
                                 <CardTitle className="text-base">
-                                    Résultats
+                                    {t("adminPages.dsl.resultsTitle")}
                                 </CardTitle>
                                 {error ? (
-                                    <Badge variant="destructive">Erreur</Badge>
+                                    <Badge variant="destructive">
+                                        {t("adminPages.dsl.errorBadge")}
+                                    </Badge>
                                 ) : result !== null ? (
                                     <Badge variant="secondary">
                                         {resultCount !== null
-                                            ? `${resultCount} résultat${resultCount !== 1 ? "s" : ""}`
+                                            ? t("adminPages.dsl.resultCount", {
+                                                  count: resultCount,
+                                              })
                                             : "OK"}
                                         {elapsed !== null
                                             ? ` · ${elapsed}ms`
@@ -173,7 +184,9 @@ function DslPage() {
                             {error ? (
                                 <Alert variant="destructive">
                                     <HugeiconsIcon icon={Alert01Icon} />
-                                    <AlertTitle>Requête invalide</AlertTitle>
+                                    <AlertTitle>
+                                        {t("adminPages.dsl.invalidQuery")}
+                                    </AlertTitle>
                                     <AlertDescription className="font-mono whitespace-pre-wrap">
                                         {error}
                                     </AlertDescription>
@@ -191,11 +204,12 @@ function DslPage() {
                                             />
                                         </EmptyMedia>
                                         <EmptyTitle>
-                                            Écrivez une requête
+                                            {t("adminPages.dsl.emptyTitle")}
                                         </EmptyTitle>
                                         <EmptyDescription>
-                                            Lancez une requête DSL pour afficher
-                                            les résultats ici.
+                                            {t(
+                                                "adminPages.dsl.emptyDescription",
+                                            )}
                                         </EmptyDescription>
                                     </EmptyHeader>
                                 </Empty>
@@ -206,13 +220,15 @@ function DslPage() {
 
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-base">Syntaxe DSL</CardTitle>
+                        <CardTitle className="text-base">
+                            {t("adminPages.dsl.syntaxTitle")}
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                             <div>
                                 <p className="mb-2 font-medium">
-                                    Collections disponibles
+                                    {t("adminPages.dsl.availableCollections")}
                                 </p>
                                 <ul className="text-muted-foreground space-y-1 font-mono text-xs">
                                     <li>incidents</li>
@@ -223,7 +239,9 @@ function DslPage() {
                                 </ul>
                             </div>
                             <div>
-                                <p className="mb-2 font-medium">Syntaxe</p>
+                                <p className="mb-2 font-medium">
+                                    {t("adminPages.dsl.syntaxLabel")}
+                                </p>
                                 <ul className="text-muted-foreground space-y-1 font-mono text-xs">
                                     <li>FIND &lt;collection&gt;</li>
                                     <li>

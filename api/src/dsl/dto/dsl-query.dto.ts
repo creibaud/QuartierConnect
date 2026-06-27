@@ -4,7 +4,7 @@ import { IsNotEmpty, IsString, MaxLength } from "class-validator";
 export class DslQueryDto {
     @ApiProperty({
         example: 'FIND incidents WHERE status = "open" LIMIT 10',
-        description: "Requête DSL QuartierConnect",
+        description: "QuartierConnect DSL query",
     })
     @IsString()
     @IsNotEmpty()

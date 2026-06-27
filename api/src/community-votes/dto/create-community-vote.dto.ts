@@ -19,20 +19,23 @@ import { CommunityVoteType } from "../schemas/community-vote.schema";
 export class VoteOptionDto {
     @ApiProperty({
         example: "yes",
-        description: "Identifiant unique de l'option",
+        description: "Unique identifier of the option",
     })
     @IsString()
     @IsNotEmpty()
     id: string;
 
-    @ApiProperty({ example: "Oui", description: "Libellé affiché de l'option" })
+    @ApiProperty({
+        example: "Yes",
+        description: "Displayed label of the option",
+    })
     @IsString()
     @IsNotEmpty()
     label: string;
 }
 
 export class CreateCommunityVoteDto {
-    @ApiProperty({ example: "Faut-il installer des bancs dans le parc ?" })
+    @ApiProperty({ example: "Should we install benches in the park?" })
     @IsString()
     @IsNotEmpty()
     title: string;
@@ -49,7 +52,7 @@ export class CreateCommunityVoteDto {
     @ApiProperty({
         type: [VoteOptionDto],
         description:
-            'Options de vote. Pour BINARY: [{id:"yes",label:"Oui"},{id:"no",label:"Non"}]',
+            'Vote options. For BINARY: [{id:"yes",label:"Yes"},{id:"no",label:"No"}]',
     })
     @IsArray()
     @ValidateNested({ each: true })
@@ -69,7 +72,7 @@ export class CreateCommunityVoteDto {
     @ApiProperty({
         required: false,
         default: 0,
-        description: "Quorum en % de participants requis",
+        description: "Quorum as % of required participants",
     })
     @IsNumber()
     @Min(0)

@@ -5,7 +5,7 @@ export class VoteOptionResponseDto {
     @ApiProperty({ example: "yes" })
     id: string;
 
-    @ApiProperty({ example: "Oui" })
+    @ApiProperty({ example: "Yes" })
     label: string;
 }
 
@@ -16,13 +16,13 @@ export class CastRecordDto {
     @ApiProperty({
         type: [String],
         example: ["yes"],
-        description: "Choix sélectionnés (ids des options)",
+        description: "Selected choices (option ids)",
     })
     choices: string[];
 
     @ApiPropertyOptional({
         example: { yes: 0.7, no: 0.3 },
-        description: "Pondérations pour les votes WEIGHTED",
+        description: "Weights for WEIGHTED votes",
     })
     weights?: Record<string, number>;
 
@@ -34,11 +34,11 @@ export class CommunityVoteDto {
     @ApiProperty({ example: "664f1a2b3c4d5e6f7a8b9c10" })
     _id: string;
 
-    @ApiProperty({ example: "Faut-il installer des bancs dans le parc ?" })
+    @ApiProperty({ example: "Should we install benches in the park?" })
     title: string;
 
     @ApiPropertyOptional({
-        example: "Vote communautaire sur l'aménagement du parc.",
+        example: "Community vote on the park layout.",
     })
     description?: string;
 
@@ -59,13 +59,13 @@ export class CommunityVoteDto {
 
     @ApiProperty({
         example: 0,
-        description: "Quorum en % de participants requis",
+        description: "Quorum as % of required participants",
     })
     quorum: number;
 
     @ApiProperty({
         type: [CastRecordDto],
-        description: "Votes enregistrés (vide si isAnonymous=false)",
+        description: "Recorded votes (empty if isAnonymous=false)",
     })
     casts: CastRecordDto[];
 
@@ -83,13 +83,13 @@ export class CommunityVoteOptionResultDto {
     @ApiProperty({ example: "yes" })
     optionId: string;
 
-    @ApiProperty({ example: "Oui" })
+    @ApiProperty({ example: "Yes" })
     label: string;
 
     @ApiProperty({ example: 12 })
     count: number;
 
-    @ApiProperty({ example: 75.0, description: "Pourcentage des votes totaux" })
+    @ApiProperty({ example: 75.0, description: "Percentage of total votes" })
     percentage: number;
 }
 
@@ -108,7 +108,7 @@ export class CommunityVoteResultsDto {
 
     @ApiProperty({
         example: false,
-        description: "Quorum atteint (totalVotes >= quorum% des membres)",
+        description: "Quorum reached (totalVotes >= quorum% of members)",
     })
     quorumReached: boolean;
 }

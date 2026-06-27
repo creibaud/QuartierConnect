@@ -6,6 +6,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { centroidOf, pointToLatLng } from "@workspace/shared/lib/geo";
 import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
 import { useInfiniteServices } from "@workspace/shared/lib/hooks/services.hooks";
@@ -53,6 +54,7 @@ export const Route = createFileRoute("/_app/services/")({
 });
 
 function ServicesPage() {
+    const { t } = useTranslation();
     const [selectedNeighborhood, setSelectedNeighborhood] =
         useState<string>("all");
     const { data: neighborhoodsData } = useNeighborhoods();
@@ -75,8 +77,8 @@ function ServicesPage() {
         <div className="p-6 md:p-8">
             <div className="mx-auto flex max-w-5xl flex-col gap-6">
                 <PageHeader
-                    title="Services"
-                    description="L'annuaire des services et commerces de votre quartier."
+                    title={t("pages.services.title")}
+                    description={t("pages.services.description")}
                     actions={
                         neighborhoods.length > 0 ? (
                             <Select
@@ -84,11 +86,15 @@ function ServicesPage() {
                                 onValueChange={handleFilterChange}
                             >
                                 <SelectTrigger className="w-48">
-                                    <SelectValue placeholder="Tous les quartiers" />
+                                    <SelectValue
+                                        placeholder={t(
+                                            "pages.services.allNeighborhoods",
+                                        )}
+                                    />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">
-                                        Tous les quartiers
+                                        {t("pages.services.allNeighborhoods")}
                                     </SelectItem>
                                     {neighborhoods.map((n) => (
                                         <SelectItem key={n._id} value={n._id}>
@@ -105,11 +111,12 @@ function ServicesPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-base">
-                                Services à proximité
+                                {t("pages.services.nearby")}
                             </CardTitle>
                             <CardDescription>
-                                {servicesWithCoords.length} service(s)
-                                localisé(s)
+                                {t("pages.services.locatedCount", {
+                                    count: servicesWithCoords.length,
+                                })}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -174,10 +181,11 @@ function ServicesPage() {
                                 <EmptyMedia variant="icon">
                                     <HugeiconsIcon icon={CustomerServiceIcon} />
                                 </EmptyMedia>
-                                <EmptyTitle>Aucun service disponible</EmptyTitle>
+                                <EmptyTitle>
+                                    {t("pages.services.emptyTitle")}
+                                </EmptyTitle>
                                 <EmptyDescription>
-                                    Aucun service n'est répertorié pour ce
-                                    quartier pour le moment.
+                                    {t("pages.services.emptyDescription")}
                                 </EmptyDescription>
                             </EmptyHeader>
                         </Empty>
@@ -222,7 +230,7 @@ function ServicesPage() {
                             className="mt-4 w-full"
                             onClick={() => fetchNextPage()}
                         >
-                            Voir plus
+                            {t("common.loadMore")}
                         </Button>
                     )}
                 </DataState>
@@ -232,6 +240,7 @@ function ServicesPage() {
 }
 
 function ServiceVote({ serviceId }: { serviceId: string }) {
+    const { t } = useTranslation();
     const { data: voteScore } = useVoteScore(serviceId, "service");
     const castVote = useCastVote();
     const breakdown = voteScore?.breakdown as
@@ -252,7 +261,7 @@ function ServiceVote({ serviceId }: { serviceId: string }) {
                             targetType: "service",
                             voteType: "like",
                         },
-                        { onError: () => toast.error("Impossible de voter") },
+                        { onError: () => toast.error(t("votes.voteError")) },
                     )
                 }
                 className="text-muted-foreground"
@@ -272,7 +281,7 @@ function ServiceVote({ serviceId }: { serviceId: string }) {
                             targetType: "service",
                             voteType: "dislike",
                         },
-                        { onError: () => toast.error("Impossible de voter") },
+                        { onError: () => toast.error(t("votes.voteError")) },
                     )
                 }
                 className="text-muted-foreground"

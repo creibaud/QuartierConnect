@@ -7,6 +7,7 @@ import atlantafx.base.theme.NordDark;
 import atlantafx.base.theme.NordLight;
 import atlantafx.base.theme.PrimerDark;
 import atlantafx.base.theme.PrimerLight;
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -80,17 +81,17 @@ public class ThemePlugin implements QuartierConnectPlugin, PluginRegistry.Contex
         ".statusbar-sep{-fx-background-color:-color-border-default;}";
 
     @Override public String getId()      { return "fr.quartierconnect.plugin.theme"; }
-    @Override public String getName()    { return "Gestionnaire de thème"; }
+    @Override public String getName()    { return I18n.get("plugin.theme.name"); }
     @Override public String getVersion() { return "1.1.0"; }
-    @Override public String getDescription() { return "Permet de changer le thème visuel de l'application (clair, sombre, Dracula, Nord)."; }
+    @Override public String getDescription() { return I18n.get("plugin.theme.description"); }
     @Override public void setContext(AppContext ctx) { this.context = ctx; }
     @Override public void onLoad()   { applyTheme(activeThemeId); }
     @Override public void onUnload() { applyTheme("nord-dark"); }
 
     @Override
     public Node getPanel() {
-        Label lightLbl = sectionLabel("Thèmes clairs");
-        Label darkLbl  = sectionLabel("Thèmes sombres");
+        Label lightLbl = sectionLabel(I18n.get("plugin.theme.lightThemes"));
+        Label darkLbl  = sectionLabel(I18n.get("plugin.theme.darkThemes"));
 
         ToggleGroup group = new ToggleGroup();
 

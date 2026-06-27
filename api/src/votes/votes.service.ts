@@ -24,8 +24,8 @@ export class VotesService {
         const existing = await this.voteModel
             .findOne({
                 userId,
-                targetId: dto.targetId,
-                targetType: dto.targetType,
+                targetId: String(dto.targetId),
+                targetType: String(dto.targetType),
             })
             .exec();
 
@@ -50,7 +50,10 @@ export class VotesService {
 
     async getScore(targetId: string, targetType: VoteTargetType) {
         const votes = await this.voteModel
-            .find({ targetId, targetType })
+            .find({
+                targetId: String(targetId),
+                targetType: String(targetType),
+            })
             .select("voteType")
             .lean()
             .exec();

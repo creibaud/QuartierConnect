@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Add01Icon, Agreement01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import {
     useContracts,
@@ -41,13 +42,6 @@ import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { toast } from "sonner";
 
-const STATUS_LABELS: Record<string, string> = {
-    draft: "Brouillon",
-    pending_signature: "En attente de signature",
-    signed: "Signé",
-    rejected: "Rejeté",
-};
-
 const STATUS_VARIANTS: Record<
     string,
     "default" | "secondary" | "outline" | "destructive"
@@ -63,9 +57,16 @@ export const Route = createFileRoute("/_app/contracts/")({
 });
 
 function ContractsPage() {
+    const { t } = useTranslation();
     const user = getCurrentUser();
     const [createOpen, setCreateOpen] = useState(false);
     const [signTarget, setSignTarget] = useState<Contract | null>(null);
+    const statusLabels: Record<string, string> = {
+        draft: t("contracts.status.draft"),
+        pending_signature: t("contracts.status.pending_signature"),
+        signed: t("contracts.status.signed"),
+        rejected: t("contracts.status.rejected"),
+    };
 
     const { data, isLoading, isError, refetch } = useContracts();
     const contracts = data ?? [];
@@ -81,12 +82,12 @@ function ContractsPage() {
         <div className="p-6 md:p-8">
             <div className="mx-auto flex max-w-5xl flex-col gap-6">
                 <PageHeader
-                    title="Contrats"
-                    description="Signez et suivez vos contrats de quartier."
+                    title={t("contracts.title")}
+                    description={t("pages.contracts.description")}
                     actions={
                         <Button onClick={() => setCreateOpen(true)}>
                             <HugeiconsIcon icon={Add01Icon} />
-                            Créer un contrat
+                            {t("pages.contracts.create")}
                         </Button>
                     }
                 />
@@ -112,16 +113,17 @@ function ContractsPage() {
                                 <EmptyMedia variant="icon">
                                     <HugeiconsIcon icon={Agreement01Icon} />
                                 </EmptyMedia>
-                                <EmptyTitle>Aucun contrat pour l'instant</EmptyTitle>
+                                <EmptyTitle>
+                                    {t("pages.contracts.emptyTitle")}
+                                </EmptyTitle>
                                 <EmptyDescription>
-                                    Créez un premier contrat pour le faire signer
-                                    par vos voisins.
+                                    {t("pages.contracts.emptyDescription")}
                                 </EmptyDescription>
                             </EmptyHeader>
                             <EmptyContent>
                                 <Button onClick={() => setCreateOpen(true)}>
                                     <HugeiconsIcon icon={Add01Icon} />
-                                    Créer un contrat
+                                    {t("pages.contracts.create")}
                                 </Button>
                             </EmptyContent>
                         </Empty>
@@ -143,22 +145,25 @@ function ContractsPage() {
                                             }
                                             className="shrink-0"
                                         >
-                                            {STATUS_LABELS[contract.status] ??
+                                            {statusLabels[contract.status] ??
                                                 contract.status}
                                         </Badge>
                                     </div>
                                     <CardDescription>
-                                        {contract.signatures.length}/
-                                        {contract.signatories.length} signature
-                                        {contract.signatories.length !== 1
-                                            ? "s"
-                                            : ""}
+                                        {t("pages.contracts.signatureCount", {
+                                            signed: contract.signatures.length,
+                                            total: contract.signatories.length,
+                                            count: contract.signatories.length,
+                                        })}
                                         {contract.signedAt && (
                                             <span className="ml-2">
-                                                · signé le{" "}
-                                                {new Date(
-                                                    contract.signedAt,
-                                                ).toLocaleDateString("fr-FR")}
+                                                {t("pages.contracts.signedOn", {
+                                                    date: new Date(
+                                                        contract.signedAt,
+                                                    ).toLocaleDateString(
+                                                        "fr-FR",
+                                                    ),
+                                                })}
                                             </span>
                                         )}
                                     </CardDescription>
@@ -176,7 +181,7 @@ function ContractsPage() {
                                                 setSignTarget(contract)
                                             }
                                         >
-                                            Signer avec TOTP
+                                            {t("pages.contracts.signWithTotp")}
                                         </Button>
                                     )}
                                 </CardContent>
@@ -214,6 +219,7 @@ function CreateContractDialog({
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
 }) {
+    const { t } = useTranslation();
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [signatoriesRaw, setSignatoriesRaw] = useState("");
@@ -234,13 +240,14 @@ function CreateContractDialog({
             },
             {
                 onSuccess: () => {
-                    toast.success("Contrat créé");
+                    toast.success(t("pages.contracts.createSuccess"));
                     setTitle("");
                     setContent("");
                     setSignatoriesRaw("");
                     onSuccess();
                 },
-                onError: () => toast.error("Impossible de créer le contrat"),
+                onError: () =>
+                    toast.error(t("pages.contracts.createError")),
             },
         );
     }
@@ -249,37 +256,43 @@ function CreateContractDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Créer un contrat</DialogTitle>
+                    <DialogTitle>{t("pages.contracts.create")}</DialogTitle>
                     <DialogDescription>
-                        Le contrat sera hashé (SHA-256) à la création.
+                        {t("pages.contracts.hashNotice")}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="ct-title">Titre *</Label>
+                        <Label htmlFor="ct-title">
+                            {t("pages.contracts.titleRequired")}
+                        </Label>
                         <Input
                             id="ct-title"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Ex : Contrat de prestation"
+                            placeholder={t("pages.contracts.titlePlaceholder")}
                             maxLength={255}
                             required
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="ct-content">Contenu *</Label>
+                        <Label htmlFor="ct-content">
+                            {t("pages.contracts.contentRequired")}
+                        </Label>
                         <Textarea
                             id="ct-content"
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
-                            placeholder="Le prestataire s'engage à…"
+                            placeholder={t(
+                                "pages.contracts.contentPlaceholder",
+                            )}
                             rows={5}
                             required
                         />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="ct-signatories">
-                            Signataires (UUID, un par ligne)
+                            {t("pages.contracts.signatories")}
                         </Label>
                         <Textarea
                             id="ct-signatories"
@@ -297,7 +310,7 @@ function CreateContractDialog({
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                         >
-                            Annuler
+                            {t("common.cancel")}
                         </Button>
                         <Button
                             type="submit"
@@ -307,7 +320,9 @@ function CreateContractDialog({
                                 !content.trim()
                             }
                         >
-                            {createContract.isPending ? "Création…" : "Créer"}
+                            {createContract.isPending
+                                ? t("common.creating")
+                                : t("common.create")}
                         </Button>
                     </div>
                 </form>
@@ -325,6 +340,7 @@ function SignContractDialog({
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
 }) {
+    const { t } = useTranslation();
     const [totpCode, setTotpCode] = useState("");
     const signContract = useSignContract();
 
@@ -335,10 +351,10 @@ function SignContractDialog({
             { id: contract._id, totpCode },
             {
                 onSuccess: () => {
-                    toast.success("Contrat signé");
+                    toast.success(t("pages.contracts.signSuccess"));
                     onSuccess();
                 },
-                onError: () => toast.error("Code TOTP invalide ou déjà signé"),
+                onError: () => toast.error(t("pages.contracts.signError")),
             },
         );
     }
@@ -347,10 +363,11 @@ function SignContractDialog({
         <Dialog open onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Signer le contrat</DialogTitle>
+                    <DialogTitle>{t("contracts.signDialog.title")}</DialogTitle>
                     <DialogDescription>
-                        "{contract.title}" — saisissez votre code TOTP pour
-                        apposer votre signature.
+                        {t("pages.contracts.signDescription", {
+                            title: contract.title,
+                        })}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -359,7 +376,7 @@ function SignContractDialog({
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="sign-totp">
-                            Code TOTP (6 chiffres) *
+                            {t("pages.contracts.totpLabel")}
                         </Label>
                         <Input
                             id="sign-totp"
@@ -384,7 +401,7 @@ function SignContractDialog({
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                         >
-                            Annuler
+                            {t("common.cancel")}
                         </Button>
                         <Button
                             type="submit"
@@ -392,7 +409,9 @@ function SignContractDialog({
                                 signContract.isPending || totpCode.length !== 6
                             }
                         >
-                            {signContract.isPending ? "Signature…" : "Signer"}
+                            {signContract.isPending
+                                ? t("pages.contracts.signing")
+                                : t("contracts.sign")}
                         </Button>
                     </div>
                 </form>

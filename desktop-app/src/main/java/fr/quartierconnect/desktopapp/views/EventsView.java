@@ -1,5 +1,6 @@
 package fr.quartierconnect.desktopapp.views;
 
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.services.ApiService;
 import fr.quartierconnect.desktopapp.services.AuthService;
 import fr.quartierconnect.desktopapp.services.EventsService;
@@ -46,16 +47,16 @@ public class EventsView {
     }
 
     private VBox buildLayout() {
-        Label pageTitle = new Label("Gestion des événements");
+        Label pageTitle = new Label(I18n.get("events.title"));
         pageTitle.getStyleClass().add("content-title");
 
-        Label pageSubtitle = new Label("Création et administration des événements du quartier");
+        Label pageSubtitle = new Label(I18n.get("events.subtitle"));
         pageSubtitle.getStyleClass().add("content-subtitle");
 
-        AppButton createBtn = new AppButton("+ Créer un événement", AppButton.Variant.PRIMARY);
+        AppButton createBtn = new AppButton(I18n.get("events.create"), AppButton.Variant.PRIMARY);
         createBtn.setOnAction(e -> openCreateForm());
 
-        AppButton refreshBtn = new AppButton("↺ Actualiser", AppButton.Variant.SECONDARY);
+        AppButton refreshBtn = new AppButton(I18n.get("events.refresh"), AppButton.Variant.SECONDARY);
         refreshBtn.setOnAction(e -> loadAsync());
 
         HBox header = new HBox(8, new VBox(4, pageTitle, pageSubtitle), refreshBtn, createBtn);
@@ -73,7 +74,7 @@ public class EventsView {
     }
 
     private void buildTable() {
-        TableColumn<EventsService.EventSummary, String> titleCol = new TableColumn<>("Titre");
+        TableColumn<EventsService.EventSummary, String> titleCol = new TableColumn<>(I18n.get("events.col.title"));
         titleCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().title()));
         titleCol.setCellFactory(col -> new TableCell<>() {
             @Override
@@ -84,18 +85,18 @@ public class EventsView {
             }
         });
 
-        TableColumn<EventsService.EventSummary, String> dateCol = new TableColumn<>("Date");
+        TableColumn<EventsService.EventSummary, String> dateCol = new TableColumn<>(I18n.get("events.col.date"));
         dateCol.setPrefWidth(140);
         dateCol.setResizable(false);
         dateCol.setCellValueFactory(c -> new SimpleStringProperty(
                 c.getValue().date() != null ? c.getValue().date().substring(0, Math.min(10, c.getValue().date().length())) : "—"));
 
-        TableColumn<EventsService.EventSummary, String> locationCol = new TableColumn<>("Lieu");
+        TableColumn<EventsService.EventSummary, String> locationCol = new TableColumn<>(I18n.get("events.col.location"));
         locationCol.setPrefWidth(180);
         locationCol.setCellValueFactory(c -> new SimpleStringProperty(
                 c.getValue().location() != null ? c.getValue().location() : "—"));
 
-        TableColumn<EventsService.EventSummary, Void> actionsCol = new TableColumn<>("Actions");
+        TableColumn<EventsService.EventSummary, Void> actionsCol = new TableColumn<>(I18n.get("events.col.actions"));
         actionsCol.setPrefWidth(120);
         actionsCol.setResizable(false);
         actionsCol.setCellFactory(col -> new TableCell<>() {
@@ -106,7 +107,7 @@ public class EventsView {
                     setGraphic(null);
                 } else {
                     EventsService.EventSummary event = getTableView().getItems().get(getIndex());
-                    AppButton deleteBtn = new AppButton("Supprimer", AppButton.Variant.DESTRUCTIVE);
+                    AppButton deleteBtn = new AppButton(I18n.get("events.delete"), AppButton.Variant.DESTRUCTIVE);
                     deleteBtn.setOnAction(e -> deleteEvent(event));
                     HBox box = new HBox(deleteBtn);
                     box.setAlignment(Pos.CENTER_LEFT);
@@ -119,7 +120,7 @@ public class EventsView {
         table.getColumns().addAll(titleCol, dateCol, locationCol, actionsCol);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.getStyleClass().add("admin-table");
-        table.setPlaceholder(new Label("Aucun événement"));
+        table.setPlaceholder(new Label(I18n.get("events.empty")));
         table.setFixedCellSize(42);
     }
 
@@ -136,7 +137,7 @@ public class EventsView {
                 skeletonHolder.getChildren().clear();
                 table.setVisible(true);
                 if (events.isEmpty()) {
-                    table.setPlaceholder(new EmptyState("Aucun événement.", "Créez le premier événement avec le bouton ci-dessus."));
+                    table.setPlaceholder(new EmptyState(I18n.get("events.empty.title"), I18n.get("events.empty.subtitle")));
                 } else {
                     table.getItems().setAll(events);
                 }
@@ -151,51 +152,51 @@ public class EventsView {
                 ApiService.delete("/events/" + event.id(), token);
                 Platform.runLater(() -> {
                     loadAsync();
-                    toast.showSuccess("Événement supprimé ✓");
+                    toast.showSuccess(I18n.get("events.deleted"));
                 });
             } catch (Exception ex) {
-                Platform.runLater(() -> toast.showError("Erreur — " + ex.getMessage()));
+                Platform.runLater(() -> toast.showError(I18n.get("common.error", ex.getMessage())));
             }
         }, "event-delete").start();
     }
 
     private void openCreateForm() {
-        Label titleFormLabel = new Label("Titre *");
+        Label titleFormLabel = new Label(I18n.get("events.form.titleLabel"));
         titleFormLabel.getStyleClass().add("form-label");
         TextField titleField = new TextField();
-        titleField.setPromptText("Ex : Réunion de quartier");
+        titleField.setPromptText(I18n.get("events.form.titlePrompt"));
 
-        Label dateFormLabel = new Label("Date *");
+        Label dateFormLabel = new Label(I18n.get("events.form.dateLabel"));
         dateFormLabel.getStyleClass().add("form-label");
         DatePicker datePicker = new DatePicker(LocalDate.now().plusDays(7));
 
-        Label locationFormLabel = new Label("Lieu");
+        Label locationFormLabel = new Label(I18n.get("events.form.locationLabel"));
         locationFormLabel.getStyleClass().add("form-label");
         TextField locationField = new TextField();
-        locationField.setPromptText("Ex : Salle des fêtes, Place de la Mairie");
+        locationField.setPromptText(I18n.get("events.form.locationPrompt"));
 
         Label errorMsg = new Label("");
         errorMsg.getStyleClass().add("error-label");
         errorMsg.setVisible(false);
         errorMsg.setManaged(false);
 
-        AppButton submitBtn = new AppButton("Créer", AppButton.Variant.PRIMARY);
-        AppButton cancelBtn = new AppButton("Annuler", AppButton.Variant.SECONDARY);
+        AppButton submitBtn = new AppButton(I18n.get("events.form.submit"), AppButton.Variant.PRIMARY);
+        AppButton cancelBtn = new AppButton(I18n.get("events.form.cancel"), AppButton.Variant.SECONDARY);
         cancelBtn.setOnAction(e -> appModal.hide());
 
         submitBtn.setOnAction(e -> {
             String titleText = titleField.getText().trim();
             if (titleText.isEmpty()) {
-                showError(errorMsg, "Le titre est obligatoire.");
+                showError(errorMsg, I18n.get("events.form.titleRequired"));
                 return;
             }
             if (datePicker.getValue() == null) {
-                showError(errorMsg, "La date est obligatoire.");
+                showError(errorMsg, I18n.get("events.form.dateRequired"));
                 return;
             }
 
             submitBtn.setDisable(true);
-            submitBtn.setText("Création…");
+            submitBtn.setText(I18n.get("events.form.creating"));
             String dateStr = datePicker.getValue().toString();
             String location = locationField.getText().trim();
 
@@ -212,13 +213,13 @@ public class EventsView {
                     Platform.runLater(() -> {
                         appModal.hide();
                         loadAsync();
-                        toast.showSuccess("Événement créé ✓");
+                        toast.showSuccess(I18n.get("events.created"));
                     });
                 } catch (Exception ex) {
                     Platform.runLater(() -> {
                         submitBtn.setDisable(false);
-                        submitBtn.setText("Créer");
-                        showError(errorMsg, "Erreur réseau — réessayez.");
+                        submitBtn.setText(I18n.get("events.form.submit"));
+                        showError(errorMsg, I18n.get("events.form.networkError"));
                     });
                 }
             }, "event-create").start();
@@ -233,7 +234,7 @@ public class EventsView {
                 locationFormLabel, locationField,
                 errorMsg, buttons);
         content.setPadding(new Insets(20));
-        appModal.show("Créer un événement", content);
+        appModal.show(I18n.get("events.form.modalTitle"), content);
     }
 
     private void showError(Label errorMsg, String message) {

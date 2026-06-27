@@ -62,7 +62,9 @@ export class DslService {
                     error instanceof Error
                         ? `${error.name}: ${error.message}`
                         : String(error);
-                this.logger.error(`Failed to load DSL Python module: ${detail}`);
+                this.logger.error(
+                    `Failed to load DSL Python module: ${detail}`,
+                );
                 throw new BadRequestException("DSL engine unavailable");
             }
         }

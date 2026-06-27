@@ -49,9 +49,9 @@ export class MeController {
 
     @Get("export")
     @ApiOperation({
-        summary: "Export de mes données personnelles (RGPD Art. 20)",
+        summary: "Export my personal data (GDPR Art. 20)",
         description:
-            "Retourne toutes les données associées au compte courant : profil, incidents, solde de points, transactions.",
+            "Returns all data associated with the current account: profile, incidents, points balance, transactions.",
     })
     @ApiResponse({ status: 200, type: GdprExportDto })
     async export(@Request() req: AuthRequest) {
@@ -111,20 +111,20 @@ export class MeController {
 
     @Delete()
     @ApiOperation({
-        summary: "Supprimer mon compte (RGPD Art. 17)",
+        summary: "Delete my account (GDPR Art. 17)",
         description:
-            "Anonymise le compte. Requiert une validation TOTP pour prévenir la suppression via token volé. Email remplacé par un hash irréversible, passwordHash et totpSecret effacés, refreshToken révoqué.",
+            "Anonymizes the account. Requires TOTP validation to prevent deletion via a stolen token. Email replaced by an irreversible hash, passwordHash and totpSecret erased, refreshToken revoked.",
     })
     @ApiBody({ type: DeleteAccountBodyDto })
     @ApiResponse({
         status: 200,
         schema: { example: { success: true } },
         description:
-            "Compte anonymisé — email remplacé par un hash, secrets effacés",
+            "Account anonymized — email replaced by a hash, secrets erased",
     })
     @ApiResponse({
         status: 401,
-        description: "Code TOTP invalide ou expiré",
+        description: "TOTP code invalid or expired",
     })
     async deleteAccount(
         @Request() req: AuthRequest,
@@ -144,7 +144,7 @@ export class MeController {
             !pgUser?.totpSecret ||
             !this.totpService.verify(pgUser.totpSecret, body.totpCode)
         ) {
-            throw new UnauthorizedException("Code TOTP invalide");
+            throw new UnauthorizedException("Invalid TOTP code");
         }
 
         const anonymizedEmail = `deleted_${userId}@anonymized.invalid`;
@@ -179,7 +179,7 @@ export class MeController {
         try {
             await session.run(
                 `MATCH (u:User {id: $userId})
-         SET u.email = $anonymizedEmail, u.name = 'Utilisateur supprimé'`,
+         SET u.email = $anonymizedEmail, u.name = 'Deleted user'`,
                 { userId, anonymizedEmail },
             );
         } catch {

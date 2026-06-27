@@ -4,19 +4,19 @@ export class IncidentDto {
     @ApiProperty({ example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890" })
     id: string;
 
-    @ApiProperty({ example: "Lampadaire cassé rue de la Paix" })
+    @ApiProperty({ example: "Broken streetlight on Rue de la Paix" })
     title: string;
 
     @ApiProperty({
         example:
-            "Le lampadaire au numéro 12 est tombé et bloque partiellement le trottoir.",
+            "The streetlight at number 12 has fallen and is partially blocking the sidewalk.",
     })
     description: string;
 
     @ApiProperty({
         example: "open",
         enum: ["open", "in_progress", "resolved"],
-        description: "Machine d'états : open → in_progress → resolved",
+        description: "State machine: open → in_progress → resolved",
     })
     status: string;
 
@@ -48,13 +48,13 @@ export class IncidentDto {
 export class SyncResultDto {
     @ApiProperty({
         example: 2,
-        description: "Nombre d'incidents insérés ou mis à jour",
+        description: "Number of incidents inserted or updated",
     })
     upserted: number;
 
     @ApiProperty({
         example: 1,
-        description: "Incidents ignorés (createdBy ne correspond pas au JWT)",
+        description: "Incidents skipped (createdBy does not match the JWT)",
     })
     skipped: number;
 }

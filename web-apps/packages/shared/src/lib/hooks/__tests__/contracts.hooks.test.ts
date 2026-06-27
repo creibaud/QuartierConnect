@@ -29,7 +29,7 @@ function createWrapper() {
 const mockContract = {
     _id: "ctr-1",
     title: "Contrat de prestation",
-    content: "Le prestataire s'engage à…",
+    content: "The provider agrees to…",
     createdBy: "user-1",
     signatories: ["user-1", "user-2"],
     status: "draft" as const,

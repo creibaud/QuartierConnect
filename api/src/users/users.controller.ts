@@ -40,20 +40,20 @@ export class UsersController {
 
     @Get()
     @ApiOperation({
-        summary: "Lister les utilisateurs (admin)",
+        summary: "List users (admin)",
         description:
-            "Retourne la liste paginée des utilisateurs. Champs retournés : id, email, role, createdAt. Les champs sensibles (passwordHash, totpSecret, refreshTokenHash) sont exclus.",
+            "Returns the paginated list of users. Returned fields: id, email, role, createdAt. Sensitive fields (passwordHash, totpSecret, refreshTokenHash) are excluded.",
     })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
     @ApiResponse({
         status: 200,
         type: [UserPublicDto],
-        description: "Liste paginée des utilisateurs (sans champs sensibles)",
+        description: "Paginated list of users (without sensitive fields)",
     })
     @ApiResponse({
         status: 403,
-        description: "Rôle insuffisant (admin requis)",
+        description: "Insufficient role (admin required)",
     })
     findAll(@Query("page") page = "1", @Query("limit") limit = "20") {
         const pageNum = Math.max(1, parseInt(page) || 1);
@@ -73,25 +73,25 @@ export class UsersController {
 
     @Patch(":id/role")
     @ApiOperation({
-        summary: "Changer le rôle d'un utilisateur (admin)",
+        summary: "Change a user's role (admin)",
         description:
-            "Permet de promouvoir, rétrograder ou bannir un utilisateur. Rôles disponibles : resident, moderator, admin, banned.",
+            "Allows promoting, demoting or banning a user. Available roles: resident, moderator, admin, banned.",
     })
     @ApiParam({
         name: "id",
-        description: "UUID de l'utilisateur",
+        description: "User UUID",
         example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     })
     @ApiResponse({
         status: 200,
         type: UserPublicDto,
-        description: "Utilisateur mis à jour",
+        description: "Updated user",
     })
     @ApiResponse({
         status: 403,
-        description: "Rôle insuffisant (admin requis)",
+        description: "Insufficient role (admin required)",
     })
-    @ApiResponse({ status: 404, description: "Utilisateur introuvable" })
+    @ApiResponse({ status: 404, description: "User not found" })
     async updateRole(@Param("id") id: string, @Body() dto: UpdateRoleDto) {
         const [updated] = await this.db
             .update(schema.users)

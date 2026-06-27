@@ -1,77 +1,77 @@
-# Rapport Technique — QuartierConnect
+# Technical Report — QuartierConnect
 
-> **Projet** : Connected Neighbours · **Groupe** : 1 · **Promo** : 3AL2 · **ESGI 2025-2026**
-> **Rendu** : 19 juillet 2026 · **Enseignant** : Frédéric SANANES
+> **Project** : Connected Neighbours · **Group** : 1 · **Cohort** : 3AL2 · **ESGI 2025-2026**
+> **Submission** : 19 July 2026 · **Instructor** : Frédéric SANANES
 
 ---
 
-## Équipe
+## Team
 
-| Membre | Rôle | Responsabilités |
+| Member | Role | Responsibilities |
 |--------|------|----------------|
-| **Claudio REIBAUD** | Chef de projet & Fullstack Dev | Backend NestJS, React Client & Admin, JavaFX Desktop, Docker, tests |
-| **Andras SCHULLER** | Front-end & Documentation | Tests Jest/Playwright, documentation technique, React |
+| **Claudio REIBAUD** | Project lead & Fullstack Dev | NestJS backend, React Client & Admin, JavaFX Desktop, Docker, tests |
+| **Andras SCHULLER** | Front-end & Documentation | Jest/Playwright tests, technical documentation, React |
 | **Mouhamadou N'DIAYE** | Infrastructure & DevOps | VPS, Caddy, Docker Compose, CI/CD GitHub Actions |
 
 ---
 
-## Table des matières
+## Table of contents
 
-1. [Contexte et objectifs](#1-contexte-et-objectifs)
-2. [Architecture générale](#2-architecture-générale)
-3. [Stack technique détaillée](#3-stack-technique-détaillée)
-4. [Module d'authentification — Analyse complète](#4-module-dauthentification--analyse-complète)
-5. [Gestion des quartiers — GeoJSON et chevauchements](#5-gestion-des-quartiers--geojson-et-chevauchements)
-6. [Système de points — Transactions ACID](#6-système-de-points--transactions-acid)
-7. [Contrats numériques — Signature forte](#7-contrats-numériques--signature-forte)
-8. [Messagerie temps réel — WebSocket](#8-messagerie-temps-réel--websocket)
-9. [Système de votes — Strategy Pattern](#9-système-de-votes--strategy-pattern)
-10. [Votes communautaires — Scrutins multi-types](#10-votes-communautaires--scrutins-multi-types)
-11. [Graphe social Neo4j — Recommandations](#11-graphe-social-neo4j--recommandations)
-12. [DSL — Micro-langage de requête](#12-dsl--micro-langage-de-requête)
-13. [Application Desktop JavaFX](#13-application-desktop-javafx)
-14. [Mode hors-ligne et synchronisation](#14-mode-hors-ligne-et-synchronisation)
-15. [Infrastructure et déploiement](#15-infrastructure-et-déploiement)
-16. [Qualité logicielle et tests](#16-qualité-logicielle-et-tests)
-17. [Bilan et perspectives](#17-bilan-et-perspectives)
+1. [Context and objectives](#1-context-and-objectives)
+2. [Overall architecture](#2-overall-architecture)
+3. [Detailed technical stack](#3-detailed-technical-stack)
+4. [Authentication module — Full analysis](#4-authentication-module--full-analysis)
+5. [Neighbourhood management — GeoJSON and overlaps](#5-neighbourhood-management--geojson-and-overlaps)
+6. [Points system — ACID transactions](#6-points-system--acid-transactions)
+7. [Digital contracts — Strong signature](#7-digital-contracts--strong-signature)
+8. [Real-time messaging — WebSocket](#8-real-time-messaging--websocket)
+9. [Voting system — Strategy Pattern](#9-voting-system--strategy-pattern)
+10. [Community polls — Multi-type ballots](#10-community-polls--multi-type-ballots)
+11. [Neo4j social graph — Recommendations](#11-neo4j-social-graph--recommendations)
+12. [DSL — Query micro-language](#12-dsl--query-micro-language)
+13. [JavaFX Desktop application](#13-javafx-desktop-application)
+14. [Offline mode and synchronization](#14-offline-mode-and-synchronization)
+15. [Infrastructure and deployment](#15-infrastructure-and-deployment)
+16. [Software quality and testing](#16-software-quality-and-testing)
+17. [Outcome and outlook](#17-outcome-and-outlook)
 
 ---
 
-## 1. Contexte et objectifs
+## 1. Context and objectives
 
-### 1.1 Problème identifié
+### 1.1 Problem identified
 
-Les quartiers résidentiels manquent d'outils numériques adaptés pour structurer l'entraide locale, formaliser les échanges de services et gérer les affaires communautaires. Les solutions généralistes (WhatsApp, Facebook Groups) ne proposent ni sécurité forte, ni traçabilité des engagements, ni fonctionnement hors-ligne.
+Residential neighbourhoods lack suitable digital tools to structure local mutual aid, formalize service exchanges, and manage community affairs. General-purpose solutions (WhatsApp, Facebook Groups) offer neither strong security, nor traceability of commitments, nor offline operation.
 
-### 1.2 Solution proposée
+### 1.2 Proposed solution
 
-QuartierConnect est une **plateforme communautaire géolocalisée et sécurisée** permettant aux habitants d'un quartier de :
+QuartierConnect is a **geolocated and secure community platform** that lets the residents of a neighbourhood:
 
-- Échanger des services valorisés par un système de points
-- Signer des documents numériques (SHA-256 + MFA)
-- Participer à des événements avec recommandations personnalisées (Neo4j)
-- Communiquer en temps réel (WebSocket)
-- Gérer incidents et alertes via une application desktop offline-first
+- Exchange services valued through a points system
+- Sign digital documents (SHA-256 + MFA)
+- Take part in events with personalized recommendations (Neo4j)
+- Communicate in real time (WebSocket)
+- Manage incidents and alerts via an offline-first desktop application
 
-### 1.3 Public cible et surfaces
+### 1.3 Target audience and surfaces
 
-| Profil | Surface | Permissions |
+| Profile | Surface | Permissions |
 |--------|---------|------------|
-| Habitant | React Client web :3000 | Services, événements, messagerie, votes, contrats |
-| Modérateur | React Client web :3000 | + Modération incidents |
-| Administrateur | React Admin web :3001 + JavaFX | + Back-office complet, desktop sync |
+| Resident | React Client web :3000 | Services, events, messaging, votes, contracts |
+| Moderator | React Client web :3000 | + Incident moderation |
+| Administrator | React Admin web :3001 + JavaFX | + Full back-office, desktop sync |
 
 ---
 
-## 2. Architecture générale
+## 2. Overall architecture
 
-### 2.1 Vue macroscopique — 7 conteneurs Docker
+### 2.1 High-level view — 7 Docker containers
 
 ```mermaid
 graph TB
-    subgraph Utilisateurs
-        HAB[Habitant navigateur]
-        ADM[Admin navigateur]
+    subgraph Users
+        HAB[Resident browser]
+        ADM[Admin browser]
         DKP[Desktop JavaFX]
     end
 
@@ -79,19 +79,19 @@ graph TB
         CADDY["Caddy :80/:443<br/>Reverse proxy HTTPS"]
 
         subgraph Frontends
-            CLI["React Client :3000<br/>Interface habitant"]
+            CLI["React Client :3000<br/>Resident interface"]
             ADI["React Admin :3001<br/>Back-office"]
         end
 
         subgraph API
             NEST["NestJS :5000<br/>REST + WebSocket + DSL"]
-            PYTHON["Python DSL<br/>PLY - port interne"]
+            PYTHON["Python DSL<br/>PLY - internal port"]
         end
 
-        subgraph Bases de données
-            MONGO["MongoDB :27017<br/>Documents flexibles"]
-            PG["PostgreSQL :5432<br/>ACID relationnel"]
-            N4J["Neo4j :7474/:7687<br/>Graphe social"]
+        subgraph Databases
+            MONGO["MongoDB :27017<br/>Flexible documents"]
+            PG["PostgreSQL :5432<br/>Relational ACID"]
+            N4J["Neo4j :7474/:7687<br/>Social graph"]
         end
     end
 
@@ -113,7 +113,7 @@ graph TB
     JAVA --- SL
 ```
 
-### 2.2 Routage Caddy
+### 2.2 Caddy routing
 
 ```caddyfile
 quartierconnect.local {
@@ -123,104 +123,104 @@ quartierconnect.local {
 }
 ```
 
-### 2.3 Pourquoi trois bases de données ?
+### 2.3 Why three databases?
 
-Le choix d'un tri-base n'est pas une complexité gratuite — chaque base est choisie pour ses propriétés fondamentales :
+The choice of a tri-database setup is not gratuitous complexity — each database is chosen for its fundamental properties:
 
 ```mermaid
 graph LR
-    subgraph "PostgreSQL — ACID strict"
-        PG1[users auth rôles tokens]
-        PG2[incidents machine d états]
-        PG3[points balances et transactions]
+    subgraph "PostgreSQL — Strict ACID"
+        PG1[users auth roles tokens]
+        PG2[incidents state machine]
+        PG3[points balances and transactions]
     end
 
-    subgraph "MongoDB — Documents flexibles"
+    subgraph "MongoDB — Flexible documents"
         M1[neighborhoods GeoJSON 2dsphere]
-        M2[services events contrats]
-        M3[messagerie votes documents GridFS]
+        M2[services events contracts]
+        M3[messaging votes documents GridFS]
         M4[ssoTokens TTL auto]
     end
 
-    subgraph "Neo4j — Graphe social"
+    subgraph "Neo4j — Social graph"
         N1[User LIVES_IN Neighborhood]
         N2[Service LOCATED_IN Neighborhood]
         N3[Event HELD_IN Neighborhood]
-        N4[Recommandations Cypher]
+        N4[Recommendations Cypher]
     end
 ```
 
-| Critère décisif | PostgreSQL | MongoDB | Neo4j |
+| Decisive criterion | PostgreSQL | MongoDB | Neo4j |
 |----------------|-----------|---------|-------|
-| Transactions atomiques multi-tables | Oui | Non | Non |
-| Schéma GeoJSON natif | Non | Oui (2dsphere) | Non |
-| Traversals de graphe efficaces | Non | Non | Oui |
-| Cas d'usage QuartierConnect | Points, auth | Quartiers, services | Recommandations |
+| Atomic multi-table transactions | Yes | No | No |
+| Native GeoJSON schema | No | Yes (2dsphere) | No |
+| Efficient graph traversals | No | No | Yes |
+| QuartierConnect use case | Points, auth | Neighbourhoods, services | Recommendations |
 
 ---
 
-## 3. Stack technique détaillée
+## 3. Detailed technical stack
 
-| Couche | Technologie | Version | Justification |
+| Layer | Technology | Version | Rationale |
 |--------|------------|---------|--------------|
-| **Back-end** | NestJS | 11 | Modulaire, DI native, guards, WebSocket |
-| **ORM PostgreSQL** | Drizzle ORM | — | Type-safe, migrations, pas de magie |
-| **ODM MongoDB** | Mongoose | — | Schéma strict, hooks, TypeScript |
-| **Graphe** | neo4j-driver | 5 | Cypher natif, sessions managées |
-| **Auth** | Passport-JWT | — | Standard NestJS, extensible |
-| **Hachage** | argon2 npm | — | Argon2id vainqueur PHC 2015 |
-| **TOTP** | speakeasy | — | RFC 6238, fenêtre ±1 |
-| **WebSocket** | Socket.io | — | Rooms, namespaces, reconnect auto |
-| **DSL** | PLY (Python) | — | Lexer/parser LALR(1) production-ready |
-| **Bridge Python** | pythonia | — | Appel Python synchrone depuis Node.js |
+| **Back-end** | NestJS | 11 | Modular, native DI, guards, WebSocket |
+| **PostgreSQL ORM** | Drizzle ORM | — | Type-safe, migrations, no magic |
+| **MongoDB ODM** | Mongoose | — | Strict schema, hooks, TypeScript |
+| **Graph** | neo4j-driver | 5 | Native Cypher, managed sessions |
+| **Auth** | Passport-JWT | — | NestJS standard, extensible |
+| **Hashing** | argon2 npm | — | Argon2id PHC 2015 winner |
+| **TOTP** | speakeasy | — | RFC 6238, ±1 window |
+| **WebSocket** | Socket.io | — | Rooms, namespaces, auto reconnect |
+| **DSL** | PLY (Python) | — | Production-ready LALR(1) lexer/parser |
+| **Python bridge** | pythonia | — | Synchronous Python call from Node.js |
 | **Front-end** | React 19 + Vite | — | HMR, Server Components |
 | **Routing** | TanStack Router | — | File-based, type-safe |
-| **Formulaires** | TanStack Form | v1 | Validation côté client |
-| **UI** | Shadcn/ui + Tailwind v4 | — | Composants accessibles |
-| **Desktop** | JavaFX + Maven | 21 | Fat JAR portable, FXML |
-| **SQLite Java** | JDBC sqlite | — | Cache local offline |
-| **CI/CD** | GitHub Actions | — | Build + tests automatisés |
-| **Proxy** | Caddy 2 | — | Let's Encrypt automatique |
+| **Forms** | TanStack Form | v1 | Client-side validation |
+| **UI** | Shadcn/ui + Tailwind v4 | — | Accessible components |
+| **Desktop** | JavaFX + Maven | 21 | Portable Fat JAR, FXML |
+| **SQLite Java** | JDBC sqlite | — | Local offline cache |
+| **CI/CD** | GitHub Actions | — | Automated build + tests |
+| **Proxy** | Caddy 2 | — | Automatic Let's Encrypt |
 
 ---
 
-## 4. Module d'authentification — Analyse complète
+## 4. Authentication module — Full analysis
 
-### 4.1 Algorithme de hachage — Argon2id
+### 4.1 Hashing algorithm — Argon2id
 
-Argon2id est le vainqueur du Password Hashing Competition (PHC) 2015. Il combine :
-- **Argon2d** : résistance aux attaques GPU grâce au coût mémoire dépendant des données
-- **Argon2i** : résistance aux attaques par canal latéral (side-channel)
+Argon2id is the winner of the Password Hashing Competition (PHC) 2015. It combines:
+- **Argon2d** : resistance to GPU attacks thanks to data-dependent memory cost
+- **Argon2i** : resistance to side-channel attacks
 
-Paramètres effectifs :
+Effective parameters:
 ```
 memoryCost: 65536 (64 MB)
-timeCost: 3 itérations
+timeCost: 3 iterations
 parallelism: 4 threads
 ```
 
-Un attaquant avec un GPU haut de gamme ne peut pas paralléliser le calcul car chaque itération dépend de 64 MB de mémoire.
+An attacker with a high-end GPU cannot parallelize the computation because each iteration depends on 64 MB of memory.
 
-### 4.2 TOTP — Fonctionnement détaillé
+### 4.2 TOTP — Detailed operation
 
 RFC 6238 : Time-based One-Time Password.
 
 ```
-Code TOTP = HOTP(secret, T)
-où T = floor(Unix_timestamp / 30)
-et HOTP(K, C) = truncate(HMAC-SHA1(K, C_bytes_big_endian))
+TOTP code = HOTP(secret, T)
+where T = floor(Unix_timestamp / 30)
+and HOTP(K, C) = truncate(HMAC-SHA1(K, C_bytes_big_endian))
 ```
 
-**Anti-replay** : un code TOTP valide 30s peut être soumis plusieurs fois dans cette fenêtre. La mitigation :
+**Anti-replay** : a TOTP code valid for 30s can be submitted several times within that window. The mitigation:
 
 ```typescript
 const key = `${secret}:${token}`;
-if (this.usedCodes.state[key] !== undefined) return false;  // déjà utilisé
-// Mémoriser 90s (couvre fenêtre ±1)
+if (this.usedCodes.state[key] !== undefined) return false;  // already used
+// Remember for 90s (covers ±1 window)
 this.usedCodes.setState(prev => ({ ...prev, [key]: Date.now() + 90_000 }));
 ```
 
-### 4.3 JWT — Détail du payload et des durées
+### 4.3 JWT — Payload and lifetime details
 
 ```json
 {
@@ -233,11 +233,11 @@ this.usedCodes.setState(prev => ({ ...prev, [key]: Date.now() + 90_000 }));
 }
 ```
 
-- `jti` (JWT ID) : UUID v4 unique par token — permet audit et révocation future
-- access token : **15 minutes** — courte durée limite la fenêtre d'attaque si volé
-- refresh token : **7 jours** — hashé Argon2 en base PostgreSQL
+- `jti` (JWT ID) : unique UUID v4 per token — enables auditing and future revocation
+- access token : **15 minutes** — short lifetime limits the attack window if stolen
+- refresh token : **7 days** — Argon2-hashed in the PostgreSQL database
 
-### 4.4 SSO — Single Sign-On cross-surface
+### 4.4 SSO — Cross-surface Single Sign-On
 
 ```mermaid
 sequenceDiagram
@@ -250,30 +250,30 @@ sequenceDiagram
     Web->>API: POST /auth/sso/generate {surface:"desktop", state}
     API->>Mongo: INSERT {token:UUIDv4, userId, state, expiresAt:+300s, usedAt:null}
     API-->>Web: {ssoToken, expiresIn:300}
-    Web->>Web: Affiche countdown 5min
+    Web->>Web: Shows 5min countdown
 
-    Web->>Java: URL deep link avec ssoToken+state
-    Java->>Java: Vérifie state == state local
+    Web->>Java: Deep link URL with ssoToken+state
+    Java->>Java: Checks state == local state
     Java->>API: POST /auth/sso/exchange {ssoToken, state}
-    API->>Mongo: findOneAndUpdate — atomique — usedAt = now
-    Note over API,Mongo: Replay impossible — usage unique garanti
+    API->>Mongo: findOneAndUpdate — atomic — usedAt = now
+    Note over API,Mongo: Replay impossible — single use guaranteed
     API-->>Java: {accessToken, refreshToken}
     Java->>Java: saveSession SQLite
 ```
 
-**Propriétés de sécurité** :
-- Token UUID v4 : 122 bits d'entropie — non devinable
-- TTL 5 minutes : fenêtre d'attaque minimale
-- `findOneAndUpdate` atomique : pas de race condition possible
-- State PKCE : empêche l'injection de token par un tiers
+**Security properties** :
+- UUID v4 token : 122 bits of entropy — not guessable
+- 5-minute TTL : minimal attack window
+- Atomic `findOneAndUpdate` : no race condition possible
+- PKCE state : prevents token injection by a third party
 
 ---
 
-## 5. Gestion des quartiers — GeoJSON et chevauchements
+## 5. Neighbourhood management — GeoJSON and overlaps
 
-### 5.1 Schéma GeoJSON
+### 5.1 GeoJSON schema
 
-Chaque quartier est défini par un **polygone GeoJSON** stocké dans MongoDB avec un index `2dsphere` :
+Each neighbourhood is defined by a **GeoJSON polygon** stored in MongoDB with a `2dsphere` index:
 
 ```javascript
 {
@@ -284,9 +284,9 @@ Chaque quartier est défini par un **polygone GeoJSON** stocké dans MongoDB ave
 }
 ```
 
-L'index `2dsphere` permet des requêtes géospatiales natives MongoDB (`$geoIntersects`, `$geoWithin`, `$near`).
+The `2dsphere` index enables native MongoDB geospatial queries (`$geoIntersects`, `$geoWithin`, `$near`).
 
-### 5.2 Détection de chevauchements
+### 5.2 Overlap detection
 
 ```typescript
 // neighborhoods.service.ts
@@ -298,52 +298,52 @@ async assertNoOverlap(geometry: GeoJsonPolygon, excludeId?: string): Promise<voi
   const conflicts = overlapping.filter(n => n._id.toString() !== excludeId);
   if (conflicts.length > 0) {
     throw new ConflictException(
-      `Le polygone chevauche ${conflicts.length} quartier(s) : ${conflicts.map(n => n.name).join(', ')}`
+      `The polygon overlaps ${conflicts.length} neighbourhood(s): ${conflicts.map(n => n.name).join(', ')}`
     );
   }
 }
 ```
 
-La requête `$geoIntersects` utilise l'algorithme géodésique de MongoDB — elle détecte tout chevauchement même partiel entre deux polygones.
+The `$geoIntersects` query uses MongoDB's geodesic algorithm — it detects any overlap, even partial, between two polygons.
 
 ---
 
-## 6. Système de points — Transactions ACID
+## 6. Points system — ACID transactions
 
-### 6.1 Algorithme de transfert
+### 6.1 Transfer algorithm
 
-Le solde minimum autorisé est **-10 points** (découvert limité). Le transfert est entièrement dans une transaction PostgreSQL :
+The minimum allowed balance is **-10 points** (limited overdraft). The transfer runs entirely within a PostgreSQL transaction:
 
 ```typescript
 // points.service.ts
 await this.db.transaction(async (tx) => {
-  // 1. Lire le solde avec verrou exclusif (FOR UPDATE = pas de lecture fantôme)
+  // 1. Read the balance with an exclusive lock (FOR UPDATE = no phantom read)
   const [senderRow] = await tx.execute(
     sql`SELECT id, balance FROM points_balances WHERE user_id = ${senderId} FOR UPDATE`
   );
 
   const currentBalance = senderRow?.balance ?? 0;
 
-  // 2. Vérifier le solde minimum
+  // 2. Check the minimum balance
   if (currentBalance - dto.amount < MIN_BALANCE) {    // MIN_BALANCE = -10
     throw new BadRequestException(`Insufficient balance`);
   }
 
-  // 3. Décrémenter sender (upsert idempotent)
+  // 3. Decrement sender (idempotent upsert)
   await tx.insert(pointsBalances).values({ userId: senderId, balance: -dto.amount })
     .onConflictDoUpdate({
       target: pointsBalances.userId,
       set: { balance: sql`points_balances.balance - ${dto.amount}` },
     });
 
-  // 4. Incrémenter recipient
+  // 4. Increment recipient
   await tx.insert(pointsBalances).values({ userId: dto.recipientId, balance: dto.amount })
     .onConflictDoUpdate({
       target: pointsBalances.userId,
       set: { balance: sql`points_balances.balance + ${dto.amount}` },
     });
 
-  // 5. Enregistrer la transaction
+  // 5. Record the transaction
   await tx.insert(pointsTransactions).values({
     senderId, recipientId: dto.recipientId, amount: dto.amount, note: dto.note
   });
@@ -358,50 +358,50 @@ sequenceDiagram
     participant PT as points_transactions
 
     S->>TX: BEGIN
-    TX->>PB: SELECT balance FOR UPDATE (verrou exclusif)
+    TX->>PB: SELECT balance FOR UPDATE (exclusive lock)
     PB-->>TX: balance = 50
     TX->>TX: 50 - 30 = 20 >= -10 OK
     TX->>PB: UPSERT sender balance - 30
     TX->>PB: UPSERT recipient balance + 30
     TX->>PT: INSERT transaction record
     TX->>S: COMMIT
-    Note over TX: Si une étape échoue → ROLLBACK automatique
+    Note over TX: If a step fails → automatic ROLLBACK
 ```
 
-**Pourquoi `FOR UPDATE` ?** Empêche qu'un autre transfert concurrent lise le même solde avant que le premier ne soit commité (évite la double dépense).
+**Why `FOR UPDATE`?** It prevents another concurrent transfer from reading the same balance before the first one is committed (avoids double spending).
 
 ---
 
-## 7. Contrats numériques — Signature forte
+## 7. Digital contracts — Strong signature
 
-### 7.1 Hash du contenu
+### 7.1 Content hash
 
-À la création, un hash SHA-256 du contenu est calculé et stocké :
+At creation time, a SHA-256 hash of the content is computed and stored:
 
 ```typescript
 const hash = crypto.createHash('sha256').update(dto.content).digest('hex');
 // contentHash = "a1b2c3d4..."
 ```
 
-### 7.2 Signature individuelle avec TOTP
+### 7.2 Individual signature with TOTP
 
-Chaque signataire doit fournir un code TOTP valide. La signature inclut contenu + identité + timestamp :
+Each signatory must provide a valid TOTP code. The signature includes content + identity + timestamp:
 
 ```typescript
 async sign(id: string, userId: string, totpCode: string) {
-  // 1. Vérifier TOTP
+  // 1. Verify TOTP
   const isValid = this.totpService.verify(user.totpSecret, totpCode);
   if (!isValid) throw new BadRequestException('Invalid TOTP code');
 
-  // 2. Calculer hash de signature
+  // 2. Compute signature hash
   const hash = crypto.createHash('sha256')
     .update(contract.content + userId + new Date().toISOString())
     .digest('hex');
 
-  // 3. Ajouter la signature
+  // 3. Add the signature
   contract.signatures.push({ userId, signedAt: new Date(), hash });
 
-  // 4. Vérifier si tous les signataires ont signé
+  // 4. Check whether all signatories have signed
   const allSigned = contract.signatories.every(s =>
     contract.signatures.some(sig => sig.userId === s)
   );
@@ -413,24 +413,24 @@ async sign(id: string, userId: string, totpCode: string) {
 
 ```mermaid
 flowchart TD
-    A[Signataire soumet totpCode] --> B{TOTP valide?}
-    B -->|Non| C[400 Invalid TOTP]
-    B -->|Oui| D{Déjà signé?}
-    D -->|Oui| E[400 Already signed]
-    D -->|Non| F[Calculer SHA-256 content+userId+timestamp]
-    F --> G[Ajouter signature au document]
-    G --> H{Tous les signataires ont signé?}
-    H -->|Oui| I[Status → signed, signedAt = now]
-    H -->|Non| J[Status → pending_signature]
+    A[Signatory submits totpCode] --> B{Valid TOTP?}
+    B -->|No| C[400 Invalid TOTP]
+    B -->|Yes| D{Already signed?}
+    D -->|Yes| E[400 Already signed]
+    D -->|No| F[Compute SHA-256 content+userId+timestamp]
+    F --> G[Add signature to the document]
+    G --> H{All signatories signed?}
+    H -->|Yes| I[Status → signed, signedAt = now]
+    H -->|No| J[Status → pending_signature]
 ```
 
 ---
 
-## 8. Messagerie temps réel — WebSocket
+## 8. Real-time messaging — WebSocket
 
-### 8.1 Architecture Socket.io
+### 8.1 Socket.io architecture
 
-Le `MessagingGateway` gère le namespace `/messaging`. Chaque connexion est authentifiée via JWT.
+The `MessagingGateway` manages the `/messaging` namespace. Each connection is authenticated via JWT.
 
 ```typescript
 handleConnection(client: Socket) {
@@ -443,7 +443,7 @@ handleConnection(client: Socket) {
 }
 ```
 
-### 8.2 Flux envoi de message
+### 8.2 Message-send flow
 
 ```mermaid
 sequenceDiagram
@@ -460,25 +460,25 @@ sequenceDiagram
 
     A->>GW: emit("send_message", {conversationId, content: "Bonjour!"})
     GW->>SVC: sendMessage(convId, aliceId, "Bonjour!", TEXT)
-    SVC->>M: INSERT message + UPDATE lastMessage dans conversation
+    SVC->>M: INSERT message + UPDATE lastMessage in conversation
     M-->>SVC: message document
     GW->>GW: server.to("conversation:conv-id-123").emit("new_message", message)
-    Note over GW: Tous les participants connectés reçoivent le message
+    Note over GW: All connected participants receive the message
 ```
 
-### 8.3 Sécurité du WebSocket
+### 8.3 WebSocket security
 
-- Connexion refusée si JWT absent ou invalide
-- `isParticipant` vérifié avant chaque `join_conversation`
-- Les rooms sont nommées `conversation:{id}` — isolées par conversation
+- Connection refused if the JWT is missing or invalid
+- `isParticipant` checked before each `join_conversation`
+- Rooms are named `conversation:{id}` — isolated per conversation
 
 ---
 
-## 9. Système de votes — Strategy Pattern
+## 9. Voting system — Strategy Pattern
 
-### 9.1 Pourquoi le Strategy Pattern ?
+### 9.1 Why the Strategy Pattern?
 
-Les votes ont deux modes (up/down pour incidents, like/dislike pour services) avec des règles différentes. Sans Strategy, on aurait une cascade de `if/switch` dans le service. Avec Strategy, chaque mode est une classe indépendante.
+Votes have two modes (up/down for incidents, like/dislike for services) with different rules. Without Strategy, we would have a cascade of `if/switch` statements in the service. With Strategy, each mode is an independent class.
 
 ```mermaid
 classDiagram
@@ -505,43 +505,43 @@ classDiagram
     VoteStrategyFactory --> VoteStrategy
 ```
 
-### 9.2 Logique toggle
+### 9.2 Toggle logic
 
-Un même vote soumis deux fois s'annule (toggle off). Un vote différent remplace l'ancien.
+The same vote submitted twice cancels itself out (toggle off). A different vote replaces the previous one.
 
 ```mermaid
 flowchart TD
     A[POST /votes targetId targetType voteType] --> B[findOne userId+targetId+targetType]
-    B --> C{Vote existant?}
-    C -->|Non| D[CREATE → action:'added']
-    C -->|Oui, même voteType| E[DELETE → action:'removed']
-    C -->|Oui, voteType différent| F[UPDATE voteType → action:'changed']
+    B --> C{Existing vote?}
+    C -->|No| D[CREATE → action:'added']
+    C -->|Yes, same voteType| E[DELETE → action:'removed']
+    C -->|Yes, different voteType| F[UPDATE voteType → action:'changed']
 ```
 
 ---
 
-## 10. Votes communautaires — Scrutins multi-types
+## 10. Community polls — Multi-type ballots
 
-### 10.1 Types de scrutin
+### 10.1 Ballot types
 
-| Type | Règle | Cas d'usage |
+| Type | Rule | Use case |
 |------|-------|------------|
-| `binary` | 1 choix parmi {oui, non} | Approbation règlement |
-| `single_choice` | 1 choix parmi N options | Élection représentant |
-| `multiple_choice` | 1 à N choix | Choix date réunion |
-| `weighted` | Poids (1-10) par option | Priorités travaux |
+| `binary` | 1 choice among {yes, no} | Approve regulation |
+| `single_choice` | 1 choice among N options | Elect representative |
+| `multiple_choice` | 1 to N choices | Choose meeting date |
+| `weighted` | Weight (1-10) per option | Work priorities |
 
-### 10.2 Calcul des résultats pondérés
+### 10.2 Computing weighted results
 
 ```typescript
 for (const cast of vote.casts) {
   if (vote.voteType === CommunityVoteType.WEIGHTED && cast.weights) {
     for (const [optionId, weight] of Object.entries(cast.weights)) {
-      totals[optionId] = (totals[optionId] ?? 0) + weight;  // somme des poids
+      totals[optionId] = (totals[optionId] ?? 0) + weight;  // sum of weights
     }
   } else {
     for (const choice of cast.choices) {
-      totals[choice] = (totals[choice] ?? 0) + 1;  // comptage simple
+      totals[choice] = (totals[choice] ?? 0) + 1;  // simple count
     }
   }
 }
@@ -551,24 +551,24 @@ for (const cast of vote.casts) {
 
 ```typescript
 const quorumReached = vote.quorum === 0 || vote.casts.length >= vote.quorum;
-// quorum=0 signifie : pas de quorum minimum requis
+// quorum=0 means: no minimum quorum required
 ```
 
-Le vote est automatiquement fermé (`status = 'closed'`) à la lecture des résultats si `endsAt` est dépassé.
+The vote is automatically closed (`status = 'closed'`) when results are read if `endsAt` has passed.
 
 ---
 
-## 11. Graphe social Neo4j — Recommandations
+## 11. Neo4j social graph — Recommendations
 
-### 11.1 Modèle de graphe
+### 11.1 Graph model
 
 ```mermaid
 graph LR
     U1(["User<br/>alice"])
     U2(["User<br/>bob"])
     N1(["Neighborhood<br/>Belleville"])
-    S1(["Service<br/>Jardinage"])
-    E1(["Event<br/>Vide-grenier"])
+    S1(["Service<br/>Gardening"])
+    E1(["Event<br/>Flea market"])
 
     U1 -->|LIVES_IN| N1
     U2 -->|LIVES_IN| N1
@@ -578,10 +578,10 @@ graph LR
     U2 -->|USED| S1
 ```
 
-### 11.2 Requête de recommandation Cypher
+### 11.2 Cypher recommendation query
 
 ```cypher
--- Services proches non utilisés
+-- Nearby unused services
 MATCH (u:User {id: $userId})-[:LIVES_IN]->(n:Neighborhood)
 OPTIONAL MATCH (n)<-[:LOCATED_IN]-(s:Service)
 WHERE NOT (u)-[:USED]->(s)
@@ -590,7 +590,7 @@ RETURN s.id AS id, s.name AS name, 'service' AS type, 3 AS score,
 
 UNION
 
--- Événements à venir proches
+-- Nearby upcoming events
 MATCH (u:User {id: $userId})-[:LIVES_IN]->(n:Neighborhood)
 OPTIONAL MATCH (n)<-[:HELD_IN]-(e:Event)
 WHERE NOT (u)-[:ATTENDING]->(e) AND e.date > datetime()
@@ -600,36 +600,36 @@ RETURN e.id AS id, e.name AS name, 'event' AS type, 2 AS score,
 ORDER BY score DESC LIMIT 10
 ```
 
-### 11.3 Sync temps réel (fire-and-forget)
+### 11.3 Real-time sync (fire-and-forget)
 
 ```typescript
-// Exemple dans neighborhoods.controller.ts
+// Example in neighborhoods.controller.ts
 async create(@Body() dto, @Request() req) {
-  const created = await this.neighborhoodModel.create(dto);    // MongoDB principal
-  void this.socialService.syncNeighborhood(                    // Neo4j non-bloquant
+  const created = await this.neighborhoodModel.create(dto);    // Primary MongoDB
+  void this.socialService.syncNeighborhood(                    // Neo4j non-blocking
     created._id.toString(), created.name
   );
-  return created;  // réponse immédiate — Neo4j ne bloque jamais
+  return created;  // immediate response — Neo4j never blocks
 }
 ```
 
 ```mermaid
 flowchart LR
-    A[CRUD Endpoint] --> B[MongoDB principal]
-    B --> C[Réponse HTTP au client]
-    B --> D["void socialService.syncX()<br/>non-bloquant"]
-    D --> E{Neo4j dispo?}
-    E -->|Oui| F[MERGE nœud + relations]
-    E -->|Non| G[Logger.warn ignoré]
+    A[CRUD Endpoint] --> B[Primary MongoDB]
+    B --> C[HTTP response to the client]
+    B --> D["void socialService.syncX()<br/>non-blocking"]
+    D --> E{Neo4j available?}
+    E -->|Yes| F[MERGE node + relations]
+    E -->|No| G[Logger.warn ignored]
 ```
 
 ---
 
-## 12. DSL — Micro-langage de requête
+## 12. DSL — Query micro-language
 
-### 12.1 Grammaire complète
+### 12.1 Complete grammar
 
-Le DSL est implémenté avec **PLY** (Python Lex-Yacc) — un générateur LALR(1) production-ready.
+The DSL is implemented with **PLY** (Python Lex-Yacc) — a production-ready LALR(1) generator.
 
 ```
 query : FIND IDENTIFIER
@@ -654,7 +654,7 @@ condition : IDENTIFIER EQ value         → {field: value}
 value : STRING | NUMBER | IDENTIFIER
 ```
 
-### 12.2 Pipeline de compilation
+### 12.2 Compilation pipeline
 
 ```mermaid
 flowchart LR
@@ -662,8 +662,8 @@ flowchart LR
     B["Tokens<br/>FIND IDENTIFIER WHERE<br/>IDENTIFIER EQ STRING LIMIT NUMBER"]
     C["AST dict<br/>{type:'find', collection:'incidents',<br/>filter:{status:'open'}, limit:10}"]
     D["Validation whitelist<br/>{incidents,neighborhoods,<br/>services,events,users}"]
-    E["MongoDB query dict<br/>prêt pour motor.find()"]
-    F["Résultat JSON<br/>[{_id, title, ...}]"]
+    E["MongoDB query dict<br/>ready for motor.find()"]
+    F["JSON result<br/>[{_id, title, ...}]"]
 
     A -->|Lexer PLY| B
     B -->|Parser LALR| C
@@ -672,13 +672,13 @@ flowchart LR
     E -->|Motor Python| F
 ```
 
-### 12.3 Sécurité du DSL
+### 12.3 DSL security
 
-1. **Whitelist de collections** : seules 5 collections sont autorisées. `FIND passwords` → `ValueError`
-2. **Paramétrage natif** : les valeurs passent par le moteur MongoDB, pas de concaténation de chaîne
-3. **Bridge pythonia** : le DSL est exécuté dans un processus Python isolé
+1. **Collection whitelist** : only 5 collections are allowed. `FIND passwords` → `ValueError`
+2. **Native parameterization** : values pass through the MongoDB engine, no string concatenation
+3. **pythonia bridge** : the DSL is executed in an isolated Python process
 
-### 12.4 Exemples
+### 12.4 Examples
 
 ```
 FIND incidents WHERE status = 'open'
@@ -699,23 +699,23 @@ FIND services WHERE title LIKE 'jardin'
 
 ---
 
-## 13. Application Desktop JavaFX
+## 13. JavaFX Desktop application
 
 ### 13.1 Architecture
 
 ```
 desktop-app/src/main/java/fr/quartierconnect/desktopapp/
-├── MainApp.java              extends Application — point d'entrée JavaFX
+├── MainApp.java              extends Application — JavaFX entry point
 ├── Launcher.java             main() → Application.launch()
 ├── views/
-│   ├── LoginView.java        SSO flow + mode offline
-│   └── MainView.java         BorderPane sidebar + contenu
+│   ├── LoginView.java        SSO flow + offline mode
+│   └── MainView.java         BorderPane sidebar + content
 ├── services/
-│   ├── AuthService.java      Singleton — tokens + session SQLite
+│   ├── AuthService.java      Singleton — tokens + SQLite session
 │   ├── ApiService.java       HttpClient Java 11 + retry 401
 │   ├── SyncService.java      ScheduledExecutorService 30s
-│   ├── SsoCallbackServer.java Serveur HTTP local — reçoit callback PKCE
-│   └── StatisticsService.java Stats live depuis API
+│   ├── SsoCallbackServer.java Local HTTP server — receives PKCE callback
+│   └── StatisticsService.java Live stats from API
 └── database/
     └── SQLiteDatabase.java   JDBC — incidents + sync_log + session
 ```
@@ -738,9 +738,9 @@ desktop-app/src/main/java/fr/quartierconnect/desktopapp/
 </plugin>
 ```
 
-Le JAR résultant (~25 MB) contient toutes les dépendances — il s'exécute avec `java -jar quartierconnect-desktop.jar` sans installation.
+The resulting JAR (~25 MB) contains all dependencies — it runs with `java -jar quartierconnect-desktop.jar` without installation.
 
-### 13.3 Système de plugins
+### 13.3 Plugin system
 
 ```java
 // PluginRegistry.java
@@ -751,23 +751,23 @@ public interface QuartierConnectPlugin {
     void onUnload();
 }
 
-// Chargement dynamique (runtime)
+// Dynamic loading (runtime)
 public void register(QuartierConnectPlugin plugin) {
     try {
         plugin.onLoad(context);
         plugins.put(plugin.getId(), plugin);
     } catch (Exception e) {
         log.severe("Plugin " + plugin.getId() + " failed to load: " + e.getMessage());
-        // Échec gracieux — le reste de l'application continue
+        // Graceful failure — the rest of the application continues
     }
 }
 ```
 
 ---
 
-## 14. Mode hors-ligne et synchronisation
+## 14. Offline mode and synchronization
 
-### 14.1 Machine d'états du démarrage
+### 14.1 Startup state machine
 
 ```mermaid
 stateDiagram-v2
@@ -775,32 +775,32 @@ stateDiagram-v2
 
     Startup --> CheckSQLite : tryResumeFromDatabase()
 
-    CheckSQLite --> NoSession : SQLite vide
-    CheckSQLite --> HasSession : Session trouvée
+    CheckSQLite --> NoSession : SQLite empty
+    CheckSQLite --> HasSession : Session found
 
-    NoSession --> LoginSSO : Affiche bouton SSO
+    NoSession --> LoginSSO : Show SSO button
 
     HasSession --> CheckNetwork : GET /health timeout 3s
 
-    CheckNetwork --> TryRefresh : Réseau OK
-    CheckNetwork --> OfflineDirect : Réseau KO
+    CheckNetwork --> TryRefresh : Network OK
+    CheckNetwork --> OfflineDirect : Network KO
 
     TryRefresh --> MainView : refresh OK
-    TryRefresh --> ShowChoice : refresh KO serveur
+    TryRefresh --> ShowChoice : refresh KO server
 
-    OfflineDirect --> MainView : access token encore valide
-    OfflineDirect --> ShowChoice : access token expiré
+    OfflineDirect --> MainView : access token still valid
+    OfflineDirect --> ShowChoice : access token expired
 
-    ShowChoice --> MainView : Continuer hors-ligne
-    ShowChoice --> LoginSSO : Se reconnecter
+    ShowChoice --> MainView : Continue offline
+    ShowChoice --> LoginSSO : Log in again
 
-    LoginSSO --> MainView : SSO échangé
+    LoginSSO --> MainView : SSO exchanged
     MainView --> [*]
 ```
 
-### 14.2 Extraction de l'email sans réseau
+### 14.2 Extracting the email without network
 
-L'email est extrait du payload JWT (base64 décodeé) et mis en cache en SQLite. Il est disponible même quand le JWT est expiré, pour afficher "Connecté en tant que alice@demo.fr" en mode hors-ligne.
+The email is extracted from the JWT payload (base64-decoded) and cached in SQLite. It is available even when the JWT is expired, in order to display "Logged in as alice@demo.fr" in offline mode.
 
 ```java
 private String extractEmailFromJwt(String token) {
@@ -814,20 +814,20 @@ private String extractEmailFromJwt(String token) {
 }
 ```
 
-### 14.3 Synchronisation LWW (Last-Write-Wins)
+### 14.3 LWW synchronization (Last-Write-Wins)
 
 ```mermaid
 flowchart TD
-    A[SyncService — toutes les 30s] --> B[GET /health]
-    B --> C{Réseau disponible?}
-    C -->|Non| D[Attendre prochain cycle]
-    C -->|Oui| E[SELECT incidents WHERE is_dirty=1]
-    E --> F{remote_id présent?}
-    F -->|Non - nouveau local| G[POST /incidents — créer en API]
-    G --> H[Récupérer remote_id]
-    F -->|Oui - mise à jour| I{updated_at local > updated_at API?}
-    I -->|Oui| J[PUT /incidents/:id — pousser vers API]
-    I -->|Non| K[GET /incidents/:id — tirer depuis API]
+    A[SyncService — every 30s] --> B[GET /health]
+    B --> C{Network available?}
+    C -->|No| D[Wait for the next cycle]
+    C -->|Yes| E[SELECT incidents WHERE is_dirty=1]
+    E --> F{remote_id present?}
+    F -->|No - new local| G[POST /incidents — create on API]
+    G --> H[Retrieve remote_id]
+    F -->|Yes - update| I{local updated_at > API updated_at?}
+    I -->|Yes| J[PUT /incidents/:id — push to API]
+    I -->|No| K[GET /incidents/:id — pull from API]
     J --> L[UPDATE SQLite SET is_dirty=0]
     K --> L
     H --> L
@@ -836,9 +836,9 @@ flowchart TD
 
 ---
 
-## 15. Infrastructure et déploiement
+## 15. Infrastructure and deployment
 
-### 15.1 Variables d'environnement
+### 15.1 Environment variables
 
 ```bash
 # .env
@@ -894,33 +894,33 @@ quartierconnect.fr {
 }
 ```
 
-Let's Encrypt est géré automatiquement par Caddy — pas de configuration SSL manuelle.
+Let's Encrypt is handled automatically by Caddy — no manual SSL configuration.
 
 ---
 
-## 16. Qualité logicielle et tests
+## 16. Software quality and testing
 
-### 16.1 Tableau de bord tests
+### 16.1 Test dashboard
 
-| Composant | Framework | Tests | Coverage |
+| Component | Framework | Tests | Coverage |
 |-----------|-----------|-------|---------|
-| API NestJS unitaires | Jest | 236/236 ✓ | 95.7% stmts |
-| API NestJS E2E | Supertest | 148/148 ✓ | — |
+| NestJS API unit | Jest | 236/236 ✓ | 95.7% stmts |
+| NestJS API E2E | Supertest | 148/148 ✓ | — |
 | Web shared hooks | Vitest | 73/73 ✓ | — |
 | Java Desktop | JUnit 5 | 63/63 ✓ | — |
 | DSL Python | pytest | 21/21 ✓ | — |
 | Web Playwright | Playwright | 79/79 ✓ | — |
 | **Total** | | **620/620 ✓** | |
 
-### 16.2 Règles qualité non négociables
+### 16.2 Non-negotiable quality rules
 
-- Zéro `console.log` en code de production
-- Zéro `TODO` en code commité
-- Zéro commentaire inline expliquant du code évident
-- Seuils coverage API : statements 80%, branches 75%, functions 80%
-- `routeTree.gen.ts` jamais édité manuellement
+- Zero `console.log` in production code
+- Zero `TODO` in committed code
+- Zero inline comment explaining obvious code
+- API coverage thresholds : statements 80%, branches 75%, functions 80%
+- `routeTree.gen.ts` never edited manually
 
-### 16.3 Convention de commit
+### 16.3 Commit convention
 
 ```
 feat(auth): add SSO token generation endpoint
@@ -932,47 +932,47 @@ chore(ci): add Playwright step to GitHub Actions
 
 ---
 
-## 17. Bilan et perspectives
+## 17. Outcome and outlook
 
-### 17.1 Fonctionnalités livrées
+### 17.1 Delivered features
 
-| Fonctionnalité | Statut |
+| Feature | Status |
 |---------------|--------|
-| Inscription + QR TOTP | ✅ |
-| Connexion MFA (email + mdp + TOTP) | ✅ |
-| SSO cross-surface (web → desktop) | ✅ |
-| JWT access 15min + refresh 7j avec rotation | ✅ |
-| CRUD quartiers avec détection chevauchements GeoJSON | ✅ |
-| CRUD services avec filtres | ✅ |
-| CRUD événements avec calendrier | ✅ |
-| Machine d'états incidents (open→in_progress→resolved) | ✅ |
-| Transfert de points ACID PostgreSQL | ✅ |
-| Signature de contrats SHA-256 + TOTP | ✅ |
-| Messagerie temps réel WebSocket (Socket.io) | ✅ |
-| Votes (Strategy Pattern : up/down, like/dislike) | ✅ |
-| Scrutins communautaires (4 types, quorum, pondéré) | ✅ |
-| Recommandations Neo4j + sync temps réel | ✅ |
-| DSL PLY + bridge pythonia | ✅ |
-| Export RGPD JSON | ✅ |
-| Application desktop JavaFX offline-first | ✅ |
-| Sync bidirectionnelle desktop ↔ API (LWW) | ✅ |
-| Système de plugins JavaFX | ✅ |
+| Registration + QR TOTP | ✅ |
+| MFA login (email + password + TOTP) | ✅ |
+| Cross-surface SSO (web → desktop) | ✅ |
+| JWT access 15min + refresh 7d with rotation | ✅ |
+| Neighbourhood CRUD with GeoJSON overlap detection | ✅ |
+| Service CRUD with filters | ✅ |
+| Event CRUD with calendar | ✅ |
+| Incident state machine (open→in_progress→resolved) | ✅ |
+| ACID PostgreSQL points transfer | ✅ |
+| Contract signature SHA-256 + TOTP | ✅ |
+| Real-time WebSocket messaging (Socket.io) | ✅ |
+| Votes (Strategy Pattern: up/down, like/dislike) | ✅ |
+| Community polls (4 types, quorum, weighted) | ✅ |
+| Neo4j recommendations + real-time sync | ✅ |
+| DSL PLY + pythonia bridge | ✅ |
+| GDPR JSON export | ✅ |
+| Offline-first JavaFX desktop application | ✅ |
+| Bidirectional desktop ↔ API sync (LWW) | ✅ |
+| JavaFX plugin system | ✅ |
 | CI/CD GitHub Actions | ✅ |
-| Documentation Scalar interactive | ✅ |
-| 620 tests automatisés | ✅ |
+| Interactive Scalar documentation | ✅ |
+| 620 automated tests | ✅ |
 
-### 17.2 Dette technique identifiée
+### 17.2 Identified technical debt
 
-| Point | Description | Priorité |
+| Item | Description | Priority |
 |-------|------------|---------|
-| Refresh token SQLite | Stocké en clair — utiliser OS keychain en prod | Haute |
-| WebSocket rooms | Pas de persistance si le serveur redémarre | Moyenne |
-| Neo4j sync | Fire-and-forget sans retry — peut manquer des mises à jour | Basse |
+| SQLite refresh token | Stored in plaintext — use OS keychain in prod | High |
+| WebSocket rooms | No persistence if the server restarts | Medium |
+| Neo4j sync | Fire-and-forget without retry — may miss updates | Low |
 
-### 17.3 Perspectives
+### 17.3 Outlook
 
-- Notifications push (Firebase / Web Push API)
-- Application mobile React Native (partage du code back-end)
-- Intégration paiement pour services payants (Stripe)
-- Cartographie interactive (Mapbox / Leaflet)
-- Chiffrement de bout en bout pour la messagerie (Signal Protocol)
+- Push notifications (Firebase / Web Push API)
+- React Native mobile application (sharing the back-end code)
+- Payment integration for paid services (Stripe)
+- Interactive mapping (Mapbox / Leaflet)
+- End-to-end encryption for messaging (Signal Protocol)

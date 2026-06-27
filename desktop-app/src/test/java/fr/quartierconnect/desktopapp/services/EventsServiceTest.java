@@ -19,26 +19,26 @@ class EventsServiceTest {
     @Test
     void eventSummary_record_fieldsAccessible() {
         EventsService.EventSummary summary =
-                new EventsService.EventSummary("id-1", "Fête de quartier", "2026-06-21T18:00:00Z", "Place du marché");
+                new EventsService.EventSummary("id-1", "Neighborhood party", "2026-06-21T18:00:00Z", "Market square");
         assertEquals("id-1", summary.id());
-        assertEquals("Fête de quartier", summary.title());
+        assertEquals("Neighborhood party", summary.title());
         assertEquals("2026-06-21T18:00:00Z", summary.date());
-        assertEquals("Place du marché", summary.location());
+        assertEquals("Market square", summary.location());
     }
 
     @Test
     void eventSummary_nullLocation_allowed() {
         EventsService.EventSummary summary =
-                new EventsService.EventSummary("id-2", "Réunion", "2026-07-01T10:00:00Z", null);
+                new EventsService.EventSummary("id-2", "Meeting", "2026-07-01T10:00:00Z", null);
         assertNull(summary.location());
     }
 
     @Test
     void eventSummary_equality_byValue() {
         EventsService.EventSummary a =
-                new EventsService.EventSummary("id-1", "Fête", "2026-06-21T18:00:00Z", null);
+                new EventsService.EventSummary("id-1", "Party", "2026-06-21T18:00:00Z", null);
         EventsService.EventSummary b =
-                new EventsService.EventSummary("id-1", "Fête", "2026-06-21T18:00:00Z", null);
+                new EventsService.EventSummary("id-1", "Party", "2026-06-21T18:00:00Z", null);
         assertEquals(a, b);
     }
 }

@@ -44,7 +44,7 @@ export class NeighborhoodsController {
     ) {}
 
     @Get()
-    @ApiOperation({ summary: "Lister les quartiers" })
+    @ApiOperation({ summary: "List neighborhoods" })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
     @ApiResponse({ status: 200, type: [NeighborhoodDto] })
@@ -56,10 +56,10 @@ export class NeighborhoodsController {
     }
 
     @Get(":id")
-    @ApiOperation({ summary: "Détail d'un quartier" })
-    @ApiParam({ name: "id", description: "ID MongoDB du quartier" })
+    @ApiOperation({ summary: "Neighborhood details" })
+    @ApiParam({ name: "id", description: "MongoDB ID of the neighborhood" })
     @ApiResponse({ status: 200, type: NeighborhoodDto })
-    @ApiResponse({ status: 404, description: "Quartier introuvable" })
+    @ApiResponse({ status: 404, description: "Neighborhood not found" })
     async findOne(@Param("id") id: string) {
         const neighborhood = await this.neighborhoodModel.findById(id).exec();
         if (!neighborhood)
@@ -72,23 +72,23 @@ export class NeighborhoodsController {
     @Roles("admin")
     @ApiBearerAuth()
     @ApiOperation({
-        summary: "Créer un quartier (admin)",
+        summary: "Create a neighborhood (admin)",
         description:
-            "Crée un quartier avec polygone GeoJSON. Vérifie les chevauchements avec $geoIntersects.",
+            "Creates a neighborhood with a GeoJSON polygon. Checks for overlaps using $geoIntersects.",
     })
     @ApiResponse({
         status: 201,
         type: NeighborhoodDto,
-        description: "Quartier créé",
+        description: "Neighborhood created",
     })
     @ApiResponse({
         status: 409,
         description:
-            "Chevauchement géographique avec un quartier existant ($geoIntersects)",
+            "Geographic overlap with an existing neighborhood ($geoIntersects)",
     })
     @ApiResponse({
         status: 403,
-        description: "Rôle insuffisant (admin requis)",
+        description: "Insufficient role (admin required)",
     })
     async create(@Body() dto: CreateNeighborhoodDto) {
         if (dto.geometry) {
@@ -106,24 +106,38 @@ export class NeighborhoodsController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles("admin")
     @ApiBearerAuth()
-    @ApiOperation({ summary: "Modifier un quartier (admin)" })
-    @ApiParam({ name: "id", description: "ID MongoDB du quartier" })
+    @ApiOperation({ summary: "Update a neighborhood (admin)" })
+    @ApiParam({ name: "id", description: "MongoDB ID of the neighborhood" })
     @ApiResponse({
         status: 200,
         type: NeighborhoodDto,
-        description: "Quartier mis à jour",
+        description: "Neighborhood updated",
     })
     @ApiResponse({
         status: 409,
-        description: "Chevauchement géographique avec un quartier existant",
+        description: "Geographic overlap with an existing neighborhood",
     })
-    @ApiResponse({ status: 404, description: "Quartier introuvable" })
+    @ApiResponse({ status: 404, description: "Neighborhood not found" })
     async update(@Param("id") id: string, @Body() dto: UpdateNeighborhoodDto) {
+        const neighborhoodId = String(id);
         if (dto.geometry) {
-            await this.neighborhoodsService.assertNoOverlap(dto.geometry, id);
+            await this.neighborhoodsService.assertNoOverlap(
+                dto.geometry,
+                neighborhoodId,
+            );
         }
+        const changes: Record<string, unknown> = {};
+        if (dto.name !== undefined) changes.name = dto.name;
+        if (dto.city !== undefined) changes.city = dto.city;
+        if (dto.description !== undefined)
+            changes.description = dto.description;
+        if (dto.geometry !== undefined)
+            changes.geometry = {
+                type: dto.geometry.type,
+                coordinates: dto.geometry.coordinates,
+            };
         const updated = await this.neighborhoodModel
-            .findByIdAndUpdate(id, dto, { new: true })
+            .findByIdAndUpdate(neighborhoodId, { $set: changes }, { new: true })
             .exec();
         if (!updated) throw new NotFoundException("Neighborhood not found");
         void this.socialService.syncNeighborhood(
@@ -137,14 +151,14 @@ export class NeighborhoodsController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles("admin")
     @ApiBearerAuth()
-    @ApiOperation({ summary: "Supprimer un quartier (admin)" })
-    @ApiParam({ name: "id", description: "ID MongoDB du quartier" })
+    @ApiOperation({ summary: "Delete a neighborhood (admin)" })
+    @ApiParam({ name: "id", description: "MongoDB ID of the neighborhood" })
     @ApiResponse({
         status: 200,
         schema: { example: { success: true } },
-        description: "Quartier supprimé définitivement",
+        description: "Neighborhood permanently deleted",
     })
-    @ApiResponse({ status: 404, description: "Quartier introuvable" })
+    @ApiResponse({ status: 404, description: "Neighborhood not found" })
     async remove(@Param("id") id: string) {
         const deleted = await this.neighborhoodModel
             .findByIdAndDelete(id)

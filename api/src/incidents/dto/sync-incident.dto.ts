@@ -16,23 +16,24 @@ import {
 
 export class SyncIncidentItemDto {
     @ApiProperty({
-        description: "UUID v4 de l'incident (généré côté client, idempotent)",
+        description:
+            "UUID v4 of the incident (generated client-side, idempotent)",
         example: "00000000-0000-4000-b000-000000000001",
     })
     @IsUUID()
     id: string;
 
     @ApiProperty({
-        description: "Titre court de l'incident",
-        example: "Nid-de-poule boulevard Voltaire",
+        description: "Short title of the incident",
+        example: "Pothole on Boulevard Voltaire",
     })
     @IsString()
     @IsNotEmpty()
     title: string;
 
     @ApiProperty({
-        description: "Description complète de l'incident",
-        example: "Gros nid-de-poule devant le n°45, dangereux pour les vélos.",
+        description: "Full description of the incident",
+        example: "Large pothole in front of no. 45, dangerous for cyclists.",
     })
     @IsString()
     @IsNotEmpty()
@@ -40,14 +41,14 @@ export class SyncIncidentItemDto {
 
     @ApiProperty({
         description:
-            "UUID de l'utilisateur propriétaire de l'incident (doit correspondre au JWT)",
+            "UUID of the user who owns the incident (must match the JWT)",
         example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     })
     @IsUUID()
     createdBy: string;
 
     @ApiProperty({
-        description: "Identifiant MongoDB du quartier (optionnel)",
+        description: "MongoDB identifier of the neighborhood (optional)",
         example: "664f1a2b3c4d5e6f7a8b9c0d",
         required: false,
     })
@@ -56,7 +57,7 @@ export class SyncIncidentItemDto {
     neighborhoodId?: string;
 
     @ApiProperty({
-        description: "Statut de l'incident (open | in_progress | resolved)",
+        description: "Status of the incident (open | in_progress | resolved)",
         example: "in_progress",
         required: false,
     })
@@ -65,7 +66,7 @@ export class SyncIncidentItemDto {
     status?: string;
 
     @ApiProperty({
-        description: "Date ISO 8601 de dernière modification côté client (LWW)",
+        description: "ISO 8601 date of last client-side modification (LWW)",
         example: "2026-04-05T14:30:00.000Z",
         required: false,
     })
@@ -97,13 +98,13 @@ export class SyncIncidentItemDto {
 export class SyncIncidentsDto {
     @ApiProperty({
         description:
-            "Liste des incidents à synchroniser depuis le client Java Desktop. Seuls les incidents dont createdBy correspond au JWT sont upsertés ; les autres sont ignorés.",
+            "List of incidents to sync from the Java Desktop client. Only incidents whose createdBy matches the JWT are upserted; the others are ignored.",
         type: [SyncIncidentItemDto],
         example: [
             {
                 id: "00000000-0000-4000-b000-000000000001",
-                title: "Nid-de-poule boulevard Voltaire",
-                description: "Gros nid-de-poule devant le n°45.",
+                title: "Pothole on Boulevard Voltaire",
+                description: "Large pothole in front of no. 45.",
                 createdBy: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
             },
         ],

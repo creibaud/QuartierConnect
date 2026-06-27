@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Alert01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { centroidOf } from "@workspace/shared/lib/geo";
 import {
     useCreateIncident,
@@ -45,12 +46,6 @@ import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { toast } from "sonner";
 
-const STATUS_LABELS: Record<string, string> = {
-    open: "Ouvert",
-    in_progress: "En cours",
-    resolved: "Résolu",
-};
-
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {
     open: "default",
     in_progress: "secondary",
@@ -62,7 +57,13 @@ export const Route = createFileRoute("/_app/incidents/")({
 });
 
 function IncidentsPage() {
+    const { t } = useTranslation();
     const [createOpen, setCreateOpen] = useState(false);
+    const statusLabels: Record<string, string> = {
+        open: t("incidents.status.open"),
+        in_progress: t("incidents.status.in_progress"),
+        resolved: t("incidents.status.resolved"),
+    };
     const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage } =
         useInfiniteIncidents();
     const incidents = data?.pages.flat() ?? [];
@@ -76,12 +77,12 @@ function IncidentsPage() {
         <div className="p-6 md:p-8">
             <div className="mx-auto max-w-5xl space-y-6">
                 <PageHeader
-                    title="Incidents"
-                    description="Signalements de votre quartier"
+                    title={t("incidents.title")}
+                    description={t("pages.incidents.description")}
                     actions={
                         <Button onClick={() => setCreateOpen(true)}>
                             <HugeiconsIcon icon={Alert01Icon} />
-                            Signaler un incident
+                            {t("incidents.new")}
                         </Button>
                     }
                 />
@@ -90,11 +91,12 @@ function IncidentsPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-base">
-                                Carte des incidents
+                                {t("pages.incidents.mapTitle")}
                             </CardTitle>
                             <CardDescription>
-                                {incidentsWithCoords.length} incident(s)
-                                localisé(s)
+                                {t("pages.incidents.locatedCount", {
+                                    count: incidentsWithCoords.length,
+                                })}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -123,10 +125,15 @@ function IncidentsPage() {
                                                     {inc.title}
                                                 </p>
                                                 <p className="text-xs">
-                                                    Statut :{" "}
-                                                    {STATUS_LABELS[
-                                                        inc.status
-                                                    ] ?? inc.status}
+                                                    {t(
+                                                        "pages.incidents.statusLabel",
+                                                        {
+                                                            status:
+                                                                statusLabels[
+                                                                    inc.status
+                                                                ] ?? inc.status,
+                                                        },
+                                                    )}
                                                 </p>
                                             </div>
                                         }
@@ -159,18 +166,16 @@ function IncidentsPage() {
                                     <HugeiconsIcon icon={Alert01Icon} />
                                 </EmptyMedia>
                                 <EmptyTitle>
-                                    Aucun incident pour l&apos;instant
+                                    {t("pages.incidents.emptyTitle")}
                                 </EmptyTitle>
                                 <EmptyDescription>
-                                    Votre quartier est calme. Signalez un
-                                    problème pour le porter à l&apos;attention
-                                    de la communauté.
+                                    {t("pages.incidents.emptyDescription")}
                                 </EmptyDescription>
                             </EmptyHeader>
                             <EmptyContent>
                                 <Button onClick={() => setCreateOpen(true)}>
                                     <HugeiconsIcon icon={Alert01Icon} />
-                                    Signaler un incident
+                                    {t("incidents.new")}
                                 </Button>
                             </EmptyContent>
                         </Empty>
@@ -196,7 +201,7 @@ function IncidentsPage() {
                                                     ] ?? "outline"
                                                 }
                                             >
-                                                {STATUS_LABELS[
+                                                {statusLabels[
                                                     incident.status
                                                 ] ?? incident.status}
                                             </Badge>
@@ -219,7 +224,7 @@ function IncidentsPage() {
                                 className="w-full"
                                 onClick={() => fetchNextPage()}
                             >
-                                Voir plus
+                                {t("common.loadMore")}
                             </Button>
                         )}
                     </div>
@@ -244,6 +249,7 @@ function CreateIncidentDialog({
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
 }) {
+    const { t } = useTranslation();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [pickedLat, setPickedLat] = useState<number | null>(null);
@@ -264,14 +270,15 @@ function CreateIncidentDialog({
             },
             {
                 onSuccess: () => {
-                    toast.success("Incident signalé");
+                    toast.success(t("pages.incidents.reportSuccess"));
                     setTitle("");
                     setDescription("");
                     setPickedLat(null);
                     setPickedLng(null);
                     onSuccess();
                 },
-                onError: () => toast.error("Impossible de signaler l'incident"),
+                onError: () =>
+                    toast.error(t("pages.incidents.reportError")),
             },
         );
     }
@@ -280,39 +287,43 @@ function CreateIncidentDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Signaler un incident</DialogTitle>
+                    <DialogTitle>{t("incidents.new")}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="incident-title">Titre *</Label>
+                        <Label htmlFor="incident-title">
+                            {t("pages.incidents.titleRequired")}
+                        </Label>
                         <Input
                             id="incident-title"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Ex : Lampadaire cassé rue de la Paix"
+                            placeholder={t("pages.incidents.titlePlaceholder")}
                             maxLength={255}
                             required
                         />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="incident-description">
-                            Description
+                            {t("incidents.fields.description")}
                         </Label>
                         <Textarea
                             id="incident-description"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Décrivez l'incident en détail…"
+                            placeholder={t(
+                                "pages.incidents.descriptionPlaceholder",
+                            )}
                             rows={3}
                         />
                     </div>
                     {firstNeighborhood?.geometry && (
                         <div className="space-y-2">
                             <Label>
-                                Lieu — cliquez sur la carte
+                                {t("pages.incidents.locationPick")}
                                 {pickedLat !== null && pickedLng !== null
                                     ? ` (${pickedLat.toFixed(4)}, ${pickedLng.toFixed(4)})`
-                                    : " (optionnel)"}
+                                    : ` (${t("common.optional")})`}
                             </Label>
                             <Map
                                 center={centroidOf(firstNeighborhood.geometry)}
@@ -343,13 +354,15 @@ function CreateIncidentDialog({
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                         >
-                            Annuler
+                            {t("common.cancel")}
                         </Button>
                         <Button
                             type="submit"
                             disabled={createIncident.isPending || !title.trim()}
                         >
-                            {createIncident.isPending ? "Envoi…" : "Signaler"}
+                            {createIncident.isPending
+                                ? t("pages.incidents.sending")
+                                : t("pages.incidents.report")}
                         </Button>
                     </div>
                 </form>

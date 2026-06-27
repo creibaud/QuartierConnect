@@ -57,35 +57,35 @@ export class IncidentsController {
 
     @Get()
     @ApiOperation({
-        summary: "Lister les incidents",
+        summary: "List incidents",
         description:
-            "Retourne la liste paginée des incidents non supprimés, triés par date de création décroissante.",
+            "Returns the paginated list of non-deleted incidents, sorted by creation date in descending order.",
     })
     @ApiQuery({
         name: "status",
         required: false,
         enum: ["open", "in_progress", "resolved"],
-        description: "Filtrer par statut",
+        description: "Filter by status",
     })
     @ApiQuery({
         name: "page",
         required: false,
         example: "1",
-        description: "Page (défaut : 1)",
+        description: "Page (default: 1)",
     })
     @ApiQuery({
         name: "limit",
         required: false,
         example: "20",
-        description: "Résultats par page (max 100, défaut : 20)",
+        description: "Results per page (max 100, default: 20)",
     })
     @ApiResponse({
         status: 200,
         type: [IncidentDto],
-        description: "Tableau des incidents paginé",
+        description: "Paginated array of incidents",
     })
-    @ApiResponse({ status: 400, description: "Statut invalide" })
-    @ApiResponse({ status: 401, description: "Non authentifié" })
+    @ApiResponse({ status: 400, description: "Invalid status" })
+    @ApiResponse({ status: 401, description: "Not authenticated" })
     findAll(
         @Query("status") status?: string,
         @Query("page") page = "1",
@@ -117,16 +117,16 @@ export class IncidentsController {
     }
 
     @Get(":id")
-    @ApiOperation({ summary: "Détail d'un incident" })
+    @ApiOperation({ summary: "Incident details" })
     @ApiParam({
         name: "id",
-        description: "UUID de l'incident",
+        description: "Incident UUID",
         example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     })
     @ApiResponse({ status: 200, type: IncidentDto })
     @ApiResponse({
         status: 404,
-        description: "Incident introuvable ou supprimé",
+        description: "Incident not found or deleted",
     })
     async findOne(@Param("id") id: string) {
         const [incident] = await this.db
@@ -145,16 +145,16 @@ export class IncidentsController {
 
     @Post()
     @ApiOperation({
-        summary: "Créer un incident",
+        summary: "Create an incident",
         description:
-            "Crée un incident avec le statut initial `open`. Le champ `createdBy` est automatiquement renseigné depuis le JWT.",
+            "Creates an incident with the initial status `open`. The `createdBy` field is automatically populated from the JWT.",
     })
     @ApiResponse({
         status: 201,
         type: [IncidentDto],
-        description: "Incident créé",
+        description: "Incident created",
     })
-    @ApiResponse({ status: 401, description: "Non authentifié" })
+    @ApiResponse({ status: 401, description: "Not authenticated" })
     create(@Body() dto: CreateIncidentDto, @Request() req: AuthRequest) {
         return this.db
             .insert(schema.incidents)
@@ -174,26 +174,26 @@ export class IncidentsController {
     @UseGuards(RolesGuard)
     @Roles("moderator", "admin")
     @ApiOperation({
-        summary: "Changer le statut d'un incident",
+        summary: "Change an incident's status",
         description:
-            "Machine d'états stricte : open → in_progress → resolved. Toute autre transition retourne 400. Protégé : moderator ou admin uniquement.",
+            "Strict state machine: open → in_progress → resolved. Any other transition returns 400. Protected: moderator or admin only.",
     })
-    @ApiParam({ name: "id", description: "UUID de l'incident" })
+    @ApiParam({ name: "id", description: "Incident UUID" })
     @ApiResponse({
         status: 200,
         type: IncidentDto,
-        description: "Statut mis à jour",
+        description: "Status updated",
     })
     @ApiResponse({
         status: 400,
         description:
-            "Transition invalide ou conflit concurrent (open→resolved est interdit)",
+            "Invalid transition or concurrent conflict (open→resolved is forbidden)",
     })
     @ApiResponse({
         status: 403,
-        description: "Rôle insuffisant (moderator/admin requis)",
+        description: "Insufficient role (moderator/admin required)",
     })
-    @ApiResponse({ status: 404, description: "Incident introuvable" })
+    @ApiResponse({ status: 404, description: "Incident not found" })
     async updateStatus(
         @Param("id") id: string,
         @Body() dto: UpdateIncidentStatusDto,
@@ -240,21 +240,21 @@ export class IncidentsController {
     @UseGuards(RolesGuard)
     @Roles("moderator", "admin")
     @ApiOperation({
-        summary: "Supprimer un incident (soft delete)",
+        summary: "Delete an incident (soft delete)",
         description:
-            "Positionne `deleted_at = NOW()` sans modifier le statut. L'incident disparaît de toutes les listes (`WHERE deleted_at IS NULL`) mais reste en base.",
+            "Sets `deleted_at = NOW()` without changing the status. The incident disappears from all lists (`WHERE deleted_at IS NULL`) but remains in the database.",
     })
-    @ApiParam({ name: "id", description: "UUID de l'incident" })
+    @ApiParam({ name: "id", description: "Incident UUID" })
     @ApiResponse({
         status: 200,
         schema: { example: { success: true } },
-        description: "Incident marqué comme supprimé (deleted_at = NOW())",
+        description: "Incident marked as deleted (deleted_at = NOW())",
     })
     @ApiResponse({
         status: 403,
-        description: "Rôle insuffisant (moderator/admin requis)",
+        description: "Insufficient role (moderator/admin required)",
     })
-    @ApiResponse({ status: 404, description: "Incident introuvable" })
+    @ApiResponse({ status: 404, description: "Incident not found" })
     async remove(@Param("id") id: string) {
         const [incident] = await this.db
             .select()
@@ -278,12 +278,12 @@ export class IncidentsController {
 
     @Post("sync")
     @ApiOperation({
-        summary: "Synchroniser des incidents depuis le client Java Desktop",
+        summary: "Sync incidents from the Java Desktop client",
         description:
-            "Upsert en masse des incidents. Seuls les incidents dont `createdBy` correspond à l'UUID du JWT sont traités ; les autres sont silencieusement ignorés. Le statut est toujours forcé à `open` lors de l'insertion initiale (LWW : les transitions de statut passent par `PATCH /:id/status`).",
+            "Bulk upsert of incidents. Only incidents whose `createdBy` matches the JWT's UUID are processed; the others are silently ignored. The status is always forced to `open` on initial insertion (LWW: status transitions go through `PATCH /:id/status`).",
     })
     @ApiResponse({ status: 201, type: SyncResultDto })
-    @ApiResponse({ status: 401, description: "Non authentifié" })
+    @ApiResponse({ status: 401, description: "Not authenticated" })
     async sync(@Body() dto: SyncIncidentsDto, @Request() req: AuthRequest) {
         const ownItems = dto.incidents.filter(
             (item) => item.createdBy === req.user.sub,

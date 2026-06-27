@@ -1,6 +1,7 @@
 package fr.quartierconnect.desktopapp.views;
 
 import fr.quartierconnect.desktopapp.database.IncidentRepository;
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.services.ApiService;
 import fr.quartierconnect.desktopapp.services.AuthService;
 import fr.quartierconnect.desktopapp.services.SyncService;
@@ -14,6 +15,7 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
@@ -22,6 +24,8 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
+
+import java.util.Locale;
 
 public class ProfileView {
 
@@ -60,7 +64,7 @@ public class ProfileView {
     }
 
     private void applyOnlineStatus(boolean online) {
-        String text = online ? "● API connectée" : "● API hors ligne";
+        String text = online ? I18n.get("status.apiOnline") : I18n.get("status.apiOffline");
         String css = online ? "status-online" : "status-offline";
         if (onlineStatusLabel != null) {
             onlineStatusLabel.setText(text);
@@ -73,10 +77,10 @@ public class ProfileView {
     }
 
     private VBox buildLayout() {
-        Label pageTitle = new Label("Mon profil");
+        Label pageTitle = new Label(I18n.get("profile.title"));
         pageTitle.getStyleClass().add("content-title");
 
-        Label pageSubtitle = new Label("Informations de session · token JWT");
+        Label pageSubtitle = new Label(I18n.get("profile.subtitle"));
         pageSubtitle.getStyleClass().add("content-subtitle");
 
         VBox titleBlock = new VBox(3, pageTitle, pageSubtitle);
@@ -89,7 +93,7 @@ public class ProfileView {
         Label avatarLbl = new Label(initials);
         avatarLbl.getStyleClass().add("profile-avatar");
 
-        Label emailLbl = new Label(email != null ? email : "Utilisateur inconnu");
+        Label emailLbl = new Label(email != null ? email : I18n.get("profile.unknownUser"));
         emailLbl.getStyleClass().add("profile-email-lbl");
 
         AppBadge roleBadge = buildRoleBadge(role);
@@ -97,10 +101,10 @@ public class ProfileView {
         HBox emailRow = new HBox(7, emailLbl, roleBadge);
         emailRow.setAlignment(Pos.CENTER_LEFT);
 
-        onlineStatusLabel = new Label("● Connexion…");
+        onlineStatusLabel = new Label(I18n.get("status.connecting"));
         onlineStatusLabel.getStyleClass().add("status-offline");
 
-        Label connectedSince = new Label("Connecté depuis cette session");
+        Label connectedSince = new Label(I18n.get("profile.connectedSince"));
         connectedSince.getStyleClass().add("profile-meta-text");
 
         HBox metaRow = new HBox(8, onlineStatusLabel, connectedSince);
@@ -118,12 +122,15 @@ public class ProfileView {
         VBox.setMargin(sessionCard, new Insets(0, 0, 9, 0));
 
         VBox dbCard = buildLocalDbCard(email);
-        VBox.setMargin(dbCard, new Insets(0, 0, 14, 0));
+        VBox.setMargin(dbCard, new Insets(0, 0, 9, 0));
 
-        AppButton logoutBtn = new AppButton("Se déconnecter", AppButton.Variant.DESTRUCTIVE, true);
+        VBox languageCard = buildLanguageCard();
+        VBox.setMargin(languageCard, new Insets(0, 0, 14, 0));
+
+        AppButton logoutBtn = new AppButton(I18n.get("profile.logout"), AppButton.Variant.DESTRUCTIVE, true);
         logoutBtn.setOnAction(e -> onLogout.run());
 
-        VBox profileLayout = new VBox(0, profileHero, sessionCard, dbCard, logoutBtn);
+        VBox profileLayout = new VBox(0, profileHero, sessionCard, dbCard, languageCard, logoutBtn);
         profileLayout.setMaxWidth(460);
 
         VBox centeredProfile = new VBox(profileLayout);
@@ -145,25 +152,25 @@ public class ProfileView {
     }
 
     private VBox buildSessionCard() {
-        Label cardTitle = new Label("SESSION");
+        Label cardTitle = new Label(I18n.get("profile.session"));
         cardTitle.getStyleClass().add("detail-card-title");
         VBox.setMargin(cardTitle, new Insets(0, 0, 12, 0));
 
-        Label networkLbl = new Label("Statut réseau");
+        Label networkLbl = new Label(I18n.get("profile.networkStatus"));
         networkLbl.getStyleClass().add("detail-row-lbl");
-        sessionNetworkLabel = new Label("● Hors ligne");
+        sessionNetworkLabel = new Label(I18n.get("status.offline"));
         sessionNetworkLabel.getStyleClass().add("status-offline");
         HBox networkRow = UiHelper.detailRow(networkLbl, sessionNetworkLabel);
 
-        Label syncLbl = new Label("Dernière synchronisation");
+        Label syncLbl = new Label(I18n.get("profile.lastSync"));
         syncLbl.getStyleClass().add("detail-row-lbl");
         lastSyncLabel = new Label("—");
         lastSyncLabel.getStyleClass().add("detail-row-val-mono");
         HBox syncRow = UiHelper.detailRow(syncLbl, lastSyncLabel);
 
-        Label tokenLbl = new Label("Token JWT");
+        Label tokenLbl = new Label(I18n.get("profile.tokenJwt"));
         tokenLbl.getStyleClass().add("detail-row-lbl");
-        tokenStatusLabel = new Label("● Valide");
+        tokenStatusLabel = new Label(I18n.get("profile.token.valid"));
         tokenStatusLabel.getStyleClass().add("status-online");
         HBox tokenHeader = UiHelper.detailRow(tokenLbl, tokenStatusLabel);
 
@@ -183,7 +190,7 @@ public class ProfileView {
         tokenBarWrap.setMaxWidth(Double.MAX_VALUE);
         VBox.setMargin(tokenBarWrap, new Insets(4, 0, 4, 0));
 
-        Label vaultLbl = new Label("Token vault");
+        Label vaultLbl = new Label(I18n.get("profile.tokenVault"));
         vaultLbl.getStyleClass().add("detail-row-lbl");
         Label vaultVal = new Label("java-keyring · OS keychain");
         vaultVal.getStyleClass().add("detail-row-val-mono");
@@ -201,29 +208,29 @@ public class ProfileView {
     }
 
     private VBox buildLocalDbCard(String email) {
-        Label cardTitle = new Label("BASE DE DONNÉES LOCALE");
+        Label cardTitle = new Label(I18n.get("profile.localDb"));
         cardTitle.getStyleClass().add("detail-card-title");
         VBox.setMargin(cardTitle, new Insets(0, 0, 12, 0));
 
-        Label incidentsLbl = new Label("Incidents locaux");
+        Label incidentsLbl = new Label(I18n.get("profile.localIncidents"));
         incidentsLbl.getStyleClass().add("detail-row-lbl");
         Label incidentsVal = new Label("—");
         incidentsVal.getStyleClass().add("big-number");
         HBox incidentsRow = UiHelper.detailRow(incidentsLbl, incidentsVal);
 
-        Label conflictsLbl = new Label("Conflits en attente");
+        Label conflictsLbl = new Label(I18n.get("profile.pendingConflicts"));
         conflictsLbl.getStyleClass().add("detail-row-lbl");
         Label conflictsVal = new Label("—");
         conflictsVal.getStyleClass().add("big-number-red");
         HBox conflictsRow = UiHelper.detailRow(conflictsLbl, conflictsVal);
 
-        Label pathLbl = new Label("Chemin SQLite");
+        Label pathLbl = new Label(I18n.get("profile.sqlitePath"));
         pathLbl.getStyleClass().add("detail-row-lbl");
         Label pathVal = new Label("quartierconnect.db");
         pathVal.getStyleClass().add("detail-row-val-mono");
         HBox pathRow = UiHelper.detailRow(pathLbl, pathVal);
 
-        Label versionLbl = new Label("Version");
+        Label versionLbl = new Label(I18n.get("profile.version"));
         versionLbl.getStyleClass().add("detail-row-lbl");
         Label versionVal = new Label("v1.4.0 · Java 21 · JavaFX 21");
         versionVal.getStyleClass().add("detail-row-val-mono");
@@ -241,6 +248,57 @@ public class ProfileView {
         loadDbStatsAsync(incidentsVal, conflictsVal);
 
         return card;
+    }
+
+    private VBox buildLanguageCard() {
+        Label cardTitle = new Label(I18n.get("profile.language").toUpperCase(Locale.ROOT));
+        cardTitle.getStyleClass().add("detail-card-title");
+        VBox.setMargin(cardTitle, new Insets(0, 0, 12, 0));
+
+        ComboBox<Locale> languageCombo = new ComboBox<>();
+        languageCombo.getItems().addAll(Locale.ENGLISH, Locale.FRENCH);
+        languageCombo.setConverter(new javafx.util.StringConverter<>() {
+            @Override public String toString(Locale locale) {
+                if (locale == null) return "";
+                return Locale.FRENCH.getLanguage().equals(locale.getLanguage())
+                        ? I18n.get("profile.language.french")
+                        : I18n.get("profile.language.english");
+            }
+            @Override public Locale fromString(String value) { return null; }
+        });
+        languageCombo.setValue(selectedLocale());
+
+        Label restartNote = new Label(I18n.get("profile.language.restartNote"));
+        restartNote.getStyleClass().add("content-subtitle");
+        restartNote.setWrapText(true);
+        restartNote.setVisible(false);
+        restartNote.setManaged(false);
+
+        languageCombo.valueProperty().addListener((obs, previous, selected) -> {
+            if (selected == null || selected.getLanguage().equals(I18n.getLocale().getLanguage())) return;
+            I18n.setLocale(selected);
+            restartNote.setVisible(true);
+            restartNote.setManaged(true);
+        });
+
+        Label languageLbl = new Label(I18n.get("profile.language"));
+        languageLbl.getStyleClass().add("detail-row-lbl");
+        Region rowSpacer = new Region();
+        HBox.setHgrow(rowSpacer, Priority.ALWAYS);
+        HBox languageRow = new HBox(languageLbl, rowSpacer, languageCombo);
+        languageRow.setAlignment(Pos.CENTER_LEFT);
+        languageRow.setPadding(new Insets(7, 0, 7, 0));
+
+        VBox card = new VBox(0, cardTitle, languageRow, restartNote);
+        card.getStyleClass().add("detail-card");
+        VBox.setMargin(restartNote, new Insets(10, 0, 0, 0));
+        return card;
+    }
+
+    private Locale selectedLocale() {
+        return Locale.FRENCH.getLanguage().equals(I18n.getLocale().getLanguage())
+                ? Locale.FRENCH
+                : Locale.ENGLISH;
     }
 
     private void startTokenCountdown() {
@@ -273,20 +331,20 @@ public class ProfileView {
         String statusText;
         if (isRefreshing) {
             cssClass = "token-fill-warn";
-            statusText = "● Rafraîchissement en cours…";
+            statusText = I18n.get("profile.token.refreshing");
         } else if (remaining <= 0) {
             cssClass = "token-fill-crit";
-            statusText = "● Expiré — refresh échoué";
+            statusText = I18n.get("profile.token.expiredRefreshFailed");
         } else if (remaining < REFRESH_THRESHOLD_SECONDS) {
             cssClass = "token-fill-crit";
-            statusText = "● Refresh dans " + remaining + "s";
+            statusText = I18n.get("profile.token.refreshIn", remaining);
         } else if (remaining < 120) {
             cssClass = "token-fill-warn";
-            statusText = "● Expire dans " + remaining + "s";
+            statusText = I18n.get("profile.token.expiresIn", remaining);
         } else {
             long minutes = remaining / 60;
             cssClass = "token-fill-ok";
-            statusText = "● Valide · expire dans ~" + minutes + " min";
+            statusText = I18n.get("profile.token.validExpiresIn", minutes);
         }
 
         String finalClass = cssClass;
@@ -336,9 +394,9 @@ public class ProfileView {
 
     private AppBadge buildRoleBadge(String role) {
         return switch (role == null ? "" : role) {
-            case "admin" -> new AppBadge("Administrateur", AppBadge.Variant.CONFLICT);
-            case "moderator" -> new AppBadge("Modérateur", AppBadge.Variant.IN_PROGRESS);
-            default -> new AppBadge("Résident", AppBadge.Variant.RESOLVED);
+            case "admin" -> new AppBadge(I18n.get("profile.role.admin"), AppBadge.Variant.CONFLICT);
+            case "moderator" -> new AppBadge(I18n.get("profile.role.moderator"), AppBadge.Variant.IN_PROGRESS);
+            default -> new AppBadge(I18n.get("profile.role.resident"), AppBadge.Variant.RESOLVED);
         };
     }
 

@@ -22,18 +22,18 @@ export class DslController {
 
     @Post("query")
     @ApiOperation({
-        summary: "Exécuter une requête DSL (moderator/admin)",
+        summary: "Execute a DSL query (moderator/admin)",
         description:
-            "Compile et exécute une requête DSL via le moteur PLY Python (in-process via pythonia).",
+            "Compiles and executes a DSL query via the Python PLY engine (in-process via pythonia).",
     })
     @ApiResponse({ status: 201, type: DslQueryResultDto })
     @ApiResponse({
         status: 400,
-        description: "Erreur de syntaxe DSL ou collection inconnue",
+        description: "DSL syntax error or unknown collection",
     })
     @ApiResponse({
         status: 403,
-        description: "Rôle insuffisant (moderator/admin requis)",
+        description: "Insufficient role (moderator/admin required)",
     })
     execute(@Body() dto: DslQueryDto) {
         return this.dslService.execute(dto.query);
