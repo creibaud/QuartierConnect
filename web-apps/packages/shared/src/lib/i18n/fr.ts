@@ -182,13 +182,46 @@ export default {
         },
         services: {
             title: "Services",
-            description: "L'annuaire des services et commerces de votre quartier.",
+            description:
+                "L'annuaire des services et commerces de votre quartier.",
             allNeighborhoods: "Tous les quartiers",
             nearby: "Services à proximité",
             locatedCount: "{{count}} service(s) localisé(s)",
             emptyTitle: "Aucun service disponible",
             emptyDescription:
                 "Aucun service n'est répertorié pour ce quartier pour le moment.",
+            offer: "Proposer un service",
+            editTitle: "Modifier le service",
+            createTitle: "Proposer un service",
+            titleLabel: "Titre *",
+            titlePlaceholder: "Ex : Aide au jardinage",
+            descriptionLabel: "Description",
+            descriptionPlaceholder: "Décrivez le service que vous proposez…",
+            categoryLabel: "Catégorie *",
+            chooseCategory: "Choisir une catégorie",
+            typeLabel: "Type *",
+            neighborhoodLabel: "Quartier",
+            chooseNeighborhood: "Choisir un quartier",
+            addressLabel: "Adresse",
+            addressPlaceholder: "Ex : 12 rue de la Paix",
+            createSuccess: "Service publié",
+            updateSuccess: "Service modifié",
+            deleteSuccess: "Service supprimé",
+            saveError: "Impossible d'enregistrer le service",
+            deleteError: "Impossible de supprimer le service",
+            deleteConfirmTitle: "Supprimer ce service ?",
+            deleteConfirmDescription:
+                "« {{title}} » sera définitivement retiré de l'annuaire.",
+            types: { free: "Gratuit", paid: "Payant", exchange: "Échange" },
+            categories: {
+                gardening: "Jardinage",
+                handyman: "Bricolage",
+                transport: "Transport",
+                shopping: "Courses",
+                childcare: "Garde d'enfants",
+                "it-support": "Aide informatique",
+                other: "Autre",
+            },
         },
         votes: {
             title: "Votes communautaires",
@@ -260,7 +293,7 @@ export default {
             contentPlaceholder: "Le prestataire s'engage à…",
             signatories: "Signataires (UUID, un par ligne)",
             signDescription:
-                "\"{{title}}\" — saisissez votre code TOTP pour apposer votre signature.",
+                '"{{title}}" — saisissez votre code TOTP pour apposer votre signature.',
             totpLabel: "Code TOTP (6 chiffres) *",
             signing: "Signature…",
             signSuccess: "Contrat signé",
@@ -277,7 +310,8 @@ export default {
             noMessages: "Aucun message — commencez la conversation !",
             loadError: "Erreur de chargement.",
             noConversations: "Aucune conversation",
-            noConversationsDescription: "Vous n'avez pas encore de conversation.",
+            noConversationsDescription:
+                "Vous n'avez pas encore de conversation.",
             conversationReady: "Conversation prête",
             unknownError: "Erreur inconnue",
             newConversationDescription:
@@ -296,13 +330,15 @@ export default {
             viewCards: "Vue cartes",
             viewMap: "Vue carte",
             emptyTitle: "Aucun événement prévu",
-            emptyDescription: "Organisez le premier rendez-vous de votre quartier.",
+            emptyDescription:
+                "Organisez le premier rendez-vous de votre quartier.",
             noneThisDay: "Aucun événement ce jour.",
             upcoming: "Prochains événements",
             interested: "Intéressé !",
             noneToShow: "Aucun événement à afficher.",
             allSeenTitle: "Vous avez tout vu !",
-            allSeenDescription: "Vous avez parcouru tous les événements à venir.",
+            allSeenDescription:
+                "Vous avez parcouru tous les événements à venir.",
             restart: "Recommencer",
             swipeHint:
                 "{{current}} / {{total}} — Glissez à droite pour marquer votre intérêt",
@@ -388,12 +424,27 @@ export default {
                 neighborhoods: "Quartiers",
             },
             quickLinks: {
-                users: { label: "Utilisateurs", desc: "Rôles et bannissements" },
-                incidents: { label: "Incidents", desc: "Modération et statuts" },
-                neighborhoods: { label: "Quartiers", desc: "Créer, modifier, supprimer" },
+                users: {
+                    label: "Utilisateurs",
+                    desc: "Rôles et bannissements",
+                },
+                incidents: {
+                    label: "Incidents",
+                    desc: "Modération et statuts",
+                },
+                neighborhoods: {
+                    label: "Quartiers",
+                    desc: "Créer, modifier, supprimer",
+                },
                 services: { label: "Services", desc: "Annuaire de quartier" },
-                events: { label: "Événements", desc: "Calendrier communautaire" },
-                dsl: { label: "Éditeur DSL", desc: "Requêtes en langage naturel" },
+                events: {
+                    label: "Événements",
+                    desc: "Calendrier communautaire",
+                },
+                dsl: {
+                    label: "Éditeur DSL",
+                    desc: "Requêtes en langage naturel",
+                },
             },
         },
         users: {
@@ -565,7 +616,8 @@ export default {
             resultCount_other: "{{count}} résultats",
             invalidQuery: "Requête invalide",
             emptyTitle: "Écrivez une requête",
-            emptyDescription: "Lancez une requête DSL pour afficher les résultats ici.",
+            emptyDescription:
+                "Lancez une requête DSL pour afficher les résultats ici.",
             syntaxTitle: "Syntaxe DSL",
             availableCollections: "Collections disponibles",
             syntaxLabel: "Syntaxe",

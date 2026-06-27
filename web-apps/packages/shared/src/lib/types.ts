@@ -45,6 +45,7 @@ export interface Service {
     address?: string;
     neighborhoodId?: string;
     pointsMultiplier?: number;
+    createdBy?: string;
     location?: GeoJsonPoint;
 }
 
