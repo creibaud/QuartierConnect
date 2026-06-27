@@ -101,6 +101,10 @@ export default {
         sendMessage: "Send message",
         typePlaceholder: "Type a message...",
         attachFile: "Attach a file",
+        sending: "Sending…",
+        download: "Download",
+        uploadError: "Unable to send the file",
+        imageAlt: "Attachment",
     },
     votes: {
         like: "Like",

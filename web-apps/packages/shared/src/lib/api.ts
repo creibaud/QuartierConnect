@@ -135,6 +135,25 @@ export async function apiDelete<T>(path: string): Promise<T> {
     return data as T;
 }
 
+export async function apiBlob(path: string): Promise<Blob> {
+    const res = await apiFetch(path, { method: "GET" });
+    if (!res.ok) {
+        throw Object.assign(new Error("Request failed"), {
+            status: res.status,
+        });
+    }
+    return res.blob();
+}
+
+/**
+ * Fetches a protected resource with the auth header and returns an object URL.
+ * The caller is responsible for revoking the URL with `URL.revokeObjectURL`.
+ */
+export async function apiBlobUrl(path: string): Promise<string> {
+    const blob = await apiBlob(path);
+    return URL.createObjectURL(blob);
+}
+
 export async function apiUpload<T>(
     path: string,
     formData: FormData,

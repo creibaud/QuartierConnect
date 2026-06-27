@@ -101,6 +101,10 @@ export default {
         sendMessage: "Envoyer un message",
         typePlaceholder: "Écrire un message...",
         attachFile: "Joindre un fichier",
+        sending: "Envoi…",
+        download: "Télécharger",
+        uploadError: "Impossible d'envoyer le fichier",
+        imageAlt: "Pièce jointe",
     },
     votes: {
         like: "J'aime",
