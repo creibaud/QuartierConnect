@@ -188,6 +188,31 @@ export default {
             copyToken: "Copier le token",
             tokenExpiresIn: "Le token expire dans {{count}} secondes.",
         },
+        points: {
+            title: "Points",
+            description:
+                "Consultez votre solde, transférez des points et suivez votre historique.",
+            balanceTitle: "Solde de points",
+            balanceUnit: "points",
+            transferTitle: "Transférer des points",
+            recipientLabel: "Identifiant du destinataire *",
+            recipientPlaceholder: "UUID du destinataire",
+            recipientHint:
+                "Saisissez l'identifiant (UUID) du destinataire : il n'existe pas encore de recherche par email.",
+            amountLabel: "Montant *",
+            noteLabel: "Note",
+            notePlaceholder: "Ex : Merci pour le coup de main !",
+            transfer: "Transférer",
+            transferring: "Transfert…",
+            transferSuccess: "Points transférés",
+            transferError: "Impossible de transférer les points",
+            historyTitle: "Historique des transactions",
+            emptyTitle: "Aucune transaction",
+            emptyDescription: "Vos transferts de points apparaîtront ici.",
+            received: "Reçu de {{user}}",
+            sent: "Envoyé à {{user}}",
+            loadError: "Impossible de charger l'historique",
+        },
         services: {
             title: "Services",
             description:

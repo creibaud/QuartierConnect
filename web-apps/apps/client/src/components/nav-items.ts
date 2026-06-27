@@ -2,6 +2,7 @@ import {
     Agreement01Icon,
     Alert01Icon,
     Calendar01Icon,
+    Coins01Icon,
     CustomerServiceIcon,
     DashboardSquare01Icon,
     Message01Icon,
@@ -23,4 +24,5 @@ export const clientNavItems: NavItem[] = [
         to: "/recommendations",
         icon: SparklesIcon,
     },
+    { title: "nav.points", to: "/points", icon: Coins01Icon },
 ];

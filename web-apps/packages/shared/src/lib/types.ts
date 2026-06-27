@@ -65,6 +65,21 @@ export interface PointBalance {
     balance: number;
 }
 
+export interface PointTransaction {
+    id: string;
+    senderId: string;
+    recipientId: string;
+    amount: number;
+    note: string | null;
+    createdAt: string;
+}
+
+export interface TransferResult {
+    transaction: PointTransaction;
+    senderBalance: number;
+    recipientBalance: number;
+}
+
 export interface PaginatedResponse<T> {
     data: T[];
     pagination: {
