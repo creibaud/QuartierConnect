@@ -146,7 +146,8 @@ export class ServicesController {
         @Body() dto: UpdateServiceDto,
         @Request() req: AuthRequest,
     ) {
-        const service = await this.serviceModel.findById(id).exec();
+        const serviceId = String(id);
+        const service = await this.serviceModel.findById(serviceId).exec();
         if (!service) throw new NotFoundException("Service not found");
 
         if (service.createdBy !== req.user.sub && req.user.role !== "admin") {
@@ -155,8 +156,24 @@ export class ServicesController {
             );
         }
 
+        const changes: Record<string, unknown> = {};
+        if (dto.title !== undefined) changes.title = dto.title;
+        if (dto.description !== undefined)
+            changes.description = dto.description;
+        if (dto.category !== undefined) changes.category = dto.category;
+        if (dto.type !== undefined) changes.type = dto.type;
+        if (dto.neighborhoodId !== undefined)
+            changes.neighborhoodId = dto.neighborhoodId;
+        if (dto.pointsMultiplier !== undefined)
+            changes.pointsMultiplier = dto.pointsMultiplier;
+        if (dto.location !== undefined)
+            changes.location = {
+                type: dto.location.type,
+                coordinates: dto.location.coordinates,
+            };
+
         const updated = await this.serviceModel
-            .findByIdAndUpdate(String(id), dto, { new: true })
+            .findByIdAndUpdate(serviceId, { $set: changes }, { new: true })
             .exec();
         if (updated) {
             void this.socialService.syncService(

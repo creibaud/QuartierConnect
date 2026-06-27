@@ -126,8 +126,18 @@ export class NeighborhoodsController {
                 neighborhoodId,
             );
         }
+        const changes: Record<string, unknown> = {};
+        if (dto.name !== undefined) changes.name = dto.name;
+        if (dto.city !== undefined) changes.city = dto.city;
+        if (dto.description !== undefined)
+            changes.description = dto.description;
+        if (dto.geometry !== undefined)
+            changes.geometry = {
+                type: dto.geometry.type,
+                coordinates: dto.geometry.coordinates,
+            };
         const updated = await this.neighborhoodModel
-            .findByIdAndUpdate(neighborhoodId, dto, { new: true })
+            .findByIdAndUpdate(neighborhoodId, { $set: changes }, { new: true })
             .exec();
         if (!updated) throw new NotFoundException("Neighborhood not found");
         void this.socialService.syncNeighborhood(

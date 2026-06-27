@@ -159,8 +159,23 @@ export class EventsController {
     })
     @ApiResponse({ status: 404, description: "Event not found" })
     async update(@Param("id") id: string, @Body() dto: UpdateEventDto) {
+        const changes: Record<string, unknown> = {};
+        if (dto.title !== undefined) changes.title = dto.title;
+        if (dto.description !== undefined)
+            changes.description = dto.description;
+        if (dto.category !== undefined) changes.category = dto.category;
+        if (dto.date !== undefined) changes.date = dto.date;
+        if (dto.neighborhoodId !== undefined)
+            changes.neighborhoodId = dto.neighborhoodId;
+        if (dto.address !== undefined) changes.address = dto.address;
+        if (dto.location !== undefined)
+            changes.location = {
+                type: dto.location.type,
+                coordinates: dto.location.coordinates,
+            };
+
         const event = await this.eventModel
-            .findByIdAndUpdate(String(id), dto, { new: true })
+            .findByIdAndUpdate(String(id), { $set: changes }, { new: true })
             .exec();
         if (!event) throw new NotFoundException("Event not found");
         return event;
