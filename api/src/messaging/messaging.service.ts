@@ -43,6 +43,15 @@ export class MessagingService {
         return !!conversation && conversation.participants.includes(userId);
     }
 
+    async assertParticipant(
+        conversationId: string,
+        userId: string,
+    ): Promise<void> {
+        if (!(await this.isParticipant(conversationId, userId))) {
+            throw new ForbiddenException("Not a participant");
+        }
+    }
+
     async findConversations(userId: string) {
         const conversations = await this.conversationModel
             .find({ participants: userId })

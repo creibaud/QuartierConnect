@@ -3,10 +3,12 @@ import {
     Body,
     Controller,
     Get,
+    NotFoundException,
     Param,
     Post,
     Query,
     Request,
+    Res,
     UploadedFile,
     UseGuards,
     UseInterceptors,
@@ -23,6 +25,7 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
+import { Response } from "express";
 import { GridFSBucket, ObjectId } from "mongodb";
 import { Connection } from "mongoose";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -152,5 +155,48 @@ export class MessagingController {
 
         this.gateway.emitToConversation(conversationId, "new_message", message);
         return message;
+    }
+
+    @Get("files/:fileId")
+    @ApiOperation({
+        summary: "Download a conversation file (GridFS)",
+        description:
+            "Streams a file stored in GridFS. Only participants of the file's conversation may access it.",
+    })
+    @ApiParam({ name: "fileId", description: "GridFS file id" })
+    @ApiResponse({ status: 200, description: "Binary file stream" })
+    @ApiResponse({ status: 403, description: "Not a participant" })
+    @ApiResponse({ status: 404, description: "File not found" })
+    async getFile(
+        @Param("fileId") fileId: string,
+        @Request() req: AuthRequest,
+        @Res() res: Response,
+    ) {
+        if (!ObjectId.isValid(fileId)) {
+            throw new BadRequestException("Invalid file id");
+        }
+
+        const objectId = new ObjectId(fileId);
+        const [file] = await this.bucket.find({ _id: objectId }).toArray();
+        if (!file) throw new NotFoundException("File not found");
+
+        const conversationId = file.metadata?.conversationId as
+            | string
+            | undefined;
+        if (!conversationId) throw new NotFoundException("File not found");
+        await this.messagingService.assertParticipant(
+            conversationId,
+            req.user.sub,
+        );
+
+        const contentType =
+            (file.metadata?.contentType as string | undefined) ??
+            "application/octet-stream";
+        const safeName = file.filename.replace(/[\r\n"]/g, "");
+        res.set({
+            "Content-Type": contentType,
+            "Content-Disposition": `inline; filename="${safeName}"`,
+        });
+        this.bucket.openDownloadStream(objectId).pipe(res);
     }
 }

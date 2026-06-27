@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Add01Icon,
     CustomerServiceIcon,
@@ -7,8 +8,11 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
-import { centroidOf, latLngToPoint, pointToLatLng } from "@workspace/shared/lib/geo";
+import {
+    centroidOf,
+    latLngToPoint,
+    pointToLatLng,
+} from "@workspace/shared/lib/geo";
 import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
 import {
     useCreateService,
@@ -79,7 +83,6 @@ import {
 } from "@workspace/ui/components/tabs";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { toast } from "sonner";
-
 
 export const Route = createFileRoute("/_app/services/")({
     component: AdminServicesPage,
@@ -265,7 +268,9 @@ function AdminServicesPage() {
                                                             }
                                                         >
                                                             <HugeiconsIcon
-                                                                icon={Edit01Icon}
+                                                                icon={
+                                                                    Edit01Icon
+                                                                }
                                                             />
                                                             {t(
                                                                 "adminPages.common.edit",
@@ -437,6 +442,11 @@ function ServiceDialog({
     const [neighborhoodId, setNeighborhoodId] = useState(
         initial?.neighborhoodId ?? "",
     );
+    const [pointsMultiplier, setPointsMultiplier] = useState(
+        initial?.pointsMultiplier != null
+            ? String(initial.pointsMultiplier)
+            : "",
+    );
     const initialCoords = initial?.location?.coordinates;
     const [pickedLat, setPickedLat] = useState<number | null>(
         initialCoords ? initialCoords[1] : null,
@@ -464,6 +474,9 @@ function ServiceDialog({
             description: description.trim() || undefined,
             address: address.trim() || undefined,
             neighborhoodId: neighborhoodId || undefined,
+            pointsMultiplier: pointsMultiplier
+                ? Number(pointsMultiplier)
+                : undefined,
             location,
         };
         if (initial) {
@@ -550,7 +563,9 @@ function ServiceDialog({
                                         {t("adminPages.services.types.paid")}
                                     </SelectItem>
                                     <SelectItem value="exchange">
-                                        {t("adminPages.services.types.exchange")}
+                                        {t(
+                                            "adminPages.services.types.exchange",
+                                        )}
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
@@ -568,6 +583,26 @@ function ServiceDialog({
                                 "adminPages.services.addressPlaceholder",
                             )}
                         />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="svc-points-multiplier">
+                            {t("adminPages.services.pointsMultiplierLabel")}
+                        </Label>
+                        <Input
+                            id="svc-points-multiplier"
+                            type="number"
+                            min={0.1}
+                            max={10}
+                            step={0.1}
+                            value={pointsMultiplier}
+                            onChange={(e) =>
+                                setPointsMultiplier(e.target.value)
+                            }
+                            placeholder="1"
+                        />
+                        <p className="text-muted-foreground text-xs">
+                            {t("adminPages.services.pointsMultiplierHint")}
+                        </p>
                     </div>
                     {neighborhoods.length > 0 && (
                         <div className="space-y-2">

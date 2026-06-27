@@ -19,6 +19,20 @@ export class UserPublicDto {
     createdAt: string;
 }
 
+export class UserSearchResultDto {
+    @ApiProperty({ example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890" })
+    id: string;
+
+    @ApiProperty({ example: "alice@demo.fr" })
+    email: string;
+
+    @ApiProperty({
+        example: "resident",
+        enum: ["resident", "moderator", "admin", "banned"],
+    })
+    role: string;
+}
+
 export class PointsBalanceDto {
     @ApiProperty({ example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890" })
     userId: string;

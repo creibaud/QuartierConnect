@@ -1,14 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Add01Icon, Message01Icon, SentIcon } from "@hugeicons/core-free-icons";
+import { useTranslation } from "react-i18next";
+import {
+    Add01Icon,
+    Attachment01Icon,
+    Download01Icon,
+    Message01Icon,
+    SentIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
+import { apiBlob, apiBlobUrl } from "@workspace/shared/lib/api";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import {
     useConversations,
     useCreateConversation,
     useMessages,
+    useSendFileMessage,
     useSocketMessages,
 } from "@workspace/shared/lib/hooks/useMessaging";
 import type { Conversation, Message } from "@workspace/shared/lib/types";
@@ -39,6 +46,7 @@ import {
     SheetTrigger,
 } from "@workspace/ui/components/sheet";
 import { cn } from "@workspace/ui/lib/utils";
+import type { TFunction } from "i18next";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/messages/")({
@@ -61,6 +69,89 @@ function conversationLabel(
     return `${others[0]} +${others.length - 1}`;
 }
 
+function AuthedImage({ fileId, alt }: { fileId: string; alt: string }) {
+    const { t } = useTranslation();
+    const [url, setUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        let objectUrl: string | null = null;
+        apiBlobUrl(`/messaging/files/${fileId}`)
+            .then((created) => {
+                if (cancelled) {
+                    URL.revokeObjectURL(created);
+                    return;
+                }
+                objectUrl = created;
+                setUrl(created);
+            })
+            .catch(() => {
+                // image failed to load — leave placeholder
+            });
+        return () => {
+            cancelled = true;
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
+    }, [fileId]);
+
+    if (!url) {
+        return (
+            <div className="text-muted-foreground py-6 text-center text-xs">
+                {t("common.loading")}
+            </div>
+        );
+    }
+
+    return (
+        <img
+            src={url}
+            alt={alt}
+            className="max-h-64 max-w-full rounded-lg object-cover"
+        />
+    );
+}
+
+function FileAttachment({ message }: { message: Message }) {
+    const { t } = useTranslation();
+    const [downloading, setDownloading] = useState(false);
+
+    async function handleDownload() {
+        if (!message.fileId) return;
+        setDownloading(true);
+        try {
+            const blob = await apiBlob(`/messaging/files/${message.fileId}`);
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = message.fileName ?? "file";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        } catch {
+            toast.error(t("messaging.uploadError"));
+        } finally {
+            setDownloading(false);
+        }
+    }
+
+    return (
+        <button
+            type="button"
+            onClick={handleDownload}
+            disabled={downloading}
+            className="flex items-center gap-2 text-sm underline underline-offset-2"
+        >
+            <HugeiconsIcon icon={Download01Icon} size={16} />
+            <span>
+                {downloading
+                    ? t("messaging.sending")
+                    : (message.fileName ?? t("messaging.download"))}
+            </span>
+        </button>
+    );
+}
+
 function MessageBubble({
     message,
     isOutgoing,
@@ -68,10 +159,14 @@ function MessageBubble({
     message: Message;
     isOutgoing: boolean;
 }) {
+    const { t } = useTranslation();
     const time = new Date(message.createdAt).toLocaleTimeString("fr-FR", {
         hour: "2-digit",
         minute: "2-digit",
     });
+
+    const isImage = message.type === "image" && !!message.fileId;
+    const isFile = message.type === "file" && !!message.fileId;
 
     return (
         <div
@@ -88,7 +183,16 @@ function MessageBubble({
                         : "bg-muted text-foreground rounded-2xl rounded-bl-md",
                 )}
             >
-                {message.content ?? ""}
+                {isImage ? (
+                    <AuthedImage
+                        fileId={message.fileId!}
+                        alt={message.fileName ?? t("messaging.imageAlt")}
+                    />
+                ) : isFile ? (
+                    <FileAttachment message={message} />
+                ) : (
+                    (message.content ?? "")
+                )}
             </div>
             <span className="text-muted-foreground px-1 text-xs tabular-nums">
                 {time}
@@ -108,8 +212,10 @@ function ConversationThread({
     const [inputValue, setInputValue] = useState("");
     const [localMessages, setLocalMessages] = useState<Message[]>([]);
     const bottomRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { data: fetchedMessages, isLoading } = useMessages(conversationId);
+    const sendFile = useSendFileMessage(conversationId);
 
     const handleNewMessage = useCallback((msg: Message) => {
         setLocalMessages((prev) => {
@@ -141,6 +247,15 @@ function ConversationThread({
         setInputValue("");
     }
 
+    function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        sendFile.mutate(file, {
+            onError: () => toast.error(t("messaging.uploadError")),
+        });
+        e.target.value = "";
+    }
+
     return (
         <div className="flex h-full flex-col">
             <ScrollArea className="flex-1 p-4">
@@ -166,10 +281,7 @@ function ConversationThread({
                 )}
             </ScrollArea>
 
-            <form
-                onSubmit={handleSend}
-                className="border-border border-t p-4"
-            >
+            <form onSubmit={handleSend} className="border-border border-t p-4">
                 <InputGroup>
                     <InputGroupInput
                         value={inputValue}
@@ -177,6 +289,20 @@ function ConversationThread({
                         placeholder={t("messaging.typePlaceholder")}
                         autoComplete="off"
                     />
+                    <InputGroupAddon align="inline-start">
+                        <InputGroupButton
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            disabled={sendFile.isPending}
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <HugeiconsIcon icon={Attachment01Icon} />
+                            <span className="sr-only">
+                                {t("messaging.attachFile")}
+                            </span>
+                        </InputGroupButton>
+                    </InputGroupAddon>
                     <InputGroupAddon align="inline-end">
                         <InputGroupButton
                             type="submit"
@@ -191,6 +317,12 @@ function ConversationThread({
                         </InputGroupButton>
                     </InputGroupAddon>
                 </InputGroup>
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={handleFilePick}
+                />
             </form>
         </div>
     );
@@ -317,9 +449,7 @@ function NewConversationDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>
-                        {t("messaging.newConversation")}
-                    </DialogTitle>
+                    <DialogTitle>{t("messaging.newConversation")}</DialogTitle>
                     <DialogDescription>
                         {t("pages.messages.newConversationDescription")}
                     </DialogDescription>

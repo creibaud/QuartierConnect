@@ -1,19 +1,40 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
+    Add01Icon,
     CustomerServiceIcon,
+    Delete01Icon,
+    Edit01Icon,
     ThumbsDownIcon,
     ThumbsUpIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
+import { getCurrentUser } from "@workspace/shared/lib/auth";
 import { centroidOf, pointToLatLng } from "@workspace/shared/lib/geo";
 import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
-import { useInfiniteServices } from "@workspace/shared/lib/hooks/services.hooks";
+import {
+    useCreateService,
+    useDeleteService,
+    useInfiniteServices,
+    useUpdateService,
+} from "@workspace/shared/lib/hooks/services.hooks";
 import {
     useCastVote,
     useVoteScore,
 } from "@workspace/shared/lib/hooks/useVotes";
+import type { Neighborhood, Service } from "@workspace/shared/lib/types";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@workspace/ui/components/alert-dialog";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -25,12 +46,20 @@ import {
 } from "@workspace/ui/components/card";
 import { DataState } from "@workspace/ui/components/data-state";
 import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@workspace/ui/components/dialog";
+import {
     Empty,
     EmptyDescription,
     EmptyHeader,
     EmptyMedia,
     EmptyTitle,
 } from "@workspace/ui/components/empty";
+import { Input } from "@workspace/ui/components/input";
+import { Label } from "@workspace/ui/components/label";
 import {
     Map,
     Marker,
@@ -47,7 +76,20 @@ import {
     SelectValue,
 } from "@workspace/ui/components/select";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { Textarea } from "@workspace/ui/components/textarea";
 import { toast } from "sonner";
+
+const SERVICE_CATEGORIES = [
+    "gardening",
+    "handyman",
+    "transport",
+    "shopping",
+    "childcare",
+    "it-support",
+    "other",
+] as const;
+
+const SERVICE_TYPES = ["free", "paid", "exchange"] as const;
 
 export const Route = createFileRoute("/_app/services/")({
     component: ServicesPage,
@@ -55,8 +97,11 @@ export const Route = createFileRoute("/_app/services/")({
 
 function ServicesPage() {
     const { t } = useTranslation();
+    const currentUser = getCurrentUser();
     const [selectedNeighborhood, setSelectedNeighborhood] =
         useState<string>("all");
+    const [createOpen, setCreateOpen] = useState(false);
+    const [editTarget, setEditTarget] = useState<Service | null>(null);
     const { data: neighborhoodsData } = useNeighborhoods();
     const neighborhoods = neighborhoodsData ?? [];
 
@@ -73,6 +118,12 @@ function ServicesPage() {
         setSelectedNeighborhood(value);
     }
 
+    function canManage(service: Service): boolean {
+        if (!currentUser) return false;
+        if (currentUser.role === "admin") return true;
+        return service.createdBy === currentUser.sub;
+    }
+
     return (
         <div className="p-6 md:p-8">
             <div className="mx-auto flex max-w-5xl flex-col gap-6">
@@ -80,30 +131,41 @@ function ServicesPage() {
                     title={t("pages.services.title")}
                     description={t("pages.services.description")}
                     actions={
-                        neighborhoods.length > 0 ? (
-                            <Select
-                                value={selectedNeighborhood}
-                                onValueChange={handleFilterChange}
-                            >
-                                <SelectTrigger className="w-48">
-                                    <SelectValue
-                                        placeholder={t(
-                                            "pages.services.allNeighborhoods",
-                                        )}
-                                    />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        {t("pages.services.allNeighborhoods")}
-                                    </SelectItem>
-                                    {neighborhoods.map((n) => (
-                                        <SelectItem key={n._id} value={n._id}>
-                                            {n.name}
+                        <div className="flex items-center gap-2">
+                            {neighborhoods.length > 0 && (
+                                <Select
+                                    value={selectedNeighborhood}
+                                    onValueChange={handleFilterChange}
+                                >
+                                    <SelectTrigger className="w-48">
+                                        <SelectValue
+                                            placeholder={t(
+                                                "pages.services.allNeighborhoods",
+                                            )}
+                                        />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            {t(
+                                                "pages.services.allNeighborhoods",
+                                            )}
                                         </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        ) : undefined
+                                        {neighborhoods.map((n) => (
+                                            <SelectItem
+                                                key={n._id}
+                                                value={n._id}
+                                            >
+                                                {n.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                            <Button onClick={() => setCreateOpen(true)}>
+                                <HugeiconsIcon icon={Add01Icon} />
+                                {t("pages.services.offer")}
+                            </Button>
+                        </div>
                     }
                 />
 
@@ -141,13 +203,15 @@ function ServicesPage() {
                                         <Marker
                                             key={s._id}
                                             variant="service"
-                                            position={pointToLatLng(s.location!)}
+                                            position={pointToLatLng(
+                                                s.location!,
+                                            )}
                                             popup={
                                                 <div className="space-y-1">
                                                     <p className="font-medium">
                                                         {s.title}
                                                     </p>
-                                                    <p className="text-xs text-muted-foreground">
+                                                    <p className="text-muted-foreground text-xs">
                                                         {s.category}
                                                     </p>
                                                 </div>
@@ -218,7 +282,17 @@ function ServicesPage() {
                                             {service.description}
                                         </p>
                                     )}
-                                    <ServiceVote serviceId={service._id} />
+                                    <div className="flex items-center justify-between">
+                                        <ServiceVote serviceId={service._id} />
+                                        {canManage(service) && (
+                                            <ServiceManageActions
+                                                service={service}
+                                                onEdit={() =>
+                                                    setEditTarget(service)
+                                                }
+                                            />
+                                        )}
+                                    </div>
                                 </CardContent>
                             </Card>
                         ))}
@@ -235,7 +309,303 @@ function ServicesPage() {
                     )}
                 </DataState>
             </div>
+
+            <ServiceFormDialog
+                open={createOpen}
+                neighborhoods={neighborhoods}
+                onOpenChange={setCreateOpen}
+                onSuccess={() => setCreateOpen(false)}
+            />
+
+            {editTarget && (
+                <ServiceFormDialog
+                    key={editTarget._id}
+                    open
+                    initial={editTarget}
+                    neighborhoods={neighborhoods}
+                    onOpenChange={(open) => {
+                        if (!open) setEditTarget(null);
+                    }}
+                    onSuccess={() => setEditTarget(null)}
+                />
+            )}
         </div>
+    );
+}
+
+function ServiceManageActions({
+    service,
+    onEdit,
+}: {
+    service: Service;
+    onEdit: () => void;
+}) {
+    const { t } = useTranslation();
+    const deleteService = useDeleteService();
+
+    function handleDelete() {
+        deleteService.mutate(service._id, {
+            onSuccess: () => toast.success(t("pages.services.deleteSuccess")),
+            onError: () => toast.error(t("pages.services.deleteError")),
+        });
+    }
+
+    return (
+        <div className="flex items-center gap-1">
+            <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onEdit}
+                className="text-muted-foreground"
+            >
+                <HugeiconsIcon icon={Edit01Icon} />
+                <span className="sr-only">{t("common.save")}</span>
+            </Button>
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={deleteService.isPending}
+                        className="text-destructive hover:text-destructive"
+                    >
+                        <HugeiconsIcon icon={Delete01Icon} />
+                        <span className="sr-only">{t("common.delete")}</span>
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {t("pages.services.deleteConfirmTitle")}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t("pages.services.deleteConfirmDescription", {
+                                title: service.title,
+                            })}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>
+                            {t("common.cancel")}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant="destructive"
+                            onClick={handleDelete}
+                        >
+                            {t("common.delete")}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
+    );
+}
+
+function ServiceFormDialog({
+    open,
+    initial,
+    neighborhoods,
+    onOpenChange,
+    onSuccess,
+}: {
+    open: boolean;
+    initial?: Service;
+    neighborhoods: Neighborhood[];
+    onOpenChange: (open: boolean) => void;
+    onSuccess: () => void;
+}) {
+    const { t } = useTranslation();
+    const [title, setTitle] = useState(initial?.title ?? "");
+    const [category, setCategory] = useState(initial?.category ?? "");
+    const [type, setType] = useState<"free" | "paid" | "exchange">(
+        (initial?.type as "free" | "paid" | "exchange") ?? "free",
+    );
+    const [description, setDescription] = useState(initial?.description ?? "");
+    const [address, setAddress] = useState(initial?.address ?? "");
+    const [neighborhoodId, setNeighborhoodId] = useState(
+        initial?.neighborhoodId ?? "",
+    );
+    const createService = useCreateService();
+    const updateService = useUpdateService();
+
+    const isPending = createService.isPending || updateService.isPending;
+    const isValid = title.trim() !== "" && category !== "";
+
+    function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        if (!isValid) return;
+        const payload = {
+            title: title.trim(),
+            category,
+            type,
+            description: description.trim() || undefined,
+            address: address.trim() || undefined,
+            neighborhoodId: neighborhoodId || undefined,
+        };
+        if (initial) {
+            updateService.mutate(
+                { id: initial._id, data: payload },
+                {
+                    onSuccess: () => {
+                        toast.success(t("pages.services.updateSuccess"));
+                        onSuccess();
+                    },
+                    onError: () => toast.error(t("pages.services.saveError")),
+                },
+            );
+        } else {
+            createService.mutate(payload, {
+                onSuccess: () => {
+                    toast.success(t("pages.services.createSuccess"));
+                    onSuccess();
+                },
+                onError: () => toast.error(t("pages.services.saveError")),
+            });
+        }
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>
+                        {initial
+                            ? t("pages.services.editTitle")
+                            : t("pages.services.createTitle")}
+                    </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="svc-title">
+                            {t("pages.services.titleLabel")}
+                        </Label>
+                        <Input
+                            id="svc-title"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder={t("pages.services.titlePlaceholder")}
+                            maxLength={255}
+                            required
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>{t("pages.services.categoryLabel")}</Label>
+                            <Select
+                                value={category}
+                                onValueChange={setCategory}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue
+                                        placeholder={t(
+                                            "pages.services.chooseCategory",
+                                        )}
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {SERVICE_CATEGORIES.map((c) => (
+                                        <SelectItem key={c} value={c}>
+                                            {t(
+                                                `pages.services.categories.${c}`,
+                                            )}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>{t("pages.services.typeLabel")}</Label>
+                            <Select
+                                value={type}
+                                onValueChange={(v) =>
+                                    setType(v as "free" | "paid" | "exchange")
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {SERVICE_TYPES.map((ty) => (
+                                        <SelectItem key={ty} value={ty}>
+                                            {t(`pages.services.types.${ty}`)}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    {neighborhoods.length > 0 && (
+                        <div className="space-y-2">
+                            <Label>
+                                {t("pages.services.neighborhoodLabel")}
+                            </Label>
+                            <Select
+                                value={neighborhoodId}
+                                onValueChange={setNeighborhoodId}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue
+                                        placeholder={t(
+                                            "pages.services.chooseNeighborhood",
+                                        )}
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {neighborhoods.map((n) => (
+                                        <SelectItem key={n._id} value={n._id}>
+                                            {n.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+                    <div className="space-y-2">
+                        <Label htmlFor="svc-address">
+                            {t("pages.services.addressLabel")}
+                        </Label>
+                        <Input
+                            id="svc-address"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            placeholder={t("pages.services.addressPlaceholder")}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="svc-desc">
+                            {t("pages.services.descriptionLabel")}
+                        </Label>
+                        <Textarea
+                            id="svc-desc"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder={t(
+                                "pages.services.descriptionPlaceholder",
+                            )}
+                            rows={3}
+                        />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => onOpenChange(false)}
+                        >
+                            {t("common.cancel")}
+                        </Button>
+                        <Button type="submit" disabled={isPending || !isValid}>
+                            {isPending
+                                ? "…"
+                                : initial
+                                  ? t("common.save")
+                                  : t("common.create")}
+                        </Button>
+                    </div>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
 

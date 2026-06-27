@@ -45,6 +45,7 @@ export interface Service {
     address?: string;
     neighborhoodId?: string;
     pointsMultiplier?: number;
+    createdBy?: string;
     location?: GeoJsonPoint;
 }
 
@@ -62,6 +63,23 @@ export interface Event {
 
 export interface PointBalance {
     balance: number;
+}
+
+export interface PointTransaction {
+    id: string;
+    senderId: string;
+    recipientId: string;
+    amount: number;
+    note: string | null;
+    senderEmail: string | null;
+    recipientEmail: string | null;
+    createdAt: string;
+}
+
+export interface TransferResult {
+    transaction: PointTransaction;
+    senderBalance: number;
+    recipientBalance: number;
 }
 
 export interface PaginatedResponse<T> {
