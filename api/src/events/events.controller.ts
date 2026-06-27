@@ -70,7 +70,7 @@ export class EventsController {
         @Query("limit") limit = "20",
     ) {
         const filter: Record<string, unknown> = {};
-        if (category) filter.category = category;
+        if (category) filter.category = String(category);
         if (date) {
             const from = new Date(date);
             const to = new Date(date);
@@ -160,7 +160,7 @@ export class EventsController {
     @ApiResponse({ status: 404, description: "Event not found" })
     async update(@Param("id") id: string, @Body() dto: UpdateEventDto) {
         const event = await this.eventModel
-            .findByIdAndUpdate(id, dto, { new: true })
+            .findByIdAndUpdate(String(id), dto, { new: true })
             .exec();
         if (!event) throw new NotFoundException("Event not found");
         return event;

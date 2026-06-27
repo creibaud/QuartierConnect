@@ -72,8 +72,8 @@ export class ServicesController {
         @Query("limit") limit = "20",
     ) {
         const filter: Record<string, string> = {};
-        if (category) filter.category = category;
-        if (type) filter.type = type;
+        if (category) filter.category = String(category);
+        if (type) filter.type = String(type);
 
         const pageNum = Math.max(1, parseInt(page) || 1);
         const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
@@ -156,7 +156,7 @@ export class ServicesController {
         }
 
         const updated = await this.serviceModel
-            .findByIdAndUpdate(id, dto, { new: true })
+            .findByIdAndUpdate(String(id), dto, { new: true })
             .exec();
         if (updated) {
             void this.socialService.syncService(

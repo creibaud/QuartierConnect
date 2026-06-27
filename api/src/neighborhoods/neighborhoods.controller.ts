@@ -119,11 +119,15 @@ export class NeighborhoodsController {
     })
     @ApiResponse({ status: 404, description: "Neighborhood not found" })
     async update(@Param("id") id: string, @Body() dto: UpdateNeighborhoodDto) {
+        const neighborhoodId = String(id);
         if (dto.geometry) {
-            await this.neighborhoodsService.assertNoOverlap(dto.geometry, id);
+            await this.neighborhoodsService.assertNoOverlap(
+                dto.geometry,
+                neighborhoodId,
+            );
         }
         const updated = await this.neighborhoodModel
-            .findByIdAndUpdate(id, dto, { new: true })
+            .findByIdAndUpdate(neighborhoodId, dto, { new: true })
             .exec();
         if (!updated) throw new NotFoundException("Neighborhood not found");
         void this.socialService.syncNeighborhood(
