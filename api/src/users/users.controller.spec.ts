@@ -56,4 +56,26 @@ describe("UsersController", () => {
             controller.updateRole("bad-id", { role: "admin" }),
         ).rejects.toThrow(NotFoundException);
     });
+
+    const authReq = (sub = "user-uuid-1"): { user: { sub: string } } => ({
+        user: { sub },
+    });
+
+    it("GET /users/search returns email matches capped at 10", async () => {
+        const result = await controller.searchByEmail("bob", authReq());
+        expect(result).toEqual([mockUser]);
+        expect(mockDb.limit).toHaveBeenCalledWith(10);
+    });
+
+    it("GET /users/search returns empty list when query is too short", async () => {
+        const result = await controller.searchByEmail("a", authReq());
+        expect(result).toEqual([]);
+        expect(mockDb.where).not.toHaveBeenCalled();
+    });
+
+    it("GET /users/search trims whitespace before measuring length", async () => {
+        const result = await controller.searchByEmail("  b  ", authReq());
+        expect(result).toEqual([]);
+        expect(mockDb.where).not.toHaveBeenCalled();
+    });
 });

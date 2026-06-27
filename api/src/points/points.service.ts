@@ -1,11 +1,16 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
-import { desc, eq, or, sql } from "drizzle-orm";
+import { desc, eq, inArray, or, sql } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { TransferPointsDto } from "./dto/transfer-points.dto";
 
 const MIN_BALANCE = -10;
+
+export type PointsTransactionWithEmails = schema.PointsTransaction & {
+    senderEmail: string | null;
+    recipientEmail: string | null;
+};
 
 @Injectable()
 export class PointsService {
@@ -27,9 +32,9 @@ export class PointsService {
         userId: string,
         page = 1,
         limit = 20,
-    ): Promise<schema.PointsTransaction[]> {
+    ): Promise<PointsTransactionWithEmails[]> {
         const skip = (page - 1) * limit;
-        return this.db
+        const transactions = await this.db
             .select()
             .from(schema.pointsTransactions)
             .where(
@@ -41,6 +46,25 @@ export class PointsService {
             .orderBy(desc(schema.pointsTransactions.createdAt))
             .offset(skip)
             .limit(limit);
+
+        if (transactions.length === 0) return [];
+
+        const counterpartIds = [
+            ...new Set(
+                transactions.flatMap((tx) => [tx.senderId, tx.recipientId]),
+            ),
+        ];
+        const users = await this.db
+            .select({ id: schema.users.id, email: schema.users.email })
+            .from(schema.users)
+            .where(inArray(schema.users.id, counterpartIds));
+        const emailById = new Map(users.map((user) => [user.id, user.email]));
+
+        return transactions.map((tx) => ({
+            ...tx,
+            senderEmail: emailById.get(tx.senderId) ?? null,
+            recipientEmail: emailById.get(tx.recipientId) ?? null,
+        }));
     }
 
     async transfer(senderId: string, dto: TransferPointsDto): Promise<void> {
