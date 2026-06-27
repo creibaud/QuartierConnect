@@ -1,10 +1,10 @@
 # Contributing — QuartierConnect
 
-Projet ESGI 3AL2 · Frédéric SANANES · Rendu final 19 juillet 2026
+ESGI 3AL2 project · Frédéric SANANES · Final submission 19 July 2026
 
 ---
 
-## Prérequis
+## Prerequisites
 
 - Docker + Docker Compose
 - Node.js 20+ · pnpm 9+
@@ -14,92 +14,92 @@ Projet ESGI 3AL2 · Frédéric SANANES · Rendu final 19 juillet 2026
 
 ```bash
 make install        # pnpm install (api + web) + uv sync (dsl)
-make docker-up      # 7 services : Caddy, API, Client, Admin, MongoDB, PostgreSQL, Neo4j
-make seed           # comptes démo + graphe Neo4j
+make docker-up      # 7 services: Caddy, API, Client, Admin, MongoDB, PostgreSQL, Neo4j
+make seed           # demo accounts + Neo4j graph
 ```
 
 ---
 
 ## Branches
 
-| Branche      | Rôle                                         |
-| ------------ | -------------------------------------------- |
-| `main`       | Production — merge uniquement via PR validée |
-| `master`     | Développement courant                        |
-| `feat/<nom>` | Nouvelle fonctionnalité                      |
-| `fix/<nom>`  | Correction de bug                            |
-| `docs/<nom>` | Documentation uniquement                     |
+| Branch       | Role                                          |
+| ------------ | --------------------------------------------- |
+| `main`       | Production — merge only via an approved PR     |
+| `master`     | Current development                           |
+| `feat/<name>`| New feature                                   |
+| `fix/<name>` | Bug fix                                        |
+| `docs/<name>`| Documentation only                            |
 
-Créer une branche depuis `master` :
+Create a branch from `master`:
 
 ```bash
 git checkout master && git pull
-git checkout -b feat/ma-fonctionnalite
+git checkout -b feat/my-feature
 ```
 
 ---
 
 ## Workflow
 
-1. **Coder** dans la bonne surface (voir tableau ci-dessous)
-2. **Valider** avant tout commit : `make validate-fast`
-3. **Committer** avec un message conventionnel
-4. **Ouvrir une PR** vers `master` — `main` uniquement pour les releases
+1. **Write code** in the right surface (see the table below)
+2. **Validate** before every commit: `make validate-fast`
+3. **Commit** with a conventional message
+4. **Open a PR** against `master` — `main` is for releases only
 
-### Surfaces et répertoires
+### Surfaces and directories
 
-| Surface                | Répertoire                  | Langage                 |
+| Surface                | Directory                   | Language                |
 | ---------------------- | --------------------------- | ----------------------- |
-| API REST               | `api/`                      | TypeScript / NestJS     |
-| Client habitant        | `web-apps/apps/client/`     | React / TanStack Router |
-| Back-office admin      | `web-apps/apps/admin/`      | React / TanStack Router |
-| Composants UI partagés | `web-apps/packages/ui/`     | React                   |
-| Utilitaires partagés   | `web-apps/packages/shared/` | TypeScript              |
-| Application desktop    | `desktop-app/`              | Java 21 / JavaFX        |
-| DSL de requêtes        | `dsl/`                      | Python / PLY            |
+| REST API               | `api/`                      | TypeScript / NestJS     |
+| Resident client        | `web-apps/apps/client/`     | React / TanStack Router |
+| Admin back-office      | `web-apps/apps/admin/`      | React / TanStack Router |
+| Shared UI components    | `web-apps/packages/ui/`     | React                   |
+| Shared utilities       | `web-apps/packages/shared/` | TypeScript              |
+| Desktop application    | `desktop-app/`              | Java 21 / JavaFX        |
+| Query DSL              | `dsl/`                      | Python / PLY            |
 
 ---
 
-## Validation obligatoire
+## Mandatory validation
 
-Toutes les vérifications suivantes doivent passer avant de pousser.
+All of the following checks must pass before pushing.
 
 ```bash
-make validate-fast      # lint + typecheck + tests unitaires (sans build)
-make validate           # pipeline CI complète (lint + typecheck + tests + coverage + build)
+make validate-fast      # lint + typecheck + unit tests (no build)
+make validate           # full CI pipeline (lint + typecheck + tests + coverage + build)
 ```
 
-### Détail des seuils
+### Threshold details
 
-| Vérification  | Commande            | Seuil                                                  |
+| Check         | Command             | Threshold                                              |
 | ------------- | ------------------- | ------------------------------------------------------ |
-| Lint API      | `make lint-api`     | zéro erreur                                            |
-| Lint Web      | `make lint-web`     | zéro erreur                                            |
-| Lint Desktop  | `make lint-desktop` | compilation sans erreur                                |
-| Lint DSL      | `make lint-dsl`     | zéro erreur Ruff                                       |
-| Typecheck     | `make typecheck`    | zéro erreur TypeScript                                 |
-| Tests API     | `make test-cov`     | statements 80%, branches 75%, functions 80%, lines 80% |
-| Tests Desktop | `make test-desktop` | tous les tests JUnit passent                           |
-| Tests DSL     | `make test-dsl`     | tous les tests pytest passent                          |
-| Tests E2E     | `make test-e2e`     | nécessite `make docker-up`                             |
+| Lint API      | `make lint-api`     | zero errors                                            |
+| Lint Web      | `make lint-web`     | zero errors                                            |
+| Lint Desktop  | `make lint-desktop` | compiles without errors                                |
+| Lint DSL      | `make lint-dsl`     | zero Ruff errors                                       |
+| Typecheck     | `make typecheck`    | zero TypeScript errors                                 |
+| API tests     | `make test-cov`     | statements 80%, branches 75%, functions 80%, lines 80% |
+| Desktop tests | `make test-desktop` | all JUnit tests pass                                   |
+| DSL tests     | `make test-dsl`     | all pytest tests pass                                  |
+| E2E tests     | `make test-e2e`     | requires `make docker-up`                              |
 
 ---
 
-## Conventions de commit
+## Commit conventions
 
-Format : `type(scope): description courte`
+Format: `type(scope): short description`
 
-| Type       | Quand l'utiliser                             |
+| Type       | When to use it                               |
 | ---------- | -------------------------------------------- |
-| `feat`     | Nouvelle fonctionnalité                      |
-| `fix`      | Correction de bug                            |
-| `refactor` | Refactoring sans changement de comportement  |
-| `test`     | Ajout ou correction de tests                 |
-| `docs`     | Documentation uniquement                     |
-| `chore`    | Mise à jour de dépendances, config, Makefile |
-| `style`    | Formatage, espaces (sans logique)            |
+| `feat`     | New feature                                  |
+| `fix`      | Bug fix                                       |
+| `refactor` | Refactoring with no behavior change           |
+| `test`     | Adding or fixing tests                        |
+| `docs`     | Documentation only                            |
+| `chore`    | Dependency, config, or Makefile updates       |
+| `style`    | Formatting, whitespace (no logic)             |
 
-Exemples :
+Examples:
 
 ```
 feat(api): add PATCH /incidents/:id/status endpoint
@@ -110,34 +110,34 @@ docs: update API.md with new DSL endpoint
 
 ---
 
-## Règles de code
+## Coding rules
 
-- **Zéro `console.log`** dans le code de production
-- **Zéro `TODO`** dans le code commité
-- **Zéro commentaire inline** expliquant du code évident
-- Ne jamais éditer `routeTree.gen.ts` manuellement (auto-généré par `pnpm dev`)
-- Mots de passe : **argon2** uniquement (pas bcrypt)
-- Points de fidélité : transactions **PostgreSQL ACID** uniquement (jamais MongoDB)
+- **Zero `console.log`** in production code
+- **Zero `TODO`** in committed code
+- **Zero inline comments** explaining obvious code
+- Never edit `routeTree.gen.ts` manually (auto-generated by `pnpm dev`)
+- Passwords: **argon2** only (not bcrypt)
+- Loyalty points: **PostgreSQL ACID** transactions only (never MongoDB)
 
-### Tests — ce qui est attendu
+### Tests — what is expected
 
-- Chaque nouvel endpoint API → au moins 1 test unitaire dans le controller
-- Chaque nouveau fichier de logique → fichier de test correspondant :
-  - API : `.spec.ts` dans le même répertoire
-  - Desktop : `.java` dans `src/test/java/`
-  - DSL : `test_*.py` dans `dsl/tests/`
+- Every new API endpoint → at least 1 unit test in the controller
+- Every new logic file → a corresponding test file:
+  - API: `.spec.ts` in the same directory
+  - Desktop: `.java` in `src/test/java/`
+  - DSL: `test_*.py` in `dsl/tests/`
 
 ---
 
-## Développement par surface
+## Development per surface
 
-### API NestJS
+### NestJS API
 
 ```bash
-make dev-api            # hot reload sur :5000
-make test-watch         # Jest en mode watch
+make dev-api            # hot reload on :5000
+make test-watch         # Jest in watch mode
 make lint-api
-make test-cov           # coverage report dans api/coverage/
+make test-cov           # coverage report in api/coverage/
 ```
 
 ### Web (client + admin)
@@ -162,33 +162,33 @@ make build-desktop      # fat JAR → desktop-app/target/quartierconnect-desktop
 ```bash
 make lint-dsl           # Ruff
 make test-dsl           # pytest
-make build-dsl          # vérification syntaxe ast.parse
+make build-dsl          # ast.parse syntax check
 ```
 
 ---
 
-## Composants UI Shadcn
+## Shadcn UI components
 
-Les composants sont installés dans `web-apps/packages/ui/src/components/`.
+Components are installed in `web-apps/packages/ui/src/components/`.
 
 ```bash
 cd web-apps/apps/client
-pnpm dlx shadcn@latest add <composant>
+pnpm dlx shadcn@latest add <component>
 ```
 
 ---
 
-## Comptes démo
+## Demo accounts
 
-| Email         | Mot de passe | Rôle      |
+| Email         | Password     | Role      |
 | ------------- | ------------ | --------- |
 | alice@demo.fr | Demo1234!    | resident  |
 | bob@demo.fr   | Demo1234!    | moderator |
 | admin@demo.fr | Demo1234!    | admin     |
 
-TOTP secret commun : `JBSWY3DPEHPK3PXP`
+Shared TOTP secret: `JBSWY3DPEHPK3PXP`
 
 ```bash
 make totp
-# ou : oathtool --totp --base32 JBSWY3DPEHPK3PXP
+# or: oathtool --totp --base32 JBSWY3DPEHPK3PXP
 ```

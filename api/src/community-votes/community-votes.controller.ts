@@ -42,9 +42,9 @@ export class CommunityVotesController {
 
     @Post()
     @ApiOperation({
-        summary: "Créer un vote communautaire",
+        summary: "Create a community vote",
         description:
-            "Pour BINARY, passer options: [{id:'yes',label:'Oui'},{id:'no',label:'Non'}]. Pour SINGLE_CHOICE/MULTIPLE_CHOICE, libre. Pour WEIGHTED, les poids doivent totaliser 1.0.",
+            "For BINARY, pass options: [{id:'yes',label:'Yes'},{id:'no',label:'No'}]. For SINGLE_CHOICE/MULTIPLE_CHOICE, options are free-form. For WEIGHTED, the weights must add up to 1.0.",
     })
     @ApiResponse({ status: 201, type: CommunityVoteDto })
     create(@Body() dto: CreateCommunityVoteDto, @Request() req: AuthRequest) {
@@ -52,7 +52,7 @@ export class CommunityVotesController {
     }
 
     @Get()
-    @ApiOperation({ summary: "Lister les votes communautaires" })
+    @ApiOperation({ summary: "List community votes" })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
     @ApiResponse({ status: 200, type: [CommunityVoteDto] })
@@ -64,31 +64,31 @@ export class CommunityVotesController {
     }
 
     @Get(":id")
-    @ApiOperation({ summary: "Détail d'un vote communautaire" })
-    @ApiParam({ name: "id", description: "MongoDB ObjectId du vote" })
+    @ApiOperation({ summary: "Community vote details" })
+    @ApiParam({ name: "id", description: "MongoDB ObjectId of the vote" })
     @ApiResponse({ status: 200, type: CommunityVoteDto })
-    @ApiResponse({ status: 404, description: "Vote introuvable" })
+    @ApiResponse({ status: 404, description: "Vote not found" })
     findOne(@Param("id") id: string) {
         return this.communityVotesService.findOne(id);
     }
 
     @Post(":id/cast")
     @ApiOperation({
-        summary: "Enregistrer un vote",
+        summary: "Cast a vote",
         description:
-            "Le corps doit contenir `choices` (tableau d'ids d'options) et optionnellement `weights` pour WEIGHTED.",
+            "The body must contain `choices` (array of option ids) and optionally `weights` for WEIGHTED.",
     })
-    @ApiParam({ name: "id", description: "MongoDB ObjectId du vote" })
+    @ApiParam({ name: "id", description: "MongoDB ObjectId of the vote" })
     @ApiResponse({
         status: 201,
         type: CommunityVoteDto,
-        description: "Vote enregistré",
+        description: "Vote recorded",
     })
     @ApiResponse({
         status: 400,
-        description: "Vote clôturé, choix invalide ou quorum déjà atteint",
+        description: "Vote closed, invalid choice, or quorum already reached",
     })
-    @ApiResponse({ status: 409, description: "Utilisateur a déjà voté" })
+    @ApiResponse({ status: 409, description: "User has already voted" })
     cast(
         @Param("id") id: string,
         @Body() dto: CastVoteDto,
@@ -98,8 +98,8 @@ export class CommunityVotesController {
     }
 
     @Get(":id/results")
-    @ApiOperation({ summary: "Résultats agrégés d'un vote" })
-    @ApiParam({ name: "id", description: "MongoDB ObjectId du vote" })
+    @ApiOperation({ summary: "Aggregated vote results" })
+    @ApiParam({ name: "id", description: "MongoDB ObjectId of the vote" })
     @ApiResponse({ status: 200, type: CommunityVoteResultsDto })
     getResults(@Param("id") id: string) {
         return this.communityVotesService.getResults(id);
@@ -107,19 +107,19 @@ export class CommunityVotesController {
 
     @Post(":id/close")
     @ApiOperation({
-        summary: "Clôturer un vote (créateur ou admin)",
+        summary: "Close a vote (creator or admin)",
         description:
-            "Passe le statut en 'closed'. Seul le créateur ou un admin peut clôturer.",
+            "Sets the status to 'closed'. Only the creator or an admin can close it.",
     })
-    @ApiParam({ name: "id", description: "MongoDB ObjectId du vote" })
+    @ApiParam({ name: "id", description: "MongoDB ObjectId of the vote" })
     @ApiResponse({
         status: 201,
         type: CommunityVoteDto,
-        description: "Vote clôturé",
+        description: "Vote closed",
     })
     @ApiResponse({
         status: 403,
-        description: "Non autorisé (créateur ou admin uniquement)",
+        description: "Not authorized (creator or admin only)",
     })
     close(@Param("id") id: string, @Request() req: AuthRequest) {
         return this.communityVotesService.close(

@@ -80,7 +80,7 @@ export class MessagingService {
             throw new BadRequestException({
                 code: "NO_OTHER_PARTICIPANTS",
                 message:
-                    "Une conversation doit inclure au moins un autre participant.",
+                    "A conversation must include at least one other participant.",
             });
         }
 
@@ -124,7 +124,7 @@ export class MessagingService {
             if (missing.length > 0) {
                 throw new NotFoundException({
                     code: "USER_EMAIL_NOT_FOUND",
-                    message: `Aucun utilisateur pour : ${missing.join(", ")}`,
+                    message: `No user found for: ${missing.join(", ")}`,
                 });
             }
             for (const row of rows) {
@@ -136,7 +136,7 @@ export class MessagingService {
             throw new BadRequestException({
                 code: "PARTICIPANTS_REQUIRED",
                 message:
-                    "Fournir `participants` (UUIDs) ou `participantEmails` (emails).",
+                    "Provide `participants` (UUIDs) or `participantEmails` (emails).",
             });
         }
 

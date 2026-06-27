@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Add01Icon, Message01Icon, SentIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import {
     useConversations,
@@ -46,14 +48,15 @@ export const Route = createFileRoute("/_app/messages/")({
 function conversationLabel(
     conv: Conversation,
     currentUserId: string,
+    t: TFunction,
 ): string {
     if (conv.isGroup) {
-        return conv.groupName ?? "Groupe";
+        return conv.groupName ?? t("pages.messages.group");
     }
     const others = (conv.participantsInfo ?? [])
         .filter((p) => p.id !== currentUserId && p.email)
         .map((p) => p.email as string);
-    if (others.length === 0) return "Conversation";
+    if (others.length === 0) return t("pages.messages.conversation");
     if (others.length <= 2) return others.join(", ");
     return `${others[0]} +${others.length - 1}`;
 }
@@ -101,6 +104,7 @@ function ConversationThread({
     conversationId: string;
     currentUserId: string;
 }) {
+    const { t } = useTranslation();
     const [inputValue, setInputValue] = useState("");
     const [localMessages, setLocalMessages] = useState<Message[]>([]);
     const bottomRef = useRef<HTMLDivElement>(null);
@@ -142,11 +146,11 @@ function ConversationThread({
             <ScrollArea className="flex-1 p-4">
                 {isLoading ? (
                     <div className="text-muted-foreground py-8 text-center text-sm">
-                        Chargement…
+                        {t("common.loading")}
                     </div>
                 ) : allMessages.length === 0 ? (
                     <div className="text-muted-foreground py-8 text-center text-sm">
-                        Aucun message — commencez la conversation !
+                        {t("pages.messages.noMessages")}
                     </div>
                 ) : (
                     <div className="flex flex-col gap-2">
@@ -170,7 +174,7 @@ function ConversationThread({
                     <InputGroupInput
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
-                        placeholder="Écrivez un message…"
+                        placeholder={t("messaging.typePlaceholder")}
                         autoComplete="off"
                     />
                     <InputGroupAddon align="inline-end">
@@ -181,7 +185,9 @@ function ConversationThread({
                             disabled={!inputValue.trim()}
                         >
                             <HugeiconsIcon icon={SentIcon} />
-                            <span className="sr-only">Envoyer</span>
+                            <span className="sr-only">
+                                {t("pages.messages.send")}
+                            </span>
                         </InputGroupButton>
                     </InputGroupAddon>
                 </InputGroup>
@@ -199,6 +205,7 @@ function ConversationList({
     onSelect: (id: string) => void;
     currentUserId: string;
 }) {
+    const { t } = useTranslation();
     const { data: conversations, isLoading, isError } = useConversations();
 
     const sorted = useMemo(
@@ -214,7 +221,7 @@ function ConversationList({
     if (isLoading) {
         return (
             <div className="text-muted-foreground p-4 text-sm">
-                Chargement…
+                {t("common.loading")}
             </div>
         );
     }
@@ -222,7 +229,7 @@ function ConversationList({
     if (isError) {
         return (
             <div className="text-destructive p-4 text-sm">
-                Erreur de chargement.
+                {t("pages.messages.loadError")}
             </div>
         );
     }
@@ -232,8 +239,8 @@ function ConversationList({
             <div className="p-4">
                 <EmptyState
                     icon={Message01Icon}
-                    title="Aucune conversation"
-                    description="Vous n'avez pas encore de conversation."
+                    title={t("pages.messages.noConversations")}
+                    description={t("pages.messages.noConversationsDescription")}
                 />
             </div>
         );
@@ -257,7 +264,7 @@ function ConversationList({
                             activeId === conv._id && "text-foreground",
                         )}
                     >
-                        {conversationLabel(conv, currentUserId)}
+                        {conversationLabel(conv, currentUserId, t)}
                     </p>
                     {conv.lastMessageAt && (
                         <p className="text-muted-foreground text-xs tabular-nums">
@@ -281,6 +288,7 @@ function NewConversationDialog({
     onOpenChange: (open: boolean) => void;
     onCreated: (id: string) => void;
 }) {
+    const { t } = useTranslation();
     const [email, setEmail] = useState("");
     const create = useCreateConversation();
 
@@ -292,13 +300,15 @@ function NewConversationDialog({
             const conv = await create.mutateAsync({
                 participantEmails: [trimmed],
             });
-            toast.success("Conversation prête");
+            toast.success(t("pages.messages.conversationReady"));
             setEmail("");
             onOpenChange(false);
             onCreated(conv._id);
         } catch (err) {
             const message =
-                err instanceof Error ? err.message : "Erreur inconnue";
+                err instanceof Error
+                    ? err.message
+                    : t("pages.messages.unknownError");
             toast.error(message);
         }
     }
@@ -307,14 +317,18 @@ function NewConversationDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Nouvelle conversation</DialogTitle>
+                    <DialogTitle>
+                        {t("messaging.newConversation")}
+                    </DialogTitle>
                     <DialogDescription>
-                        Démarre une discussion avec un voisin via son email.
+                        {t("pages.messages.newConversationDescription")}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="conv-email">Email du voisin</Label>
+                        <Label htmlFor="conv-email">
+                            {t("pages.messages.neighborEmail")}
+                        </Label>
                         <Input
                             id="conv-email"
                             type="email"
@@ -332,13 +346,15 @@ function NewConversationDialog({
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                         >
-                            Annuler
+                            {t("common.cancel")}
                         </Button>
                         <Button
                             type="submit"
                             disabled={create.isPending || !email.trim()}
                         >
-                            {create.isPending ? "Création…" : "Démarrer"}
+                            {create.isPending
+                                ? t("common.creating")
+                                : t("pages.messages.start")}
                         </Button>
                     </DialogFooter>
                 </form>
@@ -348,6 +364,7 @@ function NewConversationDialog({
 }
 
 function MessagesPage() {
+    const { t } = useTranslation();
     const user = getCurrentUser();
     const [activeConversationId, setActiveConversationId] = useState<
         string | null
@@ -374,13 +391,15 @@ function MessagesPage() {
                         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
                             <SheetTrigger asChild>
                                 <Button variant="outline" size="sm">
-                                    Conversations
+                                    {t("pages.messages.conversations")}
                                 </Button>
                             </SheetTrigger>
                             <SheetContent side="left" className="w-72 p-0">
                                 <SheetHeader className="border-border border-b px-4 py-3">
                                     <div className="flex items-center justify-between">
-                                        <SheetTitle>Conversations</SheetTitle>
+                                        <SheetTitle>
+                                            {t("pages.messages.conversations")}
+                                        </SheetTitle>
                                         <Button
                                             size="sm"
                                             variant="outline"
@@ -404,21 +423,25 @@ function MessagesPage() {
                             </SheetContent>
                         </Sheet>
                     </div>
-                    <h1 className="text-lg font-semibold">Messages</h1>
+                    <h1 className="text-lg font-semibold">
+                        {t("pages.messages.title")}
+                    </h1>
                 </div>
             </header>
 
             <div className="flex flex-1 overflow-hidden">
                 <aside className="border-border hidden w-80 flex-col border-r md:flex">
                     <div className="border-border flex items-center justify-between border-b px-4 py-3">
-                        <h2 className="text-sm font-semibold">Conversations</h2>
+                        <h2 className="text-sm font-semibold">
+                            {t("pages.messages.conversations")}
+                        </h2>
                         <Button
                             size="sm"
                             variant="outline"
                             onClick={() => setNewConvOpen(true)}
                         >
                             <HugeiconsIcon icon={Add01Icon} size={14} />
-                            Nouvelle
+                            {t("pages.messages.new")}
                         </Button>
                     </div>
                     <ScrollArea className="flex-1">
@@ -440,8 +463,10 @@ function MessagesPage() {
                         <div className="flex flex-1 items-center justify-center">
                             <EmptyState
                                 icon={Message01Icon}
-                                title="Aucune conversation sélectionnée"
-                                description="Choisissez une conversation dans la liste ou démarrez-en une nouvelle."
+                                title={t("pages.messages.noneSelectedTitle")}
+                                description={t(
+                                    "pages.messages.noneSelectedDescription",
+                                )}
                                 action={
                                     <Button
                                         size="sm"
@@ -451,7 +476,7 @@ function MessagesPage() {
                                             icon={Add01Icon}
                                             size={14}
                                         />
-                                        Nouvelle conversation
+                                        {t("messaging.newConversation")}
                                     </Button>
                                 }
                             />

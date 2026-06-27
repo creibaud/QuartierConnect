@@ -59,12 +59,12 @@ export class CommunityVotesService {
         const vote = await this.findOne(id);
 
         if (vote.status === "closed" || new Date() > vote.endsAt) {
-            throw new BadRequestException("Ce vote est terminé");
+            throw new BadRequestException("This vote has ended");
         }
 
         const alreadyVoted = vote.casts.some((c) => c.userId === userId);
         if (alreadyVoted) {
-            throw new ConflictException("Vous avez déjà voté");
+            throw new ConflictException("You have already voted");
         }
 
         this.validateChoices(vote.voteType, dto);
@@ -74,7 +74,7 @@ export class CommunityVotesService {
         );
         if (invalidChoices.length > 0) {
             throw new BadRequestException(
-                `Options invalides: ${invalidChoices.join(", ")}`,
+                `Invalid options: ${invalidChoices.join(", ")}`,
             );
         }
 
@@ -136,7 +136,7 @@ export class CommunityVotesService {
         const vote = await this.findOne(id);
         if (vote.createdBy !== requesterId && requesterRole !== "admin") {
             throw new ForbiddenException(
-                "Seul le créateur ou un admin peut fermer ce vote",
+                "Only the creator or an admin can close this vote",
             );
         }
         vote.status = "closed";
@@ -153,12 +153,12 @@ export class CommunityVotesService {
             dto.choices.length !== 1
         ) {
             throw new BadRequestException(
-                "Ce type de vote requiert exactement 1 choix",
+                "This vote type requires exactly 1 choice",
             );
         }
 
         if (voteType === CommunityVoteType.WEIGHTED && !dto.weights) {
-            throw new BadRequestException("Le vote pondéré requiert des poids");
+            throw new BadRequestException("Weighted vote requires weights");
         }
     }
 }

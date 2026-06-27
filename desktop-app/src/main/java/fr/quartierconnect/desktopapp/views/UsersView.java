@@ -1,5 +1,6 @@
 package fr.quartierconnect.desktopapp.views;
 
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.services.UsersService;
 import fr.quartierconnect.desktopapp.ui.components.AppBadge;
 import fr.quartierconnect.desktopapp.ui.components.AppButton;
@@ -39,13 +40,13 @@ public class UsersView {
     }
 
     private VBox buildLayout() {
-        Label pageTitle = new Label("Gestion des utilisateurs");
+        Label pageTitle = new Label(I18n.get("users.title"));
         pageTitle.getStyleClass().add("content-title");
 
-        Label pageSubtitle = new Label("Administration des comptes et des rôles");
+        Label pageSubtitle = new Label(I18n.get("users.subtitle"));
         pageSubtitle.getStyleClass().add("content-subtitle");
 
-        AppButton refreshBtn = new AppButton("↺ Actualiser", AppButton.Variant.SECONDARY);
+        AppButton refreshBtn = new AppButton(I18n.get("users.refresh"), AppButton.Variant.SECONDARY);
         refreshBtn.setOnAction(e -> loadAsync());
 
         HBox header = new HBox(12, new VBox(4, pageTitle, pageSubtitle), refreshBtn);
@@ -63,7 +64,7 @@ public class UsersView {
     }
 
     private void buildTable() {
-        TableColumn<UsersService.UserSummary, String> emailCol = new TableColumn<>("Email");
+        TableColumn<UsersService.UserSummary, String> emailCol = new TableColumn<>(I18n.get("users.col.email"));
         emailCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().email()));
         emailCol.setCellFactory(col -> new TableCell<>() {
             @Override
@@ -74,7 +75,7 @@ public class UsersView {
             }
         });
 
-        TableColumn<UsersService.UserSummary, String> roleCol = new TableColumn<>("Rôle");
+        TableColumn<UsersService.UserSummary, String> roleCol = new TableColumn<>(I18n.get("users.col.role"));
         roleCol.setPrefWidth(130);
         roleCol.setResizable(false);
         roleCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().role()));
@@ -90,7 +91,7 @@ public class UsersView {
             }
         });
 
-        TableColumn<UsersService.UserSummary, String> statusCol = new TableColumn<>("Statut");
+        TableColumn<UsersService.UserSummary, String> statusCol = new TableColumn<>(I18n.get("users.col.status"));
         statusCol.setPrefWidth(110);
         statusCol.setResizable(false);
         statusCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().banned() ? "banned" : "active"));
@@ -101,14 +102,14 @@ public class UsersView {
                 if (empty || status == null) {
                     setGraphic(null);
                 } else if ("banned".equals(status)) {
-                    setGraphic(new AppBadge("Banni", AppBadge.Variant.CONFLICT));
+                    setGraphic(new AppBadge(I18n.get("users.status.banned"), AppBadge.Variant.CONFLICT));
                 } else {
-                    setGraphic(new AppBadge("Actif", AppBadge.Variant.RESOLVED));
+                    setGraphic(new AppBadge(I18n.get("users.status.active"), AppBadge.Variant.RESOLVED));
                 }
             }
         });
 
-        TableColumn<UsersService.UserSummary, Void> actionsCol = new TableColumn<>("Actions");
+        TableColumn<UsersService.UserSummary, Void> actionsCol = new TableColumn<>(I18n.get("users.col.actions"));
         actionsCol.setPrefWidth(250);
         actionsCol.setResizable(false);
         actionsCol.setCellFactory(col -> new TableCell<>() {
@@ -127,7 +128,7 @@ public class UsersView {
         table.getColumns().addAll(emailCol, roleCol, statusCol, actionsCol);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.getStyleClass().add("admin-table");
-        table.setPlaceholder(new Label("Aucun utilisateur"));
+        table.setPlaceholder(new Label(I18n.get("users.empty")));
         table.setFixedCellSize(42);
     }
 
@@ -138,18 +139,18 @@ public class UsersView {
 
         if (!"admin".equals(user.role())) {
             String nextRole = "user".equals(user.role()) ? "moderator" : "user";
-            String btnLabel = "user".equals(user.role()) ? "→ Modérateur" : "→ Utilisateur";
+            String btnLabel = "user".equals(user.role()) ? I18n.get("users.toModerator") : I18n.get("users.toUser");
             AppButton roleBtn = new AppButton(btnLabel, AppButton.Variant.GHOST);
             roleBtn.setOnAction(e -> changeRole(user, nextRole));
             row.getChildren().add(roleBtn);
         }
 
         if (!user.banned()) {
-            AppButton banBtn = new AppButton("Bannir", AppButton.Variant.DESTRUCTIVE);
+            AppButton banBtn = new AppButton(I18n.get("users.ban"), AppButton.Variant.DESTRUCTIVE);
             banBtn.setOnAction(e -> toggleBan(user, true));
             row.getChildren().add(banBtn);
         } else {
-            AppButton unbanBtn = new AppButton("Débannir", AppButton.Variant.SECONDARY);
+            AppButton unbanBtn = new AppButton(I18n.get("users.unban"), AppButton.Variant.SECONDARY);
             unbanBtn.setOnAction(e -> toggleBan(user, false));
             row.getChildren().add(unbanBtn);
         }
@@ -163,10 +164,10 @@ public class UsersView {
                 usersService.banUser(user.id(), ban);
                 Platform.runLater(() -> {
                     loadAsync();
-                    toast.showSuccess(ban ? "Utilisateur banni ✓" : "Utilisateur débanni ✓");
+                    toast.showSuccess(ban ? I18n.get("users.banned") : I18n.get("users.unbanned"));
                 });
             } catch (Exception ex) {
-                Platform.runLater(() -> toast.showError("Erreur — " + ex.getMessage()));
+                Platform.runLater(() -> toast.showError(I18n.get("common.error", ex.getMessage())));
             }
         }, "user-ban").start();
     }
@@ -177,10 +178,10 @@ public class UsersView {
                 usersService.changeRole(user.id(), role);
                 Platform.runLater(() -> {
                     loadAsync();
-                    toast.showSuccess("Rôle mis à jour ✓");
+                    toast.showSuccess(I18n.get("users.roleUpdated"));
                 });
             } catch (Exception ex) {
-                Platform.runLater(() -> toast.showError("Erreur — " + ex.getMessage()));
+                Platform.runLater(() -> toast.showError(I18n.get("common.error", ex.getMessage())));
             }
         }, "user-role").start();
     }
@@ -198,7 +199,7 @@ public class UsersView {
                 skeletonHolder.getChildren().clear();
                 table.setVisible(true);
                 if (users.isEmpty()) {
-                    table.setPlaceholder(new EmptyState("Aucun utilisateur.", "Les utilisateurs inscrits apparaîtront ici."));
+                    table.setPlaceholder(new EmptyState(I18n.get("users.empty.title"), I18n.get("users.empty.subtitle")));
                 } else {
                     table.getItems().setAll(users);
                 }

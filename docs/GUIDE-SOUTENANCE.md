@@ -1,244 +1,244 @@
-# Guide de Soutenance — QuartierConnect
+# Defence Guide — QuartierConnect
 
-> **Date** : 19 juillet 2026 · **Enseignant** : Frédéric SANANES · **Durée** : ~30 minutes
-
----
-
-## Table des matières
-
-1. [Checklist pré-soutenance](#1-checklist-pré-soutenance)
-2. [Démarrage de la démo](#2-démarrage-de-la-démo)
-3. [Scénarios de démonstration](#3-scénarios-de-démonstration)
-4. [Questions probables et réponses](#4-questions-probables-et-réponses)
-5. [Chiffres à connaître par cœur](#5-chiffres-à-connaître-par-cœur)
+> **Date**: 19 July 2026 · **Instructor**: Frédéric SANANES · **Duration**: ~30 minutes
 
 ---
 
-## 1. Checklist pré-soutenance
+## Table of contents
 
-### La veille
+1. [Pre-defence checklist](#1-pre-defence-checklist)
+2. [Starting the demo](#2-starting-the-demo)
+3. [Demonstration scenarios](#3-demonstration-scenarios)
+4. [Likely questions and answers](#4-likely-questions-and-answers)
+5. [Figures to know by heart](#5-figures-to-know-by-heart)
+
+---
+
+## 1. Pre-defence checklist
+
+### The day before
 
 ```bash
-# 1. Mettre à jour les dépendances
+# 1. Update dependencies
 make install
 
-# 2. Valider tout
+# 2. Validate everything
 make validate
 
-# 3. Démarrer l'environnement
+# 3. Start the environment
 make docker-up
 
-# 4. Attendre 30s que tous les services démarrent
+# 4. Wait 30s for all services to start
 sleep 30
 
-# 5. Seeder les données démo
+# 5. Seed the demo data
 make seed
 
-# 6. Vérifier les accès
+# 6. Check access
 curl http://localhost/api/health
 # → {"status":"ok","timestamp":"2026-07-19T...","version":"0.1.3"}
 
-# 7. Vérifier Neo4j
-# Aller sur http://localhost:7474 → MATCH (n) RETURN count(n)
-# Doit afficher > 0 nœuds
+# 7. Check Neo4j
+# Go to http://localhost:7474 → MATCH (n) RETURN count(n)
+# Should show > 0 nodes
 
-# 8. Générer le code TOTP de démo
+# 8. Generate the demo TOTP code
 make totp
 ```
 
-### Le jour J
+### Defence day
 
-- [ ] Docker lancé (`make docker-up`)
-- [ ] Données seeded (`make seed`)
-- [ ] Code TOTP à portée (`make totp`)
-- [ ] Navigateur avec 3 onglets : client/:3000, admin/:3001, Scalar/docs
-- [ ] oathtool installé ou Authenticator sur smartphone
-- [ ] JAR desktop téléchargeable ou lancé (`java -jar target/quartierconnect-desktop.jar`)
+- [ ] Docker started (`make docker-up`)
+- [ ] Data seeded (`make seed`)
+- [ ] TOTP code at hand (`make totp`)
+- [ ] Browser with 3 tabs: client/:3000, admin/:3001, Scalar/docs
+- [ ] oathtool installed or Authenticator on smartphone
+- [ ] Desktop JAR downloadable or running (`java -jar target/quartierconnect-desktop.jar`)
 
 ---
 
-## 2. Démarrage de la démo
+## 2. Starting the demo
 
-### Accès rapides
+### Quick access
 
-| Surface | URL | Compte | Rôle |
+| Surface | URL | Account | Role |
 |---------|-----|--------|------|
-| Client habitant | http://localhost | alice@demo.fr | resident |
+| Resident client | http://localhost | alice@demo.fr | resident |
 | Admin | http://localhost/admin | admin@demo.fr | admin |
-| API docs Scalar | http://localhost/api/docs | — | — |
+| Scalar API docs | http://localhost/api/docs | — | — |
 | Neo4j Browser | http://localhost:7474 | neo4j/password | — |
 
-**Mot de passe** : `Demo1234!` pour tous les comptes
-**Code TOTP** : `oathtool --totp --base32 JBSWY3DPEHPK3PXP`
+**Password**: `Demo1234!` for all accounts
+**TOTP code**: `oathtool --totp --base32 JBSWY3DPEHPK3PXP`
 
 ---
 
-## 3. Scénarios de démonstration
+## 3. Demonstration scenarios
 
-### Scénario 1 — Inscription et connexion MFA (3 min)
+### Scenario 1 — Sign-up and MFA login (3 min)
 
-1. Ouvrir http://localhost
-2. Cliquer "S'inscrire" → saisir email + mot de passe
-3. **Montrer le QR code TOTP** — expliquer RFC 6238
-4. Scanner avec Google Authenticator → confirmer le code
-5. Se déconnecter → se reconnecter avec le code TOTP
+1. Open http://localhost
+2. Click "Sign up" → enter email + password
+3. **Show the TOTP QR code** — explain RFC 6238
+4. Scan with Google Authenticator → confirm the code
+5. Log out → log back in with the TOTP code
 
-**Points à souligner :**
-- Argon2id pour les mots de passe (pas bcrypt)
-- JWT access 15min + refresh 7 jours avec rotation
-- Anti-replay TOTP (même code deux fois = refusé)
+**Points to highlight:**
+- Argon2id for passwords (not bcrypt)
+- JWT access 15min + refresh 7 days with rotation
+- TOTP anti-replay (same code twice = rejected)
 
-### Scénario 2 — Création d'un quartier (2 min)
+### Scenario 2 — Creating a neighbourhood (2 min)
 
-1. Se connecter en tant qu'admin (http://localhost/admin)
-2. Aller dans "Quartiers" → "Créer un quartier"
-3. Dessiner un polygone GeoJSON sur la carte
-4. Essayer de créer un quartier qui chevauche → voir le message d'erreur 409
-5. **Ouvrir Neo4j Browser** → MATCH (n:Neighborhood) RETURN n → voir le nœud créé
+1. Log in as admin (http://localhost/admin)
+2. Go to "Neighbourhoods" → "Create a neighbourhood"
+3. Draw a GeoJSON polygon on the map
+4. Try to create a neighbourhood that overlaps → see the 409 error message
+5. **Open Neo4j Browser** → MATCH (n:Neighborhood) RETURN n → see the created node
 
-**Points à souligner :**
-- Index 2dsphere MongoDB pour `$geoIntersects`
-- Sync fire-and-forget vers Neo4j (ne bloque jamais l'API)
+**Points to highlight:**
+- MongoDB 2dsphere index for `$geoIntersects`
+- Fire-and-forget sync to Neo4j (never blocks the API)
 
-### Scénario 3 — Transfert de points (2 min)
+### Scenario 3 — Point transfer (2 min)
 
-1. Se connecter en tant qu'alice
-2. Aller dans "Points" → solde actuel
-3. Transférer 10 points à bob
-4. Vérifier que le solde de bob a augmenté
-5. **Ouvrir PgAdmin ou expliquer** la transaction `FOR UPDATE` + ACID
+1. Log in as alice
+2. Go to "Points" → current balance
+3. Transfer 10 points to bob
+4. Check that bob's balance has increased
+5. **Open PgAdmin or explain** the `FOR UPDATE` transaction + ACID
 
-**Points à souligner :**
-- `SELECT FOR UPDATE` — verrou exclusif
-- Transaction PostgreSQL — rollback automatique si erreur
-- Solde minimum -10 (découvert limité)
+**Points to highlight:**
+- `SELECT FOR UPDATE` — exclusive lock
+- PostgreSQL transaction — automatic rollback on error
+- Minimum balance -10 (limited overdraft)
 
-### Scénario 4 — Signature d'un contrat (3 min)
+### Scenario 4 — Signing a contract (3 min)
 
-1. Créer un contrat avec alice comme créateur, bob comme signataire
-2. Se connecter en tant que bob → signer avec code TOTP
-3. **Montrer le hash SHA-256** dans la réponse
-4. Se connecter en tant qu'alice → signer aussi
-5. Statut passe à "signed"
+1. Create a contract with alice as creator, bob as signatory
+2. Log in as bob → sign with TOTP code
+3. **Show the SHA-256 hash** in the response
+4. Log in as alice → sign too
+5. Status moves to "signed"
 
-**Points à souligner :**
-- SHA-256 du contenu à la création → intégrité
-- TOTP obligatoire pour signer → non-répudiation
-- Hash unique par signature (contenu + userId + timestamp)
+**Points to highlight:**
+- SHA-256 of the content at creation → integrity
+- TOTP required to sign → non-repudiation
+- Unique hash per signature (content + userId + timestamp)
 
-### Scénario 5 — Messagerie temps réel (2 min)
+### Scenario 5 — Real-time messaging (2 min)
 
-1. Ouvrir deux onglets : alice et bob connectés
-2. Créer une conversation alice ↔ bob
-3. Envoyer un message depuis alice → apparaît immédiatement chez bob
-4. **Expliquer** Socket.io namespace /messaging, rooms `conversation:{id}`
+1. Open two tabs: alice and bob logged in
+2. Create an alice ↔ bob conversation
+3. Send a message from alice → appears immediately for bob
+4. **Explain** Socket.io /messaging namespace, `conversation:{id}` rooms
 
-**Points à souligner :**
-- JWT vérifié à la connexion WebSocket
-- `isParticipant` vérifié avant `join_conversation`
-- `server.to(room).emit()` — broadcast aux participants
+**Points to highlight:**
+- JWT verified on WebSocket connection
+- `isParticipant` checked before `join_conversation`
+- `server.to(room).emit()` — broadcast to participants
 
-### Scénario 6 — Recommandations Neo4j (2 min)
+### Scenario 6 — Neo4j recommendations (2 min)
 
-1. Se connecter en tant qu'alice
-2. Afficher les recommandations
-3. **Ouvrir Neo4j Browser** → exécuter la requête Cypher du rapport
-4. Expliquer le graphe `LIVES_IN`, `LOCATED_IN`, `HELD_IN`
+1. Log in as alice
+2. Display the recommendations
+3. **Open Neo4j Browser** → run the Cypher query from the report
+4. Explain the `LIVES_IN`, `LOCATED_IN`, `HELD_IN` graph
 
-**Points à souligner :**
-- Sync temps réel à la création des entités
-- Cypher UNION — services + événements dans le même voisinage
+**Points to highlight:**
+- Real-time sync when entities are created
+- Cypher UNION — services + events in the same neighbourhood
 
-### Scénario 7 — DSL (2 min)
+### Scenario 7 — DSL (2 min)
 
-1. Aller dans "DSL" dans React Admin
-2. Taper : `FIND incidents WHERE status = 'open' LIMIT 5`
-3. Appuyer sur Ctrl+Enter → résultats s'affichent
-4. Taper : `FIND passwords` → erreur "Unknown collection"
-5. Taper : `FIND incidents WHERE status = 'open' OR status = 'in_progress'`
+1. Go to "DSL" in React Admin
+2. Type: `FIND incidents WHERE status = 'open' LIMIT 5`
+3. Press Ctrl+Enter → results appear
+4. Type: `FIND passwords` → "Unknown collection" error
+5. Type: `FIND incidents WHERE status = 'open' OR status = 'in_progress'`
 
-**Points à souligner :**
-- PLY lexer/parser LALR(1)
-- Whitelist de sécurité
-- Bridge pythonia NestJS → Python
+**Points to highlight:**
+- PLY LALR(1) lexer/parser
+- Security whitelist
+- pythonia NestJS → Python bridge
 
-### Scénario 8 — Desktop offline (3 min)
+### Scenario 8 — Desktop offline (3 min)
 
-1. Lancer le JAR : `java -jar target/quartierconnect-desktop.jar`
-2. Faire l'échange SSO depuis l'admin web (http://localhost:3001) → se connecter dans le desktop
-3. **Couper le réseau** (ou `docker pause api`)
-4. Créer un incident dans le desktop → il apparaît en local
-5. Relancer le réseau → incident synchronisé vers l'API
+1. Run the JAR: `java -jar target/quartierconnect-desktop.jar`
+2. Perform the SSO exchange from the web admin (http://localhost:3001) → log in to the desktop
+3. **Cut the network** (or `docker pause api`)
+4. Create an incident in the desktop → it appears locally
+5. Bring the network back → incident synced to the API
 
-**Points à souligner :**
-- Persistance SQLite de la session → pas besoin de se reconnecter
-- `is_dirty` flag pour la sync LWW
-- `isReachable()` avec timeout 3 secondes
+**Points to highlight:**
+- SQLite session persistence → no need to log in again
+- `is_dirty` flag for the LWW sync
+- `isReachable()` with a 3-second timeout
 
-### Scénario 9 — Tests (1 min)
+### Scenario 9 — Tests (1 min)
 
 ```bash
-# Dans un terminal visible
+# In a visible terminal
 make test
-# → 236 tests passent en ~8s
+# → 236 tests pass in ~8s
 
 make test-desktop
-# → 63 tests JUnit passent
+# → 63 JUnit tests pass
 
 cd dsl && uv run pytest
-# → 21 tests pytest passent
+# → 21 pytest tests pass
 ```
 
 ---
 
-## 4. Questions probables et réponses
+## 4. Likely questions and answers
 
-**"Pourquoi trois bases de données ? C'est trop complexe."**
-> PostgreSQL pour les données qui nécessitent des transactions ACID (points, auth) — on ne peut pas se permettre une double dépense ou une authentification partielle. MongoDB pour les documents flexibles avec GeoJSON natif (quartiers avec polygones) — PostgreSQL ne supporte pas `$geoIntersects` de cette façon. Neo4j uniquement pour les recommandations — les traversals de graphe sont son point fort. Chaque base fait une chose et la fait bien.
+**"Why three databases? That's too complex."**
+> PostgreSQL for data that requires ACID transactions (points, auth) — we can't afford double spending or partial authentication. MongoDB for flexible documents with native GeoJSON (neighbourhoods with polygons) — PostgreSQL doesn't support `$geoIntersects` this way. Neo4j only for recommendations — graph traversals are its strength. Each database does one thing and does it well.
 
-**"Argon2id vs bcrypt — pourquoi ?"**
-> bcrypt est limité à 72 octets d'entrée (mots de passe longs tronqués silencieusement) et n'a pas de paramètre mémoire. Argon2id a gagné le Password Hashing Competition 2015 — son coût mémoire de 64 MB rend les attaques GPU impraticables car on ne peut pas paralléliser des milliers de threads avec 64 MB chacun.
+**"Argon2id vs bcrypt — why?"**
+> bcrypt is limited to 72 bytes of input (long passwords silently truncated) and has no memory parameter. Argon2id won the Password Hashing Competition 2015 — its 64 MB memory cost makes GPU attacks impractical because you can't parallelise thousands of threads with 64 MB each.
 
-**"Le fire-and-forget Neo4j, c'est un problème si Neo4j tombe ?"**
-> En production, Neo4j est une fonctionnalité de recommandation — une panne Neo4j ne doit pas empêcher la création d'un quartier. On accepte que les recommandations soient temporairement absentes. Si Neo4j était une fonctionnalité critique, on utiliserait une queue (Bull/RabbitMQ) avec retry automatique. C'est un choix architectural délibéré.
+**"Neo4j fire-and-forget — is that a problem if Neo4j goes down?"**
+> In production, Neo4j is a recommendation feature — a Neo4j outage must not prevent creating a neighbourhood. We accept that recommendations may be temporarily absent. If Neo4j were a critical feature, we'd use a queue (Bull/RabbitMQ) with automatic retry. It's a deliberate architectural choice.
 
-**"Votre DSL est limité, pourquoi pas MongoDB directement ?"**
-> L'API MongoDB complète permet des opérations destructives (`$where` avec exécution de code, `deleteMany`, etc.). Notre DSL est une surface contrôlée : FIND et COUNT uniquement, 5 collections autorisées, pas d'opérations d'écriture depuis l'admin. C'est une décision de sécurité.
+**"Your DSL is limited, why not MongoDB directly?"**
+> The full MongoDB API allows destructive operations (`$where` with code execution, `deleteMany`, etc.). Our DSL is a controlled surface: FIND and COUNT only, 5 allowed collections, no write operations from the admin. It's a security decision.
 
-**"Replay attack sur TOTP — si quelqu'un intercepte le code ?"**
-> Le code est mémorisé en mémoire pendant 90 secondes (couvre la fenêtre ±1 de 30s). Un second envoi du même code dans cette fenêtre retourne `false` immédiatement. Après 90s, le code est de toute façon expiré (fenêtre RFC 6238 fermée).
+**"TOTP replay attack — what if someone intercepts the code?"**
+> The code is kept in memory for 90 seconds (covering the ±1 window of 30s). A second submission of the same code within that window returns `false` immediately. After 90s, the code has expired anyway (RFC 6238 window closed).
 
-**"Comment gérez-vous la déconnexion forcée d'un utilisateur banni ?"**
-> Le rôle est vérifié à chaque refresh de token. Si un admin bannit alice, son access token courant reste valide 15 minutes max. Lors du prochain refresh, `role === 'banned'` est détecté et `401 ACCOUNT_BANNED` est retourné. Le refresh token est also révoqué. 15 minutes est acceptable — sinon il faudrait une liste noire en cache Redis.
+**"How do you handle the forced logout of a banned user?"**
+> The role is checked on every token refresh. If an admin bans alice, her current access token remains valid for at most 15 minutes. On the next refresh, `role === 'banned'` is detected and `401 ACCOUNT_BANNED` is returned. The refresh token is also revoked. 15 minutes is acceptable — otherwise we'd need a blacklist in a Redis cache.
 
-**"Vos tests E2E, ils testent quoi exactement ?"**
-> Les tests E2E Supertest utilisent les vraies bases de données (MongoDB et PostgreSQL de test) sans mock. `beforeAll` seed via l'API pour partir d'un état connu. On teste des scénarios bout-en-bout : inscription → login → création → mise à jour → suppression avec vérification des codes HTTP et des réponses JSON réelles.
+**"Your E2E tests, what exactly do they test?"**
+> The Supertest E2E tests use the real databases (test MongoDB and PostgreSQL) with no mocks. `beforeAll` seeds via the API to start from a known state. We test end-to-end scenarios: sign-up → login → create → update → delete with verification of HTTP codes and real JSON responses.
 
 ---
 
-## 5. Chiffres à connaître par cœur
+## 5. Figures to know by heart
 
-| Chiffre | Valeur |
+| Figure | Value |
 |---------|--------|
-| Tests unitaires API | 236 |
-| Tests Web shared hooks (Vitest) | 73 |
-| Tests E2E API | 148 |
-| Tests JUnit Java | 63 |
-| Tests pytest DSL | 21 |
-| Tests Playwright | 79 |
+| API unit tests | 236 |
+| Web shared-hook tests (Vitest) | 73 |
+| API E2E tests | 148 |
+| Java JUnit tests | 63 |
+| DSL pytest tests | 21 |
+| Playwright tests | 79 |
 | **Total tests** | **620** |
-| Coverage statements API | 95.7% |
-| Coverage branches API | 86.1% |
-| Durée access token JWT | 15 minutes |
-| Durée refresh token JWT | 7 jours |
-| TTL token SSO | 5 minutes (300s) |
-| Solde minimum points | -10 |
-| TTL anti-replay TOTP | 90 secondes |
+| API statements coverage | 95.7% |
+| API branches coverage | 86.1% |
+| JWT access token lifetime | 15 minutes |
+| JWT refresh token lifetime | 7 days |
+| SSO token TTL | 5 minutes (300s) |
+| Minimum points balance | -10 |
+| TOTP anti-replay TTL | 90 seconds |
 | Rate limiting | 100 req / 15 min / IP |
-| Collections DSL autorisées | 5 |
-| Conteneurs Docker | 7 |
-| Bases de données | 3 (PostgreSQL, MongoDB, Neo4j) + 1 local (SQLite) |
-| Tables PostgreSQL | 4 (users, incidents, points_balances, points_transactions) |
-| Collections MongoDB | 9 (neighborhoods, services, events, contracts, conversations, messages, votes, communityVotes, documents, ssoTokens) |
-| Modules NestJS | 15 |
-| Taille du JAR desktop | ~25 MB |
+| Allowed DSL collections | 5 |
+| Docker containers | 7 |
+| Databases | 3 (PostgreSQL, MongoDB, Neo4j) + 1 local (SQLite) |
+| PostgreSQL tables | 4 (users, incidents, points_balances, points_transactions) |
+| MongoDB collections | 9 (neighborhoods, services, events, contracts, conversations, messages, votes, communityVotes, documents, ssoTokens) |
+| NestJS modules | 15 |
+| Desktop JAR size | ~25 MB |

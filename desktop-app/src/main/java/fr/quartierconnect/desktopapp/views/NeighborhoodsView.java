@@ -1,5 +1,6 @@
 package fr.quartierconnect.desktopapp.views;
 
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.services.ApiService;
 import fr.quartierconnect.desktopapp.services.AuthService;
 import fr.quartierconnect.desktopapp.services.NeighborhoodsService;
@@ -44,16 +45,16 @@ public class NeighborhoodsView {
     }
 
     private VBox buildLayout() {
-        Label pageTitle = new Label("Gestion des quartiers");
+        Label pageTitle = new Label(I18n.get("neighborhoods.title"));
         pageTitle.getStyleClass().add("content-title");
 
-        Label pageSubtitle = new Label("Administration des zones géographiques");
+        Label pageSubtitle = new Label(I18n.get("neighborhoods.subtitle"));
         pageSubtitle.getStyleClass().add("content-subtitle");
 
-        AppButton createBtn = new AppButton("+ Créer un quartier", AppButton.Variant.PRIMARY);
+        AppButton createBtn = new AppButton(I18n.get("neighborhoods.create"), AppButton.Variant.PRIMARY);
         createBtn.setOnAction(e -> openCreateForm());
 
-        AppButton refreshBtn = new AppButton("↺ Actualiser", AppButton.Variant.SECONDARY);
+        AppButton refreshBtn = new AppButton(I18n.get("neighborhoods.refresh"), AppButton.Variant.SECONDARY);
         refreshBtn.setOnAction(e -> loadAsync());
 
         HBox header = new HBox(8, new VBox(4, pageTitle, pageSubtitle), refreshBtn, createBtn);
@@ -71,7 +72,7 @@ public class NeighborhoodsView {
     }
 
     private void buildTable() {
-        TableColumn<NeighborhoodsService.NeighborhoodSummary, String> nameCol = new TableColumn<>("Nom du quartier");
+        TableColumn<NeighborhoodsService.NeighborhoodSummary, String> nameCol = new TableColumn<>(I18n.get("neighborhoods.col.name"));
         nameCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().name()));
         nameCol.setCellFactory(col -> new TableCell<>() {
             @Override
@@ -82,7 +83,7 @@ public class NeighborhoodsView {
             }
         });
 
-        TableColumn<NeighborhoodsService.NeighborhoodSummary, String> idCol = new TableColumn<>("Identifiant");
+        TableColumn<NeighborhoodsService.NeighborhoodSummary, String> idCol = new TableColumn<>(I18n.get("neighborhoods.col.id"));
         idCol.setPrefWidth(240);
         idCol.setResizable(false);
         idCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().id()));
@@ -95,7 +96,7 @@ public class NeighborhoodsView {
             }
         });
 
-        TableColumn<NeighborhoodsService.NeighborhoodSummary, Void> actionsCol = new TableColumn<>("Actions");
+        TableColumn<NeighborhoodsService.NeighborhoodSummary, Void> actionsCol = new TableColumn<>(I18n.get("neighborhoods.col.actions"));
         actionsCol.setPrefWidth(130);
         actionsCol.setResizable(false);
         actionsCol.setCellFactory(col -> new TableCell<>() {
@@ -106,7 +107,7 @@ public class NeighborhoodsView {
                     setGraphic(null);
                 } else {
                     NeighborhoodsService.NeighborhoodSummary n = getTableView().getItems().get(getIndex());
-                    AppButton deleteBtn = new AppButton("Supprimer", AppButton.Variant.DESTRUCTIVE);
+                    AppButton deleteBtn = new AppButton(I18n.get("neighborhoods.delete"), AppButton.Variant.DESTRUCTIVE);
                     deleteBtn.setOnAction(e -> deleteNeighborhood(n));
                     HBox box = new HBox(deleteBtn);
                     box.setAlignment(Pos.CENTER_LEFT);
@@ -119,7 +120,7 @@ public class NeighborhoodsView {
         table.getColumns().addAll(nameCol, idCol, actionsCol);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.getStyleClass().add("admin-table");
-        table.setPlaceholder(new Label("Aucun quartier"));
+        table.setPlaceholder(new Label(I18n.get("neighborhoods.empty")));
         table.setFixedCellSize(42);
     }
 
@@ -136,7 +137,7 @@ public class NeighborhoodsView {
                 skeletonHolder.getChildren().clear();
                 table.setVisible(true);
                 if (neighborhoods.isEmpty()) {
-                    table.setPlaceholder(new EmptyState("Aucun quartier.", "Créez le premier quartier avec le bouton ci-dessus."));
+                    table.setPlaceholder(new EmptyState(I18n.get("neighborhoods.empty.title"), I18n.get("neighborhoods.empty.subtitle")));
                 } else {
                     table.getItems().setAll(neighborhoods);
                 }
@@ -151,38 +152,38 @@ public class NeighborhoodsView {
                 ApiService.delete("/neighborhoods/" + neighborhood.id(), token);
                 Platform.runLater(() -> {
                     loadAsync();
-                    toast.showSuccess("Quartier supprimé ✓");
+                    toast.showSuccess(I18n.get("neighborhoods.deleted"));
                 });
             } catch (Exception ex) {
-                Platform.runLater(() -> toast.showError("Erreur — " + ex.getMessage()));
+                Platform.runLater(() -> toast.showError(I18n.get("common.error", ex.getMessage())));
             }
         }, "neighborhood-delete").start();
     }
 
     private void openCreateForm() {
-        Label nameFormLabel = new Label("Nom *");
+        Label nameFormLabel = new Label(I18n.get("neighborhoods.form.nameLabel"));
         nameFormLabel.getStyleClass().add("form-label");
         TextField nameField = new TextField();
-        nameField.setPromptText("Ex : Quartier des Arts");
+        nameField.setPromptText(I18n.get("neighborhoods.form.namePrompt"));
 
         Label errorMsg = new Label("");
         errorMsg.getStyleClass().add("error-label");
         errorMsg.setVisible(false);
         errorMsg.setManaged(false);
 
-        AppButton submitBtn = new AppButton("Créer", AppButton.Variant.PRIMARY);
-        AppButton cancelBtn = new AppButton("Annuler", AppButton.Variant.SECONDARY);
+        AppButton submitBtn = new AppButton(I18n.get("neighborhoods.form.submit"), AppButton.Variant.PRIMARY);
+        AppButton cancelBtn = new AppButton(I18n.get("neighborhoods.form.cancel"), AppButton.Variant.SECONDARY);
         cancelBtn.setOnAction(e -> appModal.hide());
 
         submitBtn.setOnAction(e -> {
             String nameText = nameField.getText().trim();
             if (nameText.isEmpty()) {
-                showError(errorMsg, "Le nom est obligatoire.");
+                showError(errorMsg, I18n.get("neighborhoods.form.nameRequired"));
                 return;
             }
 
             submitBtn.setDisable(true);
-            submitBtn.setText("Création…");
+            submitBtn.setText(I18n.get("neighborhoods.form.creating"));
 
             new Thread(() -> {
                 try {
@@ -192,13 +193,13 @@ public class NeighborhoodsView {
                     Platform.runLater(() -> {
                         appModal.hide();
                         loadAsync();
-                        toast.showSuccess("Quartier créé ✓");
+                        toast.showSuccess(I18n.get("neighborhoods.created"));
                     });
                 } catch (Exception ex) {
                     Platform.runLater(() -> {
                         submitBtn.setDisable(false);
-                        submitBtn.setText("Créer");
-                        showError(errorMsg, "Erreur réseau — réessayez.");
+                        submitBtn.setText(I18n.get("neighborhoods.form.submit"));
+                        showError(errorMsg, I18n.get("neighborhoods.form.networkError"));
                     });
                 }
             }, "neighborhood-create").start();
@@ -209,7 +210,7 @@ public class NeighborhoodsView {
 
         VBox content = new VBox(10, nameFormLabel, nameField, errorMsg, buttons);
         content.setPadding(new Insets(20));
-        appModal.show("Créer un quartier", content);
+        appModal.show(I18n.get("neighborhoods.form.modalTitle"), content);
     }
 
     private void showError(Label errorMsg, String message) {

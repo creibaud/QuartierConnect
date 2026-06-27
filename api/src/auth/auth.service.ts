@@ -160,7 +160,7 @@ export class AuthService {
     ): Promise<TokenPair & { user: object }> {
         const record = await this.ssoTokenModel.findOneAndUpdate(
             {
-                token: ssoToken,
+                token: String(ssoToken),
                 usedAt: null,
                 expiresAt: { $gt: new Date() },
             },

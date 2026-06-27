@@ -3,7 +3,7 @@ import { IsIn, IsString } from "class-validator";
 
 export class UpdateRoleDto {
     @ApiProperty({
-        description: "Nouveau rôle de l'utilisateur",
+        description: "New role for the user",
         enum: ["resident", "moderator", "admin", "banned"],
         example: "moderator",
     })

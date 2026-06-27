@@ -3,6 +3,7 @@ import { ChartColumnIcon, Tick01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import {
     apiGet,
     apiPost,
@@ -50,14 +51,8 @@ interface CommunityVote {
     casts: Array<{ userId: string; choices: string[] }>;
 }
 
-const VOTE_TYPE_LABELS: Record<string, string> = {
-    binary: "Binaire",
-    single_choice: "Choix unique",
-    multiple_choice: "Choix multiple",
-    weighted: "Pondéré",
-};
-
 function VotesPage() {
+    const { t } = useTranslation();
     const { data, isLoading, isError, refetch } = useQuery<CommunityVote[]>({
         queryKey: ["community-votes"],
         queryFn: () => apiGet<CommunityVote[]>("/community-votes"),
@@ -69,8 +64,8 @@ function VotesPage() {
         <div className="p-6 md:p-8">
             <div className="mx-auto flex max-w-5xl flex-col gap-6">
                 <PageHeader
-                    title="Votes communautaires"
-                    description="Participez aux décisions de votre quartier."
+                    title={t("pages.votes.title")}
+                    description={t("pages.votes.description")}
                 />
 
                 <DataState
@@ -94,11 +89,11 @@ function VotesPage() {
                                 <EmptyMedia variant="icon">
                                     <HugeiconsIcon icon={ChartColumnIcon} />
                                 </EmptyMedia>
-                                <EmptyTitle>Aucun vote en cours</EmptyTitle>
+                                <EmptyTitle>
+                                    {t("pages.votes.emptyTitle")}
+                                </EmptyTitle>
                                 <EmptyDescription>
-                                    Les consultations de votre quartier
-                                    apparaîtront ici dès qu'elles seront
-                                    ouvertes.
+                                    {t("pages.votes.emptyDescription")}
                                 </EmptyDescription>
                             </EmptyHeader>
                         </Empty>
@@ -116,8 +111,15 @@ function VotesPage() {
 }
 
 function VoteCard({ vote }: { vote: CommunityVote }) {
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
     const user = getCurrentUser();
+    const voteTypeLabels: Record<string, string> = {
+        binary: t("pages.votes.types.binary"),
+        single_choice: t("pages.votes.types.singleChoice"),
+        multiple_choice: t("pages.votes.types.multipleChoice"),
+        weighted: t("pages.votes.types.weighted"),
+    };
     const [selectedChoices, setSelectedChoices] = useState<string[]>([]);
     const [weights, setWeights] = useState<Record<string, number>>({});
     const isExpired = new Date() > new Date(vote.endsAt);
@@ -141,12 +143,12 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
             weights?: Record<string, number>;
         }) => apiPost(`/community-votes/${vote._id}/cast`, payload),
         onSuccess: () => {
-            toast.success("Vote enregistré");
+            toast.success(t("pages.votes.voteRecorded"));
             void queryClient.invalidateQueries({
                 queryKey: ["community-votes"],
             });
         },
-        onError: (err: Error) => toast.error(err.message ?? "Erreur"),
+        onError: (err: Error) => toast.error(err.message ?? t("common.error")),
     });
 
     function toggleChoice(id: string) {
@@ -178,14 +180,16 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
                         {hasVoted && (
                             <Badge variant="outline">
                                 <HugeiconsIcon icon={Tick01Icon} />
-                                Vous avez voté
+                                {t("pages.votes.youVoted")}
                             </Badge>
                         )}
                         <Badge variant={isClosed ? "secondary" : "default"}>
-                            {isClosed ? "Terminé" : "En cours"}
+                            {isClosed
+                                ? t("pages.votes.closed")
+                                : t("pages.votes.open")}
                         </Badge>
                         <Badge variant="outline">
-                            {VOTE_TYPE_LABELS[vote.voteType]}
+                            {voteTypeLabels[vote.voteType]}
                         </Badge>
                     </div>
                 </div>
@@ -195,11 +199,12 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
                     </p>
                 )}
                 <p className="text-muted-foreground text-xs">
-                    Fin :{" "}
-                    {new Date(vote.endsAt).toLocaleDateString("fr-FR", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
+                    {t("pages.votes.endsOn", {
+                        date: new Date(vote.endsAt).toLocaleDateString("fr-FR", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                        }),
                     })}
                 </p>
             </CardHeader>
@@ -254,7 +259,9 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
                             }
                             onClick={handleVote}
                         >
-                            {cast.isPending ? "Enregistrement…" : "Voter"}
+                            {cast.isPending
+                                ? t("pages.votes.recording")
+                                : t("pages.votes.vote")}
                         </Button>
                     </>
                 )}
@@ -270,6 +277,7 @@ function ResultsView({
     vote: CommunityVote;
     results: Record<string, unknown>;
 }) {
+    const { t } = useTranslation();
     const totals = (results.totals as Record<string, number>) ?? {};
     const totalParticipants = (results.totalParticipants as number) ?? 0;
     const max = Math.max(...Object.values(totals), 1);
@@ -277,7 +285,9 @@ function ResultsView({
     return (
         <div className="flex flex-col gap-3">
             <p className="text-muted-foreground text-xs">
-                {totalParticipants} participant(s)
+                {t("pages.votes.participantCount", {
+                    count: totalParticipants,
+                })}
             </p>
             {vote.options.map((opt) => {
                 const count = totals[opt.id] ?? 0;

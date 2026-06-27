@@ -4,13 +4,13 @@ export class VoteActionResponseDto {
     @ApiProperty({
         example: "added",
         enum: ["added", "removed", "changed"],
-        description: "Résultat de l'opération de vote",
+        description: "Result of the vote operation",
     })
     action: string;
 
     @ApiProperty({
         example: "like",
-        description: "Type de vote appliqué (like/dislike/up/down)",
+        description: "Vote type applied (like/dislike/up/down)",
     })
     voteType: string;
 }
@@ -18,25 +18,25 @@ export class VoteActionResponseDto {
 export class VoteBreakdownDto {
     @ApiProperty({
         example: 7,
-        description: "Nombre de votes positifs (like/up)",
+        description: "Number of positive votes (like/up)",
     })
     like?: number;
 
     @ApiProperty({
         example: 2,
-        description: "Nombre de votes négatifs (dislike/down)",
+        description: "Number of negative votes (dislike/down)",
     })
     dislike?: number;
 
     @ApiProperty({
         example: 5,
-        description: "Votes ▲ pour incidents/commentaires",
+        description: "▲ votes for incidents/comments",
     })
     up?: number;
 
     @ApiProperty({
         example: 1,
-        description: "Votes ▼ pour incidents/commentaires",
+        description: "▼ votes for incidents/comments",
     })
     down?: number;
 }
@@ -44,7 +44,7 @@ export class VoteBreakdownDto {
 export class VoteScoreResponseDto {
     @ApiProperty({
         example: 5,
-        description: "Score net (likes - dislikes ou up - down)",
+        description: "Net score (likes - dislikes or up - down)",
     })
     score: number;
 

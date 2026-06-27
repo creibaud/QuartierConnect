@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Alert01Icon, ListViewIcon, MapsLocation01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { centroidOf } from "@workspace/shared/lib/geo";
 import {
     useInfiniteIncidents,
@@ -49,11 +50,16 @@ import {
 } from "@workspace/ui/components/tabs";
 import { toast } from "sonner";
 
-const STATUS_LABELS: Record<string, string> = {
-    open: "Ouvert",
-    in_progress: "En cours",
-    resolved: "Résolu",
-};
+type TranslateFn = ReturnType<typeof useTranslation>["t"];
+
+function statusLabel(t: TranslateFn, status: string): string {
+    const labels: Record<string, string> = {
+        open: t("incidents.status.open"),
+        in_progress: t("incidents.status.in_progress"),
+        resolved: t("incidents.status.resolved"),
+    };
+    return labels[status] ?? status;
+}
 
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {
     open: "default",
@@ -75,6 +81,7 @@ export const Route = createFileRoute("/_app/incidents/")({
 });
 
 function AdminIncidentsPage() {
+    const { t } = useTranslation();
     const [statusFilter, setStatusFilter] = useState<string>("all");
     const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage } =
         useInfiniteIncidents(20, statusFilter);
@@ -86,24 +93,32 @@ function AdminIncidentsPage() {
         <div className="p-6">
             <div className="mx-auto flex max-w-6xl flex-col gap-6">
                 <PageHeader
-                    title="Incidents"
-                    description="Modération et suivi des signalements"
+                    title={t("incidents.title")}
+                    description={t("adminPages.incidents.description")}
                     actions={
                         <Select
                             value={statusFilter}
                             onValueChange={setStatusFilter}
                         >
                             <SelectTrigger className="w-44">
-                                <SelectValue placeholder="Tous les statuts" />
+                                <SelectValue
+                                    placeholder={t(
+                                        "adminPages.incidents.allStatuses",
+                                    )}
+                                />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Tous</SelectItem>
-                                <SelectItem value="open">Ouverts</SelectItem>
+                                <SelectItem value="all">
+                                    {t("adminPages.incidents.filterAll")}
+                                </SelectItem>
+                                <SelectItem value="open">
+                                    {t("adminPages.incidents.filterOpen")}
+                                </SelectItem>
                                 <SelectItem value="in_progress">
-                                    En cours
+                                    {t("incidents.status.in_progress")}
                                 </SelectItem>
                                 <SelectItem value="resolved">
-                                    Résolus
+                                    {t("adminPages.incidents.filterResolved")}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
@@ -114,11 +129,11 @@ function AdminIncidentsPage() {
                     <TabsList>
                         <TabsTrigger value="list">
                             <HugeiconsIcon icon={ListViewIcon} />
-                            Liste
+                            {t("adminPages.common.listTab")}
                         </TabsTrigger>
                         <TabsTrigger value="map">
                             <HugeiconsIcon icon={MapsLocation01Icon} />
-                            Carte
+                            {t("adminPages.common.mapTab")}
                         </TabsTrigger>
                     </TabsList>
 
@@ -128,7 +143,7 @@ function AdminIncidentsPage() {
                             error={isError ? true : undefined}
                             isEmpty={incidents.length === 0}
                             onRetry={() => refetch()}
-                            errorTitle="Impossible de charger les incidents"
+                            errorTitle={t("adminPages.incidents.loadError")}
                             skeleton={
                                 <div className="flex flex-col gap-2">
                                     {Array.from({ length: 5 }).map((_, i) => (
@@ -146,12 +161,14 @@ function AdminIncidentsPage() {
                                             <HugeiconsIcon icon={Alert01Icon} />
                                         </EmptyMedia>
                                         <EmptyTitle>
-                                            Aucun incident pour l&apos;instant
+                                            {t(
+                                                "adminPages.incidents.emptyTitle",
+                                            )}
                                         </EmptyTitle>
                                         <EmptyDescription>
-                                            Les signalements des résidents
-                                            apparaîtront ici dès qu&apos;ils
-                                            seront soumis.
+                                            {t(
+                                                "adminPages.incidents.emptyDescription",
+                                            )}
                                         </EmptyDescription>
                                     </EmptyHeader>
                                 </Empty>
@@ -161,11 +178,17 @@ function AdminIncidentsPage() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Titre</TableHead>
-                                            <TableHead>Statut</TableHead>
-                                            <TableHead>Signalé le</TableHead>
+                                            <TableHead>
+                                                {t("incidents.fields.title")}
+                                            </TableHead>
+                                            <TableHead>
+                                                {t("adminPages.incidents.statusColumn")}
+                                            </TableHead>
+                                            <TableHead>
+                                                {t("adminPages.incidents.reportedAt")}
+                                            </TableHead>
                                             <TableHead className="text-right">
-                                                Action
+                                                {t("adminPages.common.action")}
                                             </TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -183,9 +206,10 @@ function AdminIncidentsPage() {
                                                             ] ?? "outline"
                                                         }
                                                     >
-                                                        {STATUS_LABELS[
-                                                            incident.status
-                                                        ] ?? incident.status}
+                                                        {statusLabel(
+                                                            t,
+                                                            incident.status,
+                                                        )}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-muted-foreground text-sm tabular-nums">
@@ -218,12 +242,16 @@ function AdminIncidentsPage() {
                                                                         onSuccess:
                                                                             () =>
                                                                                 toast.success(
-                                                                                    "Statut mis à jour",
+                                                                                    t(
+                                                                                        "adminPages.incidents.statusUpdated",
+                                                                                    ),
                                                                                 ),
                                                                         onError:
                                                                             () =>
                                                                                 toast.error(
-                                                                                    "Impossible de changer le statut",
+                                                                                    t(
+                                                                                        "adminPages.incidents.statusUpdateError",
+                                                                                    ),
                                                                                 ),
                                                                     },
                                                                 )
@@ -231,11 +259,13 @@ function AdminIncidentsPage() {
                                                         >
                                                             {updateStatus.isPending
                                                                 ? "…"
-                                                                : `→ ${STATUS_LABELS[NEXT_STATUSES[incident.status][0]]}`}
+                                                                : `→ ${statusLabel(t, NEXT_STATUSES[incident.status][0])}`}
                                                         </Button>
                                                     ) : (
                                                         <span className="text-muted-foreground text-xs">
-                                                            Terminé
+                                                            {t(
+                                                                "adminPages.incidents.done",
+                                                            )}
                                                         </span>
                                                     )}
                                                 </TableCell>
@@ -251,7 +281,7 @@ function AdminIncidentsPage() {
                                             className="w-full"
                                             onClick={() => fetchNextPage()}
                                         >
-                                            Voir plus
+                                            {t("adminPages.common.loadMore")}
                                         </Button>
                                     </div>
                                 )}
@@ -278,6 +308,7 @@ function IncidentsMap({
     incidents: Incident[];
     neighborhoods: Neighborhood[];
 }) {
+    const { t } = useTranslation();
     const firstNeighborhood = neighborhoods.find((n) => n.geometry);
     const incidentsWithCoords = incidents.filter(
         (i) => i.lat !== null && i.lng !== null,
@@ -309,8 +340,8 @@ function IncidentsMap({
                         <div className="space-y-1">
                             <p className="font-medium">{inc.title}</p>
                             <p className="text-xs">
-                                Statut :{" "}
-                                {STATUS_LABELS[inc.status] ?? inc.status}
+                                {t("adminPages.incidents.statusColumn")} :{" "}
+                                {statusLabel(t, inc.status)}
                             </p>
                         </div>
                     }

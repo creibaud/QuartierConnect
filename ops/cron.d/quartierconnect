@@ -1,0 +1,11 @@
+# QuartierConnect — tâches planifiées
+#   cp ops/cron.d/quartierconnect /etc/cron.d/quartierconnect
+#   chmod 644 /etc/cron.d/quartierconnect
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Backup quotidien des bases à 2h
+0 2 * * *   deploy   cd /home/deploy/QuartierConnect && ./scripts/backup-all.sh >> /var/log/quartierconnect/cron-backup.log 2>&1
+
+# Nettoyage Docker hebdomadaire (dimanche 4h) — images/cache > 7 jours
+0 4 * * 0   deploy   docker system prune -af --filter "until=168h" >> /var/log/quartierconnect/cron-prune.log 2>&1

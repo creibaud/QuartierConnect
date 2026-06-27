@@ -10,24 +10,25 @@ import {
 
 export class CreateIncidentDto {
     @ApiProperty({
-        description: "Titre court de l'incident",
-        example: "Lampadaire cassé rue de la Paix",
+        description: "Short title of the incident",
+        example: "Broken streetlight on Rue de la Paix",
     })
     @IsString()
     @IsNotEmpty()
     title: string;
 
     @ApiProperty({
-        description: "Description détaillée de l'incident",
+        description: "Detailed description of the incident",
         example:
-            "Le lampadaire au numéro 12 est tombé et bloque partiellement le trottoir.",
+            "The streetlight at number 12 has fallen and is partially blocking the sidewalk.",
     })
     @IsString()
     @IsNotEmpty()
     description: string;
 
     @ApiProperty({
-        description: "Identifiant MongoDB du quartier concerné (optionnel)",
+        description:
+            "MongoDB identifier of the relevant neighborhood (optional)",
         example: "664f1a2b3c4d5e6f7a8b9c0d",
         required: false,
     })

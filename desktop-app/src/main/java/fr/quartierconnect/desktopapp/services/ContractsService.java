@@ -2,6 +2,7 @@ package fr.quartierconnect.desktopapp.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fr.quartierconnect.desktopapp.i18n.I18n;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -70,7 +71,7 @@ public class ContractsService {
 
     public void signContract(String contractId, String totpCode) throws Exception {
         String token = AuthService.getInstance().getAccessToken();
-        if (token == null) throw new RuntimeException("Non authentifié");
+        if (token == null) throw new RuntimeException(I18n.get("common.notAuthenticated"));
 
         Map<String, String> body = new HashMap<>();
         body.put("totpCode", totpCode);

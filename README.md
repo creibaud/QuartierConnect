@@ -1,125 +1,225 @@
 # QuartierConnect
 
-Plateforme communautaire de quartier — ESGI 3AL2 · Étape 4 (95%)
+Neighborhood community platform — ESGI 3AL2 · Stage 4 (95%)
 
-> **Rendu final** : 19 juillet 2026 · **Enseignant** : Frédéric SANANES
-> **v0.2.0** · **736 tests automatisés** · 7 conteneurs Docker · 3 bases de données · 4 surfaces
+> **Final submission**: 19 July 2026 · **Instructor**: Frédéric SANANES
+> **v0.2.0** · **736 automated tests** · 7 Docker containers · 3 databases · 4 surfaces
+
+QuartierConnect connects residents of a neighborhood: report incidents, offer and
+find services, organize events, vote, exchange points, and chat in real time.
+It ships four surfaces from one monorepo:
+
+| Surface              | Stack                          | What it is                                      |
+| -------------------- | ------------------------------ | ----------------------------------------------- |
+| **Resident client**  | React 19                       | The app residents use day to day                |
+| **Admin back-office**| React 19 + DSL editor          | Moderation, management, MongoDB query console   |
+| **REST API**         | NestJS 11                      | 60+ endpoints, JWT + TOTP, WebSocket            |
+| **Desktop client**   | JavaFX 21                      | Offline-first companion app (SQLite), plugins   |
 
 ---
 
-## Prérequis
+## Prerequisites
 
-- Docker + Docker Compose
-- Make
-- Node.js 20+ (pour le seed)
-- Java 21 (pour le desktop)
-- oathtool (`sudo apt install oathtool`) ou Google Authenticator
+Install these once. The Docker quick start needs the first four; the rest are for
+local development, the desktop app, and the DSL.
 
-## Démarrage rapide
+| Tool                     | Why                                          | Install                                                   |
+| ------------------------ | -------------------------------------------- | -------------------------------------------------------- |
+| **Docker + Compose**     | Runs the 7 services                          | https://docs.docker.com/get-docker/                      |
+| **GNU Make**             | Task runner (every command below)            | `sudo apt install make`                                  |
+| **Node.js 20+ & pnpm 9** | API + web apps + seed scripts                | Node from nodejs.org, then `corepack enable` for pnpm    |
+| **oathtool**             | Generates the TOTP codes for demo login      | `sudo apt install oathtool` (or any authenticator app)   |
+| **uv**                   | Python package manager — runs the DSL        | https://docs.astral.sh/uv/ (`curl -LsSf … \| sh`)        |
+| **Java 21**              | Desktop app (Maven ships as `./mvnw`)        | Temurin / your distro's `openjdk-21`                     |
+
+Run `make help` at any time to list every available command.
+
+---
+
+## First-time setup
+
+From a fresh clone to a running stack with demo data:
 
 ```bash
-# 1. Configurer l'environnement
+# 1. Configure the environment (see "Environment variables" below)
 cp .env.example .env
-# Éditer .env : POSTGRES_PASSWORD, MONGO_ROOT_PASSWORD, JWT_SECRET, NEO4J_AUTH
+nano .env                 # set the 4 secrets
 
-# 2. Lancer les 7 services Docker
+# 2. Install host dependencies (pnpm workspaces + the DSL Python venv)
+make install              # api + web-apps (pnpm) + dsl (uv sync)
+
+# 3. (contributors only) enable the shared pre-commit hooks
+make hooks
+
+# 4. Start the 7 Docker services
 make docker-up
 
-# 3. Créer les comptes de démo + peupler Neo4j
-make seed
+# 5. Create the demo accounts and populate Neo4j
+make seed                 # needs step 2: the seed runs on the host via ts-node
 ```
+
+Then open the surfaces:
 
 | Surface               | URL                       |
 | --------------------- | ------------------------- |
-| **Client habitant**   | http://localhost          |
+| **Resident client**   | http://localhost          |
 | **Admin back-office** | http://localhost/admin    |
 | **API docs (Scalar)** | http://localhost/api/docs |
 | **Neo4j Browser**     | http://localhost:7474     |
 
-## Comptes démo
+> First boot pulls and builds images, so `make docker-up` can take a few minutes.
+> Check progress with `make status` and `make docker-logs`.
 
-| Email         | Mot de passe | Rôle      | TOTP               |
-| ------------- | ------------ | --------- | ------------------ |
-| alice@demo.fr | Demo1234!    | resident  | `JBSWY3DPEHPK3PXP` |
-| bob@demo.fr   | Demo1234!    | moderator | `JBSWY3DPEHPK3PXP` |
-| admin@demo.fr | Demo1234!    | admin     | `JBSWY3DPEHPK3PXP` |
+---
+
+## Environment variables
+
+`.env.example` is the template. Four values must be set before the stack will run
+(everything else has sane local defaults):
+
+| Variable               | How to set it                                                        |
+| ---------------------- | ------------------------------------------------------------------- |
+| `JWT_SECRET`           | `openssl rand -base64 32` — signs the JWT access/refresh tokens      |
+| `MONGO_ROOT_PASSWORD`  | A strong password — **also update the password inside `MONGO_URI`**  |
+| `POSTGRES_PASSWORD`    | A strong password — **also update the password inside `POSTGRES_URL`** |
+| `NEO4J_AUTH`           | `neo4j/<password>` — **keep `NEO4J_USER` / `NEO4J_PASSWORD` in sync** |
+
+```bash
+# Generate a secret quickly:
+openssl rand -base64 32
+```
+
+The remaining variables (`PYTHON_BIN`, `DSL_PATH`, `DEMO_TOTP_SECRET`,
+`LOGIN_RATE_LIMIT`, `CORS_ORIGINS`) work out of the box for local development.
+`PYTHON_BIN` points at `./dsl/.venv/bin/python`, which `make install` creates.
+
+---
+
+## Demo accounts
+
+All three accounts use password `Demo1234!` and the same demo TOTP secret.
+
+| Email         | Password  | Role      | TOTP secret        |
+| ------------- | --------- | --------- | ------------------ |
+| alice@demo.fr | Demo1234! | resident  | `JBSWY3DPEHPK3PXP` |
+| bob@demo.fr   | Demo1234! | moderator | `JBSWY3DPEHPK3PXP` |
+| admin@demo.fr | Demo1234! | admin     | `JBSWY3DPEHPK3PXP` |
+
+Login requires a 6-digit TOTP code (valid 30s). Generate one:
 
 ```bash
 make totp
-# Ou : oathtool --totp --base32 JBSWY3DPEHPK3PXP
+# Or: oathtool --totp --base32 JBSWY3DPEHPK3PXP
 ```
 
-## Développement local
+---
+
+## Local development
+
+Hot-reload dev servers, outside Docker (databases still come from `make docker-up`):
 
 ```bash
-make dev              # API + client + admin en parallèle (hot reload)
-make dev-api          # API seule (port 5000)
-make dev-client       # Client React (port 3000)
-make dev-admin        # Admin React (port 3001)
-make dev-desktop      # JavaFX (javafx:run)
+make dev              # API + client + admin in parallel
+make dev-api          # API only        (port 5000)
+make dev-client       # React client    (port 3000)
+make dev-admin        # React admin      (port 3001)
+make dev-desktop      # JavaFX desktop   (./mvnw javafx:run)
 ```
+
+---
 
 ## Tests
 
 ```bash
-make test             # Unitaires API (260) + Web shared hooks (73) + Desktop (139) + DSL (21)
-make test-cov         # + rapport coverage (stmts 95.7%, branches 86.1%)
-make test-e2e         # E2E API Supertest (148) — nécessite Docker
-make test-e2e-web     # E2E Playwright (79) — nécessite apps lancées
-make validate         # Tout en séquence : lint + typecheck + tests + build
+make test             # All unit tests: API (261) + Web hooks + Desktop (139) + DSL
+make test-cov         # API unit tests + coverage report (stmts 95.7%, branches 86.1%)
+make test-e2e         # API E2E (Supertest)      — prerequisite: make docker-up
+make test-e2e-web     # Web E2E (Playwright)     — prerequisite: make dev + make docker-up
+make validate         # Full CI sequence: lint + typecheck + tests + coverage + build
+make validate-fast    # lint + typecheck + unit tests only (no build, no E2E)
 ```
 
-## Format
+> `make test` needs nothing running. The E2E targets need live services — read the
+> hint each target prints. The first Playwright run downloads a browser (slow once).
 
-```bash
-make format           # Formate les 4 composants (Prettier + Ruff)
-make format-api       # API NestJS uniquement
-make format-web       # Monorepo web uniquement
-make format-desktop   # Desktop Java (compile -q)
-make format-dsl       # DSL Python (ruff format)
-```
+---
 
 ## Build
 
 ```bash
-make build            # Tous les composants
-make build-desktop    # Fat JAR (~25 MB)
-java -jar desktop-app/target/quartierconnect-desktop.jar
+make build            # All components
+make build-desktop    # Fat JAR (~25 MB) → desktop-app/target/quartierconnect-desktop.jar
+java -jar desktop-app/target/quartierconnect-desktop.jar   # run the built JAR
 ```
+
+---
 
 ## Docker
 
 ```bash
-make docker-up        # Démarrer
-make docker-down      # Arrêter
-make docker-reset     # Reset complet (⚠️ supprime volumes)
-make docker-logs      # Logs temps réel
-make status           # État des services
+make docker-up        # Start the 7 services
+make docker-down      # Stop
+make docker-reset     # Full reset (⚠️ removes volumes — all data lost)
+make docker-logs      # Real-time logs (all services)
+make docker-logs-api  # Real-time logs (API only)
+make status           # Service status + a quick API unit-test check
 ```
+
+---
+
+## Troubleshooting
+
+| Symptom                                   | Fix                                                                       |
+| ----------------------------------------- | ------------------------------------------------------------------------ |
+| `make docker-up` hangs or a port is busy  | `make status`, then `make docker-logs`. Ports used: 80, 443, 5000, 5432, 27017, 7474, 7687 (and 3000/3001 in dev). |
+| `make seed` fails or hangs                | Run `make install` first (the seed runs on the host via `ts-node`) and confirm services are healthy with `make status`. |
+| API not reachable at `/api`               | `make docker-logs-api` to read the API logs.                             |
+| Login rejects a valid-looking TOTP        | The code is time-based (30s window). Check your clock and regenerate with `make totp`. |
+| DSL queries error in the admin console    | Ensure `make install` (a.k.a. `make install-dsl`) created `dsl/.venv`; `PYTHON_BIN` must point at it. |
+| Need a clean slate                        | `make docker-reset` rebuilds from scratch (⚠️ wipes all volumes).        |
+
+---
+
+## Project layout
+
+```
+api/          NestJS 11 API — auth (JWT+TOTP), REST, WebSocket, MongoDB DSL bridge
+web-apps/     Turbo monorepo — apps/client, apps/admin, packages/{shared,ui}
+dsl/          Python PLY micro-language (the MongoDB query DSL)
+desktop-app/  JavaFX 21 desktop client — offline-first (SQLite), plugin system
+docker/       docker-compose + Caddy reverse proxy (Let's Encrypt HTTPS)
+scripts/      Seed (demo accounts, Neo4j) + ops helpers (smoke test, rollback)
+docs/         Full functional + technical dossier (see table below)
+```
+
+---
 
 ## Documentation
 
-| Document                                               | Contenu                                                   |
+| Document                                               | Contents                                                  |
 | ------------------------------------------------------ | --------------------------------------------------------- |
-| [docs/RAPPORT-TECHNIQUE.md](docs/RAPPORT-TECHNIQUE.md) | Rapport complet pour la soutenance — tous les algorithmes |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)           | Diagrammes Mermaid — modules, flux, sécurité              |
-| [docs/DATABASE.md](docs/DATABASE.md)                   | Schémas PostgreSQL, MongoDB, Neo4j, SQLite                |
-| [docs/SECURITY.md](docs/SECURITY.md)                   | Argon2id, TOTP, JWT, SSO, SHA-256, RGPD                   |
-| [docs/TEST.md](docs/TEST.md)                           | Rapport QA — 736 tests, coverage, stratégie               |
-| [docs/DSL.md](docs/DSL.md)                             | Micro-langage PLY — grammaire, pipeline, sécurité         |
-| [docs/GUIDE-SOUTENANCE.md](docs/GUIDE-SOUTENANCE.md)   | Scénarios démo, questions/réponses, chiffres clés         |
-| [docs/API.md](docs/API.md)                             | Référence complète des 50+ endpoints                      |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)               | Déploiement VPS + Caddy HTTPS                             |
+| [docs/RENDU-31-05.md](docs/RENDU-31-05.md)             | Submission dossier — functional + technical, end to end   |
+| [docs/RAPPORT-TECHNIQUE.md](docs/RAPPORT-TECHNIQUE.md) | Full report for the defense — all the algorithms          |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)           | Mermaid diagrams — modules, flows, security               |
+| [docs/DATABASE.md](docs/DATABASE.md)                   | PostgreSQL, MongoDB, Neo4j, SQLite schemas                |
+| [docs/SECURITY.md](docs/SECURITY.md)                   | Argon2id, TOTP, JWT, SSO, SHA-256, GDPR                   |
+| [docs/TEST.md](docs/TEST.md)                           | QA report — 736 tests, coverage, strategy                 |
+| [docs/DSL.md](docs/DSL.md)                             | PLY micro-language — grammar, pipeline, security          |
+| [docs/GUIDE-SOUTENANCE.md](docs/GUIDE-SOUTENANCE.md)   | Demo scenarios, Q&A, key figures                          |
+| [docs/API.md](docs/API.md)                             | Reference for the 50+ endpoints                           |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)               | VPS deployment + Caddy HTTPS                              |
+
+---
 
 ## Stack
 
-| Couche      | Technologie                                                                |
-| ----------- | -------------------------------------------------------------------------- |
-| **API**     | NestJS 11, TypeScript, Drizzle ORM, Mongoose, JWT HS256, argon2, speakeasy |
-| **Client**  | React 19, TanStack Router/Query/Form, Shadcn/ui, Tailwind v4               |
-| **Admin**   | React 19 (même stack), DSL editor, Mermaid                                 |
-| **Desktop** | JavaFX 21, Maven Shade JAR, SQLite JDBC, java.net.http                     |
-| **Bases**   | PostgreSQL 16, MongoDB 7, Neo4j 5, SQLite 3                                |
-| **Proxy**   | Caddy 2 (HTTPS Let's Encrypt automatique)                                  |
-| **CI/CD**   | GitHub Actions (lint + test + build), Turbo monorepo                       |
-| **DSL**     | Python PLY + pythonia bridge                                               |
+| Layer         | Technology                                                                 |
+| ------------- | -------------------------------------------------------------------------- |
+| **API**       | NestJS 11, TypeScript, Drizzle ORM, Mongoose, JWT HS256, argon2, speakeasy |
+| **Client**    | React 19, TanStack Router/Query/Form, Shadcn/ui, Tailwind v4               |
+| **Admin**     | React 19 (same stack), DSL editor, Mermaid                                 |
+| **Desktop**   | JavaFX 21, Maven Shade JAR, SQLite JDBC, java.net.http                     |
+| **Databases** | PostgreSQL 16, MongoDB 7, Neo4j 5, SQLite 3                                |
+| **Proxy**     | Caddy 2 (automatic Let's Encrypt HTTPS)                                    |
+| **CI/CD**     | GitHub Actions (lint + test + build), Turbo monorepo                       |
+| **DSL**       | Python PLY + pythonia bridge                                               |

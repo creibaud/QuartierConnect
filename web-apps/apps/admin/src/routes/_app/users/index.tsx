@@ -5,6 +5,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import {
     useInfiniteUsers,
     useUpdateUserRole,
@@ -51,13 +52,6 @@ import {
 } from "@workspace/ui/components/table";
 import { toast } from "sonner";
 
-const ROLE_LABELS: Record<string, string> = {
-    resident: "Résident",
-    moderator: "Modérateur",
-    admin: "Administrateur",
-    banned: "Banni",
-};
-
 const ROLE_VARIANTS: Record<
     string,
     "default" | "secondary" | "outline" | "destructive"
@@ -73,6 +67,7 @@ export const Route = createFileRoute("/_app/users/")({
 });
 
 function UsersPage() {
+    const { t } = useTranslation();
     const { data, isLoading, isError, fetchNextPage, hasNextPage } =
         useInfiniteUsers();
     const updateRole = useUpdateUserRole();
@@ -81,13 +76,20 @@ function UsersPage() {
     const [search, setSearch] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
 
+    const roleLabels: Record<string, string> = {
+        resident: t("adminPages.roles.resident"),
+        moderator: t("adminPages.roles.moderator"),
+        admin: t("adminPages.roles.admin"),
+        banned: t("adminPages.roles.banned"),
+    };
+
     function handleRoleChange(userId: string, role: User["role"]) {
         updateRole.mutate(
             { id: userId, role },
             {
-                onSuccess: () => toast.success("Rôle mis à jour"),
+                onSuccess: () => toast.success(t("adminPages.users.roleUpdated")),
                 onError: () =>
-                    toast.error("Impossible de mettre à jour le rôle"),
+                    toast.error(t("adminPages.users.roleUpdateError")),
             },
         );
     }
@@ -109,8 +111,8 @@ function UsersPage() {
         <div className="p-6">
             <div className="mx-auto max-w-6xl space-y-6">
                 <PageHeader
-                    title="Utilisateurs"
-                    description="Gérez les rôles et les accès de la communauté."
+                    title={t("adminPages.users.title")}
+                    description={t("adminPages.users.description")}
                 />
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -122,7 +124,7 @@ function UsersPage() {
                         <Input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Rechercher par email"
+                            placeholder={t("adminPages.users.searchPlaceholder")}
                             className="pl-9"
                         />
                     </div>
@@ -131,15 +133,21 @@ function UsersPage() {
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">Tous les rôles</SelectItem>
-                            <SelectItem value="resident">Résident</SelectItem>
+                            <SelectItem value="all">
+                                {t("adminPages.users.allRoles")}
+                            </SelectItem>
+                            <SelectItem value="resident">
+                                {t("adminPages.roles.resident")}
+                            </SelectItem>
                             <SelectItem value="moderator">
-                                Modérateur
+                                {t("adminPages.roles.moderator")}
                             </SelectItem>
                             <SelectItem value="admin">
-                                Administrateur
+                                {t("adminPages.roles.admin")}
                             </SelectItem>
-                            <SelectItem value="banned">Banni</SelectItem>
+                            <SelectItem value="banned">
+                                {t("adminPages.roles.banned")}
+                            </SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -164,11 +172,11 @@ function UsersPage() {
                                 <EmptyMedia variant="icon">
                                     <HugeiconsIcon icon={UserMultipleIcon} />
                                 </EmptyMedia>
-                                <EmptyTitle>Aucun utilisateur</EmptyTitle>
+                                <EmptyTitle>
+                                    {t("adminPages.users.emptyTitle")}
+                                </EmptyTitle>
                                 <EmptyDescription>
-                                    Aucun utilisateur ne correspond à votre
-                                    recherche. Ajustez les filtres pour élargir
-                                    les résultats.
+                                    {t("adminPages.users.emptyDescription")}
                                 </EmptyDescription>
                             </EmptyHeader>
                         </Empty>
@@ -178,11 +186,15 @@ function UsersPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Rôle</TableHead>
-                                    <TableHead>Inscrit le</TableHead>
+                                    <TableHead>{t("auth.email")}</TableHead>
+                                    <TableHead>
+                                        {t("adminPages.users.role")}
+                                    </TableHead>
+                                    <TableHead>
+                                        {t("adminPages.users.registeredAt")}
+                                    </TableHead>
                                     <TableHead className="text-right">
-                                        Actions
+                                        {t("adminPages.common.actions")}
                                     </TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -199,7 +211,7 @@ function UsersPage() {
                                                     "secondary"
                                                 }
                                             >
-                                                {ROLE_LABELS[user.role] ??
+                                                {roleLabels[user.role] ??
                                                     user.role}
                                             </Badge>
                                         </TableCell>
@@ -228,13 +240,19 @@ function UsersPage() {
                                                         </SelectTrigger>
                                                         <SelectContent>
                                                             <SelectItem value="resident">
-                                                                Résident
+                                                                {t(
+                                                                    "adminPages.roles.resident",
+                                                                )}
                                                             </SelectItem>
                                                             <SelectItem value="moderator">
-                                                                Modérateur
+                                                                {t(
+                                                                    "adminPages.roles.moderator",
+                                                                )}
                                                             </SelectItem>
                                                             <SelectItem value="admin">
-                                                                Administrateur
+                                                                {t(
+                                                                    "adminPages.roles.admin",
+                                                                )}
                                                             </SelectItem>
                                                         </SelectContent>
                                                     </Select>
@@ -256,8 +274,12 @@ function UsersPage() {
                                                         >
                                                             {user.role ===
                                                             "banned"
-                                                                ? "Réactiver"
-                                                                : "Bannir"}
+                                                                ? t(
+                                                                      "adminPages.users.reactivate",
+                                                                  )
+                                                                : t(
+                                                                      "adminPages.users.ban",
+                                                                  )}
                                                         </Button>
                                                     </AlertDialogTrigger>
                                                     <AlertDialogContent>
@@ -265,19 +287,35 @@ function UsersPage() {
                                                             <AlertDialogTitle>
                                                                 {user.role ===
                                                                 "banned"
-                                                                    ? "Réactiver cet utilisateur ?"
-                                                                    : "Bannir cet utilisateur ?"}
+                                                                    ? t(
+                                                                          "adminPages.users.reactivateConfirmTitle",
+                                                                      )
+                                                                    : t(
+                                                                          "adminPages.users.banConfirmTitle",
+                                                                      )}
                                                             </AlertDialogTitle>
                                                             <AlertDialogDescription>
                                                                 {user.role ===
                                                                 "banned"
-                                                                    ? `${user.email} retrouvera le rôle Résident et l'accès à la plateforme.`
-                                                                    : `${user.email} perdra immédiatement l'accès à la plateforme.`}
+                                                                    ? t(
+                                                                          "adminPages.users.reactivateConfirmDescription",
+                                                                          {
+                                                                              email: user.email,
+                                                                          },
+                                                                      )
+                                                                    : t(
+                                                                          "adminPages.users.banConfirmDescription",
+                                                                          {
+                                                                              email: user.email,
+                                                                          },
+                                                                      )}
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
                                                             <AlertDialogCancel>
-                                                                Annuler
+                                                                {t(
+                                                                    "common.cancel",
+                                                                )}
                                                             </AlertDialogCancel>
                                                             <AlertDialogAction
                                                                 variant={
@@ -294,8 +332,8 @@ function UsersPage() {
                                                             >
                                                                 {user.role ===
                                                                 "banned"
-                                                                    ? "Réactiver"
-                                                                    : "Bannir"}
+                                                                    ? t("adminPages.users.reactivate")
+                                                                    : t("adminPages.users.ban")}
                                                             </AlertDialogAction>
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
@@ -314,7 +352,7 @@ function UsersPage() {
                                     className="w-full"
                                     onClick={() => fetchNextPage()}
                                 >
-                                    Voir plus
+                                    {t("adminPages.common.loadMore")}
                                 </Button>
                             </div>
                         )}

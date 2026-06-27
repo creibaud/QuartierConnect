@@ -22,16 +22,19 @@ import {
 } from "@workspace/ui/components/card";
 import { Spinner } from "@workspace/ui/components/spinner";
 import { useAppForm } from "@workspace/ui/lib/form";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { i18n } from "@workspace/shared/lib/i18n/index";
+
 const credentialsSchema = z.object({
-    email: z.string().email("Email invalide"),
-    password: z.string().min(1, "Mot de passe requis"),
+    email: z.string().email(i18n.t("adminPages.auth.invalidEmail")),
+    password: z.string().min(1, i18n.t("adminPages.auth.passwordRequired")),
 });
 
 const totpSchema = z.object({
-    totpCode: z.string().length(6, "Le code doit contenir 6 chiffres"),
+    totpCode: z.string().length(6, i18n.t("adminPages.auth.totpLength")),
 });
 
 export const Route = createFileRoute("/login")({
@@ -42,13 +45,14 @@ export const Route = createFileRoute("/login")({
 });
 
 function AdminLoginPage() {
-    useHead({ title: "Connexion" });
+    const { t } = useTranslation();
+    useHead({ title: t("adminPages.auth.loginTitle") });
     const navigate = useNavigate();
     const { forbidden } = useSearch({ from: "/login" });
     const [step, setStep] = useState<"credentials" | "totp">("credentials");
     const [credentials, setCredentials] = useState({ email: "", password: "" });
     const [serverError, setServerError] = useState<string | null>(
-        forbidden ? "Accès réservé aux administrateurs" : null,
+        forbidden ? t("adminPages.auth.adminOnly") : null,
     );
 
     const credentialsForm = useAppForm({
@@ -73,23 +77,23 @@ function AdminLoginPage() {
                 });
                 const payload = decodeToken(data.accessToken);
                 if (payload?.role !== "admin") {
-                    setServerError("Accès réservé aux administrateurs");
+                    setServerError(t("adminPages.auth.adminOnly"));
                     setStep("credentials");
                     return;
                 }
                 setTokens(data.accessToken);
-                toast.success("Connexion admin réussie");
+                toast.success(t("adminPages.auth.loginSuccess"));
                 navigate({ to: "/dashboard" });
             } catch (err) {
                 const apiErr = err as { code?: string; message?: string };
                 const messages: Record<string, string> = {
-                    INVALID_PASSWORD: "Email ou mot de passe incorrect",
-                    INVALID_TOTP: "Code TOTP invalide",
+                    INVALID_PASSWORD: t("adminPages.auth.invalidPassword"),
+                    INVALID_TOTP: t("adminPages.auth.invalidTotp"),
                 };
                 setServerError(
                     messages[apiErr.code ?? ""] ??
                         apiErr.message ??
-                        "Erreur de connexion",
+                        t("adminPages.auth.loginError"),
                 );
                 if (apiErr.code === "INVALID_TOTP") {
                     totpForm.setFieldValue("totpCode", "");
@@ -107,8 +111,8 @@ function AdminLoginPage() {
                     </CardTitle>
                     <CardDescription>
                         {step === "credentials"
-                            ? "Connexion espace administrateur"
-                            : "Vérification en deux étapes"}
+                            ? t("adminPages.auth.loginSubtitle")
+                            : t("adminPages.auth.twoStepVerification")}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -129,7 +133,7 @@ function AdminLoginPage() {
                             <credentialsForm.AppField name="email">
                                 {(field) => (
                                     <field.TextField
-                                        label="Email"
+                                        label={t("auth.email")}
                                         type="email"
                                         placeholder="admin@demo.fr"
                                         autoFocus
@@ -139,13 +143,13 @@ function AdminLoginPage() {
                             <credentialsForm.AppField name="password">
                                 {(field) => (
                                     <field.TextField
-                                        label="Mot de passe"
+                                        label={t("auth.password")}
                                         type="password"
                                     />
                                 )}
                             </credentialsForm.AppField>
                             <Button type="submit" className="w-full">
-                                Continuer
+                                {t("adminPages.auth.continue")}
                             </Button>
                         </form>
                     ) : (
@@ -157,7 +161,7 @@ function AdminLoginPage() {
                             className="space-y-4"
                         >
                             <p className="text-muted-foreground text-sm">
-                                Code TOTP pour{" "}
+                                {t("adminPages.auth.totpForLabel")}{" "}
                                 <span className="text-foreground font-medium">
                                     {credentials.email}
                                 </span>
@@ -165,7 +169,7 @@ function AdminLoginPage() {
                             </p>
                             <totpForm.AppField name="totpCode">
                                 {(field) => (
-                                    <field.OtpField label="Code TOTP" />
+                                    <field.OtpField label={t("auth.totpCode")} />
                                 )}
                             </totpForm.AppField>
                             <totpForm.Subscribe
@@ -180,7 +184,7 @@ function AdminLoginPage() {
                                         {isSubmitting ? (
                                             <Spinner className="mr-2" />
                                         ) : null}
-                                        Se connecter
+                                        {t("auth.login")}
                                     </Button>
                                 )}
                             </totpForm.Subscribe>
@@ -193,7 +197,7 @@ function AdminLoginPage() {
                                     setServerError(null);
                                 }}
                             >
-                                Retour
+                                {t("common.back")}
                             </Button>
                         </form>
                     )}
