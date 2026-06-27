@@ -71,6 +71,8 @@ export interface PointTransaction {
     recipientId: string;
     amount: number;
     note: string | null;
+    senderEmail: string | null;
+    recipientEmail: string | null;
     createdAt: string;
 }
 

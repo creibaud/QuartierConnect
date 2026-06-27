@@ -7,6 +7,7 @@ import {
     Param,
     Patch,
     Query,
+    Request,
     UseGuards,
 } from "@nestjs/common";
 import {
@@ -17,7 +18,7 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
-import { eq } from "drizzle-orm";
+import { and, eq, ilike, ne } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -25,7 +26,18 @@ import { RolesGuard } from "../auth/guards/roles.guard";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { UpdateRoleDto } from "./dto/update-role.dto";
-import { UserPublicDto } from "./dto/user-responses.dto";
+import { UserPublicDto, UserSearchResultDto } from "./dto/user-responses.dto";
+
+interface AuthRequest {
+    user: { sub: string };
+}
+
+const MIN_SEARCH_LENGTH = 2;
+const MAX_SEARCH_RESULTS = 10;
+
+function escapeLikePattern(value: string): string {
+    return value.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
 
 @ApiTags("Users (admin)")
 @ApiBearerAuth()
@@ -37,6 +49,36 @@ export class UsersController {
         @Inject(DRIZZLE_TOKEN)
         private readonly db: PostgresJsDatabase<typeof schema>,
     ) {}
+
+    @Get("search")
+    @Roles("resident", "moderator", "admin")
+    @ApiOperation({
+        summary: "Search users by email",
+        description:
+            "Returns up to 10 users whose email contains the query string, excluding the authenticated user. Available to any signed-in resident so they can pick a points-transfer recipient without knowing their UUID. Returns an empty list when the query is shorter than 2 characters.",
+    })
+    @ApiQuery({ name: "q", required: true, example: "bob" })
+    @ApiResponse({ status: 200, type: [UserSearchResultDto] })
+    searchByEmail(@Query("q") query = "", @Request() req: AuthRequest) {
+        const term = query.trim();
+        if (term.length < MIN_SEARCH_LENGTH) return [];
+
+        const pattern = `%${escapeLikePattern(term)}%`;
+        return this.db
+            .select({
+                id: schema.users.id,
+                email: schema.users.email,
+                role: schema.users.role,
+            })
+            .from(schema.users)
+            .where(
+                and(
+                    ilike(schema.users.email, pattern),
+                    ne(schema.users.id, req.user.sub),
+                ),
+            )
+            .limit(MAX_SEARCH_RESULTS);
+    }
 
     @Get()
     @ApiOperation({

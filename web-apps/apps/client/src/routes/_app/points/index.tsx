@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+    ArrowDown01Icon,
     ArrowDownLeft01Icon,
     ArrowUpRight01Icon,
     Coins01Icon,
@@ -13,6 +14,10 @@ import {
     usePointsHistory,
     useTransferPoints,
 } from "@workspace/shared/lib/hooks/points.hooks";
+import {
+    type UserSearchResult,
+    useUserSearch,
+} from "@workspace/shared/lib/hooks/useUserSearch";
 import type { PointTransaction } from "@workspace/shared/lib/types";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -22,6 +27,13 @@ import {
     CardHeader,
     CardTitle,
 } from "@workspace/ui/components/card";
+import {
+    Command,
+    CommandEmpty,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@workspace/ui/components/command";
 import { DataState } from "@workspace/ui/components/data-state";
 import {
     Empty,
@@ -33,6 +45,11 @@ import {
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { PageHeader } from "@workspace/ui/components/page-header";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@workspace/ui/components/popover";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { toast } from "sonner";
@@ -135,8 +152,8 @@ function TransactionRow({
     const { t } = useTranslation();
     const isIncoming = transaction.recipientId === currentUserId;
     const otherParty = isIncoming
-        ? transaction.senderId
-        : transaction.recipientId;
+        ? (transaction.senderEmail ?? transaction.senderId)
+        : (transaction.recipientEmail ?? transaction.recipientId);
     const date = new Date(transaction.createdAt).toLocaleDateString("fr-FR");
 
     return (
@@ -187,32 +204,120 @@ function TransactionRow({
     );
 }
 
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+    const [debounced, setDebounced] = useState(value);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebounced(value), delayMs);
+        return () => clearTimeout(timer);
+    }, [value, delayMs]);
+
+    return debounced;
+}
+
+function RecipientPicker({
+    recipient,
+    onSelect,
+}: {
+    recipient: UserSearchResult | null;
+    onSelect: (user: UserSearchResult) => void;
+}) {
+    const { t } = useTranslation();
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState("");
+    const debouncedQuery = useDebouncedValue(query, 250);
+    const { data: results = [], isFetching } = useUserSearch(debouncedQuery);
+
+    const emptyMessage =
+        debouncedQuery.trim().length < 2
+            ? t("pages.points.recipientHint")
+            : isFetching
+              ? t("pages.points.recipientSearching")
+              : t("pages.points.recipientNoResults");
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between font-normal"
+                >
+                    <span
+                        className={recipient ? "" : "text-muted-foreground"}
+                    >
+                        {recipient
+                            ? recipient.email
+                            : t("pages.points.recipientPlaceholder")}
+                    </span>
+                    <HugeiconsIcon
+                        icon={ArrowDown01Icon}
+                        className="text-muted-foreground size-4 shrink-0"
+                    />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent
+                className="w-(--radix-popover-trigger-width) p-0"
+                align="start"
+            >
+                <Command shouldFilter={false}>
+                    <CommandInput
+                        value={query}
+                        onValueChange={setQuery}
+                        placeholder={t(
+                            "pages.points.recipientSearchPlaceholder",
+                        )}
+                    />
+                    <CommandList>
+                        <CommandEmpty>{emptyMessage}</CommandEmpty>
+                        {results.map((user) => (
+                            <CommandItem
+                                key={user.id}
+                                value={user.id}
+                                onSelect={() => {
+                                    onSelect(user);
+                                    setQuery("");
+                                    setOpen(false);
+                                }}
+                            >
+                                {user.email}
+                            </CommandItem>
+                        ))}
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    );
+}
+
 function TransferForm() {
     const { t } = useTranslation();
-    const [recipientId, setRecipientId] = useState("");
+    const [recipient, setRecipient] = useState<UserSearchResult | null>(null);
     const [amount, setAmount] = useState("");
     const [note, setNote] = useState("");
     const transferPoints = useTransferPoints();
 
     const parsedAmount = Number(amount);
     const isValid =
-        recipientId.trim() !== "" &&
+        recipient !== null &&
         Number.isInteger(parsedAmount) &&
         parsedAmount >= 1;
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        if (!isValid) return;
+        if (!isValid || recipient === null) return;
         transferPoints.mutate(
             {
-                recipientId: recipientId.trim(),
+                recipientId: recipient.id,
                 amount: parsedAmount,
                 note: note.trim() || undefined,
             },
             {
                 onSuccess: () => {
                     toast.success(t("pages.points.transferSuccess"));
-                    setRecipientId("");
+                    setRecipient(null);
                     setAmount("");
                     setNote("");
                 },
@@ -237,17 +342,10 @@ function TransferForm() {
                         <Label htmlFor="points-recipient">
                             {t("pages.points.recipientLabel")}
                         </Label>
-                        <Input
-                            id="points-recipient"
-                            value={recipientId}
-                            onChange={(e) => setRecipientId(e.target.value)}
-                            placeholder={t("pages.points.recipientPlaceholder")}
-                            autoComplete="off"
-                            required
+                        <RecipientPicker
+                            recipient={recipient}
+                            onSelect={setRecipient}
                         />
-                        <p className="text-muted-foreground text-xs">
-                            {t("pages.points.recipientHint")}
-                        </p>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="points-amount">

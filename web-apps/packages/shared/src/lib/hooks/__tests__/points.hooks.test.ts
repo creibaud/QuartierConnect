@@ -64,6 +64,8 @@ describe("usePointsHistory", () => {
                 recipientId: "user-b",
                 amount: 10,
                 note: "Thanks",
+                senderEmail: "alice@demo.fr",
+                recipientEmail: "bob@demo.fr",
                 createdAt: "2026-06-01T10:00:00.000Z",
             },
         ];
@@ -96,6 +98,8 @@ describe("useTransferPoints", () => {
                 recipientId: "user-b",
                 amount: 10,
                 note: null,
+                senderEmail: "alice@demo.fr",
+                recipientEmail: "bob@demo.fr",
                 createdAt: "2026-06-01T10:00:00.000Z",
             },
             senderBalance: 90,
