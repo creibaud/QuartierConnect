@@ -9,7 +9,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-COMPOSE="docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml"
+COMPOSE="docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml --env-file .env"
 ARCHIVE="${1:?Usage: restore-neo4j.sh <neo4j-archive.tar.gz>}"
 [ -f "$ARCHIVE" ] || { echo "✗ Fichier introuvable : $ARCHIVE" >&2; exit 1; }
 
@@ -21,6 +21,7 @@ read -r -p "Confirmer ? Taper 'oui' : " CONFIRM
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 tar -C "$TMP" -xzf "$ARCHIVE"   # → $TMP/neo4j.dump
+chmod -R a+rX "$TMP"            # readable by the neo4j user inside the container
 
 NEO_CID="$($COMPOSE ps -q neo4j)"
 $COMPOSE stop neo4j >/dev/null

@@ -9,11 +9,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-COMPOSE="docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml"
+COMPOSE="docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml --env-file .env"
 ARCHIVE="${1:?Usage: restore-postgres.sh <postgres-dump.sql.gz>}"
 [ -f "$ARCHIVE" ] || { echo "✗ Fichier introuvable : $ARCHIVE" >&2; exit 1; }
 
-env_get() { grep -E "^$1=" .env 2>/dev/null | head -1 | cut -d= -f2-; }
+env_get() { grep -E "^$1=" .env 2>/dev/null | head -1 | cut -d= -f2- || true; }
 PG_USER="$(env_get POSTGRES_USER)"; PG_USER="${PG_USER:-qc}"
 
 echo "⚠  Cela va RÉÉCRIRE les données PostgreSQL avec :"

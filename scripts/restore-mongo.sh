@@ -9,11 +9,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-COMPOSE="docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml"
+COMPOSE="docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml --env-file .env"
 ARCHIVE="${1:?Usage: restore-mongo.sh <mongo-archive.tar.gz>}"
 [ -f "$ARCHIVE" ] || { echo "✗ Fichier introuvable : $ARCHIVE" >&2; exit 1; }
 
-env_get() { grep -E "^$1=" .env 2>/dev/null | head -1 | cut -d= -f2-; }
+env_get() { grep -E "^$1=" .env 2>/dev/null | head -1 | cut -d= -f2- || true; }
 MONGO_USER="$(env_get MONGO_ROOT_USER)"; MONGO_USER="${MONGO_USER:-root}"
 MONGO_PASS="$(env_get MONGO_ROOT_PASSWORD)"
 

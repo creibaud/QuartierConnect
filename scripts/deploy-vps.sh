@@ -10,10 +10,10 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-COMPOSE="docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml"
+COMPOSE="docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml --env-file .env"
 REF="${1:-main}"
 
-env_get() { grep -E "^$1=" .env 2>/dev/null | head -1 | cut -d= -f2-; }
+env_get() { grep -E "^$1=" .env 2>/dev/null | head -1 | cut -d= -f2- || true; }
 DOMAIN="$(env_get PROD_DOMAIN)"; DOMAIN="${DOMAIN:-quartierconnect.fr}"
 case "$DOMAIN" in https://*) ;; *) DOMAIN="https://${DOMAIN}";; esac
 HOOK="$(env_get DISCORD_WEBHOOK)"

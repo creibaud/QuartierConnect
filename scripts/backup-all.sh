@@ -11,7 +11,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-COMPOSE="docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml"
+COMPOSE="docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml --env-file .env"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/quartierconnect}"
 LOG_DIR="${LOG_DIR:-/var/log/quartierconnect}"
 RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-7}"
@@ -22,7 +22,7 @@ SUMMARY="${LOG_DIR}/backup-summary-$(date +%Y-%m-%d).log"
 mkdir -p "$BACKUP_DIR" "$LOG_DIR"
 
 # Lecture robuste d'une variable du .env (gère les '=' dans la valeur).
-env_get() { grep -E "^$1=" .env 2>/dev/null | head -1 | cut -d= -f2-; }
+env_get() { grep -E "^$1=" .env 2>/dev/null | head -1 | cut -d= -f2- || true; }
 
 log()  { echo "[$(date +%H:%M:%S)] $*" | tee -a "$SUMMARY"; }
 
@@ -73,8 +73,12 @@ upload_s3 "$PG_FILE" postgres
 NEO_FILE="${BACKUP_DIR}/neo4j-${DATE}.tar.gz"
 NEO_CID="$($COMPOSE ps -q neo4j)"
 $COMPOSE stop neo4j >/dev/null || fail "arrêt neo4j"
-if docker run --rm --volumes-from "$NEO_CID" -v "$BACKUP_DIR":/backups neo4j:5 \
-     neo4j-admin database dump neo4j --to-path=/backups --overwrite-destination=true; then
+# neo4j-admin runs as the neo4j user (uid 7474) and cannot write to a host
+# bind-mount owned by another user, so dump to the container's /tmp and stream
+# the result to the host file instead.
+if docker run --rm --volumes-from "$NEO_CID" neo4j:5 \
+     sh -c "neo4j-admin database dump neo4j --to-path=/tmp --overwrite-destination=true >&2 && cat /tmp/neo4j.dump" \
+     > "${BACKUP_DIR}/neo4j.dump"; then
   $COMPOSE start neo4j >/dev/null || fail "redémarrage neo4j"
   tar -C "$BACKUP_DIR" -czf "$NEO_FILE" neo4j.dump && rm -f "${BACKUP_DIR}/neo4j.dump"
   log "Neo4j → $(basename "$NEO_FILE") ($(du -h "$NEO_FILE" | cut -f1))"
