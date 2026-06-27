@@ -52,6 +52,8 @@ export default {
         messages: "Messages",
         services: "Services",
         votes: "Votes",
+        recommendations: "Recommandations",
+        points: "Points",
         users: "Utilisateurs",
         neighborhoods: "Quartiers",
         communityVotes: "Votes communautaires",
@@ -117,6 +119,12 @@ export default {
     recommendations: {
         title: "Recommandations",
         empty: "Aucune recommandation pour le moment",
+        description:
+            "Suggestions personnalisées selon votre activité de quartier.",
+        loadError: "Impossible de charger les recommandations",
+        emptyDescription:
+            "Participez à la vie du quartier pour recevoir des suggestions adaptées.",
+        scoreLabel: "Pertinence : {{score}}",
         types: {
             service: "Service",
             event: "Événement",

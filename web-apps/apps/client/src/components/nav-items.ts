@@ -5,9 +5,9 @@ import {
     CustomerServiceIcon,
     DashboardSquare01Icon,
     Message01Icon,
+    SparklesIcon,
     ThumbsUpIcon,
 } from "@hugeicons/core-free-icons";
-
 import type { NavItem } from "@/components/nav-main";
 
 export const clientNavItems: NavItem[] = [
@@ -18,4 +18,9 @@ export const clientNavItems: NavItem[] = [
     { title: "nav.messages", to: "/messages", icon: Message01Icon },
     { title: "nav.services", to: "/services", icon: CustomerServiceIcon },
     { title: "nav.votes", to: "/votes", icon: ThumbsUpIcon },
+    {
+        title: "nav.recommendations",
+        to: "/recommendations",
+        icon: SparklesIcon,
+    },
 ];

@@ -15,6 +15,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppVotesIndexRouteImport } from './routes/_app/votes/index'
 import { Route as AppServicesIndexRouteImport } from './routes/_app/services/index'
+import { Route as AppRecommendationsIndexRouteImport } from './routes/_app/recommendations/index'
 import { Route as AppMessagesIndexRouteImport } from './routes/_app/messages/index'
 import { Route as AppIncidentsIndexRouteImport } from './routes/_app/incidents/index'
 import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
@@ -49,6 +50,11 @@ const AppVotesIndexRoute = AppVotesIndexRouteImport.update({
 const AppServicesIndexRoute = AppServicesIndexRouteImport.update({
   id: '/services/',
   path: '/services/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRecommendationsIndexRoute = AppRecommendationsIndexRouteImport.update({
+  id: '/recommendations/',
+  path: '/recommendations/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMessagesIndexRoute = AppMessagesIndexRouteImport.update({
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/events/': typeof AppEventsIndexRoute
   '/incidents/': typeof AppIncidentsIndexRoute
   '/messages/': typeof AppMessagesIndexRoute
+  '/recommendations/': typeof AppRecommendationsIndexRoute
   '/services/': typeof AppServicesIndexRoute
   '/votes/': typeof AppVotesIndexRoute
 }
@@ -105,6 +112,7 @@ export interface FileRoutesByTo {
   '/events': typeof AppEventsIndexRoute
   '/incidents': typeof AppIncidentsIndexRoute
   '/messages': typeof AppMessagesIndexRoute
+  '/recommendations': typeof AppRecommendationsIndexRoute
   '/services': typeof AppServicesIndexRoute
   '/votes': typeof AppVotesIndexRoute
 }
@@ -120,6 +128,7 @@ export interface FileRoutesById {
   '/_app/events/': typeof AppEventsIndexRoute
   '/_app/incidents/': typeof AppIncidentsIndexRoute
   '/_app/messages/': typeof AppMessagesIndexRoute
+  '/_app/recommendations/': typeof AppRecommendationsIndexRoute
   '/_app/services/': typeof AppServicesIndexRoute
   '/_app/votes/': typeof AppVotesIndexRoute
 }
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/events/'
     | '/incidents/'
     | '/messages/'
+    | '/recommendations/'
     | '/services/'
     | '/votes/'
   fileRoutesByTo: FileRoutesByTo
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/incidents'
     | '/messages'
+    | '/recommendations'
     | '/services'
     | '/votes'
   id:
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/_app/events/'
     | '/_app/incidents/'
     | '/_app/messages/'
+    | '/_app/recommendations/'
     | '/_app/services/'
     | '/_app/votes/'
   fileRoutesById: FileRoutesById
@@ -217,6 +229,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServicesIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/recommendations/': {
+      id: '/_app/recommendations/'
+      path: '/recommendations'
+      fullPath: '/recommendations/'
+      preLoaderRoute: typeof AppRecommendationsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/messages/': {
       id: '/_app/messages/'
       path: '/messages'
@@ -269,6 +288,7 @@ interface AppRouteChildren {
   AppEventsIndexRoute: typeof AppEventsIndexRoute
   AppIncidentsIndexRoute: typeof AppIncidentsIndexRoute
   AppMessagesIndexRoute: typeof AppMessagesIndexRoute
+  AppRecommendationsIndexRoute: typeof AppRecommendationsIndexRoute
   AppServicesIndexRoute: typeof AppServicesIndexRoute
   AppVotesIndexRoute: typeof AppVotesIndexRoute
 }
@@ -280,6 +300,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppEventsIndexRoute: AppEventsIndexRoute,
   AppIncidentsIndexRoute: AppIncidentsIndexRoute,
   AppMessagesIndexRoute: AppMessagesIndexRoute,
+  AppRecommendationsIndexRoute: AppRecommendationsIndexRoute,
   AppServicesIndexRoute: AppServicesIndexRoute,
   AppVotesIndexRoute: AppVotesIndexRoute,
 }
