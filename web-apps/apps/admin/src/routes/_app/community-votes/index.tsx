@@ -1,13 +1,10 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Add01Icon, Agreement01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
-import {
-    apiGet,
-    apiPost,
-} from "@workspace/shared/lib/api";
+import { apiGet, apiPost } from "@workspace/shared/lib/api";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -78,6 +75,7 @@ function voteTypeLabel(t: TranslateFn, voteType: VoteType): string {
 function CommunityVotesPage() {
     const { t } = useTranslation();
     const [createOpen, setCreateOpen] = useState(false);
+    const [resultsVote, setResultsVote] = useState<CommunityVote | null>(null);
     const queryClient = useQueryClient();
 
     const { data, isLoading, isError, refetch } = useQuery<CommunityVote[]>({
@@ -205,21 +203,33 @@ function CommunityVotesPage() {
                                             </dd>
                                         </div>
                                     </dl>
-                                    {vote.status === "open" && (
+                                    <div className="flex flex-col gap-2">
                                         <Button
                                             variant="outline"
                                             size="sm"
                                             className="w-full"
-                                            disabled={closeVote.isPending}
-                                            onClick={() =>
-                                                closeVote.mutate(vote._id)
-                                            }
+                                            onClick={() => setResultsVote(vote)}
                                         >
                                             {t(
-                                                "adminPages.communityVotes.closeVote",
+                                                "adminPages.communityVotes.viewResults",
                                             )}
                                         </Button>
-                                    )}
+                                        {vote.status === "open" && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="w-full"
+                                                disabled={closeVote.isPending}
+                                                onClick={() =>
+                                                    closeVote.mutate(vote._id)
+                                                }
+                                            >
+                                                {t(
+                                                    "adminPages.communityVotes.closeVote",
+                                                )}
+                                            </Button>
+                                        )}
+                                    </div>
                                 </CardContent>
                             </Card>
                         ))}
@@ -236,8 +246,126 @@ function CommunityVotesPage() {
                         });
                     }}
                 />
+
+                {resultsVote && (
+                    <ResultsDialog
+                        vote={resultsVote}
+                        onOpenChange={(open) => {
+                            if (!open) setResultsVote(null);
+                        }}
+                    />
+                )}
             </div>
         </div>
+    );
+}
+
+interface VoteResultOption {
+    optionId: string;
+    label: string;
+    count: number;
+    percentage: number;
+}
+
+interface VoteResults {
+    totalVotes: number;
+    results: VoteResultOption[];
+    status: "open" | "closed";
+    quorumReached: boolean;
+}
+
+function ResultsDialog({
+    vote,
+    onOpenChange,
+}: {
+    vote: CommunityVote;
+    onOpenChange: (open: boolean) => void;
+}) {
+    const { t } = useTranslation();
+    const { data, isLoading, isError, refetch } = useQuery<VoteResults>({
+        queryKey: ["community-vote-results", vote._id],
+        queryFn: () =>
+            apiGet<VoteResults>(`/community-votes/${vote._id}/results`),
+    });
+
+    return (
+        <Dialog open onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>
+                        {t("adminPages.communityVotes.resultsTitle")}
+                    </DialogTitle>
+                </DialogHeader>
+                <DataState
+                    loading={isLoading}
+                    error={isError ? true : undefined}
+                    isEmpty={!data || data.totalVotes === 0}
+                    onRetry={() => void refetch()}
+                    errorTitle={t("adminPages.communityVotes.resultsLoadError")}
+                    skeleton={
+                        <div className="flex flex-col gap-3">
+                            {Array.from({ length: 3 }).map((_, i) => (
+                                <Skeleton
+                                    key={i}
+                                    className="h-10 w-full rounded"
+                                />
+                            ))}
+                        </div>
+                    }
+                    empty={
+                        <p className="text-muted-foreground py-6 text-center text-sm">
+                            {t("adminPages.communityVotes.noResults")}
+                        </p>
+                    }
+                >
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <p className="text-muted-foreground text-sm">
+                                {t("adminPages.communityVotes.totalVotes", {
+                                    count: data?.totalVotes ?? 0,
+                                })}
+                            </p>
+                            <Badge
+                                variant={
+                                    data?.quorumReached ? "default" : "outline"
+                                }
+                            >
+                                {data?.quorumReached
+                                    ? t(
+                                          "adminPages.communityVotes.quorumReached",
+                                      )
+                                    : t(
+                                          "adminPages.communityVotes.quorumNotReached",
+                                      )}
+                            </Badge>
+                        </div>
+                        <ul className="space-y-3">
+                            {data?.results.map((option) => (
+                                <li key={option.optionId} className="space-y-1">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="font-medium">
+                                            {option.label}
+                                        </span>
+                                        <span className="text-muted-foreground tabular-nums">
+                                            {option.count} ·{" "}
+                                            {option.percentage.toFixed(1)}%
+                                        </span>
+                                    </div>
+                                    <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+                                        <div
+                                            className="bg-primary h-full rounded-full"
+                                            style={{
+                                                width: `${option.percentage}%`,
+                                            }}
+                                        />
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </DataState>
+            </DialogContent>
+        </Dialog>
     );
 }
 
@@ -266,8 +394,7 @@ function CreateVoteDialog({
             toast.success(t("adminPages.communityVotes.created"));
             onSuccess();
         },
-        onError: (err: Error) =>
-            toast.error(err.message ?? t("common.error")),
+        onError: (err: Error) => toast.error(err.message ?? t("common.error")),
     });
 
     function handleVoteTypeChange(type: VoteType) {
@@ -322,7 +449,9 @@ function CreateVoteDialog({
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label>{t("adminPages.communityVotes.titleLabel")}</Label>
+                        <Label>
+                            {t("adminPages.communityVotes.titleLabel")}
+                        </Label>
                         <Input
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
