@@ -2,6 +2,7 @@ import { CustomerServiceIcon } from "@hugeicons/core-free-icons";
 import { useTranslation } from "react-i18next";
 import { useServices } from "@workspace/shared/lib/hooks/services.hooks";
 import { Badge } from "@workspace/ui/components/badge";
+import { Item, ItemGroup, ItemContent, ItemTitle, ItemDescription, ItemActions } from "@workspace/ui/components/item";
 import { EmptyBlock, FeedCard, Rows } from "./feed-card";
 
 export function ServicesCard() {
@@ -24,19 +25,19 @@ export function ServicesCard() {
                     subtitle={t("pages.dashboard.noServicesHint")}
                 />
             ) : (
-                <ul className="space-y-3">
+                <ItemGroup>
                     {someServices.map((s) => (
-                        <li key={s._id} className="space-y-1">
-                            <div className="flex items-center justify-between gap-2">
-                                <span className="truncate text-sm font-medium">{s.title}</span>
-                                <Badge variant="secondary" className="shrink-0 text-[10px]">{s.category}</Badge>
-                            </div>
-                            {s.description ? (
-                                <p className="text-muted-foreground line-clamp-1 text-xs">{s.description}</p>
-                            ) : null}
-                        </li>
+                        <Item key={s._id} variant="outline" size="sm">
+                            <ItemContent>
+                                <ItemTitle>{s.title}</ItemTitle>
+                                {s.description ? <ItemDescription>{s.description}</ItemDescription> : null}
+                            </ItemContent>
+                            <ItemActions>
+                                <Badge variant="secondary" className="text-[10px]">{s.category}</Badge>
+                            </ItemActions>
+                        </Item>
                     ))}
-                </ul>
+                </ItemGroup>
             )}
         </FeedCard>
     );

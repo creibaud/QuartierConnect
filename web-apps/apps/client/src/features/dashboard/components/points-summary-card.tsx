@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import { usePointBalance, usePointsHistory } from "@workspace/shared/lib/hooks/points.hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { resolveCounterparty, formatPointsDelta } from "../lib/format";
-import { EmptyBlock, Rows } from "./feed-card";
+import { Item, ItemGroup, ItemContent, ItemTitle, ItemActions } from "@workspace/ui/components/item";
+import { Rows } from "./feed-card";
 
 export function PointsSummaryCard({ currentEmail }: { currentEmail: string }) {
     const { t } = useTranslation();
@@ -37,28 +38,25 @@ export function PointsSummaryCard({ currentEmail }: { currentEmail: string }) {
                         {isLoading ? (
                             <Rows count={3} />
                         ) : transactions.length === 0 ? (
-                            <EmptyBlock
-                                icon={Coins01Icon}
-                                title={t("pages.dashboard.noTransactions")}
-                                subtitle={t("pages.dashboard.noTransactionsHint")}
-                            />
+                            <p className="text-muted-foreground text-sm">{t("pages.dashboard.noTransactions")}</p>
                         ) : (
-                            <ul className="space-y-1.5">
+                            <ItemGroup>
                                 {transactions.map((tx) => {
                                     const { received, name } = resolveCounterparty(tx, currentEmail);
                                     return (
-                                        <li
-                                            key={tx.id}
-                                            className="flex items-center justify-between gap-2 text-sm"
-                                        >
-                                            <span className="text-muted-foreground truncate">{name}</span>
-                                            <span className="font-medium tabular-nums">
-                                                {formatPointsDelta(received, tx.amount)}
-                                            </span>
-                                        </li>
+                                        <Item key={tx.id} variant="outline" size="sm">
+                                            <ItemContent>
+                                                <ItemTitle>{name}</ItemTitle>
+                                            </ItemContent>
+                                            <ItemActions>
+                                                <span className={received ? "text-emerald-600 dark:text-emerald-400 font-medium tabular-nums" : "text-muted-foreground font-medium tabular-nums"}>
+                                                    {formatPointsDelta(received, tx.amount)}
+                                                </span>
+                                            </ItemActions>
+                                        </Item>
                                     );
                                 })}
-                            </ul>
+                            </ItemGroup>
                         )}
                     </div>
                 </div>

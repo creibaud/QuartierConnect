@@ -2,6 +2,7 @@ import { SparklesIcon } from "@hugeicons/core-free-icons";
 import { useTranslation } from "react-i18next";
 import { useRecommendations } from "@workspace/shared/lib/hooks/useRecommendations";
 import { Badge } from "@workspace/ui/components/badge";
+import { Item, ItemGroup, ItemContent, ItemTitle, ItemDescription, ItemActions } from "@workspace/ui/components/item";
 import { EmptyBlock, FeedCard, Rows } from "./feed-card";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -30,19 +31,21 @@ export function RecommendationsCard() {
                     subtitle={t("pages.dashboard.noRecommendationsHint")}
                 />
             ) : (
-                <ul className="space-y-3">
+                <ItemGroup>
                     {top.map((r) => (
-                        <li key={r.id} className="space-y-1">
-                            <div className="flex items-center justify-between gap-2">
-                                <span className="truncate text-sm font-medium">{r.name}</span>
-                                <Badge variant="secondary" className="shrink-0 text-[10px]">
+                        <Item key={r.id} variant="outline" size="sm">
+                            <ItemContent>
+                                <ItemTitle>{r.name}</ItemTitle>
+                                <ItemDescription>{r.reason}</ItemDescription>
+                            </ItemContent>
+                            <ItemActions>
+                                <Badge variant="secondary" className="text-[10px]">
                                     {t(TYPE_LABEL[r.type] ?? "pages.dashboard.recoType.service")}
                                 </Badge>
-                            </div>
-                            <p className="text-muted-foreground line-clamp-1 text-xs">{r.reason}</p>
-                        </li>
+                            </ItemActions>
+                        </Item>
                     ))}
-                </ul>
+                </ItemGroup>
             )}
         </FeedCard>
     );
