@@ -10,6 +10,8 @@ const MIN_BALANCE = -10;
 export type PointsTransactionWithEmails = schema.PointsTransaction & {
     senderEmail: string | null;
     recipientEmail: string | null;
+    senderName: string | null;
+    recipientName: string | null;
 };
 
 @Injectable()
@@ -55,15 +57,31 @@ export class PointsService {
             ),
         ];
         const users = await this.db
-            .select({ id: schema.users.id, email: schema.users.email })
+            .select({
+                id: schema.users.id,
+                email: schema.users.email,
+                firstName: schema.users.firstName,
+                lastName: schema.users.lastName,
+            })
             .from(schema.users)
             .where(inArray(schema.users.id, counterpartIds));
         const emailById = new Map(users.map((user) => [user.id, user.email]));
+        const nameById = new Map(
+            users.map((user) => [
+                user.id,
+                [user.firstName, user.lastName]
+                    .filter(Boolean)
+                    .join(" ")
+                    .trim() || null,
+            ]),
+        );
 
         return transactions.map((tx) => ({
             ...tx,
             senderEmail: emailById.get(tx.senderId) ?? null,
             recipientEmail: emailById.get(tx.recipientId) ?? null,
+            senderName: nameById.get(tx.senderId) ?? null,
+            recipientName: nameById.get(tx.recipientId) ?? null,
         }));
     }
 

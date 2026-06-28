@@ -215,8 +215,10 @@ function DashboardPage() {
                                                     tx.recipientEmail ===
                                                     user.email;
                                                 const other = received
-                                                    ? tx.senderEmail
-                                                    : tx.recipientEmail;
+                                                    ? (tx.senderName ??
+                                                      tx.senderEmail)
+                                                    : (tx.recipientName ??
+                                                      tx.recipientEmail);
                                                 return (
                                                     <li
                                                         key={tx.id}
