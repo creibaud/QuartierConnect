@@ -12,16 +12,16 @@ import {
 import type { NavItem } from "@/components/nav-main";
 
 export const adminNavItems: NavItem[] = [
-    { title: "Tableau de bord", to: "/dashboard", icon: DashboardSquare01Icon },
-    { title: "Utilisateurs", to: "/users", icon: UserMultipleIcon },
-    { title: "Incidents", to: "/incidents", icon: Alert01Icon },
-    { title: "Événements", to: "/events", icon: Calendar01Icon },
-    { title: "Quartiers", to: "/neighborhoods", icon: Building01Icon },
+    { title: "nav.dashboard", to: "/dashboard", icon: DashboardSquare01Icon },
+    { title: "nav.users", to: "/users", icon: UserMultipleIcon },
+    { title: "nav.incidents", to: "/incidents", icon: Alert01Icon },
+    { title: "nav.events", to: "/events", icon: Calendar01Icon },
+    { title: "nav.neighborhoods", to: "/neighborhoods", icon: Building01Icon },
     {
-        title: "Votes communautaires",
+        title: "nav.communityVotes",
         to: "/community-votes",
         icon: Agreement01Icon,
     },
-    { title: "Services", to: "/services", icon: CustomerServiceIcon },
-    { title: "Éditeur DSL", to: "/dsl", icon: CodeSquareIcon },
+    { title: "nav.services", to: "/services", icon: CustomerServiceIcon },
+    { title: "nav.dsl", to: "/dsl", icon: CodeSquareIcon },
 ];

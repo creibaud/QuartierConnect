@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost } from "../api";
+import { apiDelete, apiGet, apiPatch, apiPost } from "../api";
 import type { Incident } from "../types";
 
 export function fetchIncidents(
@@ -33,4 +33,8 @@ export function updateIncidentStatus(
     status: "open" | "in_progress" | "resolved",
 ): Promise<Incident> {
     return apiPatch<Incident>(`/incidents/${id}`, { status });
+}
+
+export function deleteIncident(id: string): Promise<void> {
+    return apiDelete<void>(`/incidents/${id}`);
 }

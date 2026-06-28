@@ -1,6 +1,7 @@
 package fr.quartierconnect.desktopapp.plugin;
 
 import fr.quartierconnect.desktopapp.database.IncidentRepository;
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -27,9 +28,9 @@ public class NotificationPlugin implements QuartierConnectPlugin, PluginRegistry
     private Label statusLabel;
 
     @Override public String getId()      { return "fr.quartierconnect.plugin.notifications"; }
-    @Override public String getName()    { return "Alertes conflits"; }
+    @Override public String getName()    { return I18n.get("plugin.notifications.name"); }
     @Override public String getVersion() { return "1.0.0"; }
-    @Override public String getDescription() { return "Affiche une alerte lorsque de nouveaux conflits de synchronisation sont détectés."; }
+    @Override public String getDescription() { return I18n.get("plugin.notifications.description"); }
 
     @Override
     public void setContext(AppContext ctx) { this.context = ctx; }
@@ -52,25 +53,31 @@ public class NotificationPlugin implements QuartierConnectPlugin, PluginRegistry
 
     @Override
     public Node getPanel() {
-        Label desc = new Label("Surveille les conflits de synchronisation et affiche une alerte lorsqu'un nouveau conflit est détecté.");
+        Label desc = new Label(I18n.get("plugin.notifications.panelDesc"));
         desc.setStyle("-fx-font-size: 11.5px; -fx-text-fill: -color-fg-muted;");
         desc.setWrapText(true);
 
-        ToggleButton toggle = new ToggleButton(alertsEnabled ? "Alertes activées" : "Alertes désactivées");
+        ToggleButton toggle = new ToggleButton(alertsEnabled
+                ? I18n.get("plugin.notifications.enabled")
+                : I18n.get("plugin.notifications.disabled"));
         toggle.setSelected(alertsEnabled);
         toggle.setStyle("-fx-background-radius: 6; -fx-border-radius: 6; -fx-padding: 5 14; "
                 + "-fx-font-size: 12px; -fx-cursor: hand;");
         toggle.setOnAction(e -> {
             alertsEnabled = toggle.isSelected();
-            toggle.setText(alertsEnabled ? "Alertes activées" : "Alertes désactivées");
+            toggle.setText(alertsEnabled
+                    ? I18n.get("plugin.notifications.enabled")
+                    : I18n.get("plugin.notifications.disabled"));
             if (statusLabel != null) {
-                statusLabel.setText(alertsEnabled ? "● Surveillance active" : "● Surveillance suspendue");
+                statusLabel.setText(alertsEnabled
+                        ? I18n.get("plugin.notifications.monitoringActive")
+                        : I18n.get("plugin.notifications.monitoringPaused"));
                 statusLabel.setStyle("-fx-font-size: 11px; -fx-font-family: monospace; -fx-text-fill: "
                         + (alertsEnabled ? "#15803d" : "#71717a") + ";");
             }
         });
 
-        statusLabel = new Label("● Surveillance active");
+        statusLabel = new Label(I18n.get("plugin.notifications.monitoringActive"));
         statusLabel.setStyle("-fx-font-size: 11px; -fx-font-family: monospace; -fx-text-fill: #15803d;");
 
         HBox toggleRow = new HBox(10, toggle, statusLabel);
@@ -94,9 +101,11 @@ public class NotificationPlugin implements QuartierConnectPlugin, PluginRegistry
                 long newConflicts = conflicts - previous;
                 Platform.runLater(() -> {
                     Alert alert = new Alert(Alert.AlertType.WARNING);
-                    alert.setTitle("Nouveaux conflits détectés");
-                    alert.setHeaderText(newConflicts + " nouveau" + (newConflicts > 1 ? "x" : "") + " conflit" + (newConflicts > 1 ? "s" : ""));
-                    alert.setContentText("Des incidents sont en conflit de synchronisation.\nOuvrez la vue Incidents pour les résoudre.");
+                    alert.setTitle(I18n.get("plugin.notifications.alertTitle"));
+                    alert.setHeaderText(newConflicts > 1
+                            ? I18n.get("plugin.notifications.alertHeaderMany", newConflicts)
+                            : I18n.get("plugin.notifications.alertHeaderOne", newConflicts));
+                    alert.setContentText(I18n.get("plugin.notifications.alertContent"));
                     alert.show();
                 });
             }

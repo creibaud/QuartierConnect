@@ -22,10 +22,22 @@ export class PointsTransactionResponseDto {
     amount: number;
 
     @ApiPropertyOptional({
-        example: "Merci pour le jardinage !",
+        example: "Thanks for the gardening!",
         nullable: true,
     })
     note: string | null;
+
+    @ApiPropertyOptional({ example: "alice@demo.fr", nullable: true })
+    senderEmail: string | null;
+
+    @ApiPropertyOptional({ example: "bob@demo.fr", nullable: true })
+    recipientEmail: string | null;
+
+    @ApiPropertyOptional({ example: "Alice Martin", nullable: true })
+    senderName: string | null;
+
+    @ApiPropertyOptional({ example: "Bob Dupont", nullable: true })
+    recipientName: string | null;
 
     @ApiProperty({ example: "2026-04-05T12:00:00.000Z" })
     createdAt: string;
@@ -35,9 +47,9 @@ export class TransferResponseDto {
     @ApiProperty({ type: PointsTransactionResponseDto })
     transaction: PointsTransactionResponseDto;
 
-    @ApiProperty({ example: 140, description: "Nouveau solde de l'expéditeur" })
+    @ApiProperty({ example: 140, description: "Sender's new balance" })
     senderBalance: number;
 
-    @ApiProperty({ example: 60, description: "Nouveau solde du destinataire" })
+    @ApiProperty({ example: 60, description: "Recipient's new balance" })
     recipientBalance: number;
 }

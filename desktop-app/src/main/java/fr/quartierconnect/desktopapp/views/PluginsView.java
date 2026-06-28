@@ -1,6 +1,7 @@
 package fr.quartierconnect.desktopapp.views;
 
 import atlantafx.base.controls.ToggleSwitch;
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.plugin.PluginRegistry;
 import fr.quartierconnect.desktopapp.plugin.QuartierConnectPlugin;
 import fr.quartierconnect.desktopapp.plugin.ViewablePlugin;
@@ -35,10 +36,10 @@ public class PluginsView {
     }
 
     private VBox buildLayout() {
-        Label pageTitle = new Label("Plugins installés");
+        Label pageTitle = new Label(I18n.get("plugins.title"));
         pageTitle.getStyleClass().add("content-title");
 
-        Label pageSubtitle = new Label("Extensions chargées au démarrage · PluginRegistry · ServiceLoader");
+        Label pageSubtitle = new Label(I18n.get("plugins.subtitle"));
         pageSubtitle.getStyleClass().add("content-subtitle");
 
         VBox titleBlock = new VBox(3, pageTitle, pageSubtitle);
@@ -89,11 +90,7 @@ public class PluginsView {
         infoIcon.setIconSize(14);
         infoIcon.setStyle("-fx-icon-color: -color-accent-fg;");
 
-        Label text = new Label(
-            "Les plugins sont chargés depuis le dossier plugins/ via URLClassLoader + ServiceLoader<QuartierConnectPlugin>. "
-            + "Chaque JAR doit déclarer ses implémentations dans META-INF/services/. "
-            + "onLoad() est appelé au chargement, onUnload() à la déconnexion ou au retrait."
-        );
+        Label text = new Label(I18n.get("plugins.info"));
         text.getStyleClass().add("plugin-info-box-text");
         text.setWrapText(true);
         HBox.setHgrow(text, Priority.ALWAYS);
@@ -136,12 +133,12 @@ public class PluginsView {
         Label idLbl = new Label(plugin.getId());
         idLbl.getStyleClass().add("plugin-id-lbl");
 
-        Label tagLbl = new Label(plugin instanceof ViewablePlugin ? "Plugin · Configurable" : "Plugin");
+        Label tagLbl = new Label(plugin instanceof ViewablePlugin ? I18n.get("plugins.tagConfigurable") : I18n.get("plugins.tag"));
         tagLbl.setStyle("-fx-background-color: " + getLightColor(borderColor) + "; -fx-text-fill: " + borderColor
                 + "; -fx-background-radius: 4; -fx-padding: 2 7; -fx-font-size: 9px; -fx-font-weight: bold;");
         VBox.setMargin(tagLbl, new Insets(4, 0, 0, 0));
 
-        Label statusDot = new Label("● Chargé · onLoad() OK");
+        Label statusDot = new Label(I18n.get("plugins.loaded"));
         statusDot.setStyle("-fx-text-fill: -color-success-fg; -fx-font-size: 11px;");
         VBox.setMargin(statusDot, new Insets(6, 0, 0, 0));
 
@@ -156,20 +153,20 @@ public class PluginsView {
         toggle.selectedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
                 PluginRegistry.getInstance().enable(plugin.getId());
-                statusDot.setText("● Chargé · onLoad() OK");
+                statusDot.setText(I18n.get("plugins.loaded"));
                 statusDot.setStyle("-fx-text-fill: -color-success-fg; -fx-font-size: 11px;");
             } else {
                 PluginRegistry.getInstance().disable(plugin.getId());
-                statusDot.setText("○ Désactivé · onUnload() appelé");
+                statusDot.setText(I18n.get("plugins.disabled"));
                 statusDot.setStyle("-fx-text-fill: -color-fg-muted; -fx-font-size: 11px;");
             }
         });
         actions.getChildren().add(toggle);
 
         if (plugin instanceof ViewablePlugin viewable) {
-            AppButton configBtn = new AppButton("Configurer", AppButton.Variant.SECONDARY);
+            AppButton configBtn = new AppButton(I18n.get("plugins.configure"), AppButton.Variant.SECONDARY);
             configBtn.disableProperty().bind(toggle.selectedProperty().not());
-            configBtn.setOnAction(e -> appModal.showWide("Configurer — " + plugin.getName(), viewable.getPanel()));
+            configBtn.setOnAction(e -> appModal.showWide(I18n.get("plugins.configureTitle", plugin.getName()), viewable.getPanel()));
             actions.getChildren().add(configBtn);
         }
 
@@ -192,11 +189,11 @@ public class PluginsView {
         icon.setStyle("-fx-font-size: 28px; -fx-opacity: 0.25;");
         icon.setAlignment(Pos.CENTER);
 
-        Label title = new Label("Aucun plugin installé.");
+        Label title = new Label(I18n.get("plugins.empty.title"));
         title.setStyle("-fx-font-size: 13.5px; -fx-font-weight: bold; -fx-text-fill: -color-fg-muted;");
         title.setAlignment(Pos.CENTER);
 
-        Label sub = new Label("Déposez des fichiers .jar dans le dossier plugins/ pour les charger.");
+        Label sub = new Label(I18n.get("plugins.empty.subtitle"));
         sub.setStyle("-fx-font-size: 12px; -fx-font-family: monospace; -fx-text-fill: -color-fg-subtle;");
         sub.setAlignment(Pos.CENTER);
         sub.setWrapText(true);
@@ -209,16 +206,16 @@ public class PluginsView {
     }
 
     private VBox buildDirInfoRow(int totalPlugins) {
-        Label dirTitle = new Label("Dossier plugins");
+        Label dirTitle = new Label(I18n.get("plugins.dir"));
         dirTitle.getStyleClass().add("plugin-dir-lbl");
 
-        Label dirSub = new Label("./plugins/  ·  " + totalPlugins + " JAR(s) scannés  ·  " + totalPlugins + " chargés");
+        Label dirSub = new Label(I18n.get("plugins.dirInfo", totalPlugins, totalPlugins));
         dirSub.getStyleClass().add("plugin-dir-sub");
 
         VBox info = new VBox(2, dirTitle, dirSub);
         HBox.setHgrow(info, Priority.ALWAYS);
 
-        AppButton rescanBtn = new AppButton("Rescanner plugins/", AppButton.Variant.SECONDARY);
+        AppButton rescanBtn = new AppButton(I18n.get("plugins.rescan"), AppButton.Variant.SECONDARY);
         rescanBtn.setGraphic(makeIcon(FontAwesomeSolid.SYNC_ALT, 11));
         rescanBtn.setGraphicTextGap(6);
         rescanBtn.setOnAction(e -> {});

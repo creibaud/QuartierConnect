@@ -1,0 +1,11 @@
+# Rotation des logs Caddy de QuartierConnect.
+#   cp ops/logrotate-caddy /etc/logrotate.d/caddy
+/var/log/quartierconnect/caddy/*.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+}

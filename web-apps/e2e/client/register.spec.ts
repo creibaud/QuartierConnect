@@ -25,6 +25,8 @@ test.describe("Client — Register parcours", () => {
 
     test("shows error when passwords do not match", async ({ page }) => {
         await page.goto("/register");
+        await page.getByLabel("Prénom", { exact: true }).fill("Test");
+        await page.getByLabel("Nom", { exact: true }).fill("Resident");
         await page.getByLabel("Email").fill(uniqueEmail());
         await page
             .getByLabel("Mot de passe", { exact: true })
@@ -39,13 +41,15 @@ test.describe("Client — Register parcours", () => {
     test("shows QR code after successful registration", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         await page.goto("/register");
+        await page.getByLabel("Prénom", { exact: true }).fill("Test");
+        await page.getByLabel("Nom", { exact: true }).fill("Resident");
         await page.getByLabel("Email").fill(uniqueEmail());
         await page
             .getByLabel("Mot de passe", { exact: true })
             .fill(DEMO_PASSWORD);
         await page.getByLabel(/confirmer/i).fill(DEMO_PASSWORD);
         await page.getByRole("button", { name: /créer/i }).click();
-        await expect(page.locator("svg")).toBeVisible({ timeout: 8000 });
+        await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 8000 });
         await expect(page.getByText(/scannez/i)).toBeVisible();
     });
 
@@ -54,15 +58,19 @@ test.describe("Client — Register parcours", () => {
         const email = uniqueEmail();
 
         await page.goto("/register");
+        await page.getByLabel("Prénom", { exact: true }).fill("Test");
+        await page.getByLabel("Nom", { exact: true }).fill("Resident");
         await page.getByLabel("Email").fill(email);
         await page
             .getByLabel("Mot de passe", { exact: true })
             .fill(DEMO_PASSWORD);
         await page.getByLabel(/confirmer/i).fill(DEMO_PASSWORD);
         await page.getByRole("button", { name: /créer/i }).click();
-        await expect(page.locator("svg")).toBeVisible({ timeout: 8000 });
+        await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 8000 });
 
         await page.goto("/register");
+        await page.getByLabel("Prénom", { exact: true }).fill("Test");
+        await page.getByLabel("Nom", { exact: true }).fill("Resident");
         await page.getByLabel("Email").fill(email);
         await page
             .getByLabel("Mot de passe", { exact: true })
@@ -76,6 +84,8 @@ test.describe("Client — Register parcours", () => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         const email = uniqueEmail();
         await page.goto("/register");
+        await page.getByLabel("Prénom", { exact: true }).fill("Test");
+        await page.getByLabel("Nom", { exact: true }).fill("Resident");
         await page.getByLabel("Email").fill(email);
         await page
             .getByLabel("Mot de passe", { exact: true })
@@ -98,7 +108,7 @@ test.describe("Client — Register parcours", () => {
         });
 
         await page.getByRole("button", { name: /créer/i }).click();
-        await expect(page.locator("svg")).toBeVisible({ timeout: 8000 });
+        await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 8000 });
 
         if (totpSecret) {
             await page

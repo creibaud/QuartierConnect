@@ -36,9 +36,9 @@ export class PointsController {
 
     @Get("balance")
     @ApiOperation({
-        summary: "Consulter son solde de points",
+        summary: "Check your points balance",
         description:
-            "Retourne le solde courant de l'utilisateur authentifié. Crée un enregistrement à 0 si aucun solde n'existe encore (lazy init).",
+            "Returns the current balance of the authenticated user. Creates a record at 0 if no balance exists yet (lazy init).",
     })
     @ApiResponse({ status: 200, type: PointsBalanceResponseDto })
     getBalance(@Request() req: AuthRequest) {
@@ -47,9 +47,9 @@ export class PointsController {
 
     @Get("history")
     @ApiOperation({
-        summary: "Historique des transactions de points",
+        summary: "Points transaction history",
         description:
-            "Retourne les transactions (envoyées et reçues) de l'utilisateur authentifié, triées par date décroissante.",
+            "Returns the transactions (sent and received) of the authenticated user, sorted by date in descending order.",
     })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
@@ -68,14 +68,14 @@ export class PointsController {
 
     @Post("transfer")
     @ApiOperation({
-        summary: "Transférer des points",
+        summary: "Transfer points",
         description:
-            "Transfère des points vers un autre utilisateur. La transaction est atomique (PostgreSQL ACID) : le solde de l'expéditeur est débité et celui du destinataire est crédité dans la même transaction. Échoue si le solde est insuffisant.",
+            "Transfers points to another user. The transaction is atomic (PostgreSQL ACID): the sender's balance is debited and the recipient's balance is credited within the same transaction. Fails if the balance is insufficient.",
     })
     @ApiResponse({ status: 201, type: TransferResponseDto })
     @ApiResponse({
         status: 400,
-        description: "Solde insuffisant ou destinataire inexistant",
+        description: "Insufficient balance or recipient does not exist",
     })
     transfer(@Body() dto: TransferPointsDto, @Request() req: AuthRequest) {
         return this.pointsService.transfer(req.user.sub, dto);

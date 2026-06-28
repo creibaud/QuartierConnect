@@ -7,6 +7,7 @@ import {
     Param,
     Patch,
     Query,
+    Request,
     UseGuards,
 } from "@nestjs/common";
 import {
@@ -17,7 +18,7 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
-import { eq } from "drizzle-orm";
+import { and, eq, ilike, ne } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -25,7 +26,18 @@ import { RolesGuard } from "../auth/guards/roles.guard";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { UpdateRoleDto } from "./dto/update-role.dto";
-import { UserPublicDto } from "./dto/user-responses.dto";
+import { UserPublicDto, UserSearchResultDto } from "./dto/user-responses.dto";
+
+interface AuthRequest {
+    user: { sub: string };
+}
+
+const MIN_SEARCH_LENGTH = 2;
+const MAX_SEARCH_RESULTS = 10;
+
+function escapeLikePattern(value: string): string {
+    return value.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
 
 @ApiTags("Users (admin)")
 @ApiBearerAuth()
@@ -38,22 +50,52 @@ export class UsersController {
         private readonly db: PostgresJsDatabase<typeof schema>,
     ) {}
 
+    @Get("search")
+    @Roles("resident", "moderator", "admin")
+    @ApiOperation({
+        summary: "Search users by email",
+        description:
+            "Returns up to 10 users whose email contains the query string, excluding the authenticated user. Available to any signed-in resident so they can pick a points-transfer recipient without knowing their UUID. Returns an empty list when the query is shorter than 2 characters.",
+    })
+    @ApiQuery({ name: "q", required: true, example: "bob" })
+    @ApiResponse({ status: 200, type: [UserSearchResultDto] })
+    searchByEmail(@Query("q") query = "", @Request() req: AuthRequest) {
+        const term = query.trim();
+        if (term.length < MIN_SEARCH_LENGTH) return [];
+
+        const pattern = `%${escapeLikePattern(term)}%`;
+        return this.db
+            .select({
+                id: schema.users.id,
+                email: schema.users.email,
+                role: schema.users.role,
+            })
+            .from(schema.users)
+            .where(
+                and(
+                    ilike(schema.users.email, pattern),
+                    ne(schema.users.id, req.user.sub),
+                ),
+            )
+            .limit(MAX_SEARCH_RESULTS);
+    }
+
     @Get()
     @ApiOperation({
-        summary: "Lister les utilisateurs (admin)",
+        summary: "List users (admin)",
         description:
-            "Retourne la liste paginée des utilisateurs. Champs retournés : id, email, role, createdAt. Les champs sensibles (passwordHash, totpSecret, refreshTokenHash) sont exclus.",
+            "Returns the paginated list of users. Returned fields: id, email, role, createdAt. Sensitive fields (passwordHash, totpSecret, refreshTokenHash) are excluded.",
     })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
     @ApiResponse({
         status: 200,
         type: [UserPublicDto],
-        description: "Liste paginée des utilisateurs (sans champs sensibles)",
+        description: "Paginated list of users (without sensitive fields)",
     })
     @ApiResponse({
         status: 403,
-        description: "Rôle insuffisant (admin requis)",
+        description: "Insufficient role (admin required)",
     })
     findAll(@Query("page") page = "1", @Query("limit") limit = "20") {
         const pageNum = Math.max(1, parseInt(page) || 1);
@@ -73,25 +115,25 @@ export class UsersController {
 
     @Patch(":id/role")
     @ApiOperation({
-        summary: "Changer le rôle d'un utilisateur (admin)",
+        summary: "Change a user's role (admin)",
         description:
-            "Permet de promouvoir, rétrograder ou bannir un utilisateur. Rôles disponibles : resident, moderator, admin, banned.",
+            "Allows promoting, demoting or banning a user. Available roles: resident, moderator, admin, banned.",
     })
     @ApiParam({
         name: "id",
-        description: "UUID de l'utilisateur",
+        description: "User UUID",
         example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     })
     @ApiResponse({
         status: 200,
         type: UserPublicDto,
-        description: "Utilisateur mis à jour",
+        description: "Updated user",
     })
     @ApiResponse({
         status: 403,
-        description: "Rôle insuffisant (admin requis)",
+        description: "Insufficient role (admin required)",
     })
-    @ApiResponse({ status: 404, description: "Utilisateur introuvable" })
+    @ApiResponse({ status: 404, description: "User not found" })
     async updateRole(@Param("id") id: string, @Body() dto: UpdateRoleDto) {
         const [updated] = await this.db
             .update(schema.users)

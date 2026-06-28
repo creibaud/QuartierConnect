@@ -1,26 +1,26 @@
-# Schémas des bases de données — QuartierConnect
+# Database schemas — QuartierConnect
 
-> **Version** 0.1.3 · **Date** 7 avril 2026
+> **Version** 0.1.3 · **Date** 7 April 2026
 
-QuartierConnect utilise trois bases de données complémentaires selon leurs forces respectives.
-
----
-
-## Table des matières
-
-1. [PostgreSQL — Données relationnelles ACID](#1-postgresql--données-relationnelles-acid)
-2. [MongoDB — Documents flexibles](#2-mongodb--documents-flexibles)
-3. [Neo4j — Graphe social](#3-neo4j--graphe-social)
-4. [SQLite — Cache local desktop](#4-sqlite--cache-local-desktop)
-5. [Règles d'utilisation par base](#5-règles-dutilisation-par-base)
+QuartierConnect uses three complementary databases, each chosen for its respective strengths.
 
 ---
 
-## 1. PostgreSQL — Données relationnelles ACID
+## Table of contents
 
-ORM : **Drizzle ORM** (TypeScript) avec migrations auto.
+1. [PostgreSQL — ACID relational data](#1-postgresql--acid-relational-data)
+2. [MongoDB — Flexible documents](#2-mongodb--flexible-documents)
+3. [Neo4j — Social graph](#3-neo4j--social-graph)
+4. [SQLite — Local desktop cache](#4-sqlite--local-desktop-cache)
+5. [Per-database usage rules](#5-per-database-usage-rules)
 
-### 1.1 Diagramme ERD
+---
+
+## 1. PostgreSQL — ACID relational data
+
+ORM: **Drizzle ORM** (TypeScript) with automatic migrations.
+
+### 1.1 ERD diagram
 
 ```mermaid
 erDiagram
@@ -30,7 +30,7 @@ erDiagram
         varchar password_hash "argon2id"
         varchar totp_secret "base32 speakeasy"
         varchar role "resident|moderator|admin|banned"
-        text refresh_token_hash "argon2id hash du JWT, null si déconnecté"
+        text refresh_token_hash "argon2id hash of the JWT, null if logged out"
         timestamp created_at
         timestamp updated_at
     }
@@ -41,16 +41,16 @@ erDiagram
         text description
         varchar status "open|in_progress|resolved"
         uuid created_by FK
-        varchar neighborhood_id "référence MongoDB (string)"
-        timestamp deleted_at "null = non supprimé (soft delete)"
+        varchar neighborhood_id "MongoDB reference (string)"
+        timestamp deleted_at "null = not deleted (soft delete)"
         timestamp created_at
         timestamp updated_at
     }
 
     points_balances {
         uuid id PK
-        uuid user_id FK UK "1 solde par utilisateur"
-        integer balance "peut être négatif jusqu'à -10"
+        uuid user_id FK UK "1 balance per user"
+        integer balance "can be negative down to -10"
         timestamp updated_at
     }
 
@@ -58,15 +58,15 @@ erDiagram
         uuid id PK
         uuid sender_id FK
         uuid recipient_id FK
-        integer amount "toujours positif"
-        text note "optionnel"
+        integer amount "always positive"
+        text note "optional"
         timestamp created_at
     }
 
-    users ||--o{ incidents : "crée"
-    users ||--o| points_balances : "possède"
-    users ||--o{ points_transactions : "envoie"
-    users ||--o{ points_transactions : "reçoit"
+    users ||--o{ incidents : "creates"
+    users ||--o| points_balances : "owns"
+    users ||--o{ points_transactions : "sends"
+    users ||--o{ points_transactions : "receives"
 ```
 
 ### 1.2 Table `users`
@@ -78,17 +78,17 @@ CREATE TABLE users (
     password_hash    VARCHAR(255) NOT NULL,  -- argon2id
     totp_secret      VARCHAR(255) NOT NULL,  -- base32 RFC 6238
     role             VARCHAR(50)  NOT NULL DEFAULT 'resident',
-    refresh_token_hash TEXT,                  -- null = déconnecté
+    refresh_token_hash TEXT,                  -- null = logged out
     created_at       TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMP NOT NULL DEFAULT NOW()
 );
 ```
 
-**Règles métier :**
-- Email stocké en minuscule (normalisé à l'insertion)
-- `password_hash` : Argon2id — jamais bcrypt
-- `refresh_token_hash` : hash argon2 du JWT refresh (rotation stricte)
-- `role` : machine d'états `resident → moderator → admin` ; `banned` terminal
+**Business rules:**
+- Email stored in lowercase (normalized on insert)
+- `password_hash`: Argon2id — never bcrypt
+- `refresh_token_hash`: argon2 hash of the refresh JWT (strict rotation)
+- `role`: state machine `resident → moderator → admin`; `banned` is terminal
 
 ### 1.3 Table `incidents`
 
@@ -99,8 +99,8 @@ CREATE TABLE incidents (
     description      TEXT NOT NULL,
     status           VARCHAR(50) NOT NULL DEFAULT 'open',
     created_by       UUID NOT NULL REFERENCES users(id),
-    neighborhood_id  VARCHAR(255),  -- ID MongoDB (string)
-    deleted_at       TIMESTAMP,     -- NULL = actif
+    neighborhood_id  VARCHAR(255),  -- MongoDB ID (string)
+    deleted_at       TIMESTAMP,     -- NULL = active
     created_at       TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMP NOT NULL DEFAULT NOW(),
     INDEX incidents_status_idx (status),
@@ -108,21 +108,21 @@ CREATE TABLE incidents (
 );
 ```
 
-**Machine d'états :**
+**State machine:**
 ```
 open → in_progress → resolved
-       (irréversible, transitions validées côté API)
+       (irreversible, transitions validated on the API side)
 ```
 
-**Soft delete :** `deleted_at IS NOT NULL` = supprimé logiquement.
+**Soft delete:** `deleted_at IS NOT NULL` = logically deleted.
 
-### 1.4 Tables `points_balances` et `points_transactions`
+### 1.4 Tables `points_balances` and `points_transactions`
 
 ```sql
 CREATE TABLE points_balances (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id     UUID NOT NULL UNIQUE REFERENCES users(id),
-    balance     INTEGER NOT NULL DEFAULT 0,  -- min -10 validé en code
+    balance     INTEGER NOT NULL DEFAULT 0,  -- min -10 enforced in code
     updated_at  TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
@@ -130,19 +130,19 @@ CREATE TABLE points_transactions (
     id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     sender_id    UUID NOT NULL REFERENCES users(id),
     recipient_id UUID NOT NULL REFERENCES users(id),
-    amount       INTEGER NOT NULL,     -- toujours > 0
+    amount       INTEGER NOT NULL,     -- always > 0
     note         TEXT,
     created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
     INDEX points_tx_sender_idx (sender_id)
 );
 ```
 
-**Transaction ACID (PointsService) :**
+**ACID transaction (PointsService):**
 
 ```sql
--- Exécuté dans une transaction PostgreSQL
+-- Executed inside a PostgreSQL transaction
 SELECT id, balance FROM points_balances WHERE user_id = $senderId FOR UPDATE;
--- Vérification balance >= amount - 10
+-- Check balance >= amount - 10
 INSERT INTO points_balances (user_id, balance) VALUES ($sender, balance - amount)
   ON CONFLICT (user_id) DO UPDATE SET balance = points_balances.balance - $amount;
 INSERT INTO points_balances (user_id, balance) VALUES ($recipient, amount)
@@ -152,11 +152,11 @@ INSERT INTO points_transactions (sender_id, recipient_id, amount, note) VALUES (
 
 ---
 
-## 2. MongoDB — Documents flexibles
+## 2. MongoDB — Flexible documents
 
-ODM : **Mongoose** (NestJS MongooseModule).
+ODM: **Mongoose** (NestJS MongooseModule).
 
-### 2.0 Vue d'ensemble — 9 collections
+### 2.0 Overview — 9 collections
 
 ```mermaid
 erDiagram
@@ -165,7 +165,7 @@ erDiagram
         String name
         String city
         String description
-        Object geometry "GeoJSON Polygon - index 2dsphere"
+        Object geometry "GeoJSON Polygon - 2dsphere index"
         Date createdAt
         Date updatedAt
     }
@@ -175,7 +175,7 @@ erDiagram
         String description
         String category
         String type "free - paid - exchange"
-        String createdBy "UUID PostgreSQL"
+        String createdBy "PostgreSQL UUID"
         ObjectId neighborhoodId FK
         Date createdAt
         Date updatedAt
@@ -186,7 +186,7 @@ erDiagram
         String description
         String category
         Date date
-        String createdBy "UUID PostgreSQL"
+        String createdBy "PostgreSQL UUID"
         ObjectId neighborhoodId FK
         Array interestedUserIds "addToSet idempotent"
         Date createdAt
@@ -196,23 +196,23 @@ erDiagram
         ObjectId _id PK
         String title
         String content
-        String contentHash "SHA-256 du contenu"
-        String createdBy "UUID PostgreSQL"
-        Array signatories "UUIDs PostgreSQL"
+        String contentHash "SHA-256 of the content"
+        String createdBy "PostgreSQL UUID"
+        Array signatories "PostgreSQL UUIDs"
         String status "draft - pending_signature - signed"
-        Array signatures "userId - signedAt - hash SHA-256"
+        Array signatures "userId - signedAt - SHA-256 hash"
         Date createdAt
     }
     conversations {
         ObjectId _id PK
-        Array participants "UUIDs PostgreSQL"
+        Array participants "PostgreSQL UUIDs"
         Object lastMessage "content - sentAt"
         Date createdAt
     }
     messages {
         ObjectId _id PK
         ObjectId conversationId FK
-        String senderId "UUID PostgreSQL"
+        String senderId "PostgreSQL UUID"
         String content
         String type "text - image - file"
         String mediaUrl
@@ -221,7 +221,7 @@ erDiagram
     }
     votes {
         ObjectId _id PK
-        String userId "UUID PostgreSQL"
+        String userId "PostgreSQL UUID"
         ObjectId targetId
         String targetType "service - incident"
         String voteType "up - down - like - dislike"
@@ -236,7 +236,7 @@ erDiagram
         Int quorum
         Boolean isAnonymous
         String status "open - closed"
-        String createdBy "UUID PostgreSQL"
+        String createdBy "PostgreSQL UUID"
         Array casts "userId - choices - weights - castAt"
         Date createdAt
     }
@@ -245,20 +245,20 @@ erDiagram
         String filename
         String mimeType
         Int size
-        ObjectId gridfsId "binaire GridFS"
-        String uploadedBy "UUID PostgreSQL"
+        ObjectId gridfsId "GridFS binary"
+        String uploadedBy "PostgreSQL UUID"
         String category
         Array auditLog "action - userId - timestamp"
         Date createdAt
     }
     ssoTokens {
         ObjectId _id PK
-        String userId "UUID PostgreSQL"
+        String userId "PostgreSQL UUID"
         String token "UUID v4"
         String surface "desktop"
         String state "UUID v4 PKCE"
         Date expiresAt "TTL index 300s"
-        Date usedAt "null = non consomme"
+        Date usedAt "null = not consumed"
     }
 
     neighborhoods ||--o{ services : "neighborhoodId"
@@ -291,7 +291,7 @@ classDiagram
   _id: ObjectId,
   name: "Belleville",
   city: "Paris",
-  description: "Quartier populaire du 20e arr.",
+  description: "Working-class neighborhood in the 20th arrondissement.",
   geometry: {
     type: "Polygon",
     coordinates: [[[2.385, 48.867], [2.392, 48.870], ...]]
@@ -301,18 +301,18 @@ classDiagram
 }
 ```
 
-**Index spécial :** `geometry` → index `2dsphere` pour `$geoIntersects` (détection chevauchements).
+**Special index:** `geometry` → `2dsphere` index for `$geoIntersects` (overlap detection).
 
 ### 2.2 Collection `services`
 
 ```javascript
 {
   _id: ObjectId,
-  title: "Aide au jardinage",
-  description: "Disponible les week-ends",
+  title: "Gardening help",
+  description: "Available on weekends",
   category: "gardening",
   type: "free",          // "free" | "paid" | "exchange"
-  createdBy: "uuid-pg",  // UUID PostgreSQL user
+  createdBy: "uuid-pg",  // PostgreSQL user UUID
   neighborhoodId: ObjectId,
   createdAt: ISODate,
   updatedAt: ISODate
@@ -324,8 +324,8 @@ classDiagram
 ```javascript
 {
   _id: ObjectId,
-  title: "Vide-grenier annuel",
-  description: "Grand marché communautaire",
+  title: "Annual flea market",
+  description: "Large community market",
   category: "community",
   date: ISODate,
   createdBy: "uuid-pg",
@@ -341,9 +341,9 @@ classDiagram
 ```javascript
 {
   _id: ObjectId,
-  title: "Bail de location cave",
-  content: "Texte complet du contrat...",
-  contentHash: "sha256hex",   // SHA-256 du contenu au moment de la création
+  title: "Cellar rental lease",
+  content: "Full contract text...",
+  contentHash: "sha256hex",   // SHA-256 of the content at creation time
   createdBy: "uuid-pg",
   signatories: ["uuid1", "uuid2"],
   status: "draft",            // "draft" | "pending_signature" | "signed"
@@ -352,19 +352,19 @@ classDiagram
     {
       userId: "uuid1",
       signedAt: ISODate,
-      hash: "sha256(content + userId + signedAt)"  // preuve d'intégrité
+      hash: "sha256(content + userId + signedAt)"  // integrity proof
     }
   ],
   createdAt: ISODate
 }
 ```
 
-**Workflow de signature :**
+**Signing workflow:**
 ```
-draft → pending_signature (premier signataire) → signed (tous signent)
+draft → pending_signature (first signatory) → signed (everyone signs)
 ```
 
-### 2.5 Collection `conversations` et `messages`
+### 2.5 Collections `conversations` and `messages`
 
 ```javascript
 // conversations
@@ -380,7 +380,7 @@ draft → pending_signature (premier signataire) → signed (tous signent)
   _id: ObjectId,
   conversationId: ObjectId,
   senderId: "uuid-pg",
-  content: "Bonjour !",
+  content: "Hello!",
   type: "text",    // "text" | "image" | "file"
   mediaUrl: null,
   readBy: ["uuid1"],
@@ -396,27 +396,27 @@ draft → pending_signature (premier signataire) → signed (tous signent)
   userId: "uuid-pg",
   targetId: ObjectId,
   targetType: "service",   // "service" | "incident"
-  voteType: "up",          // "up"/"down" ou "like"/"dislike" selon targetType
+  voteType: "up",          // "up"/"down" or "like"/"dislike" depending on targetType
   createdAt: ISODate
 }
 ```
 
-**Index unique :** `{ userId, targetId, targetType }` → 1 vote par utilisateur par entité.
+**Unique index:** `{ userId, targetId, targetType }` → 1 vote per user per entity.
 
 ### 2.7 Collection `communityVotes`
 
 ```javascript
 {
   _id: ObjectId,
-  title: "Choix jour réunion mensuelle",
-  description: "Voter pour la date",
+  title: "Monthly meeting day choice",
+  description: "Vote for the date",
   voteType: "single_choice",  // "binary"|"single_choice"|"multiple_choice"|"weighted"
   options: [
-    { id: "opt-1", label: "Lundi 14 avril" },
-    { id: "opt-2", label: "Mardi 15 avril" }
+    { id: "opt-1", label: "Monday 14 April" },
+    { id: "opt-2", label: "Tuesday 15 April" }
   ],
   endsAt: ISODate,
-  quorum: 10,          // 0 = pas de quorum
+  quorum: 10,          // 0 = no quorum
   isAnonymous: false,
   status: "open",      // "open" | "closed"
   createdBy: "uuid-pg",
@@ -424,7 +424,7 @@ draft → pending_signature (premier signataire) → signed (tous signent)
     {
       userId: "uuid1",
       choices: ["opt-1"],
-      weights: null,    // rempli pour voteType "weighted"
+      weights: null,    // filled in for voteType "weighted"
       castAt: ISODate
     }
   ],
@@ -432,7 +432,7 @@ draft → pending_signature (premier signataire) → signed (tous signent)
 }
 ```
 
-### 2.8 Collection `documents` (métadonnées GridFS)
+### 2.8 Collection `documents` (GridFS metadata)
 
 ```javascript
 {
@@ -441,7 +441,7 @@ draft → pending_signature (premier signataire) → signed (tous signent)
   originalName: "bail-2026.pdf",
   mimeType: "application/pdf",
   size: 124300,
-  gridfsId: ObjectId,   // référence au fichier binaire GridFS
+  gridfsId: ObjectId,   // reference to the GridFS binary file
   uploadedBy: "uuid-pg",
   category: "contract",
   auditLog: [
@@ -458,29 +458,29 @@ draft → pending_signature (premier signataire) → signed (tous signent)
 {
   _id: ObjectId,
   userId: "uuid-pg",
-  token: "UUID-v4",       // secret partagé web ↔ desktop
+  token: "UUID-v4",       // shared secret web ↔ desktop
   surface: "desktop",
   state: "UUID-v4",       // PKCE — state parameter
-  expiresAt: ISODate,     // TTL index MongoDB — auto-expiration
-  usedAt: null            // non-null = token consommé
+  expiresAt: ISODate,     // MongoDB TTL index — auto-expiry
+  usedAt: null            // non-null = token consumed
 }
 ```
 
-**Index TTL :** `expiresAt` → 300 secondes. Les documents expirés sont supprimés automatiquement.
+**TTL index:** `expiresAt` → 300 seconds. Expired documents are removed automatically.
 
 ---
 
-## 3. Neo4j — Graphe social
+## 3. Neo4j — Social graph
 
-### 3.1 Modèle de graphe
+### 3.1 Graph model
 
 ```mermaid
 graph LR
     U1[User<br/>id: uuid-alice]
     U2[User<br/>id: uuid-bob]
     N1[Neighborhood<br/>id: mongo-id-belleville]
-    S1[Service<br/>id: mongo-id-jardinage]
-    E1[Event<br/>id: mongo-id-videgrenier]
+    S1[Service<br/>id: mongo-id-gardening]
+    E1[Event<br/>id: mongo-id-fleamarket]
 
     U1 -->|LIVES_IN| N1
     U2 -->|LIVES_IN| N1
@@ -490,29 +490,29 @@ graph LR
     U2 -->|USED| S1
 ```
 
-### 3.2 Labels et propriétés
+### 3.2 Labels and properties
 
-| Label | Propriétés | Origine |
+| Label | Properties | Origin |
 |-------|-----------|---------|
-| `User` | `id` (UUID PostgreSQL), `createdAt`, `updatedAt` | Sync sur register |
-| `Neighborhood` | `id` (ObjectId MongoDB), `name`, `createdAt`, `updatedAt` | Sync CRUD |
-| `Service` | `id`, `name`, `createdAt`, `updatedAt` | Sync CRUD |
-| `Event` | `id`, `name`, `date`, `createdAt`, `updatedAt` | Sync CRUD |
+| `User` | `id` (PostgreSQL UUID), `createdAt`, `updatedAt` | Sync on register |
+| `Neighborhood` | `id` (MongoDB ObjectId), `name`, `createdAt`, `updatedAt` | CRUD sync |
+| `Service` | `id`, `name`, `createdAt`, `updatedAt` | CRUD sync |
+| `Event` | `id`, `name`, `date`, `createdAt`, `updatedAt` | CRUD sync |
 
-### 3.3 Relations
+### 3.3 Relationships
 
-| Relation | De | Vers | Créée quand |
+| Relationship | From | To | Created when |
 |----------|-----|------|------------|
-| `LIVES_IN` | User | Neighborhood | Mise à jour profil |
-| `LOCATED_IN` | Service | Neighborhood | Création service |
-| `HELD_IN` | Event | Neighborhood | Création événement |
+| `LIVES_IN` | User | Neighborhood | Profile update |
+| `LOCATED_IN` | Service | Neighborhood | Service creation |
+| `HELD_IN` | Event | Neighborhood | Event creation |
 | `INTERESTED_IN` | User | Event | `POST /events/:id/interest` |
-| `USED` | User | Service | Futur : appel de service |
+| `USED` | User | Service | Future: service request |
 
-### 3.4 Requête de recommandation (Cypher)
+### 3.4 Recommendation query (Cypher)
 
 ```cypher
--- Services du même quartier non encore utilisés
+-- Services in the same neighborhood not yet used
 MATCH (u:User {id: $userId})-[:LIVES_IN]->(n:Neighborhood)
 OPTIONAL MATCH (n)<-[:LOCATED_IN]-(s:Service)
 WHERE NOT (u)-[:USED]->(s)
@@ -521,7 +521,7 @@ RETURN s.id AS id, s.name AS name, 'service' AS type, 3 AS score,
 
 UNION
 
--- Événements à venir dans le même quartier
+-- Upcoming events in the same neighborhood
 MATCH (u:User {id: $userId})-[:LIVES_IN]->(n:Neighborhood)
 OPTIONAL MATCH (n)<-[:HELD_IN]-(e:Event)
 WHERE NOT (u)-[:ATTENDING]->(e) AND e.date > datetime()
@@ -533,60 +533,60 @@ ORDER BY score DESC LIMIT 10
 
 ---
 
-## 4. SQLite — Cache local desktop
+## 4. SQLite — Local desktop cache
 
-Fichier : `quartierconnect.db` (répertoire courant de la JVM).
+File: `quartierconnect.db` (the JVM's current directory).
 
-### 4.1 Schéma complet
+### 4.1 Full schema
 
 ```sql
--- Incidents locaux (sync bidirectionnelle)
+-- Local incidents (bidirectional sync)
 CREATE TABLE IF NOT EXISTS incidents (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    remote_id   TEXT,       -- UUID PostgreSQL après sync
+    remote_id   TEXT,       -- PostgreSQL UUID after sync
     title       TEXT    NOT NULL,
     description TEXT,
     status      TEXT    NOT NULL DEFAULT 'open',
-    is_dirty    INTEGER NOT NULL DEFAULT 1,  -- 1 = en attente de sync
+    is_dirty    INTEGER NOT NULL DEFAULT 1,  -- 1 = pending sync
     created_at  TEXT    NOT NULL,
     updated_at  TEXT    NOT NULL             -- LWW timestamp
 );
 
--- Journal de synchronisation
+-- Synchronization log
 CREATE TABLE IF NOT EXISTS sync_log (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     synced_at  TEXT    NOT NULL,
     success    INTEGER NOT NULL  -- 0/1
 );
 
--- Session persistante (upsert sur id=1)
+-- Persistent session (upsert on id=1)
 CREATE TABLE IF NOT EXISTS session (
-    id            INTEGER PRIMARY KEY,   -- toujours 1
-    email         TEXT NOT NULL,         -- affiché en mode hors-ligne
-    access_token  TEXT,                  -- JWT (peut être expiré)
-    refresh_token TEXT,                  -- JWT refresh
+    id            INTEGER PRIMARY KEY,   -- always 1
+    email         TEXT NOT NULL,         -- displayed in offline mode
+    access_token  TEXT,                  -- JWT (may be expired)
+    refresh_token TEXT,                  -- refresh JWT
     saved_at      TEXT NOT NULL          -- ISO-8601
 );
 ```
 
-### 4.2 Algorithme LWW (Last-Write-Wins)
+### 4.2 LWW (Last-Write-Wins) algorithm
 
 ```
-Si remote_id connu :
-  Si api.updated_at > local.updated_at → API gagne → mettre à jour SQLite
-  Si local.updated_at > api.updated_at → Local gagne → pousser vers API
-Sinon (nouvel incident local) :
-  Créer dans API → récupérer remote_id → mettre à jour SQLite
+If remote_id is known:
+  If api.updated_at > local.updated_at → API wins → update SQLite
+  If local.updated_at > api.updated_at → Local wins → push to API
+Otherwise (new local incident):
+  Create in API → fetch remote_id → update SQLite
 ```
 
 ---
 
-## 5. Règles d'utilisation par base
+## 5. Per-database usage rules
 
-| Règle | Détail |
+| Rule | Detail |
 |-------|--------|
-| **Jamais de transaction MongoDB pour les points** | PostgreSQL ACID obligatoire |
-| **Jamais de données auth dans MongoDB** | Sécurité — seul PostgreSQL pour users |
-| **Neo4j = lecture uniquement côté API** | Écriture via socialService fire-and-forget uniquement |
-| **SQLite = cache local uniquement** | Jamais de source de vérité — l'API PostgreSQL fait foi |
-| **GridFS = binaires uniquement** | Métadonnées dans la collection `documents` MongoDB |
+| **Never use a MongoDB transaction for points** | PostgreSQL ACID is mandatory |
+| **Never store auth data in MongoDB** | Security — only PostgreSQL for users |
+| **Neo4j = read-only on the API side** | Writes only via socialService fire-and-forget |
+| **SQLite = local cache only** | Never the source of truth — the PostgreSQL API is authoritative |
+| **GridFS = binaries only** | Metadata in the MongoDB `documents` collection |

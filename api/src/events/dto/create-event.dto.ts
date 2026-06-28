@@ -9,23 +9,24 @@ import {
 
 export class CreateEventDto {
     @ApiProperty({
-        description: "Titre de l'événement",
-        example: "Vide-grenier du quartier",
+        description: "Title of the event",
+        example: "Neighborhood garage sale",
     })
     @IsString()
     @IsNotEmpty()
     title: string;
 
     @ApiProperty({
-        description: "Description de l'événement",
-        example: "Grand vide-grenier annuel, de 9h à 18h, place du marché.",
+        description: "Description of the event",
+        example:
+            "Large annual garage sale, from 9am to 6pm, at the market square.",
     })
     @IsString()
     @IsNotEmpty()
     description: string;
 
     @ApiProperty({
-        description: "Catégorie de l'événement",
+        description: "Category of the event",
         example: "community",
         enum: ["culture", "sport", "community", "education", "other"],
     })
@@ -34,14 +35,14 @@ export class CreateEventDto {
     category: string;
 
     @ApiProperty({
-        description: "Date et heure de l'événement au format ISO 8601",
+        description: "Date and time of the event in ISO 8601 format",
         example: "2026-05-15T09:00:00.000Z",
     })
     @IsDateString()
     date: string;
 
     @ApiProperty({
-        description: "Identifiant MongoDB du quartier (optionnel)",
+        description: "MongoDB identifier of the neighborhood (optional)",
         example: "664f1a2b3c4d5e6f7a8b9c0d",
         required: false,
     })
@@ -50,15 +51,15 @@ export class CreateEventDto {
     neighborhoodId?: string;
 
     @ApiPropertyOptional({
-        description: "Adresse postale lisible",
-        example: "Place du marché",
+        description: "Human-readable postal address",
+        example: "Market square",
     })
     @IsString()
     @IsOptional()
     address?: string;
 
     @ApiPropertyOptional({
-        description: "Position GeoJSON (coordinates = [lng, lat])",
+        description: "GeoJSON position (coordinates = [lng, lat])",
         example: { type: "Point", coordinates: [2.3522, 48.8566] },
     })
     @IsOptional()

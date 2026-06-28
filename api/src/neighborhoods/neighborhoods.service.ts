@@ -38,7 +38,7 @@ export class NeighborhoodsService {
         );
         if (conflicts.length > 0) {
             throw new ConflictException(
-                `Le polygone chevauche ${conflicts.length} quartier(s) existant(s): ${conflicts.map((n) => n.name).join(", ")}`,
+                `The polygon overlaps ${conflicts.length} existing neighborhood(s): ${conflicts.map((n) => n.name).join(", ")}`,
             );
         }
     }

@@ -146,7 +146,7 @@ Response: `Service` (201)
 curl -X POST http://localhost:5000/services \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"title":"Aide au jardinage","description":"Week-ends","category":"gardening","type":"free"}'
+  -d '{"title":"Gardening help","description":"Weekends","category":"gardening","type":"free"}'
 ```
 
 ### PATCH /services/:id
@@ -195,7 +195,7 @@ Response: `Event` (201)
 curl -X POST http://localhost:5000/events \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"title":"Vide-grenier","description":"Grand vide-grenier","category":"community","date":"2026-05-15T09:00:00.000Z"}'
+  -d '{"title":"Flea market","description":"Large community flea market","category":"community","date":"2026-05-15T09:00:00.000Z"}'
 ```
 
 ### POST /events/:id/interest
@@ -235,7 +235,7 @@ Response: `Incident[]` (201) — initial status is `open`
 curl -X POST http://localhost:5000/incidents \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"title":"Lampadaire cassé","description":"Rue Victor Hugo"}'
+  -d '{"title":"Broken streetlight","description":"Rue Victor Hugo"}'
 ```
 
 ### PATCH /incidents/:id/status
@@ -266,7 +266,7 @@ Response: `{ upserted: number, skipped: number }` — only incidents owned by th
 curl -X POST http://localhost:5000/incidents/sync \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"incidents":[{"id":"uuid","title":"Nid de poule","description":"Rue X","createdBy":"<userId>"}]}'
+  -d '{"incidents":[{"id":"uuid","title":"Pothole","description":"Rue X","createdBy":"<userId>"}]}'
 ```
 
 ---
@@ -297,7 +297,7 @@ Response: `Contract` (201) — SHA-256 hash of content auto-calculated
 curl -X POST http://localhost:5000/contracts \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"title":"Contrat jardinage","content":"Je m'\''engage à...","signatories":["<userId2>"]}'
+  -d '{"title":"Gardening contract","content":"I undertake to...","signatories":["<userId2>"]}'
 ```
 
 ### POST /contracts/:id/sign
@@ -331,7 +331,7 @@ Response: `Conversation` (201)
 curl -X POST http://localhost:5000/messaging/conversations \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"participantIds":["<userId2>"],"title":"Discussion jardinage"}'
+  -d '{"participantIds":["<userId2>"],"title":"Gardening discussion"}'
 ```
 
 ### GET /messaging/conversations/:id/messages
@@ -413,7 +413,7 @@ Fails with 400 if balance would go below -10.
 curl -X POST http://localhost:5000/points/transfer \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"recipientId":"<userId2>","amount":10,"note":"Merci !"}'
+  -d '{"recipientId":"<userId2>","amount":10,"note":"Thanks!"}'
 ```
 
 ---
@@ -446,12 +446,12 @@ curl -X POST http://localhost:5000/dsl/query \
 
 ---
 
-## Me (RGPD)
+## Me (GDPR)
 
 ### GET /users/me/export
 Auth: Bearer JWT
 Response: `{ profile: object, incidents: object[], pointsBalance: object|null, transactions: object[] }`
-RGPD Art. 20 — data portability. `passwordHash` and `totpSecret` are never included.
+GDPR Art. 20 — data portability. `passwordHash` and `totpSecret` are never included.
 ```bash
 curl http://localhost:5000/users/me/export \
   -H "Authorization: Bearer <token>"
@@ -459,9 +459,9 @@ curl http://localhost:5000/users/me/export \
 
 ### DELETE /users/me
 Auth: Bearer JWT
-Body: `{ totpCode: string }` — TOTP obligatoire pour prévenir la suppression via token volé
+Body: `{ totpCode: string }` — TOTP required to prevent deletion via a stolen token
 Response: `{ success: true }`
-RGPD Art. 17 — anonymises the account: email replaced with `deleted_<id>@anonymized.invalid`, passwordHash and totpSecret cleared, refreshToken revoked.
+GDPR Art. 17 — anonymises the account: email replaced with `deleted_<id>@anonymized.invalid`, passwordHash and totpSecret cleared, refreshToken revoked.
 ```bash
 curl -X DELETE http://localhost:5000/users/me \
   -H "Authorization: Bearer <token>" \
@@ -504,7 +504,7 @@ Response: `CommunityVote` (201)
 curl -X POST http://localhost:5000/community-votes \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"title":"Faut-il installer des bancs ?","voteType":"binary","options":[{"id":"yes","label":"Oui"},{"id":"no","label":"Non"}],"endsAt":"2026-07-01T00:00:00.000Z"}'
+  -d '{"title":"Should we install benches?","voteType":"binary","options":[{"id":"yes","label":"Yes"},{"id":"no","label":"No"}],"endsAt":"2026-07-01T00:00:00.000Z"}'
 ```
 
 ### GET /community-votes

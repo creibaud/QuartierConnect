@@ -1,38 +1,35 @@
 import { useState } from "react";
 import { useHead } from "@unhead/react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { apiPost } from "@workspace/shared/lib/api";
 import { setTokens, type LoginResponse } from "@workspace/shared/lib/auth";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
 import { Button } from "@workspace/ui/components/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent } from "@workspace/ui/components/card";
 import { Spinner } from "@workspace/ui/components/spinner";
 import { useAppForm } from "@workspace/ui/lib/form";
 import { toast } from "sonner";
 import { z } from "zod";
-
-const credentialsSchema = z.object({
-    email: z.string().email("Email invalide"),
-    password: z.string().min(1, "Mot de passe requis"),
-});
-
-const totpSchema = z.object({
-    totpCode: z.string().length(6, "Le code doit contenir 6 chiffres"),
-});
+import { AuthLayout } from "../components/auth-layout";
 
 export const Route = createFileRoute("/login")({
     component: LoginPage,
 });
 
 function LoginPage() {
-    useHead({ title: "Connexion" });
+    const { t } = useTranslation();
+    useHead({ title: t("pages.login.pageTitle") });
     const navigate = useNavigate();
+
+    const credentialsSchema = z.object({
+        email: z.string().email(t("auth.validation.invalidEmail")),
+        password: z.string().min(1, t("auth.validation.passwordRequired")),
+    });
+
+    const totpSchema = z.object({
+        totpCode: z.string().length(6, t("auth.validation.totpLength")),
+    });
     const [step, setStep] = useState<"credentials" | "totp">("credentials");
     const [credentials, setCredentials] = useState({ email: "", password: "" });
     const [serverError, setServerError] = useState<string | null>(null);
@@ -58,18 +55,18 @@ function LoginPage() {
                     totpCode: value.totpCode,
                 });
                 setTokens(data.accessToken);
-                toast.success("Connexion réussie");
+                toast.success(t("auth.loginSuccess"));
                 navigate({ to: "/dashboard" });
             } catch (err) {
                 const apiErr = err as { code?: string; message?: string };
                 const messages: Record<string, string> = {
-                    INVALID_PASSWORD: "Email ou mot de passe incorrect",
-                    INVALID_TOTP: "Code TOTP invalide",
+                    INVALID_PASSWORD: t("auth.errors.invalidCredentials"),
+                    INVALID_TOTP: t("auth.errors.invalidTotp"),
                 };
                 setServerError(
                     messages[apiErr.code ?? ""] ??
                         apiErr.message ??
-                        "Erreur de connexion",
+                        t("auth.errors.loginFailed"),
                 );
                 if (apiErr.code === "INVALID_TOTP") {
                     totpForm.setFieldValue("totpCode", "");
@@ -79,16 +76,14 @@ function LoginPage() {
     });
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 dark:bg-zinc-950">
-            <Card className="w-full max-w-sm">
-                <CardHeader className="text-center">
-                    <CardTitle className="text-2xl">QuartierConnect</CardTitle>
-                    <CardDescription>
-                        {step === "credentials"
-                            ? "Connexion à votre compte"
-                            : "Vérification en deux étapes"}
-                    </CardDescription>
-                </CardHeader>
+        <AuthLayout
+            subtitle={
+                step === "credentials"
+                    ? t("pages.login.subtitle")
+                    : t("pages.login.twoFactorSubtitle")
+            }
+        >
+            <Card className="border-border/60 shadow-foreground/5 shadow-lg">
                 <CardContent className="space-y-4">
                     {serverError && (
                         <Alert variant="destructive">
@@ -107,7 +102,7 @@ function LoginPage() {
                             <credentialsForm.AppField name="email">
                                 {(field) => (
                                     <field.TextField
-                                        label="Email"
+                                        label={t("auth.email")}
                                         type="email"
                                         placeholder="alice@demo.fr"
                                         autoFocus
@@ -117,21 +112,21 @@ function LoginPage() {
                             <credentialsForm.AppField name="password">
                                 {(field) => (
                                     <field.TextField
-                                        label="Mot de passe"
+                                        label={t("auth.password")}
                                         type="password"
                                     />
                                 )}
                             </credentialsForm.AppField>
                             <Button type="submit" className="w-full">
-                                Continuer
+                                {t("common.continue")}
                             </Button>
                             <p className="text-muted-foreground text-center text-sm">
-                                Pas encore de compte ?{" "}
+                                {t("pages.login.noAccount")}{" "}
                                 <Link
                                     to="/register"
-                                    className="text-primary underline-offset-4 hover:underline"
+                                    className="text-primary font-medium underline-offset-4 hover:underline"
                                 >
-                                    S&apos;inscrire
+                                    {t("auth.register")}
                                 </Link>
                             </p>
                         </form>
@@ -144,7 +139,7 @@ function LoginPage() {
                             className="space-y-4"
                         >
                             <p className="text-muted-foreground text-sm">
-                                Code TOTP pour{" "}
+                                {t("pages.login.totpFor")}{" "}
                                 <span className="text-foreground font-medium">
                                     {credentials.email}
                                 </span>
@@ -152,12 +147,10 @@ function LoginPage() {
                             </p>
                             <totpForm.AppField name="totpCode">
                                 {(field) => (
-                                    <field.OtpField label="Code TOTP" />
+                                    <field.OtpField label={t("auth.totpCode")} />
                                 )}
                             </totpForm.AppField>
-                            <totpForm.Subscribe
-                                selector={(s) => s.isSubmitting}
-                            >
+                            <totpForm.Subscribe selector={(s) => s.isSubmitting}>
                                 {(isSubmitting) => (
                                     <Button
                                         type="submit"
@@ -167,7 +160,7 @@ function LoginPage() {
                                         {isSubmitting ? (
                                             <Spinner className="mr-2" />
                                         ) : null}
-                                        Se connecter
+                                        {t("auth.login")}
                                     </Button>
                                 )}
                             </totpForm.Subscribe>
@@ -180,12 +173,12 @@ function LoginPage() {
                                     setServerError(null);
                                 }}
                             >
-                                Retour
+                                {t("common.back")}
                             </Button>
                         </form>
                     )}
                 </CardContent>
             </Card>
-        </div>
+        </AuthLayout>
     );
 }

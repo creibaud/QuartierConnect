@@ -81,17 +81,16 @@ export class AuthController {
     @ApiOperation({
         summary: "Login with email + password + TOTP code (6 digits)",
         description:
-            "Authentifie l'utilisateur et retourne une paire de tokens JWT. Le code TOTP est obligatoire (6 chiffres, valide 30s). Limité à 5 tentatives par 15 min.",
+            "Authenticates the user and returns a JWT token pair. The TOTP code is required (6 digits, valid for 30s). Limited to 5 attempts per 15 min.",
     })
     @ApiResponse({ status: 200, type: AuthTokensResponseDto })
     @ApiResponse({
         status: 401,
-        description:
-            "INVALID_PASSWORD | INVALID_TOTP — identifiants incorrects",
+        description: "INVALID_PASSWORD | INVALID_TOTP — incorrect credentials",
     })
     @ApiResponse({
         status: 429,
-        description: "TOO_MANY_REQUESTS — attendre 15 minutes",
+        description: "TOO_MANY_REQUESTS — wait 15 minutes",
     })
     async login(
         @Body() dto: LoginDto,
@@ -127,12 +126,12 @@ export class AuthController {
     @ApiOperation({
         summary: "Step 2/2: Exchange SSO token for JWT pair",
         description:
-            "Endpoint public. Le token est invalidé après le premier échange. Retourne une paire JWT correspondant à l'utilisateur d'origine. Le paramètre `state` optionnel doit correspondre au state fourni lors de la génération (protection CSRF PKCE).",
+            "Public endpoint. The token is invalidated after the first exchange. Returns a JWT pair belonging to the original user. The optional `state` parameter must match the state provided during generation (PKCE CSRF protection).",
     })
     @ApiResponse({ status: 200, type: AuthTokensResponseDto })
     @ApiResponse({
         status: 401,
-        description: "SSO_INVALID — token invalide, expiré ou déjà utilisé",
+        description: "SSO_INVALID — token invalid, expired or already used",
     })
     async exchangeSsoToken(
         @Body() dto: SsoExchangeDto,
@@ -150,15 +149,15 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @Throttle({ default: { limit: 10, ttl: 60000 } })
     @ApiOperation({
-        summary: "Rotation du refresh token → nouvelle paire JWT",
+        summary: "Refresh token rotation → new JWT pair",
         description:
-            "Invalide l'ancien refresh token et retourne une nouvelle paire. Le token est lu depuis le cookie httpOnly qc_rt ou depuis le body (compatibilité desktop).",
+            "Invalidates the old refresh token and returns a new pair. The token is read from the httpOnly qc_rt cookie or from the body (desktop compatibility).",
     })
     @ApiResponse({ status: 200, type: RefreshTokensResponseDto })
     @ApiResponse({
         status: 401,
         description:
-            "TOKEN_REVOKED | TOKEN_INVALID — refresh token invalide ou révoqué",
+            "TOKEN_REVOKED | TOKEN_INVALID — refresh token invalid or revoked",
     })
     async refresh(
         @Req() req: ExpressRequest,
@@ -178,9 +177,9 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     @ApiOperation({
-        summary: "Déconnexion — révocation du refresh token côté serveur",
+        summary: "Logout — server-side refresh token revocation",
         description:
-            "Efface le hash du refresh token en base et révoque l'access token courant (JTI blocklist). Efface également le cookie qc_rt.",
+            "Erases the refresh token hash in the database and revokes the current access token (JTI blocklist). Also clears the qc_rt cookie.",
     })
     @ApiResponse({ status: 200, type: LogoutResponseDto })
     async logout(

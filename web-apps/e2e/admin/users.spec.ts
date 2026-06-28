@@ -7,7 +7,7 @@ import {
     uniqueEmail,
 } from "../helpers/auth";
 
-test.use({ baseURL: "http://localhost:3001" });
+test.use({ baseURL: process.env.PLAYWRIGHT_BASE_URL_ADMIN ?? "http://localhost:3001/" });
 
 test.describe("Admin — Gestion utilisateurs", () => {
     let adminAccessToken: string;
@@ -45,7 +45,7 @@ test.describe("Admin — Gestion utilisateurs", () => {
             adminAccessToken,
             adminRefreshToken,
         );
-        await page.goto("/users");
+        await page.goto("users");
         await expect(page).toHaveURL(/\/users/);
     });
 
@@ -60,7 +60,7 @@ test.describe("Admin — Gestion utilisateurs", () => {
             tokens.accessToken,
             tokens.refreshToken,
         );
-        await page.goto("/users");
+        await page.goto("users");
         await expect(page).toHaveURL(/\/login/);
     });
 
@@ -89,7 +89,8 @@ test.describe("Admin — Gestion utilisateurs", () => {
 
     test("changes user role to moderator", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
-        const combobox = page.getByRole("combobox").first();
+        // .nth(1): skip the role-FILTER combobox (.first()); target a user row's role select
+        const combobox = page.getByRole("combobox").nth(1);
         await expect(combobox).toBeVisible({ timeout: 8000 });
         // Read current role to pick a different target (avoid no-op select)
         const currentText = (await combobox.textContent()) ?? "";

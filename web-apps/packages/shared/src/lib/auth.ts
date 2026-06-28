@@ -9,6 +9,8 @@ export interface TokenPayload {
     sub: string;
     email: string;
     role: string;
+    firstName?: string | null;
+    lastName?: string | null;
     exp: number;
 }
 

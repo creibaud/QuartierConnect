@@ -1,9 +1,20 @@
-import { Logout01Icon, UnfoldMoreIcon } from "@hugeicons/core-free-icons";
+import {
+    Logout01Icon,
+    Settings01Icon,
+    UnfoldMoreIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useNavigate } from "@tanstack/react-router";
-import { apiPost } from "@workspace/shared/lib/api";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import { apiPost, assetUrl } from "@workspace/shared/lib/api";
 import { clearTokens, getCurrentUser } from "@workspace/shared/lib/auth";
-import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar";
+import { useMyProfile } from "@workspace/shared/lib/hooks/useMe";
+import { setLocale } from "@workspace/shared/lib/i18n/index";
+import {
+    Avatar,
+    AvatarFallback,
+    AvatarImage,
+} from "@workspace/ui/components/avatar";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -19,27 +30,38 @@ import {
     useSidebar,
 } from "@workspace/ui/components/sidebar";
 
-const ROLE_LABELS: Record<string, string> = {
-    resident: "Résident",
-    moderator: "Modérateur",
-    admin: "Administrateur",
-    banned: "Banni",
-};
-
 function initialsFromEmail(email: string): string {
     return email.slice(0, 2).toUpperCase();
 }
 
 export function NavUser() {
+    const { t } = useTranslation();
     const { isMobile } = useSidebar();
     const navigate = useNavigate();
     const user = getCurrentUser();
+    const { data: profile } = useMyProfile();
 
     if (!user) {
         return null;
     }
 
-    const roleLabel = ROLE_LABELS[user.role] ?? user.role;
+    const roleLabels: Record<string, string> = {
+        resident: t("roles.resident"),
+        moderator: t("roles.moderator"),
+        admin: t("roles.admin"),
+        banned: t("roles.banned"),
+    };
+    const roleLabel = roleLabels[user.role] ?? user.role;
+    const firstName = profile?.firstName ?? user.firstName ?? "";
+    const lastName = profile?.lastName ?? user.lastName ?? "";
+    const avatarSrc = profile?.avatarUrl
+        ? assetUrl(profile.avatarUrl)
+        : undefined;
+    const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
+    const displayName = fullName || user.email;
+    const initials = fullName
+        ? `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase()
+        : initialsFromEmail(user.email);
 
     async function handleLogout() {
         await apiPost("/auth/logout", {}).catch(() => undefined);
@@ -56,17 +78,21 @@ export function NavUser() {
                             size="lg"
                             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                         >
-                            <Avatar className="size-8 rounded-lg">
-                                <AvatarFallback className="rounded-lg">
-                                    {initialsFromEmail(user.email)}
+                            <Avatar className="size-8">
+                                <AvatarImage
+                                    src={avatarSrc}
+                                    className="object-cover"
+                                />
+                                <AvatarFallback>
+                                    {initials}
                                 </AvatarFallback>
                             </Avatar>
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-medium">
-                                    {user.email}
+                                    {displayName}
                                 </span>
                                 <span className="text-muted-foreground truncate text-xs">
-                                    {roleLabel}
+                                    {fullName ? user.email : roleLabel}
                                 </span>
                             </div>
                             <HugeiconsIcon
@@ -83,25 +109,43 @@ export function NavUser() {
                     >
                         <DropdownMenuLabel className="p-0 font-normal">
                             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                                <Avatar className="size-8 rounded-lg">
-                                    <AvatarFallback className="rounded-lg">
-                                        {initialsFromEmail(user.email)}
+                                <Avatar className="size-8">
+                                    <AvatarImage
+                                        src={avatarSrc}
+                                        className="object-cover"
+                                    />
+                                    <AvatarFallback>
+                                        {initials}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-medium">
-                                        {user.email}
+                                        {displayName}
                                     </span>
                                     <span className="text-muted-foreground truncate text-xs">
-                                        {roleLabel}
+                                        {fullName ? user.email : roleLabel}
                                     </span>
                                 </div>
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                            <Link to="/settings">
+                                <HugeiconsIcon icon={Settings01Icon} />
+                                {t("pages.account.title")}
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setLocale("fr")}>
+                            Français
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setLocale("en")}>
+                            English
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout}>
                             <HugeiconsIcon icon={Logout01Icon} />
-                            Déconnexion
+                            {t("auth.logout")}
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

@@ -1,6 +1,7 @@
 import { ArrowDown01Icon, ArrowUp01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import {
     useIncident,
@@ -24,24 +25,24 @@ import { PageHeader } from "@workspace/ui/components/page-header";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { toast } from "sonner";
 
-const STATUS_LABELS: Record<string, string> = {
-    open: "Ouvert",
-    in_progress: "En cours",
-    resolved: "Résolu",
-};
-
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {
     open: "default",
     in_progress: "secondary",
     resolved: "outline",
 };
 
-const NEXT_STATUS: Record<
+const NEXT_STATUS_VALUES: Record<
     string,
-    { value: "open" | "in_progress" | "resolved"; label: string } | null
+    { value: "open" | "in_progress" | "resolved"; labelKey: string } | null
 > = {
-    open: { value: "in_progress", label: "Passer en cours" },
-    in_progress: { value: "resolved", label: "Marquer résolu" },
+    open: {
+        value: "in_progress",
+        labelKey: "pages.incidentDetail.moveToInProgress",
+    },
+    in_progress: {
+        value: "resolved",
+        labelKey: "pages.incidentDetail.markResolved",
+    },
     resolved: null,
 };
 
@@ -50,8 +51,14 @@ export const Route = createFileRoute("/_app/incidents/$id")({
 });
 
 function IncidentDetailPage() {
+    const { t } = useTranslation();
     const { id } = Route.useParams();
     const user = getCurrentUser();
+    const statusLabels: Record<string, string> = {
+        open: t("incidents.status.open"),
+        in_progress: t("incidents.status.in_progress"),
+        resolved: t("incidents.status.resolved"),
+    };
 
     const { data: incident, isLoading, isError, refetch } = useIncident(id);
     const { data: voteScore } = useVoteScore(id, "incident");
@@ -64,12 +71,14 @@ function IncidentDetailPage() {
         <div className="p-6 md:p-8">
             <div className="mx-auto max-w-5xl space-y-6">
                 <PageHeader
-                    title={incident?.title ?? "Incident"}
+                    title={incident?.title ?? t("pages.incidentDetail.title")}
                     description={
                         incident
-                            ? `Signalé le ${new Date(
-                                  incident.createdAt,
-                              ).toLocaleDateString("fr-FR")}`
+                            ? t("pages.incidentDetail.reportedOn", {
+                                  date: new Date(
+                                      incident.createdAt,
+                                  ).toLocaleDateString("fr-FR"),
+                              })
                             : undefined
                     }
                     actions={
@@ -79,7 +88,7 @@ function IncidentDetailPage() {
                                     STATUS_VARIANTS[incident.status] ?? "outline"
                                 }
                             >
-                                {STATUS_LABELS[incident.status] ??
+                                {statusLabels[incident.status] ??
                                     incident.status}
                             </Badge>
                         ) : undefined
@@ -90,7 +99,7 @@ function IncidentDetailPage() {
                     loading={isLoading}
                     error={isError || (!isLoading && !incident) ? true : undefined}
                     onRetry={() => refetch()}
-                    errorTitle="Incident introuvable"
+                    errorTitle={t("pages.incidentDetail.notFound")}
                     skeleton={
                         <Card>
                             <CardHeader>
@@ -107,10 +116,10 @@ function IncidentDetailPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-base">
-                                    Description
+                                    {t("incidents.fields.description")}
                                 </CardTitle>
                                 <CardDescription>
-                                    Détail du signalement
+                                    {t("pages.incidentDetail.reportDetail")}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
@@ -120,7 +129,7 @@ function IncidentDetailPage() {
                                     </p>
                                 ) : (
                                     <p className="text-muted-foreground text-sm">
-                                        Aucune description fournie.
+                                        {t("pages.incidentDetail.noDescription")}
                                     </p>
                                 )}
 
@@ -139,7 +148,7 @@ function IncidentDetailPage() {
                                                 {
                                                     onError: () =>
                                                         toast.error(
-                                                            "Impossible de voter",
+                                                            t("votes.voteError"),
                                                         ),
                                                 },
                                             )
@@ -162,7 +171,7 @@ function IncidentDetailPage() {
                                                 {
                                                     onError: () =>
                                                         toast.error(
-                                                            "Impossible de voter",
+                                                            t("votes.voteError"),
                                                         ),
                                                 },
                                             )
@@ -173,15 +182,19 @@ function IncidentDetailPage() {
                                     </Button>
                                     {voteScore !== undefined && (
                                         <span className="text-muted-foreground text-sm tabular-nums">
-                                            Score :{" "}
-                                            {voteScore.score > 0 ? "+" : ""}
-                                            {voteScore.score}
+                                            {t("pages.incidentDetail.score", {
+                                                score: `${
+                                                    voteScore.score > 0
+                                                        ? "+"
+                                                        : ""
+                                                }${voteScore.score}`,
+                                            })}
                                         </span>
                                     )}
                                 </div>
 
                                 {canTransition &&
-                                    NEXT_STATUS[incident.status] && (
+                                    NEXT_STATUS_VALUES[incident.status] && (
                                         <Button
                                             variant="outline"
                                             size="sm"
@@ -190,27 +203,36 @@ function IncidentDetailPage() {
                                                 updateStatus.mutate(
                                                     {
                                                         id,
-                                                        status: NEXT_STATUS[
+                                                        status: NEXT_STATUS_VALUES[
                                                             incident.status
                                                         ]!.value,
                                                     },
                                                     {
                                                         onSuccess: () =>
                                                             toast.success(
-                                                                "Statut mis à jour",
+                                                                t(
+                                                                    "pages.incidentDetail.statusUpdated",
+                                                                ),
                                                             ),
                                                         onError: () =>
                                                             toast.error(
-                                                                "Impossible de changer le statut",
+                                                                t(
+                                                                    "pages.incidentDetail.statusUpdateError",
+                                                                ),
                                                             ),
                                                     },
                                                 )
                                             }
                                         >
                                             {updateStatus.isPending
-                                                ? "Mise à jour…"
-                                                : NEXT_STATUS[incident.status]!
-                                                      .label}
+                                                ? t(
+                                                      "pages.incidentDetail.updating",
+                                                  )
+                                                : t(
+                                                      NEXT_STATUS_VALUES[
+                                                          incident.status
+                                                      ]!.labelKey,
+                                                  )}
                                         </Button>
                                     )}
                             </CardContent>

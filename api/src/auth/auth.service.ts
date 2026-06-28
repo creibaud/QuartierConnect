@@ -51,6 +51,8 @@ export class AuthService {
                     email: dto.email.toLowerCase(),
                     passwordHash,
                     totpSecret: secret,
+                    firstName: dto.firstName,
+                    lastName: dto.lastName,
                 })
                 .returning({ id: schema.users.id });
             insertedId = inserted?.id;
@@ -119,11 +121,19 @@ export class AuthService {
             sub: user.id,
             email: user.email,
             role: user.role,
+            firstName: user.firstName,
+            lastName: user.lastName,
         });
 
         return {
             ...tokens,
-            user: { id: user.id, email: user.email, role: user.role },
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                firstName: user.firstName,
+                lastName: user.lastName,
+            },
         };
     }
 
@@ -160,7 +170,7 @@ export class AuthService {
     ): Promise<TokenPair & { user: object }> {
         const record = await this.ssoTokenModel.findOneAndUpdate(
             {
-                token: ssoToken,
+                token: String(ssoToken),
                 usedAt: null,
                 expiresAt: { $gt: new Date() },
             },
@@ -198,11 +208,19 @@ export class AuthService {
             sub: user.id,
             email: user.email,
             role: user.role,
+            firstName: user.firstName,
+            lastName: user.lastName,
         });
 
         return {
             ...tokens,
-            user: { id: user.id, email: user.email, role: user.role },
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                firstName: user.firstName,
+                lastName: user.lastName,
+            },
         };
     }
 

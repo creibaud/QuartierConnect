@@ -12,6 +12,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useSwipeable } from "react-swipeable";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { apiPost } from "@workspace/shared/lib/api";
 import { centroidOf, pointToLatLng } from "@workspace/shared/lib/geo";
 import {
@@ -69,6 +70,7 @@ export const Route = createFileRoute("/_app/events/")({
 type ViewMode = "list" | "calendar" | "swipe" | "map";
 
 function EventsPage() {
+    const { t } = useTranslation();
     const [createOpen, setCreateOpen] = useState(false);
     const [viewMode, setViewMode] = useState<ViewMode>("calendar");
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(
@@ -101,8 +103,8 @@ function EventsPage() {
         <div className="p-6 md:p-8">
             <div className="mx-auto flex max-w-5xl flex-col gap-6">
                 <PageHeader
-                    title="Événements"
-                    description="Les rendez-vous et animations de votre quartier."
+                    title={t("pages.events.title")}
+                    description={t("pages.events.description")}
                     actions={
                         <div className="flex items-center gap-2">
                             <ToggleGroup
@@ -116,32 +118,32 @@ function EventsPage() {
                             >
                                 <ToggleGroupItem
                                     value="calendar"
-                                    aria-label="Vue calendrier"
+                                    aria-label={t("pages.events.viewCalendar")}
                                 >
                                     <HugeiconsIcon icon={Calendar01Icon} />
                                 </ToggleGroupItem>
                                 <ToggleGroupItem
                                     value="list"
-                                    aria-label="Vue liste"
+                                    aria-label={t("pages.events.viewList")}
                                 >
                                     <HugeiconsIcon icon={ListViewIcon} />
                                 </ToggleGroupItem>
                                 <ToggleGroupItem
                                     value="swipe"
-                                    aria-label="Vue cartes"
+                                    aria-label={t("pages.events.viewCards")}
                                 >
                                     <HugeiconsIcon icon={GridViewIcon} />
                                 </ToggleGroupItem>
                                 <ToggleGroupItem
                                     value="map"
-                                    aria-label="Vue carte"
+                                    aria-label={t("pages.events.viewMap")}
                                 >
                                     <HugeiconsIcon icon={Location01Icon} />
                                 </ToggleGroupItem>
                             </ToggleGroup>
                             <Button onClick={() => setCreateOpen(true)}>
                                 <HugeiconsIcon icon={Add01Icon} />
-                                Créer
+                                {t("common.create")}
                             </Button>
                         </div>
                     }
@@ -164,17 +166,16 @@ function EventsPage() {
                                     <HugeiconsIcon icon={Calendar01Icon} />
                                 </EmptyMedia>
                                 <EmptyTitle>
-                                    Aucun événement prévu
+                                    {t("pages.events.emptyTitle")}
                                 </EmptyTitle>
                                 <EmptyDescription>
-                                    Organisez le premier rendez-vous de votre
-                                    quartier.
+                                    {t("pages.events.emptyDescription")}
                                 </EmptyDescription>
                             </EmptyHeader>
                             <EmptyContent>
                                 <Button onClick={() => setCreateOpen(true)}>
                                     <HugeiconsIcon icon={Add01Icon} />
-                                    Créer un événement
+                                    {t("pages.events.create")}
                                 </Button>
                             </EmptyContent>
                         </Empty>
@@ -211,7 +212,7 @@ function EventsPage() {
                                     </p>
                                     {eventsOnSelected.length === 0 ? (
                                         <p className="text-muted-foreground text-sm">
-                                            Aucun événement ce jour.
+                                            {t("pages.events.noneThisDay")}
                                         </p>
                                     ) : (
                                         eventsOnSelected.map((evt) => (
@@ -227,7 +228,7 @@ function EventsPage() {
                             {!selectedDate && upcoming.length > 0 && (
                                 <div className="flex flex-col gap-3">
                                     <p className="text-muted-foreground text-sm font-medium">
-                                        Prochains événements
+                                        {t("pages.events.upcoming")}
                                     </p>
                                     {upcoming.slice(0, 3).map((evt) => (
                                         <EventCard key={evt._id} event={evt} />
@@ -265,6 +266,7 @@ function EventsPage() {
 }
 
 function SwipeView({ events }: { events: Event[] }) {
+    const { t } = useTranslation();
     const [index, setIndex] = useState(0);
     const [swipeDirection, setSwipeDirection] = useState<
         "left" | "right" | null
@@ -293,7 +295,7 @@ function SwipeView({ events }: { events: Event[] }) {
             if (!current) return;
             setSwipeDirection("right");
             recordInterest.mutate({ eventId: current._id, interested: true });
-            toast.success("Intéressé !");
+            toast.success(t("pages.events.interested"));
             setTimeout(() => {
                 setSwipeDirection(null);
                 setIndex((i) => i + 1);
@@ -315,7 +317,7 @@ function SwipeView({ events }: { events: Event[] }) {
     if (events.length === 0) {
         return (
             <p className="text-muted-foreground py-8 text-center text-sm">
-                Aucun événement à afficher.
+                {t("pages.events.noneToShow")}
             </p>
         );
     }
@@ -327,9 +329,9 @@ function SwipeView({ events }: { events: Event[] }) {
                     <EmptyMedia variant="icon">
                         <HugeiconsIcon icon={FavouriteIcon} />
                     </EmptyMedia>
-                    <EmptyTitle>Vous avez tout vu !</EmptyTitle>
+                    <EmptyTitle>{t("pages.events.allSeenTitle")}</EmptyTitle>
                     <EmptyDescription>
-                        Vous avez parcouru tous les événements à venir.
+                        {t("pages.events.allSeenDescription")}
                     </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>
@@ -338,7 +340,7 @@ function SwipeView({ events }: { events: Event[] }) {
                         size="sm"
                         onClick={() => setIndex(0)}
                     >
-                        Recommencer
+                        {t("pages.events.restart")}
                     </Button>
                 </EmptyContent>
             </Empty>
@@ -348,8 +350,10 @@ function SwipeView({ events }: { events: Event[] }) {
     return (
         <div className="space-y-4">
             <p className="text-muted-foreground text-center text-xs">
-                {index + 1} / {events.length} — Glissez à droite pour marquer
-                votre intérêt
+                {t("pages.events.swipeHint", {
+                    current: index + 1,
+                    total: events.length,
+                })}
             </p>
             <div
                 {...handlers}
@@ -396,7 +400,7 @@ function SwipeView({ events }: { events: Event[] }) {
                 <Button
                     variant="outline"
                     size="icon"
-                    aria-label="Passer"
+                    aria-label={t("pages.events.skip")}
                     className="border-destructive text-destructive hover:bg-destructive/10 size-14 rounded-full border-2"
                     onClick={() => {
                         setSwipeDirection("left");
@@ -414,7 +418,7 @@ function SwipeView({ events }: { events: Event[] }) {
                 </Button>
                 <Button
                     size="icon"
-                    aria-label="Je suis intéressé"
+                    aria-label={t("pages.events.imInterested")}
                     className="size-14 rounded-full"
                     onClick={() => {
                         setSwipeDirection("right");
@@ -422,7 +426,7 @@ function SwipeView({ events }: { events: Event[] }) {
                             eventId: current._id,
                             interested: true,
                         });
-                        toast.success("Intéressé !");
+                        toast.success(t("pages.events.interested"));
                         setTimeout(() => {
                             setSwipeDirection(null);
                             setIndex((i) => i + 1);
@@ -437,6 +441,7 @@ function SwipeView({ events }: { events: Event[] }) {
 }
 
 function EventCard({ event }: { event: Event }) {
+    const { t } = useTranslation();
     const date = new Date(event.date);
     const isPast = date < new Date();
 
@@ -450,7 +455,7 @@ function EventCard({ event }: { event: Event }) {
                     <div className="flex shrink-0 items-center gap-2">
                         {isPast && (
                             <Badge variant="outline" className="text-xs">
-                                Passé
+                                {t("pages.events.past")}
                             </Badge>
                         )}
                         <span className="text-muted-foreground text-xs whitespace-nowrap">
@@ -486,6 +491,7 @@ function CreateEventDialog({
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
 }) {
+    const { t } = useTranslation();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [date, setDate] = useState("");
@@ -506,7 +512,7 @@ function CreateEventDialog({
             },
             {
                 onSuccess: () => {
-                    toast.success("Événement créé");
+                    toast.success(t("pages.events.createSuccess"));
                     setTitle("");
                     setDescription("");
                     setDate("");
@@ -514,7 +520,7 @@ function CreateEventDialog({
                     setCategory("other");
                     onSuccess();
                 },
-                onError: () => toast.error("Impossible de créer l'événement"),
+                onError: () => toast.error(t("pages.events.createError")),
             },
         );
     }
@@ -523,23 +529,27 @@ function CreateEventDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Créer un événement</DialogTitle>
+                    <DialogTitle>{t("pages.events.create")}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="evt-title">Titre *</Label>
+                        <Label htmlFor="evt-title">
+                            {t("pages.events.titleRequired")}
+                        </Label>
                         <Input
                             id="evt-title"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Ex : Fête de quartier"
+                            placeholder={t("pages.events.titlePlaceholder")}
                             maxLength={255}
                             required
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="evt-date">Date *</Label>
+                            <Label htmlFor="evt-date">
+                                {t("pages.events.dateRequired")}
+                            </Label>
                             <Input
                                 id="evt-date"
                                 type="datetime-local"
@@ -549,17 +559,23 @@ function CreateEventDialog({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="evt-address">Lieu</Label>
+                            <Label htmlFor="evt-address">
+                                {t("pages.events.location")}
+                            </Label>
                             <Input
                                 id="evt-address"
                                 value={address}
                                 onChange={(e) => setAddress(e.target.value)}
-                                placeholder="Ex : Place du marché"
+                                placeholder={t(
+                                    "pages.events.locationPlaceholder",
+                                )}
                             />
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="evt-desc">Description</Label>
+                        <Label htmlFor="evt-desc">
+                            {t("pages.events.descriptionLabel")}
+                        </Label>
                         <Textarea
                             id="evt-desc"
                             value={description}
@@ -573,7 +589,7 @@ function CreateEventDialog({
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                         >
-                            Annuler
+                            {t("common.cancel")}
                         </Button>
                         <Button
                             type="submit"
@@ -581,7 +597,9 @@ function CreateEventDialog({
                                 createEvent.isPending || !title.trim() || !date
                             }
                         >
-                            {createEvent.isPending ? "Création…" : "Créer"}
+                            {createEvent.isPending
+                                ? t("common.creating")
+                                : t("common.create")}
                         </Button>
                     </div>
                 </form>
@@ -591,6 +609,7 @@ function CreateEventDialog({
 }
 
 function MapView({ events }: { events: Event[] }) {
+    const { t } = useTranslation();
     const { data: neighborhoods } = useNeighborhoods();
     const firstNeighborhood = neighborhoods?.find((n) => n.geometry);
     const eventsWithCoords = events.filter((e) => e.location);
@@ -598,7 +617,7 @@ function MapView({ events }: { events: Event[] }) {
     if (!firstNeighborhood?.geometry) {
         return (
             <p className="text-muted-foreground text-sm">
-                Aucun quartier cartographié pour le moment.
+                {t("pages.events.noNeighborhoodMapped")}
             </p>
         );
     }
@@ -607,10 +626,12 @@ function MapView({ events }: { events: Event[] }) {
         <Card>
             <CardHeader>
                 <CardTitle className="text-base">
-                    Événements à proximité
+                    {t("pages.events.nearby")}
                 </CardTitle>
                 <CardDescription>
-                    {eventsWithCoords.length} événement(s) localisé(s)
+                    {t("pages.events.locatedCount", {
+                        count: eventsWithCoords.length,
+                    })}
                 </CardDescription>
             </CardHeader>
             <CardContent>

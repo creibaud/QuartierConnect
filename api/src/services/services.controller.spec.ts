@@ -8,7 +8,7 @@ import { ServicesController } from "./services.controller";
 const mockService = {
     _id: "svc-id-1",
     title: "Plomberie",
-    description: "Réparations",
+    description: "Repairs",
     category: "home",
     type: "paid",
     createdBy: "user-uuid-1",

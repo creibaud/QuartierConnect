@@ -43,3 +43,5 @@ services:
 
   caddy:
     restart: unless-stopped
+    volumes:
+      - /var/log/quartierconnect/caddy:/var/log/caddy

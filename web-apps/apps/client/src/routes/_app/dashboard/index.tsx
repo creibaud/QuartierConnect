@@ -1,292 +1,402 @@
-import { useEffect, useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
-    Alert01Icon,
     Calendar01Icon,
     Coins01Icon,
-    ComputerIcon,
-    Copy01Icon,
     CustomerServiceIcon,
-    Location01Icon,
-    Message01Icon,
+    SparklesIcon,
+    ThumbsUpIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { apiPost } from "@workspace/shared/lib/api";
+import { motion, useReducedMotion, type Variants } from "motion/react";
+import { useTranslation } from "react-i18next";
+import { apiGet } from "@workspace/shared/lib/api";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
-import { centroidOf } from "@workspace/shared/lib/geo";
-import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
-import { usePointBalance } from "@workspace/shared/lib/hooks/points.hooks";
+import { useEvents } from "@workspace/shared/lib/hooks/events.hooks";
 import {
-    Map,
-    NeighborhoodPolygon,
-    UserLocation,
-} from "@workspace/ui/components/map";
+    usePointBalance,
+    usePointsHistory,
+} from "@workspace/shared/lib/hooks/points.hooks";
+import { useServices } from "@workspace/shared/lib/hooks/services.hooks";
+import { useMyProfile } from "@workspace/shared/lib/hooks/useMe";
+import { useRecommendations } from "@workspace/shared/lib/hooks/useRecommendations";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from "@workspace/ui/components/card";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@workspace/ui/components/dialog";
 import { PageHeader } from "@workspace/ui/components/page-header";
-import { Spinner } from "@workspace/ui/components/spinner";
-import { StatCard } from "@workspace/ui/components/stat-card";
-import { toast } from "sonner";
+import { Skeleton } from "@workspace/ui/components/skeleton";
 
-interface SsoTokenResponse {
-    ssoToken: string;
-    expiresAt: string;
-    expiresIn: number;
+interface CommunityVote {
+    _id: string;
+    title: string;
+    status: "open" | "closed";
 }
-
-const ROLE_LABELS: Record<string, string> = {
-    resident: "Résident",
-    moderator: "Modérateur",
-    admin: "Administrateur",
-};
-
-interface QuickLink {
-    to: string;
-    label: string;
-    icon: IconSvgElement;
-}
-
-const QUICK_LINKS: QuickLink[] = [
-    { to: "/incidents", label: "Incidents", icon: Alert01Icon },
-    { to: "/services", label: "Services", icon: CustomerServiceIcon },
-    { to: "/events", label: "Événements", icon: Calendar01Icon },
-    { to: "/contracts", label: "Contrats", icon: Coins01Icon },
-    { to: "/messages", label: "Messages", icon: Message01Icon },
-];
 
 export const Route = createFileRoute("/_app/dashboard/")({
     component: DashboardPage,
 });
 
+function FeedCard({
+    title,
+    to,
+    icon,
+    children,
+}: {
+    title: string;
+    to: string;
+    icon: IconSvgElement;
+    children: ReactNode;
+}) {
+    const { t } = useTranslation();
+    return (
+        <Card className="h-full">
+            <CardHeader>
+                <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                        <HugeiconsIcon
+                            icon={icon}
+                            className="text-primary size-5"
+                        />
+                        {title}
+                    </CardTitle>
+                    <Button
+                        asChild
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground -mr-2 text-xs"
+                    >
+                        <Link to={to}>{t("pages.dashboard.seeAll")}</Link>
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent>{children}</CardContent>
+        </Card>
+    );
+}
+
+function Rows({ count = 3 }: { count?: number }) {
+    return (
+        <div className="space-y-2">
+            {Array.from({ length: count }).map((_, i) => (
+                <Skeleton key={i} className="h-6 w-full rounded" />
+            ))}
+        </div>
+    );
+}
+
+function EmptyBlock({ icon, text }: { icon: IconSvgElement; text: string }) {
+    return (
+        <div className="text-muted-foreground flex flex-col items-center gap-2 py-6 text-center text-sm">
+            <HugeiconsIcon icon={icon} className="size-7 opacity-30" />
+            {text}
+        </div>
+    );
+}
+
 function DashboardPage() {
+    const { t } = useTranslation();
+    const reduce = useReducedMotion();
+    const [now] = useState(() => Date.now());
     const user = getCurrentUser();
-    const { data: pointData, isLoading: pointsLoading } = usePointBalance();
-    const { data: neighborhoods } = useNeighborhoods();
-    const primaryNeighborhood = neighborhoods?.find((n) => n.geometry);
+    const { data: profile } = useMyProfile();
 
-    const [ssoToken, setSsoToken] = useState<SsoTokenResponse | null>(null);
-    const [ssoLoading, setSsoLoading] = useState(false);
-    const [countdown, setCountdown] = useState(0);
-    const [ssoDialogOpen, setSsoDialogOpen] = useState(false);
-
-    useEffect(() => {
-        if (!ssoToken) return;
-        const expiresAt = new Date(ssoToken.expiresAt).getTime();
-        const tick = () => {
-            const remaining = Math.max(
-                0,
-                Math.round((expiresAt - Date.now()) / 1000),
-            );
-            setCountdown(remaining);
-            if (remaining === 0) setSsoToken(null);
-        };
-        tick();
-        const id = setInterval(tick, 1000);
-        return () => clearInterval(id);
-    }, [ssoToken]);
-
-    async function handleGenerateSsoToken() {
-        setSsoLoading(true);
-        try {
-            const data = await apiPost<SsoTokenResponse>("/auth/sso/generate", {
-                surface: "java-desktop",
-            });
-            setSsoToken(data);
-            setCountdown(data.expiresIn);
-            setSsoDialogOpen(true);
-        } catch {
-            toast.error("Impossible de générer le token SSO");
-        } finally {
-            setSsoLoading(false);
-        }
-    }
-
-    function handleCopySsoToken() {
-        if (!ssoToken) return;
-        navigator.clipboard.writeText(ssoToken.ssoToken);
-        toast.success("Token copié dans le presse-papier");
-    }
-
-    function handleCloseDialog() {
-        setSsoDialogOpen(false);
-        setSsoToken(null);
-    }
+    const { data: balance } = usePointBalance();
+    const { data: history, isLoading: historyLoading } = usePointsHistory(1, 5);
+    const { data: events, isLoading: eventsLoading } = useEvents();
+    const { data: services, isLoading: servicesLoading } = useServices();
+    const { data: recommendations, isLoading: recoLoading } =
+        useRecommendations();
+    const { data: votes, isLoading: votesLoading } = useQuery<CommunityVote[]>({
+        queryKey: ["community-votes"],
+        queryFn: () => apiGet<CommunityVote[]>("/community-votes"),
+    });
 
     if (!user) return null;
 
-    const roleLabel = ROLE_LABELS[user.role] ?? user.role;
+    const roleLabels: Record<string, string> = {
+        resident: t("roles.resident"),
+        moderator: t("roles.moderator"),
+        admin: t("roles.admin"),
+    };
+    const roleLabel = roleLabels[user.role] ?? user.role;
+    const firstName = profile?.firstName ?? user.firstName;
+
+    const transactions = (history ?? []).slice(0, 4);
+    const upcomingEvents = (events ?? [])
+        .filter((e) => new Date(e.date).getTime() >= now)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        .slice(0, 4);
+    const openVotes = (votes ?? [])
+        .filter((v) => v.status === "open")
+        .slice(0, 4);
+    const someServices = (services ?? []).slice(0, 4);
+    const topRecommendations = (recommendations ?? []).slice(0, 4);
+
+    const stagger: Variants = {
+        hidden: {},
+        visible: { transition: { staggerChildren: reduce ? 0 : 0.07 } },
+    };
+    const fadeUp: Variants = {
+        hidden: { opacity: 0, y: reduce ? 0 : 16 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { type: "spring", stiffness: 240, damping: 26 },
+        },
+    };
 
     return (
-        <div className="p-6 md:p-8">
-            <div className="mx-auto max-w-5xl space-y-6">
+        <div className="mx-auto w-full max-w-5xl space-y-6 p-6 md:p-8">
+            <motion.div
+                initial={{ opacity: 0, y: reduce ? 0 : 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 240, damping: 26 }}
+            >
                 <PageHeader
-                    title="Bonjour"
+                    title={
+                        firstName
+                            ? `${t("pages.dashboard.welcome")} ${firstName}`
+                            : t("pages.dashboard.welcome")
+                    }
                     description={user.email}
                     actions={<Badge variant="secondary">{roleLabel}</Badge>}
                 />
+            </motion.div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <StatCard
-                        label="Vos points"
-                        value={pointData?.balance ?? "—"}
-                        hint="Points de participation"
-                        loading={pointsLoading}
-                    />
-                    <StatCard
-                        label="Quartiers cartographiés"
-                        value={neighborhoods?.length ?? "—"}
-                        hint="Autour de chez vous"
-                    />
-                </div>
-
-                {primaryNeighborhood?.geometry && (
+            <motion.div
+                variants={stagger}
+                initial="hidden"
+                animate="visible"
+                className="grid gap-4 lg:grid-cols-2"
+            >
+                {/* Mes points + dernières transactions (pleine largeur) */}
+                <motion.div variants={fadeUp} className="lg:col-span-2">
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-base">
                                 <HugeiconsIcon
-                                    icon={Location01Icon}
+                                    icon={Coins01Icon}
                                     className="text-primary size-5"
                                 />
-                                Mon quartier — {primaryNeighborhood.name}
+                                {t("pages.dashboard.yourPoints")}
                             </CardTitle>
-                            <CardDescription>
-                                {neighborhoods && neighborhoods.length > 1
-                                    ? `${neighborhoods.length} quartiers cartographiés`
-                                    : "Plan du quartier"}
-                            </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Map
-                                center={centroidOf(primaryNeighborhood.geometry)}
-                                zoom={13}
-                                className="h-80 min-h-80 w-full"
-                            >
-                                {neighborhoods?.map((n) =>
-                                    n.geometry ? (
-                                        <NeighborhoodPolygon
-                                            key={n._id}
-                                            geometry={n.geometry}
-                                            label={n.name}
-                                        />
-                                    ) : null,
-                                )}
-                                <UserLocation
-                                    fallbackCenter={centroidOf(
-                                        primaryNeighborhood.geometry,
+                            <div className="grid gap-6 sm:grid-cols-2">
+                                <div className="flex flex-col justify-center">
+                                    <p className="font-heading text-5xl font-semibold tabular-nums">
+                                        {balance?.balance ?? "—"}
+                                    </p>
+                                    <p className="text-muted-foreground mt-1 text-sm">
+                                        {t(
+                                            "pages.dashboard.participationPoints",
+                                        )}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
+                                        {t(
+                                            "pages.dashboard.recentTransactions",
+                                        )}
+                                    </p>
+                                    {historyLoading ? (
+                                        <Rows count={3} />
+                                    ) : transactions.length === 0 ? (
+                                        <p className="text-muted-foreground text-sm">
+                                            {t("pages.dashboard.noTransactions")}
+                                        </p>
+                                    ) : (
+                                        <ul className="space-y-1.5">
+                                            {transactions.map((tx) => {
+                                                const received =
+                                                    tx.recipientEmail ===
+                                                    user.email;
+                                                const other = received
+                                                    ? (tx.senderName ??
+                                                      tx.senderEmail)
+                                                    : (tx.recipientName ??
+                                                      tx.recipientEmail);
+                                                return (
+                                                    <li
+                                                        key={tx.id}
+                                                        className="flex items-center justify-between gap-2 text-sm"
+                                                    >
+                                                        <span className="text-muted-foreground truncate">
+                                                            {other ?? "—"}
+                                                        </span>
+                                                        <span className="font-medium tabular-nums">
+                                                            {received
+                                                                ? "+"
+                                                                : "−"}
+                                                            {Math.abs(
+                                                                tx.amount,
+                                                            )}
+                                                        </span>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
                                     )}
-                                />
-                            </Map>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
-                )}
+                </motion.div>
 
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-                    {QUICK_LINKS.map((item) => (
-                        <Link key={item.to} to={item.to} className="group">
-                            <Card className="hover:border-primary/40 hover:bg-accent/40 h-full transition-colors">
-                                <CardContent className="flex flex-col items-center gap-3 py-6 text-center">
-                                    <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-lg">
-                                        <HugeiconsIcon
-                                            icon={item.icon}
-                                            className="size-5"
-                                        />
-                                    </div>
-                                    <p className="text-sm font-medium">
-                                        {item.label}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    ))}
-                </div>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <HugeiconsIcon
-                                icon={ComputerIcon}
-                                className="text-primary size-5"
+                {/* Votes en cours */}
+                <motion.div variants={fadeUp}>
+                    <FeedCard
+                        title={t("pages.dashboard.openVotes")}
+                        to="/votes"
+                        icon={ThumbsUpIcon}
+                    >
+                        {votesLoading ? (
+                            <Rows count={3} />
+                        ) : openVotes.length === 0 ? (
+                            <EmptyBlock
+                                icon={ThumbsUpIcon}
+                                text={t("pages.dashboard.noOpenVotes")}
                             />
-                            Application desktop
-                        </CardTitle>
-                        <CardDescription>
-                            Générez un token SSO pour vous connecter à
-                            l&apos;application Java sans ressaisir vos
-                            identifiants.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Button
-                            variant="outline"
-                            onClick={handleGenerateSsoToken}
-                            disabled={ssoLoading}
-                        >
-                            {ssoLoading ? <Spinner className="mr-2" /> : null}
-                            {ssoLoading
-                                ? "Génération…"
-                                : "Générer un token SSO"}
-                        </Button>
-                    </CardContent>
-                </Card>
+                        ) : (
+                            <ul className="space-y-2">
+                                {openVotes.map((v) => (
+                                    <li
+                                        key={v._id}
+                                        className="flex items-center justify-between gap-2"
+                                    >
+                                        <span className="truncate text-sm font-medium">
+                                            {v.title}
+                                        </span>
+                                        <Button
+                                            asChild
+                                            size="sm"
+                                            variant="outline"
+                                            className="shrink-0"
+                                        >
+                                            <Link to="/votes">
+                                                {t("pages.dashboard.respond")}
+                                            </Link>
+                                        </Button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </FeedCard>
+                </motion.div>
 
-                <Dialog open={ssoDialogOpen} onOpenChange={handleCloseDialog}>
-                    {ssoToken && (
-                        <DialogContent className="sm:max-w-md">
-                            <DialogHeader>
-                                <DialogTitle>Token SSO</DialogTitle>
-                                <DialogDescription>
-                                    Valide{" "}
-                                    {countdown > 0
-                                        ? `encore ${countdown}s`
-                                        : "(expiré)"}
-                                    . Usage unique.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                                <div className="bg-muted rounded-lg p-3 font-mono text-xs break-all select-all">
-                                    {ssoToken.ssoToken}
-                                </div>
-                                <div className="flex gap-2">
-                                    <Button
-                                        className="flex-1"
-                                        onClick={handleCopySsoToken}
-                                        disabled={countdown === 0}
+                {/* Prochains événements */}
+                <motion.div variants={fadeUp}>
+                    <FeedCard
+                        title={t("pages.dashboard.upcomingEvents")}
+                        to="/events"
+                        icon={Calendar01Icon}
+                    >
+                        {eventsLoading ? (
+                            <Rows count={3} />
+                        ) : upcomingEvents.length === 0 ? (
+                            <EmptyBlock
+                                icon={Calendar01Icon}
+                                text={t("pages.dashboard.noUpcomingEvents")}
+                            />
+                        ) : (
+                            <ul className="space-y-2">
+                                {upcomingEvents.map((e) => (
+                                    <li
+                                        key={e._id}
+                                        className="flex items-center justify-between gap-3 text-sm"
                                     >
-                                        <HugeiconsIcon icon={Copy01Icon} />
-                                        Copier le token
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        onClick={handleCloseDialog}
+                                        <span className="truncate font-medium">
+                                            {e.title}
+                                        </span>
+                                        <span className="text-muted-foreground shrink-0 text-xs">
+                                            {new Date(
+                                                e.date,
+                                            ).toLocaleDateString(undefined, {
+                                                day: "numeric",
+                                                month: "short",
+                                            })}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </FeedCard>
+                </motion.div>
+
+                {/* Services du quartier */}
+                <motion.div variants={fadeUp}>
+                    <FeedCard
+                        title={t("pages.dashboard.neighborhoodServices")}
+                        to="/services"
+                        icon={CustomerServiceIcon}
+                    >
+                        {servicesLoading ? (
+                            <Rows count={3} />
+                        ) : someServices.length === 0 ? (
+                            <EmptyBlock
+                                icon={CustomerServiceIcon}
+                                text={t("pages.dashboard.noServices")}
+                            />
+                        ) : (
+                            <ul className="space-y-2">
+                                {someServices.map((s) => (
+                                    <li
+                                        key={s._id}
+                                        className="flex items-center justify-between gap-2 text-sm"
                                     >
-                                        Fermer
-                                    </Button>
-                                </div>
-                                {countdown <= 60 && countdown > 0 && (
-                                    <p className="text-destructive text-xs">
-                                        Le token expire dans {countdown}{" "}
-                                        secondes.
-                                    </p>
-                                )}
-                            </div>
-                        </DialogContent>
-                    )}
-                </Dialog>
-            </div>
+                                        <span className="truncate font-medium">
+                                            {s.title}
+                                        </span>
+                                        <Badge
+                                            variant="secondary"
+                                            className="shrink-0 text-xs"
+                                        >
+                                            {s.category}
+                                        </Badge>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </FeedCard>
+                </motion.div>
+
+                {/* Recommandations pour toi */}
+                <motion.div variants={fadeUp}>
+                    <FeedCard
+                        title={t("pages.dashboard.recommendationsForYou")}
+                        to="/recommendations"
+                        icon={SparklesIcon}
+                    >
+                        {recoLoading ? (
+                            <Rows count={3} />
+                        ) : topRecommendations.length === 0 ? (
+                            <EmptyBlock
+                                icon={SparklesIcon}
+                                text={t("pages.dashboard.noRecommendations")}
+                            />
+                        ) : (
+                            <ul className="space-y-2.5">
+                                {topRecommendations.map((r) => (
+                                    <li key={r.id} className="space-y-0.5">
+                                        <p className="truncate text-sm font-medium">
+                                            {r.name}
+                                        </p>
+                                        <p className="text-muted-foreground truncate text-xs">
+                                            {r.reason}
+                                        </p>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </FeedCard>
+                </motion.div>
+            </motion.div>
         </div>
     );
 }
