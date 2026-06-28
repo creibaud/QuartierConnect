@@ -4,14 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { apiGet } from "@workspace/shared/lib/api";
 import { Button } from "@workspace/ui/components/button";
+import type { CommunityVote } from "../lib/community-vote";
 import { selectOpenVotes } from "../lib/kpis";
 import { EmptyBlock, FeedCard, Rows } from "./feed-card";
-
-interface CommunityVote {
-    _id: string;
-    title: string;
-    status: "open" | "closed";
-}
 
 export function OpenVotesCard() {
     const { t } = useTranslation();
