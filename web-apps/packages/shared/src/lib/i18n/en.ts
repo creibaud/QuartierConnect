@@ -250,6 +250,19 @@ export default {
             neighborhoodServices: "Neighborhood services",
             noServices: "No services available",
             quickActions: "Quick actions",
+            moderation: {
+                title: "Moderation area",
+                openIncidents: "Open incidents",
+                pendingVotes: "Pending votes",
+                noIncidents: "No open incidents",
+                noPendingVotes: "No pending votes",
+            },
+            kpi: {
+                openIncidents: "Open incidents",
+                openVotes: "Open votes",
+                upcomingEvents: "Upcoming events",
+                services: "Services",
+            },
         },
         points: {
             title: "Points",
