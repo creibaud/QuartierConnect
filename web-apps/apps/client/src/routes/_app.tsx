@@ -1,4 +1,4 @@
-import { useHead } from "@unhead/react";
+import { useTranslation } from "react-i18next";
 import { Coins01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -7,7 +7,7 @@ import {
     redirect,
     useLocation,
 } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
+import { useHead } from "@unhead/react";
 import { ensureAuthenticated } from "@workspace/shared/lib/api";
 import { usePointBalance } from "@workspace/shared/lib/hooks/points.hooks";
 import {
@@ -23,8 +23,12 @@ import {
     SidebarProvider,
     SidebarTrigger,
 } from "@workspace/ui/components/sidebar";
-import { TooltipProvider } from "@workspace/ui/components/tooltip";
-
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@workspace/ui/components/tooltip";
 import { AppSidebar } from "@/components/app-sidebar";
 import { clientNavItems } from "@/components/nav-items";
 
@@ -50,14 +54,21 @@ function HeaderPoints() {
     const { t } = useTranslation();
     const { data } = usePointBalance();
     return (
-        <div
-            className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium"
-            title={t("pages.dashboard.yourPoints")}
-        >
-            <HugeiconsIcon icon={Coins01Icon} className="text-primary size-4" />
-            <span className="tabular-nums">{data?.balance ?? "—"}</span>
-            <span className="text-muted-foreground hidden sm:inline">pts</span>
-        </div>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium">
+                    <HugeiconsIcon
+                        icon={Coins01Icon}
+                        className="text-primary size-4"
+                    />
+                    <span className="tabular-nums">{data?.balance ?? "—"}</span>
+                    <span className="text-muted-foreground hidden sm:inline">
+                        pts
+                    </span>
+                </div>
+            </TooltipTrigger>
+            <TooltipContent>{t("pages.dashboard.yourPoints")}</TooltipContent>
+        </Tooltip>
     );
 }
 
@@ -75,7 +86,7 @@ function AppLayout() {
                         <SidebarTrigger className="-ml-1" />
                         <Separator
                             orientation="vertical"
-                            className="mr-1 data-[orientation=vertical]:h-4"
+                            className="mt-6 mr-1 data-[orientation=vertical]:h-4"
                         />
                         <Breadcrumb>
                             <BreadcrumbList>
