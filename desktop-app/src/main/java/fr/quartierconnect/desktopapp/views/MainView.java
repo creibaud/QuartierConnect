@@ -10,6 +10,7 @@ import fr.quartierconnect.desktopapp.plugin.NotificationPlugin;
 import fr.quartierconnect.desktopapp.plugin.OfflineModePlugin;
 import fr.quartierconnect.desktopapp.plugin.PluginEventBus;
 import fr.quartierconnect.desktopapp.plugin.PluginRegistry;
+import fr.quartierconnect.desktopapp.plugin.SpanishLanguagePackPlugin;
 import fr.quartierconnect.desktopapp.plugin.ThemePlugin;
 import fr.quartierconnect.desktopapp.services.ApiService;
 import fr.quartierconnect.desktopapp.services.AuthService;
@@ -80,6 +81,7 @@ public class MainView {
         registry.register(new ExportPlugin(), appContext);
         registry.register(new NotificationPlugin(), appContext);
         registry.register(new OfflineModePlugin(), appContext);
+        registry.register(new SpanishLanguagePackPlugin(), appContext);
 
         Path pluginsDir = Paths.get("plugins");
         registry.loadFromDirectory(pluginsDir, appContext);

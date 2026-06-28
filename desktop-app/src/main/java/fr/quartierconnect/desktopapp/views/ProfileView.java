@@ -266,14 +266,9 @@ public class ProfileView {
         VBox.setMargin(cardTitle, new Insets(0, 0, 12, 0));
 
         ComboBox<Locale> languageCombo = new ComboBox<>();
-        languageCombo.getItems().addAll(Locale.ENGLISH, Locale.FRENCH);
+        languageCombo.getItems().addAll(I18n.availableLocales());
         languageCombo.setConverter(new javafx.util.StringConverter<>() {
-            @Override public String toString(Locale locale) {
-                if (locale == null) return "";
-                return Locale.FRENCH.getLanguage().equals(locale.getLanguage())
-                        ? I18n.get("profile.language.french")
-                        : I18n.get("profile.language.english");
-            }
+            @Override public String toString(Locale locale) { return localeDisplayName(locale); }
             @Override public Locale fromString(String value) { return null; }
         });
         languageCombo.setValue(selectedLocale());
@@ -373,9 +368,20 @@ public class ProfileView {
     }
 
     private Locale selectedLocale() {
-        return Locale.FRENCH.getLanguage().equals(I18n.getLocale().getLanguage())
-                ? Locale.FRENCH
-                : Locale.ENGLISH;
+        String current = I18n.getLocale().getLanguage();
+        return I18n.availableLocales().stream()
+                .filter(locale -> locale.getLanguage().equals(current))
+                .findFirst()
+                .orElse(Locale.ENGLISH);
+    }
+
+    private String localeDisplayName(Locale locale) {
+        if (locale == null) return "";
+        String language = locale.getLanguage();
+        if (Locale.FRENCH.getLanguage().equals(language)) return I18n.get("profile.language.french");
+        if (Locale.ENGLISH.getLanguage().equals(language)) return I18n.get("profile.language.english");
+        String name = locale.getDisplayLanguage(locale);
+        return name.isEmpty() ? language : Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
 
     private void startTokenCountdown() {
