@@ -223,6 +223,60 @@ async function seedNeighborhoods(token: string): Promise<void> {
   console.log(`  ✓ ${created} quartier(s) Paris créé(s)`);
 }
 
+async function seedContent(token: string): Promise<void> {
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+  const nbhRes = await fetch(`${BASE_URL}/neighborhoods`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const nbhs = (nbhRes.ok ? await nbhRes.json() : []) as Array<{ _id: string }>;
+  const neighborhoodId = nbhs[0]?._id;
+
+  const evRes = await fetch(`${BASE_URL}/events`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const existing = (evRes.ok ? await evRes.json() : []) as unknown[];
+  if (existing.length > 0) return;
+
+  const inDays = (d: number) =>
+    new Date(Date.now() + d * 86400000).toISOString();
+
+  const events = [
+    { title: "Vide-grenier du quartier", description: "Grand vide-grenier annuel, de 9h à 18h sur la place du marché.", category: "community", date: inDays(6), neighborhoodId },
+    { title: "Concert en plein air", description: "Soirée musicale avec les artistes du quartier.", category: "culture", date: inDays(12), neighborhoodId },
+    { title: "Tournoi de pétanque", description: "Inscriptions sur place, ouvert à tous les habitants.", category: "sport", date: inDays(20), neighborhoodId },
+  ];
+  for (const e of events) {
+    await fetch(`${BASE_URL}/events`, { method: "POST", headers, body: JSON.stringify(e) });
+  }
+
+  const services = [
+    { title: "Aide au jardinage le week-end", description: "Je propose mon aide pour désherber et tailler les haies le samedi matin.", category: "gardening", type: "exchange", neighborhoodId },
+    { title: "Cours de soutien scolaire", description: "Étudiant disponible pour aider collégiens et lycéens en maths.", category: "other", type: "paid", neighborhoodId },
+    { title: "Garde d'animaux", description: "Je garde vos animaux de compagnie pendant vos absences.", category: "childcare", type: "free", neighborhoodId },
+  ];
+  for (const s of services) {
+    await fetch(`${BASE_URL}/services`, { method: "POST", headers, body: JSON.stringify(s) });
+  }
+
+  await fetch(`${BASE_URL}/community-votes`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      title: "Faut-il installer des bancs supplémentaires dans le parc ?",
+      description: "Vote consultatif pour les résidents du quartier.",
+      voteType: "binary",
+      options: [
+        { id: "oui", label: "Oui" },
+        { id: "non", label: "Non" },
+      ],
+      endsAt: inDays(14),
+    }),
+  });
+}
+
 async function main(): Promise<void> {
   console.log("QuartierConnect — Demo Seed");
   console.log(`API: ${BASE_URL}`);
@@ -236,6 +290,7 @@ async function main(): Promise<void> {
   const adminToken = await loginAdmin();
   if (adminToken) {
     await seedNeighborhoods(adminToken);
+    await seedContent(adminToken);
   } else {
     console.warn("  ! admin login failed — skipping neighborhood seed");
   }
