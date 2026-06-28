@@ -7,6 +7,7 @@ import { useEvents } from "@workspace/shared/lib/hooks/events.hooks";
 import { useInfiniteIncidents } from "@workspace/shared/lib/hooks/incidents.hooks";
 import { useServices } from "@workspace/shared/lib/hooks/services.hooks";
 import { Button } from "@workspace/ui/components/button";
+import type { CommunityVote } from "../lib/community-vote";
 import {
     countOpenIncidents,
     countOpenVotes,
@@ -16,18 +17,12 @@ import {
 import { EmptyBlock, FeedCard, Rows } from "./feed-card";
 import { KpiCard } from "./kpi-card";
 
-interface CommunityVote {
-    _id: string;
-    title: string;
-    status: "open" | "closed";
-}
-
 export function ModerationOverview({ now }: { now: number }) {
     const { t } = useTranslation();
 
     const { data: incidentsData, isLoading: incidentsLoading } = useInfiniteIncidents(20, "open");
     const incidents = incidentsData?.pages?.[0] ?? [];
-    const { data: votes } = useQuery<CommunityVote[]>({
+    const { data: votes, isLoading: votesLoading } = useQuery<CommunityVote[]>({
         queryKey: ["community-votes"],
         queryFn: () => apiGet<CommunityVote[]>("/community-votes"),
     });
@@ -95,7 +90,9 @@ export function ModerationOverview({ now }: { now: number }) {
                     to="/votes"
                     icon={ThumbsUpIcon}
                 >
-                    {openVotes.length === 0 ? (
+                    {votesLoading ? (
+                        <Rows count={3} />
+                    ) : openVotes.length === 0 ? (
                         <EmptyBlock icon={ThumbsUpIcon} text={t("pages.dashboard.moderation.noPendingVotes")} />
                     ) : (
                         <ul className="space-y-2">

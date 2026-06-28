@@ -253,7 +253,6 @@ export default {
             quickActions: "Actions rapides",
             moderation: {
                 title: "Espace modération",
-                toHandle: "À traiter",
                 openIncidents: "Incidents ouverts",
                 pendingVotes: "Votes en attente",
                 noIncidents: "Aucun incident ouvert",
