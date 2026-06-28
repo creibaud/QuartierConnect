@@ -160,6 +160,15 @@ export interface DocumentMeta {
     uploadedAt: string;
 }
 
+export interface MyProfile {
+    id: string;
+    email: string;
+    role: string;
+    firstName: string | null;
+    lastName: string | null;
+    avatarUrl: string | null;
+}
+
 export interface UserExport {
     profile: {
         id: string;

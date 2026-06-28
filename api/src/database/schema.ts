@@ -26,6 +26,7 @@ export const users = pgTable("users", {
     role: varchar("role", { length: 50 }).notNull().default("resident"),
     firstName: varchar("first_name", { length: 100 }),
     lastName: varchar("last_name", { length: 100 }),
+    avatarUrl: text("avatar_url"),
     refreshTokenHash: text("refresh_token_hash"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),

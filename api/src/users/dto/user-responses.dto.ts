@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsString, MinLength } from "class-validator";
+import { IsOptional, IsString, MaxLength, MinLength } from "class-validator";
 import { IncidentDto } from "../../incidents/dto/incident-response.dto";
 
 export class UserPublicDto {
@@ -104,4 +104,26 @@ export class ChangePasswordDto {
     @IsString()
     @MinLength(8)
     newPassword: string;
+}
+
+export class UpdateProfileDto {
+    @ApiPropertyOptional({ example: "Alice" })
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    firstName?: string;
+
+    @ApiPropertyOptional({ example: "Martin" })
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    lastName?: string;
+
+    @ApiPropertyOptional({
+        description: "Avatar as a data URL (resized client-side) or image URL",
+    })
+    @IsOptional()
+    @IsString()
+    @MaxLength(700000)
+    avatarUrl?: string;
 }
