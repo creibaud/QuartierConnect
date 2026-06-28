@@ -6,7 +6,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { apiPost } from "@workspace/shared/lib/api";
+import { apiPost, assetUrl } from "@workspace/shared/lib/api";
 import { clearTokens, getCurrentUser } from "@workspace/shared/lib/auth";
 import { useMyProfile } from "@workspace/shared/lib/hooks/useMe";
 import { setLocale } from "@workspace/shared/lib/i18n/index";
@@ -54,7 +54,9 @@ export function NavUser() {
     const roleLabel = roleLabels[user.role] ?? user.role;
     const firstName = profile?.firstName ?? user.firstName ?? "";
     const lastName = profile?.lastName ?? user.lastName ?? "";
-    const avatarUrl = profile?.avatarUrl ?? "";
+    const avatarSrc = profile?.avatarUrl
+        ? assetUrl(profile.avatarUrl)
+        : undefined;
     const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
     const displayName = fullName || user.email;
     const initials = fullName
@@ -78,7 +80,7 @@ export function NavUser() {
                         >
                             <Avatar className="size-8">
                                 <AvatarImage
-                                    src={avatarUrl || undefined}
+                                    src={avatarSrc}
                                     className="object-cover"
                                 />
                                 <AvatarFallback>
@@ -109,7 +111,7 @@ export function NavUser() {
                             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                                 <Avatar className="size-8">
                                     <AvatarImage
-                                        src={avatarUrl || undefined}
+                                        src={avatarSrc}
                                         className="object-cover"
                                     />
                                     <AvatarFallback>

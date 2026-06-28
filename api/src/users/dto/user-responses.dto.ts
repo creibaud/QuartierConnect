@@ -118,12 +118,4 @@ export class UpdateProfileDto {
     @IsString()
     @MaxLength(100)
     lastName?: string;
-
-    @ApiPropertyOptional({
-        description: "Avatar as a data URL (resized client-side) or image URL",
-    })
-    @IsOptional()
-    @IsString()
-    @MaxLength(700000)
-    avatarUrl?: string;
 }
