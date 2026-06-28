@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { usePointBalance, usePointsHistory } from "@workspace/shared/lib/hooks/points.hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { resolveCounterparty, formatPointsDelta } from "../lib/format";
-import { Rows } from "./feed-card";
+import { EmptyBlock, Rows } from "./feed-card";
 
 export function PointsSummaryCard({ currentEmail }: { currentEmail: string }) {
     const { t } = useTranslation();
@@ -37,9 +37,11 @@ export function PointsSummaryCard({ currentEmail }: { currentEmail: string }) {
                         {isLoading ? (
                             <Rows count={3} />
                         ) : transactions.length === 0 ? (
-                            <p className="text-muted-foreground text-sm">
-                                {t("pages.dashboard.noTransactions")}
-                            </p>
+                            <EmptyBlock
+                                icon={Coins01Icon}
+                                title={t("pages.dashboard.noTransactions")}
+                                subtitle={t("pages.dashboard.noTransactionsHint")}
+                            />
                         ) : (
                             <ul className="space-y-1.5">
                                 {transactions.map((tx) => {
