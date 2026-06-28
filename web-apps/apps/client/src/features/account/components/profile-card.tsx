@@ -221,7 +221,7 @@ export function ProfileCard() {
                         <Avatar className="size-14">
                             <AvatarImage
                                 src={shownAvatar || undefined}
-                                className="rounded-xl object-cover"
+                                className="object-cover"
                             />
                             <AvatarFallback className="text-lg">
                                 {initials}
