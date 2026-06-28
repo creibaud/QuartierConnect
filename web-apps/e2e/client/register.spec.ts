@@ -45,7 +45,7 @@ test.describe("Client — Register parcours", () => {
             .fill(DEMO_PASSWORD);
         await page.getByLabel(/confirmer/i).fill(DEMO_PASSWORD);
         await page.getByRole("button", { name: /créer/i }).click();
-        await expect(page.locator("svg")).toBeVisible({ timeout: 8000 });
+        await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 8000 });
         await expect(page.getByText(/scannez/i)).toBeVisible();
     });
 
@@ -60,7 +60,7 @@ test.describe("Client — Register parcours", () => {
             .fill(DEMO_PASSWORD);
         await page.getByLabel(/confirmer/i).fill(DEMO_PASSWORD);
         await page.getByRole("button", { name: /créer/i }).click();
-        await expect(page.locator("svg")).toBeVisible({ timeout: 8000 });
+        await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 8000 });
 
         await page.goto("/register");
         await page.getByLabel("Email").fill(email);
@@ -98,7 +98,7 @@ test.describe("Client — Register parcours", () => {
         });
 
         await page.getByRole("button", { name: /créer/i }).click();
-        await expect(page.locator("svg")).toBeVisible({ timeout: 8000 });
+        await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 8000 });
 
         if (totpSecret) {
             await page
