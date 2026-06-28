@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
     Calendar01Icon,
     Coins01Icon,
@@ -94,6 +94,7 @@ function EmptyLine({ text }: { text: string }) {
 function DashboardPage() {
     const { t } = useTranslation();
     const reduce = useReducedMotion();
+    const [now] = useState(() => Date.now());
     const user = getCurrentUser();
 
     const { data: balance } = usePointBalance();
@@ -116,7 +117,6 @@ function DashboardPage() {
     const roleLabel = roleLabels[user.role] ?? user.role;
 
     const transactions = (history ?? []).slice(0, 3);
-    const now = Date.now();
     const upcomingEvents = (events ?? [])
         .filter((e) => new Date(e.date).getTime() >= now)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
