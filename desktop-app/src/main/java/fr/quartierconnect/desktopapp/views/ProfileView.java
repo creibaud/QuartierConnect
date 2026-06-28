@@ -5,6 +5,8 @@ import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.services.ApiService;
 import fr.quartierconnect.desktopapp.services.AuthService;
 import fr.quartierconnect.desktopapp.services.SyncService;
+import fr.quartierconnect.desktopapp.services.UninstallService;
+import fr.quartierconnect.desktopapp.services.UpdateService;
 import fr.quartierconnect.desktopapp.ui.components.AppBadge;
 import fr.quartierconnect.desktopapp.ui.components.AppButton;
 import fr.quartierconnect.desktopapp.util.TimeFormatter;
@@ -15,6 +17,8 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -43,6 +47,9 @@ public class ProfileView {
     private Region tokenFill;
     private Timeline tokenCountdownTimer;
     private volatile boolean isRefreshing = false;
+
+    private final UpdateService updateService = new UpdateService();
+    private final UninstallService uninstallService = new UninstallService();
 
     public ProfileView(Runnable onLogout, SyncService syncService) {
         this.onLogout = onLogout;
@@ -125,12 +132,15 @@ public class ProfileView {
         VBox.setMargin(dbCard, new Insets(0, 0, 9, 0));
 
         VBox languageCard = buildLanguageCard();
-        VBox.setMargin(languageCard, new Insets(0, 0, 14, 0));
+        VBox.setMargin(languageCard, new Insets(0, 0, 9, 0));
+
+        VBox applicationCard = buildApplicationCard();
+        VBox.setMargin(applicationCard, new Insets(0, 0, 14, 0));
 
         AppButton logoutBtn = new AppButton(I18n.get("profile.logout"), AppButton.Variant.DESTRUCTIVE, true);
         logoutBtn.setOnAction(e -> onLogout.run());
 
-        VBox profileLayout = new VBox(0, profileHero, sessionCard, dbCard, languageCard, logoutBtn);
+        VBox profileLayout = new VBox(0, profileHero, sessionCard, dbCard, languageCard, applicationCard, logoutBtn);
         profileLayout.setMaxWidth(460);
 
         VBox centeredProfile = new VBox(profileLayout);
@@ -293,6 +303,73 @@ public class ProfileView {
         card.getStyleClass().add("detail-card");
         VBox.setMargin(restartNote, new Insets(10, 0, 0, 0));
         return card;
+    }
+
+    private VBox buildApplicationCard() {
+        Label cardTitle = new Label(I18n.get("profile.app").toUpperCase(Locale.ROOT));
+        cardTitle.getStyleClass().add("detail-card-title");
+        VBox.setMargin(cardTitle, new Insets(0, 0, 12, 0));
+
+        Label versionLbl = new Label(I18n.get("profile.version"));
+        versionLbl.getStyleClass().add("detail-row-lbl");
+        Label versionVal = new Label("v" + UpdateService.currentVersion() + " · Java 21 · JavaFX 21");
+        versionVal.getStyleClass().add("detail-row-val-mono");
+        HBox versionRow = UiHelper.detailRow(versionLbl, versionVal);
+
+        Label updateStatus = new Label(I18n.get("profile.update.idle"));
+        updateStatus.getStyleClass().add("profile-meta-text");
+        updateStatus.setWrapText(true);
+        VBox.setMargin(updateStatus, new Insets(10, 0, 0, 0));
+
+        AppButton updateBtn = new AppButton(I18n.get("profile.update.check"), AppButton.Variant.PRIMARY, true);
+        updateBtn.setOnAction(e -> startUpdate(updateBtn, updateStatus));
+
+        AppButton uninstallBtn = new AppButton(I18n.get("profile.uninstall"), AppButton.Variant.DESTRUCTIVE, true);
+        uninstallBtn.setOnAction(e -> confirmAndUninstall());
+
+        VBox buttons = new VBox(8, updateBtn, uninstallBtn);
+        VBox.setMargin(buttons, new Insets(12, 0, 0, 0));
+
+        VBox card = new VBox(0, cardTitle, versionRow, UiHelper.separator(), updateStatus, buttons);
+        card.getStyleClass().add("detail-card");
+        return card;
+    }
+
+    private void startUpdate(AppButton trigger, Label status) {
+        trigger.setDisable(true);
+        status.setText(I18n.get("profile.update.checking"));
+        new Thread(() -> {
+            try {
+                updateService.downloadAndInstallLatest(stage ->
+                        Platform.runLater(() -> status.setText(I18n.get("profile.update." + stage))));
+                Platform.runLater(Platform::exit);
+            } catch (Exception ex) {
+                Platform.runLater(() -> {
+                    status.setText(I18n.get("profile.update.failed", ex.getMessage()));
+                    trigger.setDisable(false);
+                });
+            }
+        }, "app-update").start();
+    }
+
+    private void confirmAndUninstall() {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                I18n.get("profile.uninstall.confirm"), ButtonType.OK, ButtonType.CANCEL);
+        confirm.setTitle(I18n.get("profile.uninstall"));
+        confirm.setHeaderText(I18n.get("profile.uninstall.confirmTitle"));
+        confirm.showAndWait()
+                .filter(button -> button == ButtonType.OK)
+                .ifPresent(button -> runUninstall());
+    }
+
+    private void runUninstall() {
+        try {
+            uninstallService.uninstall();
+            Platform.exit();
+        } catch (Exception ex) {
+            new Alert(Alert.AlertType.ERROR,
+                    I18n.get("profile.uninstall.failed", ex.getMessage()), ButtonType.OK).showAndWait();
+        }
     }
 
     private Locale selectedLocale() {
