@@ -4,6 +4,7 @@ import { AuthModule } from "../auth/auth.module";
 import { User, UserSchema } from "../auth/schemas/user.schema";
 import { Neo4jModule } from "../social/neo4j/neo4j.module";
 import { MeController } from "./me.controller";
+import { UsersAvatarController } from "./users-avatar.controller";
 import { UsersController } from "./users.controller";
 
 @Module({
@@ -12,6 +13,6 @@ import { UsersController } from "./users.controller";
         AuthModule,
         Neo4jModule,
     ],
-    controllers: [UsersController, MeController],
+    controllers: [UsersController, MeController, UsersAvatarController],
 })
 export class UsersModule {}

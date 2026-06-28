@@ -143,12 +143,10 @@ export class MeController {
         const update: Partial<{
             firstName: string;
             lastName: string;
-            avatarUrl: string;
             updatedAt: Date;
         }> = { updatedAt: new Date() };
         if (body.firstName !== undefined) update.firstName = body.firstName;
         if (body.lastName !== undefined) update.lastName = body.lastName;
-        if (body.avatarUrl !== undefined) update.avatarUrl = body.avatarUrl;
 
         const [profile] = await this.db
             .update(schema.users)

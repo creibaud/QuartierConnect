@@ -8,6 +8,11 @@ import {
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
 
+/** Absolute URL for a server asset path (e.g. an avatar served by the API). */
+export function assetUrl(path: string): string {
+    return `${BASE_URL}${path}`;
+}
+
 interface ApiError {
     statusCode: number;
     message: string;
@@ -41,6 +46,7 @@ async function apiFetch(
         "Content-Type": "application/json",
         ...(init.headers as Record<string, string>),
     };
+    if (init.body instanceof FormData) delete headers["Content-Type"];
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
     const res = await fetch(`${BASE_URL}${path}`, {

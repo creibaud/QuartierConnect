@@ -7,10 +7,13 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { assetUrl } from "@workspace/shared/lib/api";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import {
+    useDeleteAvatar,
     useMyProfile,
     useUpdateProfile,
+    useUploadAvatar,
 } from "@workspace/shared/lib/hooks/useMe";
 import {
     Avatar,
@@ -27,29 +30,29 @@ import {
 } from "@workspace/ui/components/card";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
-import { resizeImageToDataUrl } from "@/features/account/lib/avatar";
+import { resizeImageToBlob } from "@/features/account/lib/avatar";
 
 export function ProfileCard() {
     const { t } = useTranslation();
     const jwtUser = getCurrentUser();
     const { data: profile } = useMyProfile();
     const updateProfile = useUpdateProfile();
+    const uploadAvatar = useUploadAvatar();
+    const deleteAvatar = useDeleteAvatar();
     const fileRef = useRef<HTMLInputElement>(null);
 
     const [editing, setEditing] = useState(false);
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
-    const [avatarUrl, setAvatarUrl] = useState("");
 
     const email = profile?.email ?? jwtUser?.email ?? "";
     const role = profile?.role ?? jwtUser?.role ?? "resident";
     const baseFirst = profile?.firstName ?? jwtUser?.firstName ?? "";
     const baseLast = profile?.lastName ?? jwtUser?.lastName ?? "";
-    const baseAvatar = profile?.avatarUrl ?? "";
+    const avatarSrc = profile?.avatarUrl ? assetUrl(profile.avatarUrl) : undefined;
 
     const shownFirst = editing ? firstName : (baseFirst ?? "");
     const shownLast = editing ? lastName : (baseLast ?? "");
-    const shownAvatar = editing ? avatarUrl : baseAvatar;
     const fullName = [shownFirst, shownLast].filter(Boolean).join(" ").trim();
     const displayName = fullName || email;
     const initials = fullName
@@ -61,19 +64,23 @@ export function ProfileCard() {
         admin: t("roles.admin"),
     };
     const roleLabel = roleLabels[role] ?? role;
+    const avatarBusy = uploadAvatar.isPending || deleteAvatar.isPending;
 
     function startEdit() {
         setFirstName(baseFirst ?? "");
         setLastName(baseLast ?? "");
-        setAvatarUrl(baseAvatar);
         setEditing(true);
     }
 
     async function handleFile(event: ChangeEvent<HTMLInputElement>) {
         const file = event.target.files?.[0];
+        event.target.value = "";
         if (!file) return;
         try {
-            setAvatarUrl(await resizeImageToDataUrl(file, 256));
+            const blob = await resizeImageToBlob(file, 256);
+            uploadAvatar.mutate(blob, {
+                onError: () => toast.error(t("pages.account.updateError")),
+            });
         } catch {
             toast.error(t("pages.account.updateError"));
         }
@@ -81,7 +88,7 @@ export function ProfileCard() {
 
     function handleSave() {
         updateProfile.mutate(
-            { firstName, lastName, avatarUrl },
+            { firstName, lastName },
             {
                 onSuccess: () => {
                     toast.success(t("pages.account.profileUpdated"));
@@ -126,11 +133,12 @@ export function ProfileCard() {
                             <button
                                 type="button"
                                 onClick={() => fileRef.current?.click()}
+                                disabled={avatarBusy}
                                 className="group relative"
                             >
                                 <Avatar className="size-16">
                                     <AvatarImage
-                                        src={shownAvatar || undefined}
+                                        src={avatarSrc}
                                         className="object-cover"
                                     />
                                     <AvatarFallback className="text-lg">
@@ -149,6 +157,7 @@ export function ProfileCard() {
                                     type="button"
                                     variant="outline"
                                     size="sm"
+                                    disabled={avatarBusy}
                                     onClick={() => fileRef.current?.click()}
                                 >
                                     <HugeiconsIcon
@@ -157,13 +166,14 @@ export function ProfileCard() {
                                     />
                                     {t("pages.account.changePhoto")}
                                 </Button>
-                                {shownAvatar && (
+                                {avatarSrc && (
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         size="sm"
                                         className="text-muted-foreground"
-                                        onClick={() => setAvatarUrl("")}
+                                        disabled={avatarBusy}
+                                        onClick={() => deleteAvatar.mutate()}
                                     >
                                         {t("pages.account.removePhoto")}
                                     </Button>
@@ -220,7 +230,7 @@ export function ProfileCard() {
                     <div className="flex items-center gap-4">
                         <Avatar className="size-14">
                             <AvatarImage
-                                src={shownAvatar || undefined}
+                                src={avatarSrc}
                                 className="object-cover"
                             />
                             <AvatarFallback className="text-lg">
