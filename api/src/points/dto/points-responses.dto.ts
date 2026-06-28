@@ -33,6 +33,12 @@ export class PointsTransactionResponseDto {
     @ApiPropertyOptional({ example: "bob@demo.fr", nullable: true })
     recipientEmail: string | null;
 
+    @ApiPropertyOptional({ example: "Alice Martin", nullable: true })
+    senderName: string | null;
+
+    @ApiPropertyOptional({ example: "Bob Dupont", nullable: true })
+    recipientName: string | null;
+
     @ApiProperty({ example: "2026-04-05T12:00:00.000Z" })
     createdAt: string;
 }

@@ -73,6 +73,8 @@ export interface PointTransaction {
     note: string | null;
     senderEmail: string | null;
     recipientEmail: string | null;
+    senderName: string | null;
+    recipientName: string | null;
     createdAt: string;
 }
 
@@ -117,7 +119,11 @@ export interface Contract {
 export interface Conversation {
     _id: string;
     participants: string[];
-    participantsInfo?: { id: string; email: string | null }[];
+    participantsInfo?: {
+        id: string;
+        email: string | null;
+        name?: string | null;
+    }[];
     isGroup: boolean;
     groupName: string | null;
     neighborhoodId: string | null;
