@@ -13,6 +13,8 @@ export interface NavItem {
     title: string;
     to: string;
     icon: IconSvgElement;
+    /** If set, only these roles see the item. Absent = everyone. */
+    roles?: string[];
 }
 
 function isItemActive(pathname: string, to: string): boolean {

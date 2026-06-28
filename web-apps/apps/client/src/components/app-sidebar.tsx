@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { getCurrentUser } from "@workspace/shared/lib/auth";
 import {
     Sidebar,
     SidebarContent,
@@ -19,6 +20,14 @@ import { NavUser } from "@/components/nav-user";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { t } = useTranslation();
+    const role = getCurrentUser()?.role ?? "resident";
+    const navItems = clientNavItems.filter(
+        (item) => !item.roles || item.roles.includes(role),
+    );
+    const spaceLabel =
+        role === "resident"
+            ? t("pages.sidebar.residentSpace")
+            : t(`roles.${role}`);
 
     return (
         <Sidebar collapsible="icon" {...props}>
@@ -33,7 +42,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                         QuartierConnect
                                     </span>
                                     <span className="truncate text-xs">
-                                        {t("pages.sidebar.residentSpace")}
+                                        {spaceLabel}
                                     </span>
                                 </div>
                             </Link>
@@ -42,7 +51,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </SidebarMenu>
             </SidebarHeader>
             <SidebarContent>
-                <NavMain items={clientNavItems} />
+                <NavMain items={navItems} />
             </SidebarContent>
             <SidebarFooter>
                 <NavUser />
