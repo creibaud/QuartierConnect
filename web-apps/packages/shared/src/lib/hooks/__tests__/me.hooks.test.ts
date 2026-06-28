@@ -69,9 +69,11 @@ describe("useDeleteMyAccount", () => {
             wrapper: createWrapper(),
         });
         await act(async () => {
-            await result.current.mutateAsync();
+            await result.current.mutateAsync("123456");
         });
-        expect(api.apiDelete).toHaveBeenCalledWith("/users/me");
+        expect(api.apiDelete).toHaveBeenCalledWith("/users/me", {
+            totpCode: "123456",
+        });
         expect(auth.clearTokens).toHaveBeenCalled();
     });
 
@@ -82,7 +84,7 @@ describe("useDeleteMyAccount", () => {
             wrapper: createWrapper(),
         });
         await act(async () => {
-            await result.current.mutateAsync();
+            await result.current.mutateAsync("123456");
         });
         expect(window.location.href).toBe("/login");
     });
