@@ -11,7 +11,7 @@ export function PointsSummaryCard({ currentEmail }: { currentEmail: string }) {
     const { t } = useTranslation();
     const { data: balance } = usePointBalance();
     const { data: history, isLoading } = usePointsHistory(1, 5);
-    const transactions = (history ?? []).slice(0, 4);
+    const transactions = (history ?? []).slice(0, 3);
 
     return (
         <Card>
@@ -44,7 +44,7 @@ export function PointsSummaryCard({ currentEmail }: { currentEmail: string }) {
                                 {transactions.map((tx) => {
                                     const { received, name } = resolveCounterparty(tx, currentEmail);
                                     return (
-                                        <Item key={tx.id} variant="outline" size="sm">
+                                        <Item key={tx.id} variant="outline" size="xs">
                                             <ItemContent>
                                                 <ItemTitle>{name}</ItemTitle>
                                             </ItemContent>
