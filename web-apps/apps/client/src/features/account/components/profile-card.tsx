@@ -134,9 +134,9 @@ export function ProfileCard() {
                                 type="button"
                                 onClick={() => fileRef.current?.click()}
                                 disabled={avatarBusy}
-                                className="group relative"
+                                className="group relative shrink-0 rounded-full"
                             >
-                                <Avatar className="size-16">
+                                <Avatar className="size-14">
                                     <AvatarImage
                                         src={avatarSrc}
                                         className="object-cover"
