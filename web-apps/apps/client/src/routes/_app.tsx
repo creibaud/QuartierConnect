@@ -47,7 +47,9 @@ function useActiveSectionTitleKey(): string {
     const active = clientNavItems.find(
         (item) => pathname === item.to || pathname.startsWith(`${item.to}/`),
     );
-    return active?.title ?? "Accueil";
+    if (active) return active.title;
+    if (pathname.startsWith("/settings")) return "pages.account.title";
+    return "Accueil";
 }
 
 function HeaderPoints() {

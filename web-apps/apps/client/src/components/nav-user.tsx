@@ -1,6 +1,10 @@
-import { Logout01Icon, UnfoldMoreIcon } from "@hugeicons/core-free-icons";
+import {
+    Logout01Icon,
+    Settings01Icon,
+    UnfoldMoreIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { apiPost } from "@workspace/shared/lib/api";
 import { clearTokens, getCurrentUser } from "@workspace/shared/lib/auth";
@@ -100,14 +104,21 @@ export function NavUser() {
                                 </Avatar>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-medium">
-                                        {user.email}
+                                        {displayName}
                                     </span>
                                     <span className="text-muted-foreground truncate text-xs">
-                                        {roleLabel}
+                                        {fullName ? user.email : roleLabel}
                                     </span>
                                 </div>
                             </div>
                         </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                            <Link to="/settings">
+                                <HugeiconsIcon icon={Settings01Icon} />
+                                {t("pages.account.title")}
+                            </Link>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => setLocale("fr")}>
                             Français

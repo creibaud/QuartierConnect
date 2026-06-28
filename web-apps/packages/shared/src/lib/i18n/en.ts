@@ -173,6 +173,29 @@ export default {
             verificationCode: "Verification code",
             confirmAndLogin: "Confirm and sign in",
         },
+        account: {
+            pageTitle: "My account",
+            title: "My account",
+            subtitle: "Manage your profile and your data.",
+            profile: "Profile",
+            role: "Role",
+            privacy: "Privacy (GDPR)",
+            exportData: "Export my data",
+            exportDescription:
+                "Download a copy of your data (profile, points, incidents).",
+            deleteAccount: "Delete my account",
+            deleteDescription:
+                "Permanently anonymizes your account. This cannot be undone.",
+            deleteConfirmTitle: "Permanently delete your account?",
+            deleteConfirmDescription:
+                "Enter your authenticator (2FA) code to confirm.",
+            totpLabel: "6-digit code",
+            security: "Security",
+            securitySoon:
+                "Password change and 2FA management coming soon.",
+            cancel: "Cancel",
+            confirmDelete: "Delete permanently",
+        },
         dashboard: {
             welcome: "Hello",
             yourPoints: "Your points",
