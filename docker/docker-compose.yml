@@ -11,6 +11,7 @@ services:
       PORT: 5000
       MONGO_URI: mongodb://${MONGO_ROOT_USER:-root}:${MONGO_ROOT_PASSWORD}@mongo:27017/quartierconnect?authSource=admin
       POSTGRES_URL: postgresql://${POSTGRES_USER:-qc}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-quartierconnect}
+      NEO4J_URI: bolt://neo4j:7687
       CORS_ORIGINS: http://localhost,http://localhost:3000,http://localhost:3001
       LOGIN_RATE_LIMIT: "100"
       PYTHON_BIN: python3
