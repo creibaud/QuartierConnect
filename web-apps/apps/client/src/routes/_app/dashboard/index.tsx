@@ -11,6 +11,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { motion, useReducedMotion, type Variants } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { apiPost } from "@workspace/shared/lib/api";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
@@ -57,7 +58,11 @@ interface QuickLink {
 
 const QUICK_LINKS: QuickLink[] = [
     { to: "/incidents", labelKey: "incidents.title", icon: Alert01Icon },
-    { to: "/services", labelKey: "pages.services.title", icon: CustomerServiceIcon },
+    {
+        to: "/services",
+        labelKey: "pages.services.title",
+        icon: CustomerServiceIcon,
+    },
     { to: "/events", labelKey: "pages.events.title", icon: Calendar01Icon },
     { to: "/contracts", labelKey: "contracts.title", icon: Coins01Icon },
     { to: "/messages", labelKey: "pages.messages.title", icon: Message01Icon },
@@ -69,6 +74,7 @@ export const Route = createFileRoute("/_app/dashboard/")({
 
 function DashboardPage() {
     const { t } = useTranslation();
+    const reduce = useReducedMotion();
     const user = getCurrentUser();
     const { data: pointData, isLoading: pointsLoading } = usePointBalance();
     const { data: neighborhoods } = useNeighborhoods();
@@ -131,16 +137,43 @@ function DashboardPage() {
     };
     const roleLabel = roleLabels[user.role] ?? user.role;
 
+    const stagger: Variants = {
+        hidden: {},
+        visible: {
+            transition: { staggerChildren: reduce ? 0 : 0.07 },
+        },
+    };
+    const fadeUp: Variants = {
+        hidden: { opacity: 0, y: reduce ? 0 : 16 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { type: "spring", stiffness: 240, damping: 26 },
+        },
+    };
+
     return (
         <div className="p-6 md:p-8">
-            <div className="mx-auto max-w-5xl space-y-6">
-                <PageHeader
-                    title={t("pages.dashboard.welcome")}
-                    description={user.email}
-                    actions={<Badge variant="secondary">{roleLabel}</Badge>}
-                />
+            <motion.div
+                variants={stagger}
+                initial="hidden"
+                animate="visible"
+                className="mx-auto max-w-5xl space-y-6"
+            >
+                <motion.div variants={fadeUp}>
+                    <PageHeader
+                        title={t("pages.dashboard.welcome")}
+                        description={user.email}
+                        actions={
+                            <Badge variant="secondary">{roleLabel}</Badge>
+                        }
+                    />
+                </motion.div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <motion.div
+                    variants={fadeUp}
+                    className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+                >
                     <StatCard
                         label={t("pages.dashboard.yourPoints")}
                         value={pointData?.balance ?? "—"}
@@ -152,100 +185,122 @@ function DashboardPage() {
                         value={neighborhoods?.length ?? "—"}
                         hint={t("pages.dashboard.aroundYou")}
                     />
-                </div>
+                </motion.div>
 
                 {primaryNeighborhood?.geometry && (
+                    <motion.div variants={fadeUp}>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <HugeiconsIcon
+                                        icon={Location01Icon}
+                                        className="text-primary size-5"
+                                    />
+                                    {t("pages.dashboard.myNeighborhood", {
+                                        name: primaryNeighborhood.name,
+                                    })}
+                                </CardTitle>
+                                <CardDescription>
+                                    {neighborhoods && neighborhoods.length > 1
+                                        ? t(
+                                              "pages.dashboard.mappedNeighborhoodsCount",
+                                              { count: neighborhoods.length },
+                                          )
+                                        : t("pages.dashboard.neighborhoodMap")}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Map
+                                    center={centroidOf(
+                                        primaryNeighborhood.geometry,
+                                    )}
+                                    zoom={13}
+                                    className="h-80 min-h-80 w-full"
+                                >
+                                    {neighborhoods?.map((n) =>
+                                        n.geometry ? (
+                                            <NeighborhoodPolygon
+                                                key={n._id}
+                                                geometry={n.geometry}
+                                                label={n.name}
+                                            />
+                                        ) : null,
+                                    )}
+                                    <UserLocation
+                                        fallbackCenter={centroidOf(
+                                            primaryNeighborhood.geometry,
+                                        )}
+                                    />
+                                </Map>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                )}
+
+                <motion.div
+                    variants={fadeUp}
+                    className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
+                >
+                    {QUICK_LINKS.map((item) => (
+                        <Link key={item.to} to={item.to} className="group">
+                            <motion.div
+                                whileHover={reduce ? undefined : { y: -4 }}
+                                whileTap={reduce ? undefined : { scale: 0.97 }}
+                                transition={{
+                                    type: "spring",
+                                    stiffness: 400,
+                                    damping: 25,
+                                }}
+                                className="h-full"
+                            >
+                                <Card className="hover:border-primary/40 hover:bg-accent/40 h-full transition-colors">
+                                    <CardContent className="flex flex-col items-center gap-3 py-6 text-center">
+                                        <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-lg">
+                                            <HugeiconsIcon
+                                                icon={item.icon}
+                                                className="size-5"
+                                            />
+                                        </div>
+                                        <p className="text-sm font-medium">
+                                            {t(item.labelKey)}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        </Link>
+                    ))}
+                </motion.div>
+
+                <motion.div variants={fadeUp}>
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-base">
                                 <HugeiconsIcon
-                                    icon={Location01Icon}
+                                    icon={ComputerIcon}
                                     className="text-primary size-5"
                                 />
-                                {t("pages.dashboard.myNeighborhood", {
-                                    name: primaryNeighborhood.name,
-                                })}
+                                {t("pages.dashboard.desktopApp")}
                             </CardTitle>
                             <CardDescription>
-                                {neighborhoods && neighborhoods.length > 1
-                                    ? t(
-                                          "pages.dashboard.mappedNeighborhoodsCount",
-                                          { count: neighborhoods.length },
-                                      )
-                                    : t("pages.dashboard.neighborhoodMap")}
+                                {t("pages.dashboard.desktopAppDescription")}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Map
-                                center={centroidOf(primaryNeighborhood.geometry)}
-                                zoom={13}
-                                className="h-80 min-h-80 w-full"
+                            <Button
+                                variant="outline"
+                                onClick={handleGenerateSsoToken}
+                                disabled={ssoLoading}
                             >
-                                {neighborhoods?.map((n) =>
-                                    n.geometry ? (
-                                        <NeighborhoodPolygon
-                                            key={n._id}
-                                            geometry={n.geometry}
-                                            label={n.name}
-                                        />
-                                    ) : null,
-                                )}
-                                <UserLocation
-                                    fallbackCenter={centroidOf(
-                                        primaryNeighborhood.geometry,
-                                    )}
-                                />
-                            </Map>
+                                {ssoLoading ? (
+                                    <Spinner className="mr-2" />
+                                ) : null}
+                                {ssoLoading
+                                    ? t("pages.dashboard.generating")
+                                    : t("pages.dashboard.generateSsoToken")}
+                            </Button>
                         </CardContent>
                     </Card>
-                )}
-
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-                    {QUICK_LINKS.map((item) => (
-                        <Link key={item.to} to={item.to} className="group">
-                            <Card className="hover:border-primary/40 hover:bg-accent/40 h-full transition-colors">
-                                <CardContent className="flex flex-col items-center gap-3 py-6 text-center">
-                                    <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-lg">
-                                        <HugeiconsIcon
-                                            icon={item.icon}
-                                            className="size-5"
-                                        />
-                                    </div>
-                                    <p className="text-sm font-medium">
-                                        {t(item.labelKey)}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    ))}
-                </div>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <HugeiconsIcon
-                                icon={ComputerIcon}
-                                className="text-primary size-5"
-                            />
-                            {t("pages.dashboard.desktopApp")}
-                        </CardTitle>
-                        <CardDescription>
-                            {t("pages.dashboard.desktopAppDescription")}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Button
-                            variant="outline"
-                            onClick={handleGenerateSsoToken}
-                            disabled={ssoLoading}
-                        >
-                            {ssoLoading ? <Spinner className="mr-2" /> : null}
-                            {ssoLoading
-                                ? t("pages.dashboard.generating")
-                                : t("pages.dashboard.generateSsoToken")}
-                        </Button>
-                    </CardContent>
-                </Card>
+                </motion.div>
 
                 <Dialog open={ssoDialogOpen} onOpenChange={handleCloseDialog}>
                     {ssoToken && (
@@ -256,10 +311,9 @@ function DashboardPage() {
                                 </DialogTitle>
                                 <DialogDescription>
                                     {countdown > 0
-                                        ? t(
-                                              "pages.dashboard.ssoValidFor",
-                                              { count: countdown },
-                                          )
+                                        ? t("pages.dashboard.ssoValidFor", {
+                                              count: countdown,
+                                          })
                                         : t("pages.dashboard.ssoExpired")}
                                 </DialogDescription>
                             </DialogHeader>
@@ -294,7 +348,7 @@ function DashboardPage() {
                         </DialogContent>
                     )}
                 </Dialog>
-            </div>
+            </motion.div>
         </div>
     );
 }
