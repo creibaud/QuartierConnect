@@ -2,6 +2,7 @@ import { Calendar01Icon } from "@hugeicons/core-free-icons";
 import { useTranslation } from "react-i18next";
 import { useEvents } from "@workspace/shared/lib/hooks/events.hooks";
 import { Badge } from "@workspace/ui/components/badge";
+import { Item, ItemGroup, ItemContent, ItemTitle, ItemDescription, ItemActions, ItemMedia } from "@workspace/ui/components/item";
 import { selectUpcomingEvents } from "../lib/kpis";
 import { formatEventDay, formatEventMonth } from "../lib/format";
 import { EmptyBlock, FeedCard, Rows } from "./feed-card";
@@ -22,23 +23,23 @@ export function UpcomingEventsCard({ now }: { now: number }) {
                     subtitle={t("pages.dashboard.noUpcomingEventsHint")}
                 />
             ) : (
-                <ul className="space-y-2.5">
+                <ItemGroup>
                     {upcoming.map((e) => (
-                        <li key={e._id} className="flex items-center gap-3">
-                            <div className="bg-primary/10 text-primary flex size-11 shrink-0 flex-col items-center justify-center rounded-lg">
+                        <Item key={e._id} variant="outline" size="sm">
+                            <ItemMedia className="bg-primary/10 text-primary flex size-10 flex-col items-center justify-center rounded-md">
                                 <span className="text-sm font-bold leading-none">{formatEventDay(e.date)}</span>
-                                <span className="text-[10px] font-medium uppercase leading-none mt-0.5">{formatEventMonth(e.date)}</span>
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium">{e.title}</p>
-                                <div className="mt-0.5 flex items-center gap-2">
-                                    <Badge variant="secondary" className="text-[10px]">{e.category}</Badge>
-                                    {e.address ? <span className="text-muted-foreground truncate text-xs">{e.address}</span> : null}
-                                </div>
-                            </div>
-                        </li>
+                                <span className="mt-0.5 text-[10px] font-medium uppercase leading-none">{formatEventMonth(e.date)}</span>
+                            </ItemMedia>
+                            <ItemContent>
+                                <ItemTitle>{e.title}</ItemTitle>
+                                {e.address ? <ItemDescription>{e.address}</ItemDescription> : null}
+                            </ItemContent>
+                            <ItemActions>
+                                <Badge variant="secondary" className="text-[10px]">{e.category}</Badge>
+                            </ItemActions>
+                        </Item>
                     ))}
-                </ul>
+                </ItemGroup>
             )}
         </FeedCard>
     );
