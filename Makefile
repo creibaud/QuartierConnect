@@ -1,6 +1,6 @@
 .PHONY: help \
         dev dev-api dev-client dev-admin dev-desktop \
-        build build-api build-web build-desktop build-dsl \
+        build build-api build-web build-desktop build-dsl package-desktop \
         test test-api test-web test-desktop test-dsl \
         test-cov test-e2e test-e2e-web test-watch \
 		format format-api format-web format-desktop format-dsl \
@@ -128,6 +128,11 @@ build-desktop: ## Build le fat JAR JavaFX (Maven Shade, ~25 MB)
 	@cd desktop-app && ./mvnw clean package -q
 	@echo "$(OK) JAR prêt : $(BOLD)desktop-app/target/quartierconnect-desktop.jar$(RESET)"
 	@ls -lh desktop-app/target/quartierconnect-desktop.jar 2>/dev/null | awk '{print "     Taille : " $$5}'
+
+package-desktop: ## Build l'installateur natif desktop pour l'OS hôte (jpackage)
+	@echo "$(RUN) Build installateur desktop (jpackage)..."
+	@cd desktop-app && ./packaging/jpackage-build.sh
+	@echo "$(OK) Installateur prêt : $(BOLD)desktop-app/target/installer/$(RESET)"
 
 build-dsl: ## Vérifier la syntaxe Python du DSL (ast.parse)
 	@echo "$(RUN) Vérification syntaxe DSL..."
