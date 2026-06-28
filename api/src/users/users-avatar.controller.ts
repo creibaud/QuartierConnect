@@ -141,7 +141,9 @@ export class UsersAvatarController {
             .select({ avatarUrl: schema.users.avatarUrl })
             .from(schema.users)
             .where(eq(schema.users.id, userId));
-        const match = user?.avatarUrl?.match(/\/users\/avatar\/([a-f0-9]{24})/i);
+        const match = user?.avatarUrl?.match(
+            /\/users\/avatar\/([a-f0-9]{24})/i,
+        );
         if (match && ObjectId.isValid(match[1])) {
             await this.bucket
                 .delete(new ObjectId(match[1]))
