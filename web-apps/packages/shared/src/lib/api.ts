@@ -121,8 +121,11 @@ export async function apiGet<T>(path: string): Promise<T> {
     return data as T;
 }
 
-export async function apiDelete<T>(path: string): Promise<T> {
-    const res = await apiFetch(path, { method: "DELETE" });
+export async function apiDelete<T>(path: string, body?: unknown): Promise<T> {
+    const res = await apiFetch(path, {
+        method: "DELETE",
+        body: body ? JSON.stringify(body) : undefined,
+    });
     if (res.status === 204) return undefined as T;
     const data = await res.json();
     if (!res.ok) {

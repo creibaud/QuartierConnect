@@ -173,6 +173,29 @@ export default {
             verificationCode: "Code de vérification",
             confirmAndLogin: "Confirmer et se connecter",
         },
+        account: {
+            pageTitle: "Mon compte",
+            title: "Mon compte",
+            subtitle: "Gérez votre profil et vos données.",
+            profile: "Profil",
+            role: "Rôle",
+            privacy: "Confidentialité (RGPD)",
+            exportData: "Exporter mes données",
+            exportDescription:
+                "Téléchargez une copie de vos données (profil, points, incidents).",
+            deleteAccount: "Supprimer mon compte",
+            deleteDescription:
+                "Anonymise définitivement votre compte. Action irréversible.",
+            deleteConfirmTitle: "Supprimer définitivement votre compte ?",
+            deleteConfirmDescription:
+                "Saisissez votre code d'authentification (2FA) pour confirmer.",
+            totpLabel: "Code à 6 chiffres",
+            security: "Sécurité",
+            securitySoon:
+                "Modification du mot de passe et gestion de la 2FA bientôt disponibles.",
+            cancel: "Annuler",
+            confirmDelete: "Supprimer définitivement",
+        },
         dashboard: {
             welcome: "Bonjour",
             yourPoints: "Vos points",

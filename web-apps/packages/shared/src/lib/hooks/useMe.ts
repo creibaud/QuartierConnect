@@ -13,7 +13,8 @@ export function useMyDataExport() {
 export function useDeleteMyAccount() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: () => apiDelete<{ success: boolean }>("/users/me"),
+        mutationFn: (totpCode: string) =>
+            apiDelete<{ success: boolean }>("/users/me", { totpCode }),
         onSuccess: () => {
             clearTokens();
             queryClient.clear();
