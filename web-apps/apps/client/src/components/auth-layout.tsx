@@ -50,7 +50,9 @@ export function AuthLayout({
                     variants={item}
                     className="mb-8 flex flex-col items-center text-center"
                 >
-                    <BrandLogo className="text-primary size-16" />
+                    <span className="bg-primary text-primary-foreground inline-flex size-16 items-center justify-center rounded-2xl shadow-sm">
+                        <BrandLogo className="size-9" />
+                    </span>
                     <h1 className="font-heading text-foreground mt-4 text-3xl font-semibold tracking-tight">
                         QuartierConnect
                     </h1>

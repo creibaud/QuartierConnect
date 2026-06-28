@@ -201,6 +201,9 @@ export default {
             noUpcomingEvents: "Aucun événement à venir",
             recommendationsForYou: "Recommandations pour toi",
             noRecommendations: "Pas encore de recommandation",
+            neighborhoodServices: "Services du quartier",
+            noServices: "Aucun service disponible",
+            quickActions: "Actions rapides",
         },
         points: {
             title: "Points",
