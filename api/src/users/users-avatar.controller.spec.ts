@@ -24,7 +24,7 @@ function makeDb(avatarUrl: string | null = null) {
         where: jest.fn().mockReturnValue(whereResult),
         update: jest.fn().mockReturnThis(),
         set: jest.fn().mockReturnThis(),
-    } as any;
+    };
 }
 
 function makeBucket() {
