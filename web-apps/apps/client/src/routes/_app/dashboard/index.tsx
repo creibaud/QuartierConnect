@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import {
     Calendar01Icon,
     Coins01Icon,
+    CustomerServiceIcon,
     SparklesIcon,
     ThumbsUpIcon,
 } from "@hugeicons/core-free-icons";
@@ -17,6 +18,7 @@ import {
     usePointBalance,
     usePointsHistory,
 } from "@workspace/shared/lib/hooks/points.hooks";
+import { useServices } from "@workspace/shared/lib/hooks/services.hooks";
 import { useRecommendations } from "@workspace/shared/lib/hooks/useRecommendations";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
@@ -87,8 +89,13 @@ function Rows({ count = 3 }: { count?: number }) {
     );
 }
 
-function EmptyLine({ text }: { text: string }) {
-    return <p className="text-muted-foreground py-2 text-sm">{text}</p>;
+function EmptyBlock({ icon, text }: { icon: IconSvgElement; text: string }) {
+    return (
+        <div className="text-muted-foreground flex flex-col items-center gap-2 py-6 text-center text-sm">
+            <HugeiconsIcon icon={icon} className="size-7 opacity-30" />
+            {text}
+        </div>
+    );
 }
 
 function DashboardPage() {
@@ -100,6 +107,7 @@ function DashboardPage() {
     const { data: balance } = usePointBalance();
     const { data: history, isLoading: historyLoading } = usePointsHistory(1, 5);
     const { data: events, isLoading: eventsLoading } = useEvents();
+    const { data: services, isLoading: servicesLoading } = useServices();
     const { data: recommendations, isLoading: recoLoading } =
         useRecommendations();
     const { data: votes, isLoading: votesLoading } = useQuery<CommunityVote[]>({
@@ -116,15 +124,16 @@ function DashboardPage() {
     };
     const roleLabel = roleLabels[user.role] ?? user.role;
 
-    const transactions = (history ?? []).slice(0, 3);
+    const transactions = (history ?? []).slice(0, 4);
     const upcomingEvents = (events ?? [])
         .filter((e) => new Date(e.date).getTime() >= now)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        .slice(0, 3);
+        .slice(0, 4);
     const openVotes = (votes ?? [])
         .filter((v) => v.status === "open")
-        .slice(0, 3);
-    const topRecommendations = (recommendations ?? []).slice(0, 3);
+        .slice(0, 4);
+    const someServices = (services ?? []).slice(0, 4);
+    const topRecommendations = (recommendations ?? []).slice(0, 4);
 
     const stagger: Variants = {
         hidden: {},
@@ -159,10 +168,10 @@ function DashboardPage() {
                 animate="visible"
                 className="grid gap-4 lg:grid-cols-2"
             >
-                {/* Mes points + dernières transactions */}
-                <motion.div variants={fadeUp}>
-                    <Card className="h-full">
-                        <CardHeader className="space-y-0">
+                {/* Mes points + dernières transactions (pleine largeur) */}
+                <motion.div variants={fadeUp} className="lg:col-span-2">
+                    <Card>
+                        <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-base">
                                 <HugeiconsIcon
                                     icon={Coins01Icon}
@@ -171,46 +180,61 @@ function DashboardPage() {
                                 {t("pages.dashboard.yourPoints")}
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <p className="font-heading text-4xl font-semibold tabular-nums">
-                                {balance?.balance ?? "—"}
-                            </p>
-                            <div>
-                                <p className="text-muted-foreground mb-1.5 text-xs font-medium tracking-wide uppercase">
-                                    {t("pages.dashboard.recentTransactions")}
-                                </p>
-                                {historyLoading ? (
-                                    <Rows count={2} />
-                                ) : transactions.length === 0 ? (
-                                    <EmptyLine
-                                        text={t("pages.dashboard.noTransactions")}
-                                    />
-                                ) : (
-                                    <ul className="space-y-1.5">
-                                        {transactions.map((tx) => {
-                                            const received =
-                                                tx.recipientEmail ===
-                                                user.email;
-                                            const other = received
-                                                ? tx.senderEmail
-                                                : tx.recipientEmail;
-                                            return (
-                                                <li
-                                                    key={tx.id}
-                                                    className="flex items-center justify-between gap-2 text-sm"
-                                                >
-                                                    <span className="text-muted-foreground truncate">
-                                                        {other ?? "—"}
-                                                    </span>
-                                                    <span className="font-medium tabular-nums">
-                                                        {received ? "+" : "−"}
-                                                        {Math.abs(tx.amount)}
-                                                    </span>
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                )}
+                        <CardContent>
+                            <div className="grid gap-6 sm:grid-cols-2">
+                                <div className="flex flex-col justify-center">
+                                    <p className="font-heading text-5xl font-semibold tabular-nums">
+                                        {balance?.balance ?? "—"}
+                                    </p>
+                                    <p className="text-muted-foreground mt-1 text-sm">
+                                        {t(
+                                            "pages.dashboard.participationPoints",
+                                        )}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
+                                        {t(
+                                            "pages.dashboard.recentTransactions",
+                                        )}
+                                    </p>
+                                    {historyLoading ? (
+                                        <Rows count={3} />
+                                    ) : transactions.length === 0 ? (
+                                        <p className="text-muted-foreground text-sm">
+                                            {t("pages.dashboard.noTransactions")}
+                                        </p>
+                                    ) : (
+                                        <ul className="space-y-1.5">
+                                            {transactions.map((tx) => {
+                                                const received =
+                                                    tx.recipientEmail ===
+                                                    user.email;
+                                                const other = received
+                                                    ? tx.senderEmail
+                                                    : tx.recipientEmail;
+                                                return (
+                                                    <li
+                                                        key={tx.id}
+                                                        className="flex items-center justify-between gap-2 text-sm"
+                                                    >
+                                                        <span className="text-muted-foreground truncate">
+                                                            {other ?? "—"}
+                                                        </span>
+                                                        <span className="font-medium tabular-nums">
+                                                            {received
+                                                                ? "+"
+                                                                : "−"}
+                                                            {Math.abs(
+                                                                tx.amount,
+                                                            )}
+                                                        </span>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    )}
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -224,9 +248,12 @@ function DashboardPage() {
                         icon={ThumbsUpIcon}
                     >
                         {votesLoading ? (
-                            <Rows count={2} />
+                            <Rows count={3} />
                         ) : openVotes.length === 0 ? (
-                            <EmptyLine text={t("pages.dashboard.noOpenVotes")} />
+                            <EmptyBlock
+                                icon={ThumbsUpIcon}
+                                text={t("pages.dashboard.noOpenVotes")}
+                            />
                         ) : (
                             <ul className="space-y-2">
                                 {openVotes.map((v) => (
@@ -264,7 +291,8 @@ function DashboardPage() {
                         {eventsLoading ? (
                             <Rows count={3} />
                         ) : upcomingEvents.length === 0 ? (
-                            <EmptyLine
+                            <EmptyBlock
+                                icon={Calendar01Icon}
                                 text={t("pages.dashboard.noUpcomingEvents")}
                             />
                         ) : (
@@ -292,6 +320,43 @@ function DashboardPage() {
                     </FeedCard>
                 </motion.div>
 
+                {/* Services du quartier */}
+                <motion.div variants={fadeUp}>
+                    <FeedCard
+                        title={t("pages.dashboard.neighborhoodServices")}
+                        to="/services"
+                        icon={CustomerServiceIcon}
+                    >
+                        {servicesLoading ? (
+                            <Rows count={3} />
+                        ) : someServices.length === 0 ? (
+                            <EmptyBlock
+                                icon={CustomerServiceIcon}
+                                text={t("pages.dashboard.noServices")}
+                            />
+                        ) : (
+                            <ul className="space-y-2">
+                                {someServices.map((s) => (
+                                    <li
+                                        key={s._id}
+                                        className="flex items-center justify-between gap-2 text-sm"
+                                    >
+                                        <span className="truncate font-medium">
+                                            {s.title}
+                                        </span>
+                                        <Badge
+                                            variant="secondary"
+                                            className="shrink-0 text-xs"
+                                        >
+                                            {s.category}
+                                        </Badge>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </FeedCard>
+                </motion.div>
+
                 {/* Recommandations pour toi */}
                 <motion.div variants={fadeUp}>
                     <FeedCard
@@ -302,7 +367,8 @@ function DashboardPage() {
                         {recoLoading ? (
                             <Rows count={3} />
                         ) : topRecommendations.length === 0 ? (
-                            <EmptyLine
+                            <EmptyBlock
+                                icon={SparklesIcon}
                                 text={t("pages.dashboard.noRecommendations")}
                             />
                         ) : (
