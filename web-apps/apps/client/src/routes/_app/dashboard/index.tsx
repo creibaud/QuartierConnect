@@ -19,6 +19,7 @@ import {
     usePointsHistory,
 } from "@workspace/shared/lib/hooks/points.hooks";
 import { useServices } from "@workspace/shared/lib/hooks/services.hooks";
+import { useMyProfile } from "@workspace/shared/lib/hooks/useMe";
 import { useRecommendations } from "@workspace/shared/lib/hooks/useRecommendations";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
@@ -103,6 +104,7 @@ function DashboardPage() {
     const reduce = useReducedMotion();
     const [now] = useState(() => Date.now());
     const user = getCurrentUser();
+    const { data: profile } = useMyProfile();
 
     const { data: balance } = usePointBalance();
     const { data: history, isLoading: historyLoading } = usePointsHistory(1, 5);
@@ -123,6 +125,7 @@ function DashboardPage() {
         admin: t("roles.admin"),
     };
     const roleLabel = roleLabels[user.role] ?? user.role;
+    const firstName = profile?.firstName ?? user.firstName;
 
     const transactions = (history ?? []).slice(0, 4);
     const upcomingEvents = (events ?? [])
@@ -157,8 +160,8 @@ function DashboardPage() {
             >
                 <PageHeader
                     title={
-                        user.firstName
-                            ? `${t("pages.dashboard.welcome")} ${user.firstName}`
+                        firstName
+                            ? `${t("pages.dashboard.welcome")} ${firstName}`
                             : t("pages.dashboard.welcome")
                     }
                     description={user.email}

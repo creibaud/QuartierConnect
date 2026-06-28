@@ -32,6 +32,7 @@ import {
     ChangePasswordDto,
     DeleteAccountBodyDto,
     GdprExportDto,
+    UpdateProfileDto,
 } from "./dto/user-responses.dto";
 
 interface AuthRequest {
@@ -113,6 +114,55 @@ export class MeController {
             transactions,
             socialData,
         };
+    }
+
+    @Get("profile")
+    @ApiOperation({ summary: "Get my profile" })
+    async getProfile(@Request() req: AuthRequest) {
+        const [profile] = await this.db
+            .select({
+                id: schema.users.id,
+                email: schema.users.email,
+                role: schema.users.role,
+                firstName: schema.users.firstName,
+                lastName: schema.users.lastName,
+                avatarUrl: schema.users.avatarUrl,
+            })
+            .from(schema.users)
+            .where(eq(schema.users.id, req.user.sub));
+        return profile ?? null;
+    }
+
+    @Patch("profile")
+    @ApiOperation({ summary: "Update my profile (name, avatar)" })
+    @ApiBody({ type: UpdateProfileDto })
+    async updateProfile(
+        @Request() req: AuthRequest,
+        @Body() body: UpdateProfileDto,
+    ) {
+        const update: Partial<{
+            firstName: string;
+            lastName: string;
+            avatarUrl: string;
+            updatedAt: Date;
+        }> = { updatedAt: new Date() };
+        if (body.firstName !== undefined) update.firstName = body.firstName;
+        if (body.lastName !== undefined) update.lastName = body.lastName;
+        if (body.avatarUrl !== undefined) update.avatarUrl = body.avatarUrl;
+
+        const [profile] = await this.db
+            .update(schema.users)
+            .set(update)
+            .where(eq(schema.users.id, req.user.sub))
+            .returning({
+                id: schema.users.id,
+                email: schema.users.email,
+                role: schema.users.role,
+                firstName: schema.users.firstName,
+                lastName: schema.users.lastName,
+                avatarUrl: schema.users.avatarUrl,
+            });
+        return profile;
     }
 
     @Patch("password")

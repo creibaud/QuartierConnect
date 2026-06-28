@@ -8,8 +8,13 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { apiPost } from "@workspace/shared/lib/api";
 import { clearTokens, getCurrentUser } from "@workspace/shared/lib/auth";
+import { useMyProfile } from "@workspace/shared/lib/hooks/useMe";
 import { setLocale } from "@workspace/shared/lib/i18n/index";
-import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar";
+import {
+    Avatar,
+    AvatarFallback,
+    AvatarImage,
+} from "@workspace/ui/components/avatar";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -34,6 +39,7 @@ export function NavUser() {
     const { isMobile } = useSidebar();
     const navigate = useNavigate();
     const user = getCurrentUser();
+    const { data: profile } = useMyProfile();
 
     if (!user) {
         return null;
@@ -46,13 +52,13 @@ export function NavUser() {
         banned: t("roles.banned"),
     };
     const roleLabel = roleLabels[user.role] ?? user.role;
-    const fullName = [user.firstName, user.lastName]
-        .filter(Boolean)
-        .join(" ")
-        .trim();
+    const firstName = profile?.firstName ?? user.firstName ?? "";
+    const lastName = profile?.lastName ?? user.lastName ?? "";
+    const avatarUrl = profile?.avatarUrl ?? "";
+    const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
     const displayName = fullName || user.email;
     const initials = fullName
-        ? `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase()
+        ? `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase()
         : initialsFromEmail(user.email);
 
     async function handleLogout() {
@@ -70,8 +76,12 @@ export function NavUser() {
                             size="lg"
                             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                         >
-                            <Avatar className="size-8 rounded-lg">
-                                <AvatarFallback className="rounded-lg">
+                            <Avatar className="size-8">
+                                <AvatarImage
+                                    src={avatarUrl || undefined}
+                                    className="object-cover"
+                                />
+                                <AvatarFallback>
                                     {initials}
                                 </AvatarFallback>
                             </Avatar>
@@ -97,8 +107,12 @@ export function NavUser() {
                     >
                         <DropdownMenuLabel className="p-0 font-normal">
                             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                                <Avatar className="size-8 rounded-lg">
-                                    <AvatarFallback className="rounded-lg">
+                                <Avatar className="size-8">
+                                    <AvatarImage
+                                        src={avatarUrl || undefined}
+                                        className="object-cover"
+                                    />
+                                    <AvatarFallback>
                                         {initials}
                                     </AvatarFallback>
                                 </Avatar>
