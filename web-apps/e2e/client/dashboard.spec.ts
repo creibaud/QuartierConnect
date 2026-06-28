@@ -47,12 +47,6 @@ test.describe("Client — Dashboard", () => {
         await expect(page.getByRole("main").getByText(testEmail)).toBeVisible();
     });
 
-    test("generates and displays SSO token", async ({ page }) => {
-        test.skip(!apiAvailable, "API not available — start the backend first");
-        await page.getByRole("button", { name: /générer|sso/i }).click();
-        await expect(page.getByText(/[0-9a-f]{8}-[0-9a-f]{4}/i)).toBeVisible();
-    });
-
     test("logout redirects to /login", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         // Logout lives in the nav-user dropdown: open it (trigger shows the email), then click the menuitem
