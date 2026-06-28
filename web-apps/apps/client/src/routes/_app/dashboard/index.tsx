@@ -156,7 +156,11 @@ function DashboardPage() {
                 transition={{ type: "spring", stiffness: 240, damping: 26 }}
             >
                 <PageHeader
-                    title={t("pages.dashboard.welcome")}
+                    title={
+                        user.firstName
+                            ? `${t("pages.dashboard.welcome")} ${user.firstName}`
+                            : t("pages.dashboard.welcome")
+                    }
                     description={user.email}
                     actions={<Badge variant="secondary">{roleLabel}</Badge>}
                 />

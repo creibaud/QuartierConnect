@@ -31,6 +31,7 @@ export default {
         validation: {
             invalidEmail: "Invalid email",
             passwordRequired: "Password required",
+            required: "Required field",
             passwordMin: "8 characters minimum",
             passwordMismatch: "Passwords do not match",
             totpLength: "The code must contain 6 digits",
@@ -161,6 +162,8 @@ export default {
             title: "Create an account",
             subtitle: "Join QuartierConnect",
             confirmPassword: "Confirm password",
+            firstName: "First name",
+            lastName: "Last name",
             createMyAccount: "Create my account",
             alreadyRegistered: "Already registered?",
             accountCreated: "Account created successfully!",
@@ -446,6 +449,7 @@ export default {
             totpForLabel: "TOTP code for",
             invalidEmail: "Invalid email",
             passwordRequired: "Password required",
+            required: "Required field",
             totpLength: "The code must contain 6 digits",
         },
         sso: {

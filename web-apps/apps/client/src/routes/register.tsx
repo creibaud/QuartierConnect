@@ -29,6 +29,8 @@ function RegisterPage() {
 
     const registerSchema = z
         .object({
+            firstName: z.string().min(1, t("auth.validation.required")),
+            lastName: z.string().min(1, t("auth.validation.required")),
             email: z.string().email(t("auth.validation.invalidEmail")),
             password: z.string().min(8, t("auth.validation.passwordMin")),
             confirmPassword: z.string(),
@@ -50,13 +52,21 @@ function RegisterPage() {
     const [serverError, setServerError] = useState<string | null>(null);
 
     const registerForm = useAppForm({
-        defaultValues: { email: "", password: "", confirmPassword: "" },
+        defaultValues: {
+            firstName: "",
+            lastName: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+        },
         validators: { onSubmit: registerSchema },
         onSubmit: async ({ value }) => {
             try {
                 const data = await apiPost<RegisterResponse>("/auth/register", {
                     email: value.email,
                     password: value.password,
+                    firstName: value.firstName,
+                    lastName: value.lastName,
                 });
                 setOtpauthUrl(data.otpauthUrl);
                 setLoginCredentials({
@@ -118,13 +128,33 @@ function RegisterPage() {
                             }}
                             className="space-y-4"
                         >
+                            <div className="grid grid-cols-2 gap-3">
+                                <registerForm.AppField name="firstName">
+                                    {(field) => (
+                                        <field.TextField
+                                            label={t(
+                                                "pages.register.firstName",
+                                            )}
+                                            placeholder="Alice"
+                                            autoFocus
+                                        />
+                                    )}
+                                </registerForm.AppField>
+                                <registerForm.AppField name="lastName">
+                                    {(field) => (
+                                        <field.TextField
+                                            label={t("pages.register.lastName")}
+                                            placeholder="Martin"
+                                        />
+                                    )}
+                                </registerForm.AppField>
+                            </div>
                             <registerForm.AppField name="email">
                                 {(field) => (
                                     <field.TextField
                                         label={t("auth.email")}
                                         type="email"
                                         placeholder="alice@demo.fr"
-                                        autoFocus
                                     />
                                 )}
                             </registerForm.AppField>

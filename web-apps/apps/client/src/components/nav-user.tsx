@@ -42,6 +42,14 @@ export function NavUser() {
         banned: t("roles.banned"),
     };
     const roleLabel = roleLabels[user.role] ?? user.role;
+    const fullName = [user.firstName, user.lastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+    const displayName = fullName || user.email;
+    const initials = fullName
+        ? `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase()
+        : initialsFromEmail(user.email);
 
     async function handleLogout() {
         await apiPost("/auth/logout", {}).catch(() => undefined);
@@ -60,15 +68,15 @@ export function NavUser() {
                         >
                             <Avatar className="size-8 rounded-lg">
                                 <AvatarFallback className="rounded-lg">
-                                    {initialsFromEmail(user.email)}
+                                    {initials}
                                 </AvatarFallback>
                             </Avatar>
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-medium">
-                                    {user.email}
+                                    {displayName}
                                 </span>
                                 <span className="text-muted-foreground truncate text-xs">
-                                    {roleLabel}
+                                    {fullName ? user.email : roleLabel}
                                 </span>
                             </div>
                             <HugeiconsIcon
@@ -87,7 +95,7 @@ export function NavUser() {
                             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                                 <Avatar className="size-8 rounded-lg">
                                     <AvatarFallback className="rounded-lg">
-                                        {initialsFromEmail(user.email)}
+                                        {initials}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="grid flex-1 text-left text-sm leading-tight">

@@ -24,6 +24,8 @@ export const users = pgTable("users", {
     passwordHash: varchar("password_hash", { length: 255 }).notNull(),
     totpSecret: varchar("totp_secret", { length: 255 }).notNull(),
     role: varchar("role", { length: 50 }).notNull().default("resident"),
+    firstName: varchar("first_name", { length: 100 }),
+    lastName: varchar("last_name", { length: 100 }),
     refreshTokenHash: text("refresh_token_hash"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),

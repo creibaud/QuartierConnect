@@ -9,9 +9,9 @@ const PG_USER = process.env.POSTGRES_USER ?? "qc";
 const PG_DB = process.env.POSTGRES_DB ?? "quartierconnect";
 
 const ACCOUNTS = [
-  { email: "alice@demo.fr", role: "resident" },
-  { email: "bob@demo.fr", role: "moderator" },
-  { email: "admin@demo.fr", role: "admin" },
+  { email: "alice@demo.fr", role: "resident", firstName: "Alice", lastName: "Martin" },
+  { email: "bob@demo.fr", role: "moderator", firstName: "Bob", lastName: "Dupont" },
+  { email: "admin@demo.fr", role: "admin", firstName: "Admin", lastName: "QuartierConnect" },
 ];
 
 async function post(path: string, body: unknown): Promise<Response> {
@@ -82,12 +82,19 @@ function promoteRole(email: string, role: string): void {
   }
 }
 
-async function seedAccount(email: string, role: string): Promise<void> {
+async function seedAccount(
+  email: string,
+  role: string,
+  firstName: string,
+  lastName: string,
+): Promise<void> {
   console.log(`Seeding ${email}…`);
 
   const registerRes = await post("/auth/register", {
     email,
     password: DEMO_PASSWORD,
+    firstName,
+    lastName,
   });
 
   if (registerRes.status === 409) {
@@ -221,8 +228,8 @@ async function main(): Promise<void> {
   console.log(`API: ${BASE_URL}`);
   console.log("");
 
-  for (const { email, role } of ACCOUNTS) {
-    await seedAccount(email, role);
+  for (const { email, role, firstName, lastName } of ACCOUNTS) {
+    await seedAccount(email, role, firstName, lastName);
   }
 
   console.log("\nSeeding Paris neighborhoods…");

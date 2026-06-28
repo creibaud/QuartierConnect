@@ -31,6 +31,7 @@ export default {
         validation: {
             invalidEmail: "Email invalide",
             passwordRequired: "Mot de passe requis",
+            required: "Champ requis",
             passwordMin: "8 caractères minimum",
             passwordMismatch: "Les mots de passe ne correspondent pas",
             totpLength: "Le code doit contenir 6 chiffres",
@@ -161,6 +162,8 @@ export default {
             title: "Créer un compte",
             subtitle: "Rejoignez QuartierConnect",
             confirmPassword: "Confirmer le mot de passe",
+            firstName: "Prénom",
+            lastName: "Nom",
             createMyAccount: "Créer mon compte",
             alreadyRegistered: "Déjà inscrit ?",
             accountCreated: "Compte créé avec succès !",
@@ -448,6 +451,7 @@ export default {
             totpForLabel: "Code TOTP pour",
             invalidEmail: "Email invalide",
             passwordRequired: "Mot de passe requis",
+            required: "Champ requis",
             totpLength: "Le code doit contenir 6 chiffres",
         },
         sso: {
