@@ -5,6 +5,14 @@ on:
     - cron: "0 3 * * *"
   push:
     tags: ["v*.*.*"]
+  pull_request:
+    branches: [main, master, develop]
+    paths:
+      - "web-apps/**"
+      - "api/**"
+      - "scripts/**"
+      - "docker/**"
+      - ".github/workflows/e2e.yml"
   workflow_dispatch:
     inputs:
       branch:
@@ -101,14 +109,24 @@ jobs:
         run: |
           cd api && pnpm install --frozen-lockfile
           API_URL=http://localhost/api PG_CONTAINER=docker-postgres-1 \
-            pnpm exec ts-node ../scripts/seed-demo.ts || echo "Seed failed"
+            pnpm exec tsx ../scripts/seed-demo.ts || echo "Seed failed"
 
       - name: Run Playwright
         working-directory: web-apps
         env:
           PLAYWRIGHT_BASE_URL_CLIENT: http://localhost
           PLAYWRIGHT_BASE_URL_ADMIN: http://localhost:3001/admin/
-        run: pnpm run test:e2e
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "PR smoke subset: client login + points + admin services CRUD"
+            pnpm exec playwright test \
+              e2e/client/login.spec.ts \
+              e2e/client/points.spec.ts \
+              e2e/admin/services.spec.ts
+          else
+            echo "Full E2E suite"
+            pnpm run test:e2e
+          fi
 
       - name: API E2E (Supertest)
         if: always()
@@ -121,7 +139,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-${{ github.run_id }}
-          path: web-apps/playwright-report/
+          path: |
+            web-apps/playwright-report/
+            web-apps/test-results/
           retention-days: 14
 
       - name: Dump logs en cas d'échec

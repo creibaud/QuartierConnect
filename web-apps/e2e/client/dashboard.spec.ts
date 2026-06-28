@@ -58,7 +58,7 @@ test.describe("Client — Dashboard", () => {
         // Logout lives in the nav-user dropdown: open it (trigger shows the email), then click the menuitem
         await page.getByRole("button").filter({ hasText: testEmail }).click();
         await page
-            .getByRole("menuitem", { name: /déconnexion|logout/i })
+            .getByRole("menuitem", { name: /déconnexion|déconnecter|logout/i })
             .click();
         await expect(page).toHaveURL(/\/login/);
     });
