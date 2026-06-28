@@ -1,6 +1,4 @@
 import * as React from "react";
-import { DashboardSquare01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import {
@@ -14,6 +12,7 @@ import {
     SidebarRail,
 } from "@workspace/ui/components/sidebar";
 
+import { BrandLogo } from "@/components/brand-logo";
 import { clientNavItems } from "@/components/nav-items";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
@@ -28,12 +27,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link to="/dashboard">
-                                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                                    <HugeiconsIcon
-                                        icon={DashboardSquare01Icon}
-                                        className="size-4"
-                                    />
-                                </div>
+                                <BrandLogo className="text-sidebar-primary size-8 shrink-0" />
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-semibold">
                                         QuartierConnect
