@@ -251,6 +251,19 @@ export default {
             neighborhoodServices: "Services du quartier",
             noServices: "Aucun service disponible",
             quickActions: "Actions rapides",
+            moderation: {
+                title: "Espace modération",
+                openIncidents: "Incidents ouverts",
+                pendingVotes: "Votes en attente",
+                noIncidents: "Aucun incident ouvert",
+                noPendingVotes: "Aucun vote en attente",
+            },
+            kpi: {
+                openIncidents: "Incidents ouverts",
+                openVotes: "Votes en cours",
+                upcomingEvents: "Événements à venir",
+                services: "Services",
+            },
         },
         points: {
             title: "Points",
