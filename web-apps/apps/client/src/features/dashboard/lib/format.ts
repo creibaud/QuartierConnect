@@ -25,3 +25,15 @@ export function resolveCounterparty(
         : (tx.recipientName ?? tx.recipientEmail);
     return { received, name: name ?? "—" };
 }
+
+export function formatEventDay(date: string | number | Date, locale?: string): string {
+    return new Date(date).toLocaleDateString(locale, { day: "numeric" });
+}
+
+export function formatEventMonth(date: string | number | Date, locale?: string): string {
+    return new Date(date).toLocaleDateString(locale, { month: "short" }).replace(".", "");
+}
+
+export function formatDeadline(date: string | number | Date, locale?: string): string {
+    return new Date(date).toLocaleDateString(locale, { day: "numeric", month: "short" });
+}
