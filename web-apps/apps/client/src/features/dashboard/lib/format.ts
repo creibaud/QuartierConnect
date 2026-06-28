@@ -1,8 +1,8 @@
 export interface PointsTransactionLike {
     id: string;
     amount: number;
-    recipientEmail?: string;
-    senderEmail?: string;
+    recipientEmail?: string | null;
+    senderEmail?: string | null;
     recipientName?: string | null;
     senderName?: string | null;
 }

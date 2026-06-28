@@ -9,7 +9,7 @@ export function DashboardHeader({
     roleLabel,
     reduce,
 }: {
-    firstName?: string;
+    firstName?: string | null;
     email: string;
     roleLabel: string;
     reduce: boolean | null;
