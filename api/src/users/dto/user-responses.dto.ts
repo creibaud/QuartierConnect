@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsString } from "class-validator";
+import { IsString, MinLength } from "class-validator";
 import { IncidentDto } from "../../incidents/dto/incident-response.dto";
 
 export class UserPublicDto {
@@ -93,4 +93,15 @@ export class DeleteAccountBodyDto {
     })
     @IsString()
     totpCode: string;
+}
+
+export class ChangePasswordDto {
+    @ApiProperty({ example: "Demo1234!" })
+    @IsString()
+    currentPassword: string;
+
+    @ApiProperty({ example: "NewDemo1234!", minLength: 8 })
+    @IsString()
+    @MinLength(8)
+    newPassword: string;
 }
