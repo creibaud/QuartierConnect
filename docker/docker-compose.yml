@@ -13,6 +13,8 @@ services:
       POSTGRES_URL: postgresql://${POSTGRES_USER:-qc}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-quartierconnect}
       CORS_ORIGINS: http://localhost,http://localhost:3000,http://localhost:3001
       LOGIN_RATE_LIMIT: "100"
+      PYTHON_BIN: python3
+      DSL_PATH: /app/dsl
     depends_on:
       mongo:
         condition: service_healthy

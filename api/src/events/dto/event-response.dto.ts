@@ -4,11 +4,11 @@ export class EventDto {
     @ApiProperty({ example: "664f1a2b3c4d5e6f7a8b9c0e" })
     _id: string;
 
-    @ApiProperty({ example: "Vide-grenier du quartier" })
+    @ApiProperty({ example: "Neighborhood garage sale" })
     title: string;
 
     @ApiProperty({
-        example: "Grand vide-grenier annuel ouvert à tous les habitants.",
+        example: "Large annual garage sale open to all residents.",
     })
     description: string;
 
@@ -30,11 +30,11 @@ export class EventDto {
     @ApiProperty({
         type: [String],
         example: ["uuid-1", "uuid-2"],
-        description: "UUIDs des utilisateurs ayant marqué leur intérêt",
+        description: "UUIDs of users who have marked their interest",
     })
     interestedUserIds: string[];
 
-    @ApiPropertyOptional({ example: "Place du marché", nullable: true })
+    @ApiPropertyOptional({ example: "Market square", nullable: true })
     address?: string | null;
 
     @ApiPropertyOptional({
@@ -53,7 +53,7 @@ export class EventDto {
 export class EventInterestResponseDto {
     @ApiProperty({
         example: 3,
-        description: "Nombre total de personnes intéressées",
+        description: "Total number of interested people",
     })
     interested: number;
 }

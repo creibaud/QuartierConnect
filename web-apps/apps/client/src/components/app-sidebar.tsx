@@ -1,7 +1,7 @@
 import * as React from "react";
-import { DashboardSquare01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import { getCurrentUser } from "@workspace/shared/lib/auth";
 import {
     Sidebar,
     SidebarContent,
@@ -13,11 +13,22 @@ import {
     SidebarRail,
 } from "@workspace/ui/components/sidebar";
 
+import { BrandLogo } from "@/components/brand-logo";
 import { clientNavItems } from "@/components/nav-items";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    const { t } = useTranslation();
+    const role = getCurrentUser()?.role ?? "resident";
+    const navItems = clientNavItems.filter(
+        (item) => !item.roles || item.roles.includes(role),
+    );
+    const spaceLabel =
+        role === "resident"
+            ? t("pages.sidebar.residentSpace")
+            : t(`roles.${role}`);
+
     return (
         <Sidebar collapsible="icon" {...props}>
             <SidebarHeader>
@@ -25,18 +36,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link to="/dashboard">
-                                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                                    <HugeiconsIcon
-                                        icon={DashboardSquare01Icon}
-                                        className="size-4"
-                                    />
+                                <div className="bg-primary text-primary-foreground flex size-9 shrink-0 items-center justify-center rounded-lg">
+                                    <BrandLogo className="size-6" />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-semibold">
                                         QuartierConnect
                                     </span>
                                     <span className="truncate text-xs">
-                                        Espace résident
+                                        {spaceLabel}
                                     </span>
                                 </div>
                             </Link>
@@ -45,7 +53,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </SidebarMenu>
             </SidebarHeader>
             <SidebarContent>
-                <NavMain items={clientNavItems} />
+                <NavMain items={navItems} />
             </SidebarContent>
             <SidebarFooter>
                 <NavUser />

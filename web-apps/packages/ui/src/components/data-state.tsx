@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Alert01Icon, Refresh01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription, AlertTitle } from "@workspace/ui/components/alert";
 import { Button } from "@workspace/ui/components/button";
 
@@ -15,10 +16,10 @@ export interface DataStateProps {
     children: React.ReactNode;
 }
 
-function errorMessage(error: unknown): string {
+function errorMessage(error: unknown, fallback: string): string {
     if (error instanceof Error) return error.message;
     if (typeof error === "string") return error;
-    return "Une erreur est survenue. Réessayez.";
+    return fallback;
 }
 
 export function DataState({
@@ -28,9 +29,10 @@ export function DataState({
     skeleton,
     empty,
     onRetry,
-    errorTitle = "Impossible de charger les données",
+    errorTitle,
     children,
 }: DataStateProps) {
+    const { t } = useTranslation();
     if (loading) {
         return <>{skeleton}</>;
     }
@@ -39,8 +41,8 @@ export function DataState({
         return (
             <Alert variant="destructive">
                 <HugeiconsIcon icon={Alert01Icon} />
-                <AlertTitle>{errorTitle}</AlertTitle>
-                <AlertDescription>{errorMessage(error)}</AlertDescription>
+                <AlertTitle>{errorTitle ?? t("common.loadError")}</AlertTitle>
+                <AlertDescription>{errorMessage(error, t("common.error"))}</AlertDescription>
                 {onRetry ? (
                     <Button
                         variant="outline"
@@ -49,7 +51,7 @@ export function DataState({
                         onClick={onRetry}
                     >
                         <HugeiconsIcon icon={Refresh01Icon} />
-                        Réessayer
+                        {t("common.retry")}
                     </Button>
                 ) : null}
             </Alert>

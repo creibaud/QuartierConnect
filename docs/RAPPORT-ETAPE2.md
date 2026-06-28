@@ -1,233 +1,233 @@
-# Rapport de Projet — Étape 2
+# Project Report — Stage 2
 ## QuartierConnect — *Connected Neighbours*
 
 ---
 
 |                    |                                                                         |
 | ------------------ | ----------------------------------------------------------------------- |
-| **Groupe**         | 1 — 3AL2                                                                |
-| **Membres**        | Claudio REIBAUD · Andras SCHULLER · Mouhamadou N'DIAYE                  |
-| **Enseignant**     | Frédéric SANANES                                                        |
-| **Date de remise** | 8 avril 2026                                                            |
-| **Avancement**     | Étape 2 — 30 % réalisé (légère avance sur certains points de l'Étape 3) |
+| **Group**          | 1 — 3AL2                                                                |
+| **Members**        | Claudio REIBAUD · Andras SCHULLER · Mouhamadou N'DIAYE                  |
+| **Instructor**     | Frédéric SANANES                                                        |
+| **Due date**       | 8 April 2026                                                            |
+| **Progress**       | Stage 2 — 30% complete (slightly ahead on some Stage 3 items)          |
 
 ---
 
-## Table des matières
+## Table of contents
 
-1. [Descriptif fonctionnel](#1-descriptif-fonctionnel)
-2. [Cas d'utilisation](#2-cas-dutilisation)
-3. [Modèle Conceptuel de Données](#3-modèle-conceptuel-de-données)
-4. [Diagramme de classes — Java Desktop](#4-diagramme-de-classes--java-desktop)
-5. [Architecture logicielle](#5-architecture-logicielle)
-6. [Algorithmes complexes](#6-algorithmes-complexes)
-7. [APIs et frameworks utilisés](#7-apis-et-frameworks-utilisés)
+1. [Functional description](#1-functional-description)
+2. [Use cases](#2-use-cases)
+3. [Conceptual Data Model](#3-conceptual-data-model)
+4. [Class diagram — Java Desktop](#4-class-diagram--java-desktop)
+5. [Software architecture](#5-software-architecture)
+6. [Complex algorithms](#6-complex-algorithms)
+7. [APIs and frameworks used](#7-apis-and-frameworks-used)
 8. [Tests](#8-tests)
-9. [Démonstration Java Desktop](#9-démonstration-java-desktop)
+9. [Java Desktop demonstration](#9-java-desktop-demonstration)
 
 ---
 
-## 1. Descriptif fonctionnel
+## 1. Functional description
 
-### 1.1 Présentation du projet
+### 1.1 Project overview
 
-QuartierConnect est une plateforme collaborative destinée aux habitants d'un quartier résidentiel. Elle permet de gérer des services entre voisins, de signaler des incidents, de participer à des événements communautaires et d'échanger des points représentant des créances de service.
+QuartierConnect is a collaborative platform for the residents of a residential neighbourhood. It allows neighbours to manage services among themselves, report incidents, take part in community events, and exchange points that represent service credits.
 
-La plateforme est accessible sur trois surfaces :
+The platform is available on three surfaces:
 
-- **React Client** (port 3000) — interface habitant, accessible depuis un navigateur ;
-- **React Admin** (port 3001) — back-office administrateur ;
-- **Java Desktop** — application lourde JavaFX, fonctionnant hors-ligne via SQLite.
+- **React Client** (port 3000) — resident interface, accessible from a browser;
+- **React Admin** (port 3001) — administrator back-office;
+- **Java Desktop** — heavyweight JavaFX application, working offline via SQLite.
 
-### 1.2 Profils utilisateurs
+### 1.2 User profiles
 
-| Profil                   | Surface                                   | Droits                                                                |
+| Profile                  | Surface                                   | Rights                                                                |
 | ------------------------ | ----------------------------------------- | --------------------------------------------------------------------- |
-| Habitant (`resident`)    | React Client                              | Créer incidents, consulter services et événements, envoyer des points |
-| Modérateur (`moderator`) | React Client                              | Droits habitant + changement de statut et suppression d'incidents     |
-| Administrateur (`admin`) | React Client + React Admin + Java Desktop | Gestion complète (utilisateurs, quartiers, modération, stats)         |
-| Banni (`banned`)         | —                                         | Accès révoqué ; tous les tokens en cours sont invalidés               |
+| Resident (`resident`)    | React Client                              | Create incidents, view services and events, send points              |
+| Moderator (`moderator`)  | React Client                              | Resident rights + change incident status and delete incidents        |
+| Administrator (`admin`)  | React Client + React Admin + Java Desktop | Full management (users, neighbourhoods, moderation, stats)           |
+| Banned (`banned`)        | —                                         | Access revoked; all current tokens are invalidated                   |
 
-### 1.3 État d'avancement
+### 1.3 Progress status
 
-#### Cible Étape 2 — ✅ Complète
+#### Stage 2 target — ✅ Complete
 
-| Module                                                                           | Statut    |
+| Module                                                                           | Status    |
 | -------------------------------------------------------------------------------- | --------- |
-| Authentification (register, login 2FA, refresh, logout)                          | ✅ Terminé |
-| SSO PKCE (web → Java Desktop)                                                    | ✅ Terminé |
-| Interface React Client — pages login, register, dashboard                        | ✅ Terminé |
-| Interface React Admin — page login + dashboard placeholder                       | ✅ Terminé |
-| Application Java Desktop (SSO, sync, SQLite)                                     | ✅ Terminé |
-| Infrastructure Docker 7 conteneurs (Caddy, API, Mongo, PG, Neo4j, Client, Admin) | ✅ Terminé |
+| Authentication (register, login 2FA, refresh, logout)                            | ✅ Done    |
+| SSO PKCE (web → Java Desktop)                                                    | ✅ Done    |
+| React Client interface — login, register, dashboard pages                        | ✅ Done    |
+| React Admin interface — login page + dashboard placeholder                       | ✅ Done    |
+| Java Desktop application (SSO, sync, SQLite)                                     | ✅ Done    |
+| Docker infrastructure, 7 containers (Caddy, API, Mongo, PG, Neo4j, Client, Admin) | ✅ Done   |
 
-#### Avance partielle sur l'Étape 3 (backend uniquement, sans interface)
+#### Partial head start on Stage 3 (backend only, no interface)
 
-| Module                                                   | Statut                                     |
+| Module                                                   | Status                                     |
 | -------------------------------------------------------- | ------------------------------------------ |
-| CRUD Quartiers (API)                                     | ✅ Terminé — *pas d'interface React Client* |
-| CRUD Services (API)                                      | ✅ Terminé — *pas d'interface React Client* |
-| CRUD Événements (API)                                    | ✅ Terminé — *pas d'interface React Client* |
-| CRUD Incidents + workflow de statuts + soft-delete (API) | ✅ Terminé — *pas d'interface React Client* |
-| Synchronisation offline incidents (Java → API)           | ✅ Terminé                                  |
-| Transactions de points ACID PostgreSQL (API)             | ✅ Terminé — *pas d'interface React Client* |
-| Gestion utilisateurs (API)                               | ✅ Terminé — *pas d'interface React Admin*  |
+| Neighbourhoods CRUD (API)                                | ✅ Done — *no React Client interface*       |
+| Services CRUD (API)                                      | ✅ Done — *no React Client interface*       |
+| Events CRUD (API)                                        | ✅ Done — *no React Client interface*       |
+| Incidents CRUD + status workflow + soft-delete (API)     | ✅ Done — *no React Client interface*       |
+| Offline incident synchronization (Java → API)           | ✅ Done                                     |
+| ACID points transactions in PostgreSQL (API)            | ✅ Done — *no React Client interface*       |
+| User management (API)                                    | ✅ Done — *no React Admin interface*        |
 
-#### Non commencé — Étape 3/4
+#### Not started — Stage 3/4
 
-| Module                                                       | Cible   |
+| Module                                                       | Target  |
 | ------------------------------------------------------------ | ------- |
-| Pages React Client (incidents, services, événements, points) | Étape 3 |
-| React Admin complet (modération, stats réelles)              | Étape 3 |
-| Recommandations Neo4j + DSL Python                           | Étape 4 |
+| React Client pages (incidents, services, events, points)     | Stage 3 |
+| Complete React Admin (moderation, real stats)                | Stage 3 |
+| Neo4j recommendations + Python DSL                           | Stage 4 |
 
 ---
 
-## 2. Cas d'utilisation
+## 2. Use cases
 
-### 2.1 Diagramme général
+### 2.1 General diagram
 
 ```mermaid
 graph TD
-    Visiteur([Visiteur])
-    Habitant([Habitant])
-    Moderateur([Modérateur])
-    Admin([Administrateur])
+    Visiteur([Visitor])
+    Habitant([Resident])
+    Moderateur([Moderator])
+    Admin([Administrator])
 
-    Visiteur --> UC_REG[S'inscrire]
-    Visiteur --> UC_LOG[Se connecter]
+    Visiteur --> UC_REG[Register]
+    Visiteur --> UC_LOG[Log in]
 
-    Habitant --> UC_INC[Créer un incident]
-    Habitant --> UC_PTS[Envoyer des points]
-    Habitant --> UC_SVC[Consulter les services]
-    Habitant --> UC_EVT[Consulter les événements]
-    Habitant --> UC_DASH[Accéder au dashboard]
+    Habitant --> UC_INC[Create an incident]
+    Habitant --> UC_PTS[Send points]
+    Habitant --> UC_SVC[View services]
+    Habitant --> UC_EVT[View events]
+    Habitant --> UC_DASH[Access the dashboard]
 
-    Moderateur --> UC_STATUS[Changer le statut d'un incident]
-    Moderateur --> UC_DEL[Supprimer un incident]
+    Moderateur --> UC_STATUS[Change an incident's status]
+    Moderateur --> UC_DEL[Delete an incident]
 
-    Admin --> UC_USERS[Gérer les utilisateurs]
-    Admin --> UC_ROLES[Changer les rôles]
-    Admin --> UC_STATS[Consulter les statistiques]
-    Admin --> UC_JAVA[Utiliser l'application desktop]
+    Admin --> UC_USERS[Manage users]
+    Admin --> UC_ROLES[Change roles]
+    Admin --> UC_STATS[View statistics]
+    Admin --> UC_JAVA[Use the desktop application]
 
-    UC_LOG --> UC_TOTP[Vérifier le code TOTP]
-    UC_JAVA --> UC_SSO[Authentification SSO PKCE]
+    UC_LOG --> UC_TOTP[Verify the TOTP code]
+    UC_JAVA --> UC_SSO[SSO PKCE authentication]
 
-    Moderateur -.->|hérite| Habitant
-    Admin -.->|hérite| Moderateur
+    Moderateur -.->|inherits| Habitant
+    Admin -.->|inherits| Moderateur
 ```
 
-### 2.2 UC-01 — Inscription et activation TOTP
+### 2.2 UC-01 — Registration and TOTP activation
 
 ```mermaid
 sequenceDiagram
-    actor V as Visiteur
+    actor V as Visitor
     participant C as React Client
-    participant A as API NestJS
+    participant A as NestJS API
     participant DB as PostgreSQL
 
-    V->>C: Remplit email + mot de passe
+    V->>C: Enters email + password
     C->>A: POST /auth/register { email, password }
     A->>A: argon2.hash(password)
     A->>A: speakeasy.generateSecret(email)
     A->>DB: INSERT users { email, passwordHash, totpSecret }
     DB-->>A: OK
     A-->>C: { otpauthUrl }
-    C-->>V: Affiche le QR code TOTP
+    C-->>V: Displays the TOTP QR code
 
-    V->>V: Scanne le QR avec une app TOTP
-    V->>C: Saisit le code à 6 chiffres
+    V->>V: Scans the QR with a TOTP app
+    V->>C: Enters the 6-digit code
     C->>A: POST /auth/verify-totp { totpCode }
     A->>A: speakeasy.verify(totpCode, secret, window=1)
     A-->>C: 200 OK
-    C-->>V: Redirection vers /dashboard
+    C-->>V: Redirect to /dashboard
 ```
 
-### 2.3 UC-02 — Connexion en deux étapes
+### 2.3 UC-02 — Two-step login
 
 ```mermaid
 sequenceDiagram
-    actor U as Utilisateur
+    actor U as User
     participant C as React Client
-    participant A as API NestJS
+    participant A as NestJS API
     participant DB as PostgreSQL
 
-    U->>C: email + mot de passe + code TOTP
+    U->>C: email + password + TOTP code
     C->>A: POST /auth/login { email, password, totpCode }
 
     A->>DB: SELECT * FROM users WHERE email = ?
-    DB-->>A: utilisateur
+    DB-->>A: user
 
-    alt Compte banni
+    alt Banned account
         A-->>C: 403 ACCOUNT_BANNED
     end
 
     A->>A: argon2.verify(password, passwordHash)
 
-    alt Mot de passe incorrect
+    alt Incorrect password
         A-->>C: 401 INVALID_PASSWORD
     end
 
     A->>A: speakeasy.verify(totpCode, totpSecret)
 
-    alt Code TOTP invalide
+    alt Invalid TOTP code
         A-->>C: 401 TOTP_INVALID
     end
 
     A->>A: generatePair(user) — JWT HS256
     A->>DB: UPDATE users SET refresh_token_hash = argon2(refreshToken)
-    A-->>C: { accessToken (15min), refreshToken (7j) }
-    C-->>U: Redirection vers /dashboard
+    A-->>C: { accessToken (15min), refreshToken (7d) }
+    C-->>U: Redirect to /dashboard
 ```
 
-### 2.4 UC-03 — SSO PKCE (Java Desktop → navigateur → API)
+### 2.4 UC-03 — SSO PKCE (Java Desktop → browser → API)
 
 ```mermaid
 sequenceDiagram
     actor Admin
     participant D as Java Desktop
-    participant B as Navigateur
+    participant B as Browser
     participant W as React /sso/authorize
-    participant A as API NestJS
+    participant A as NestJS API
     participant DB as MongoDB
 
-    D->>D: Génère UUID state
-    D->>D: Démarre HttpServer local (port OS)
-    D->>B: Ouvre /sso/authorize?state=UUID&redirect=localhost:PORT/cb
+    D->>D: Generates a UUID state
+    D->>D: Starts a local HttpServer (OS port)
+    D->>B: Opens /sso/authorize?state=UUID&redirect=localhost:PORT/cb
 
-    B->>W: Charge la page
+    B->>W: Loads the page
 
-    alt Admin déjà connecté
+    alt Admin already logged in
         W->>W: Auto-approve (useEffect)
         W->>A: POST /auth/sso/generate { surface, state }
         A->>DB: INSERT ssoTokens { token: UUID, expiresAt: now+5min }
         A-->>W: { ssoToken }
         W-->>B: Redirect → localhost:PORT/cb?token=T&state=UUID
-    else Non connecté
-        W-->>Admin: Formulaire login inline
-        Admin->>W: email + mot de passe + TOTP
-        alt Rôle admin
+    else Not logged in
+        W-->>Admin: Inline login form
+        Admin->>W: email + password + TOTP
+        alt Admin role
             W->>A: POST /auth/sso/generate
             A-->>W: { ssoToken }
             W-->>B: Redirect → localhost:PORT/cb?token=T&state=UUID
-        else Non admin
-            W-->>Admin: Alerte "réservé aux administrateurs"
+        else Not admin
+            W-->>Admin: "administrators only" alert
         end
     end
 
     B->>D: GET /cb?token=T&state=UUID
-    D->>D: Vérifie state reçu == state généré (CSRF guard)
+    D->>D: Checks received state == generated state (CSRF guard)
     D->>A: POST /auth/sso/exchange { ssoToken }
     A->>DB: findOneAndUpdate({ token, usedAt: null, expiresAt > now }, { usedAt: now })
-    Note over A,DB: Atomique — garantit usage unique
+    Note over A,DB: Atomic — guarantees single use
     DB-->>A: { userId }
     A->>A: generatePair(user)
-    A-->>D: { accessToken (15min), refreshToken (7j) }
-    Note over D: Tokens en mémoire uniquement
+    A-->>D: { accessToken (15min), refreshToken (7d) }
+    Note over D: Tokens in memory only
 ```
 
-### 2.5 UC-04 — Cycle de vie d'un incident
+### 2.5 UC-04 — Incident lifecycle
 
 ```mermaid
 stateDiagram-v2
@@ -235,48 +235,48 @@ stateDiagram-v2
     open --> in_progress : PATCH status
     in_progress --> resolved : PATCH status
     resolved --> [*]
-    open --> supprimé : DELETE soft
-    in_progress --> supprimé : DELETE soft
-    supprimé --> [*]
+    open --> deleted : DELETE soft
+    in_progress --> deleted : DELETE soft
+    deleted --> [*]
 
     note right of open
         status = open
-        is_dirty = 1 si créé hors-ligne
+        is_dirty = 1 if created offline
     end note
     note right of in_progress
         Anti-race: WHERE status = current
     end note
-    note right of supprimé
+    note right of deleted
         deleted_at = now()
-        filtré de tous les SELECT
+        filtered out of all SELECTs
     end note
 ```
 
-### 2.6 UC-05 — Synchronisation offline (Java Desktop)
+### 2.6 UC-05 — Offline synchronization (Java Desktop)
 
 ```mermaid
 sequenceDiagram
-    actor U as Utilisateur Desktop
+    actor U as Desktop User
     participant J as Java App
     participant S as SQLite
-    participant API as API NestJS
+    participant API as NestJS API
     participant PG as PostgreSQL
 
-    U->>J: Crée un incident hors-ligne
+    U->>J: Creates an incident offline
     J->>S: INSERT incidents { ..., is_dirty=1 }
     S-->>J: OK
 
-    loop Toutes les 30 secondes
+    loop Every 30 seconds
         J->>API: GET /health
-        alt Hors-ligne
+        alt Offline
             API--xJ: timeout
-            J->>J: indicateur = "Hors ligne" (rouge)
-        else En ligne
-            J->>J: indicateur = "En ligne" (vert)
+            J->>J: indicator = "Offline" (red)
+        else Online
+            J->>J: indicator = "Online" (green)
             J->>S: SELECT * FROM incidents WHERE is_dirty = 1
-            S-->>J: [ liste des incidents dirty ]
+            S-->>J: [ list of dirty incidents ]
             J->>API: POST /incidents/sync { incidents: [...] }
-            Note over API: Filtre createdBy == req.user.sub
+            Note over API: Filters createdBy == req.user.sub
             Note over API: onConflictDoUpdate WHERE created_by = user
             API->>PG: UPSERT incidents
             API-->>J: { upserted: N, skipped: M }
@@ -286,17 +286,17 @@ sequenceDiagram
     end
 ```
 
-### 2.7 UC-06 — Transfert de points
+### 2.7 UC-06 — Points transfer
 
 ```mermaid
 sequenceDiagram
-    actor E as Expéditeur
-    participant A as API NestJS
+    actor E as Sender
+    participant A as NestJS API
     participant PG as PostgreSQL
 
     E->>A: POST /points/transfer { recipientId, amount, note }
 
-    alt Expéditeur == Destinataire
+    alt Sender == Recipient
         A-->>E: 400 SELF_TRANSFER
     end
 
@@ -318,9 +318,9 @@ sequenceDiagram
 
 ---
 
-## 3. Modèle Conceptuel de Données
+## 3. Conceptual Data Model
 
-### 3.1 PostgreSQL — Données relationnelles
+### 3.1 PostgreSQL — Relational data
 
 ```mermaid
 erDiagram
@@ -395,19 +395,19 @@ erDiagram
         TIMESTAMP created_at
     }
 
-    users         ||--o{ neighborhoods      : "crée"
-    users         ||--o{ services           : "crée"
-    users         ||--o{ events             : "crée"
-    users         ||--o{ incidents          : "signale"
-    users         ||--|| points_balances    : "possède"
-    users         ||--o{ points_transactions : "envoie (sender)"
-    users         ||--o{ points_transactions : "reçoit (recipient)"
-    neighborhoods ||--o{ services           : "héberge"
-    neighborhoods ||--o{ events             : "accueille"
-    neighborhoods ||--o{ incidents          : "concerne"
+    users         ||--o{ neighborhoods      : "creates"
+    users         ||--o{ services           : "creates"
+    users         ||--o{ events             : "creates"
+    users         ||--o{ incidents          : "reports"
+    users         ||--|| points_balances    : "owns"
+    users         ||--o{ points_transactions : "sends (sender)"
+    users         ||--o{ points_transactions : "receives (recipient)"
+    neighborhoods ||--o{ services           : "hosts"
+    neighborhoods ||--o{ events             : "holds"
+    neighborhoods ||--o{ incidents          : "concerns"
 ```
 
-### 3.2 MongoDB — Collection SSO Tokens
+### 3.2 MongoDB — SSO Tokens collection
 
 ```mermaid
 erDiagram
@@ -418,13 +418,13 @@ erDiagram
         String    surface   "java-desktop|web-admin"
         String    state     "UUID v4 PKCE, nullable"
         Date      expiresAt "TTL index (expireAfterSeconds=0)"
-        Date      usedAt    "null = disponible, date = consommé"
+        Date      usedAt    "null = available, date = consumed"
     }
 ```
 
-> Le TTL index MongoDB supprime automatiquement le document dès que `expiresAt` est atteint (5 minutes). L'opération `findOneAndUpdate` avec filtre `{ usedAt: null, expiresAt: { $gt: now } }` garantit l'usage unique de façon atomique.
+> The MongoDB TTL index automatically deletes the document as soon as `expiresAt` is reached (5 minutes). The `findOneAndUpdate` operation with the filter `{ usedAt: null, expiresAt: { $gt: now } }` guarantees single use atomically.
 
-### 3.3 SQLite — Application Java Desktop
+### 3.3 SQLite — Java Desktop application
 
 ```mermaid
 erDiagram
@@ -433,7 +433,7 @@ erDiagram
         TEXT    title       "NOT NULL"
         TEXT    description
         TEXT    status      "DEFAULT open"
-        INTEGER is_dirty    "0=synchronisé, 1=à synchroniser"
+        INTEGER is_dirty    "0=synchronized, 1=to synchronize"
         TEXT    created_at  "ISO 8601"
         TEXT    updated_at  "LWW conflict resolution"
     }
@@ -441,11 +441,11 @@ erDiagram
     sync_log {
         INTEGER id        PK
         TEXT    synced_at "ISO 8601"
-        INTEGER success   "1=OK, 0=échec"
+        INTEGER success   "1=OK, 0=failure"
     }
 ```
 
-### 3.4 Neo4j — Graphe social (Étape 4)
+### 3.4 Neo4j — Social graph (Stage 4)
 
 ```mermaid
 graph LR
@@ -464,7 +464,7 @@ graph LR
 
 ---
 
-## 4. Diagramme de classes — Java Desktop
+## 4. Class diagram — Java Desktop
 
 ```mermaid
 classDiagram
@@ -545,13 +545,13 @@ classDiagram
 
 ---
 
-## 5. Architecture logicielle
+## 5. Software architecture
 
-### 5.1 Vue d'ensemble — Infrastructure Docker
+### 5.1 Overview — Docker infrastructure
 
 ```mermaid
 graph TD
-    Browser(["🌐 Navigateur"])
+    Browser(["🌐 Browser"])
     Desktop(["🖥 Java Desktop App"])
 
     Browser --> Caddy["Caddy\n:80 / :443\nReverse proxy + TLS"]
@@ -563,20 +563,20 @@ graph TD
 
     API --> MongoDB[("MongoDB\n:27017\nssoTokens")]
     API --> PostgreSQL[("PostgreSQL\n:5432\nusers · incidents\npoints · services · events")]
-    API --> Neo4j[("Neo4j\n:7474 / :7687\nrecommandations — Étape 4")]
+    API --> Neo4j[("Neo4j\n:7474 / :7687\nrecommendations — Stage 4")]
     Desktop --> SQLite[("SQLite\nlocal\nincidents · sync_log")]
 ```
 
-### 5.2 Justification du choix de chaque base de données
+### 5.2 Rationale for each database choice
 
-| Base           | Rôle                                           | Raison du choix                                                                                                                                                                                                      |
+| Database       | Role                                           | Reason for the choice                                                                                                                                                                                                  |
 | -------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **PostgreSQL** | Données relationnelles, transactions de points | ACID natif. Les transferts de points nécessitent une transaction `BEGIN/COMMIT` avec `SELECT FOR UPDATE` pour éviter les courses concurrentes. La contrainte `CHECK (balance >= -10)` est garantie au niveau moteur. |
-| **MongoDB**    | SSO tokens                                     | TTL index natif pour l'expiration automatique (5 min). `findOneAndUpdate` atomique pour l'usage unique. Prévu pour GridFS (PDF, médias) et GeoJSON (quartiers) aux étapes suivantes.                                 |
-| **Neo4j**      | Recommandations                                | Les recommandations sociales reposent sur un traversal de graphe. En SQL cela exigerait 5 jointures récursives (>500 ms). En Cypher un seul `MATCH` suffit (<5 ms).                                                  |
-| **SQLite**     | Cache offline Java                             | Embarqué dans le JAR, zéro dépendance réseau, miroir léger de PostgreSQL avec le flag `is_dirty` pour la synchronisation.                                                                                            |
+| **PostgreSQL** | Relational data, points transactions           | Native ACID. Points transfers require a `BEGIN/COMMIT` transaction with `SELECT FOR UPDATE` to avoid race conditions. The `CHECK (balance >= -10)` constraint is enforced at the engine level. |
+| **MongoDB**    | SSO tokens                                     | Native TTL index for automatic expiration (5 min). Atomic `findOneAndUpdate` for single use. Planned for GridFS (PDFs, media) and GeoJSON (neighbourhoods) in the upcoming stages.                                 |
+| **Neo4j**      | Recommendations                                | Social recommendations rely on a graph traversal. In SQL this would require 5 recursive joins (>500 ms). In Cypher a single `MATCH` is enough (<5 ms).                                                  |
+| **SQLite**     | Java offline cache                             | Embedded in the JAR, zero network dependency, lightweight mirror of PostgreSQL with the `is_dirty` flag for synchronization.                                                                                            |
 
-### 5.3 Architecture NestJS par modules
+### 5.3 NestJS module architecture
 
 ```mermaid
 graph TD
@@ -598,21 +598,21 @@ graph TD
     ServicesModule --> DrizzleDB
     EventsModule --> DrizzleDB
 
-    JwtGuard["JwtAuthGuard\n(Passport-JWT)"] -.->|protège| AuthModule
-    RolesGuard["RolesGuard\n(@Roles decorator)"] -.->|protège| UsersModule
-    RolesGuard -.->|protège| IncidentsModule
-    Throttler["ThrottlerGuard\n5 req/15min"] -.->|protège| AuthModule
+    JwtGuard["JwtAuthGuard\n(Passport-JWT)"] -.->|protects| AuthModule
+    RolesGuard["RolesGuard\n(@Roles decorator)"] -.->|protects| UsersModule
+    RolesGuard -.->|protects| IncidentsModule
+    Throttler["ThrottlerGuard\n5 req/15min"] -.->|protects| AuthModule
 ```
 
-### 5.4 Structure du monorepo web (Turbo + pnpm)
+### 5.4 Web monorepo structure (Turbo + pnpm)
 
 ```mermaid
 graph TD
     Root["web-apps/\npnpm workspace + Turbo"]
-    Root --> Client["apps/client\nReact 19 — port 3000\nRésidents"]
-    Root --> AdminApp["apps/admin\nReact 19 — port 3001\nAdministrateurs"]
-    Root --> UI["packages/ui\nShadcn/Tailwind v4\nComposants partagés"]
-    Root --> Shared["packages/shared\napi.ts · auth.ts\nLogique partagée"]
+    Root --> Client["apps/client\nReact 19 — port 3000\nResidents"]
+    Root --> AdminApp["apps/admin\nReact 19 — port 3001\nAdministrators"]
+    Root --> UI["packages/ui\nShadcn/Tailwind v4\nShared components"]
+    Root --> Shared["packages/shared\napi.ts · auth.ts\nShared logic"]
 
     Client --> UI
     Client --> Shared
@@ -620,87 +620,87 @@ graph TD
     AdminApp --> Shared
 
     Shared --> APICall["apiPost / apiGet\nBearer + retry 401"]
-    Shared --> TokenMgr["setTokens / getAccessToken\nrefreshTokens silencieux"]
+    Shared --> TokenMgr["setTokens / getAccessToken\nsilent refreshTokens"]
 ```
 
 ---
 
-## 6. Algorithmes complexes
+## 6. Complex algorithms
 
 ### 6.1 TOTP — Time-based One-Time Password (RFC 6238)
 
-**Problème :** valider l'identité sans transmettre un secret réutilisable à chaque connexion.
+**Problem:** verify identity without transmitting a reusable secret on every login.
 
-**Principe :** le serveur et l'application TOTP du client calculent indépendamment `HMAC-SHA1(secret, floor(now / 30))` et comparent les codes à 6 chiffres. Aucun échange réseau n'est nécessaire pour le calcul.
+**Principle:** the server and the client's TOTP app independently compute `HMAC-SHA1(secret, floor(now / 30))` and compare the 6-digit codes. No network exchange is needed for the computation.
 
 ```mermaid
 sequenceDiagram
-    participant S as Serveur (speakeasy)
-    participant C as App TOTP (client)
+    participant S as Server (speakeasy)
+    participant C as TOTP App (client)
 
-    Note over S,C: Inscription — partage unique du secret
+    Note over S,C: Registration — one-time secret sharing
     S->>S: secret = generateSecret() — base32
     S-->>C: otpauthUrl → QR code
 
-    Note over S,C: Vérification à chaque connexion
+    Note over S,C: Verification on every login
     S->>S: T = floor(now / 30)
-    S->>S: codeServeur = HMAC-SHA1(secret, T) mod 1_000_000
+    S->>S: serverCode = HMAC-SHA1(secret, T) mod 1_000_000
     C->>C: T = floor(now / 30)
-    C->>C: codeClient = HMAC-SHA1(secret, T) mod 1_000_000
-    C-->>S: soumet codeClient
+    C->>C: clientCode = HMAC-SHA1(secret, T) mod 1_000_000
+    C-->>S: submits clientCode
 
-    S->>S: Vérifie codeClient ∈ {T-1, T, T+1} (window=1)
-    Note over S: Tolère ±30s de décalage d'horloge
-    S-->>C: valide ou rejeté
+    S->>S: Checks clientCode ∈ {T-1, T, T+1} (window=1)
+    Note over S: Tolerates ±30s clock drift
+    S-->>C: accepted or rejected
 ```
 
-**Sécurité :** le secret n'est jamais retransmis après l'inscription. Un code intercepté est inutilisable après 60 secondes.
+**Security:** the secret is never retransmitted after registration. An intercepted code is unusable after 60 seconds.
 
-### 6.2 Rotation des Refresh Tokens (anti-vol)
+### 6.2 Refresh Token Rotation (anti-theft)
 
-**Objectif :** détecter le vol de token. Si un attaquant vole un refresh token et l'utilise, la victime détectera la révocation à son prochain accès.
+**Goal:** detect token theft. If an attacker steals a refresh token and uses it, the victim will detect the revocation on their next access.
 
 ```mermaid
 flowchart TD
-    A([POST /auth/refresh]) --> B[Extraire userId du JWT]
+    A([POST /auth/refresh]) --> B[Extract userId from the JWT]
     B --> C[SELECT refreshTokenHash FROM users]
-    C --> D{refreshTokenHash\nest NULL ?}
-    D -- Oui --> E[401 TOKEN_REVOKED]
-    D -- Non --> F[argon2.verify\ntoken reçu vs hash stocké]
-    F --> G{Hash valide ?}
-    G -- Non --> H[401 INVALID_REFRESH_TOKEN\nVol de token détecté]
-    G -- Oui --> I[UPDATE users\nSET refreshTokenHash = NULL]
-    I --> J[Générer nouveau accessToken + refreshToken]
-    J --> K[UPDATE users\nSET refreshTokenHash = argon2 nouveau token]
-    K --> L[200 — retourner la nouvelle paire]
+    C --> D{refreshTokenHash\nis NULL?}
+    D -- Yes --> E[401 TOKEN_REVOKED]
+    D -- No --> F[argon2.verify\nreceived token vs stored hash]
+    F --> G{Hash valid?}
+    G -- No --> H[401 INVALID_REFRESH_TOKEN\nToken theft detected]
+    G -- Yes --> I[UPDATE users\nSET refreshTokenHash = NULL]
+    I --> J[Generate new accessToken + refreshToken]
+    J --> K[UPDATE users\nSET refreshTokenHash = argon2 new token]
+    K --> L[200 — return the new pair]
 
     style E fill:#f55,color:#fff
     style H fill:#f55,color:#fff
     style L fill:#5a5,color:#fff
 ```
 
-> **Rotation complète :** à chaque refresh, l'ancien hash est écrasé. Si le même ancien token est rejoué (attaquant), il est rejeté car le hash ne correspond plus.
+> **Full rotation:** on every refresh, the old hash is overwritten. If the same old token is replayed (by an attacker), it is rejected because the hash no longer matches.
 
-### 6.3 Synchronisation offline — Last-Write-Wins
+### 6.3 Offline synchronization — Last-Write-Wins
 
-**Stratégie :** le champ `updated_at` de chaque enregistrement sert d'arbitre en cas de conflit. La version la plus récente l'emporte.
+**Strategy:** each record's `updated_at` field acts as the tie-breaker in case of conflict. The most recent version wins.
 
 ```mermaid
 flowchart TD
-    A([SyncService — toutes les 30s]) --> B[GET /health]
-    B --> C{Réponse reçue ?}
-    C -- Non --> D[Statut = Hors ligne\nAttendre prochain cycle]
-    C -- Oui --> E[Statut = En ligne]
+    A([SyncService — every 30s]) --> B[GET /health]
+    B --> C{Response received?}
+    C -- No --> D[Status = Offline\nWait for next cycle]
+    C -- Yes --> E[Status = Online]
     E --> F[SELECT incidents WHERE is_dirty = 1]
-    F --> G{Incidents\ndirty ?}
-    G -- Non --> H[Rien à faire]
-    G -- Oui --> I[POST /incidents/sync]
-    I --> J[API filtre : createdBy == req.user.sub]
-    J --> K{Incident existe\ndéjà côté API ?}
-    K -- Non --> L[INSERT incident]
-    K -- Oui --> M{updated_at local\n> updated_at serveur ?}
-    M -- Oui --> N[UPDATE title + description\n--- LWW : local gagne]
-    M -- Non --> O[Ignorer --- serveur plus récent]
+    F --> G{Dirty\nincidents?}
+    G -- No --> H[Nothing to do]
+    G -- Yes --> I[POST /incidents/sync]
+    I --> J[API filters: createdBy == req.user.sub]
+    J --> K{Incident already\nexists on the API?}
+    K -- No --> L[INSERT incident]
+    K -- Yes --> M{local updated_at\n> server updated_at?}
+    M -- Yes --> N[UPDATE title + description\n--- LWW: local wins]
+    M -- No --> O[Skip --- server is more recent]
     L --> P[UPDATE SQLite\nis_dirty = 0]
     N --> P
     O --> P
@@ -710,26 +710,26 @@ flowchart TD
     style E fill:#5a5,color:#fff
 ```
 
-### 6.4 Transfert de points — Transaction ACID
+### 6.4 Points transfer — ACID transaction
 
-**Problème :** deux transferts simultanés depuis le même compte pourraient tous deux passer la vérification de solde avant que l'un ne débite, conduisant à un solde négatif inférieur à -10.
+**Problem:** two simultaneous transfers from the same account could both pass the balance check before either one debits, leading to a negative balance below -10.
 
-**Solution :** `SELECT ... FOR UPDATE` verrouille la ligne jusqu'au `COMMIT`.
+**Solution:** `SELECT ... FOR UPDATE` locks the row until `COMMIT`.
 
 ```mermaid
 sequenceDiagram
-    participant A as API NestJS
+    participant A as NestJS API
     participant PG as PostgreSQL
 
     A->>PG: BEGIN TRANSACTION
     A->>PG: SELECT balance FROM points_balances\nWHERE user_id = senderId FOR UPDATE
-    Note over PG: Ligne verrouillée — tout autre transfert\nconcurrent attend ici
+    Note over PG: Row locked — any other concurrent\ntransfer waits here
     PG-->>A: { balance: B }
 
     alt B - amount < -10
         A->>PG: ROLLBACK
         A-->>A: 400 INSUFFICIENT_BALANCE
-    else Solde suffisant
+    else Sufficient balance
         A->>PG: UPDATE points_balances\nSET balance = balance - amount\nWHERE user_id = senderId
         A->>PG: INSERT ON CONFLICT DO UPDATE\nbalance = balance + amount\n(recipientId)
         A->>PG: INSERT points_transactions\n{ senderId, recipientId, amount, note }
@@ -737,9 +737,9 @@ sequenceDiagram
     end
 ```
 
-> La contrainte `CHECK (balance >= -10)` au niveau PostgreSQL constitue un filet de sécurité supplémentaire indépendant du code applicatif.
+> The `CHECK (balance >= -10)` constraint at the PostgreSQL level provides an extra safety net independent of the application code.
 
-### 6.5 Machine à états des incidents — Anti-race condition
+### 6.5 Incident state machine — Anti-race condition
 
 ```mermaid
 stateDiagram-v2
@@ -760,111 +760,111 @@ stateDiagram-v2
     end note
 ```
 
-**Vérification du statut courant dans le `WHERE` :** si deux modérateurs tentent simultanément de passer un incident à `in_progress`, l'un des deux obtiendra `null` en retour (la condition `status = 'open'` sera fausse) et recevra une erreur `409 Concurrent update detected`.
+**Checking the current status in the `WHERE` clause:** if two moderators try to move an incident to `in_progress` at the same time, one of them will get `null` back (the `status = 'open'` condition will be false) and will receive a `409 Concurrent update detected` error.
 
 ---
 
-## 7. APIs et frameworks utilisés
+## 7. APIs and frameworks used
 
-### 7.1 Backend NestJS (TypeScript)
+### 7.1 NestJS backend (TypeScript)
 
-| Bibliothèque          | Version | Rôle dans le projet                                                         |
+| Library               | Version | Role in the project                                                         |
 | --------------------- | ------- | --------------------------------------------------------------------------- |
-| **NestJS**            | 11      | Framework principal — injection de dépendances, guards, decorators, modules |
-| **Drizzle ORM**       | 0.40    | ORM PostgreSQL type-safe — requêtes, migrations, `onConflictDoUpdate`       |
-| **Mongoose**          | 8       | ODM MongoDB — SSO tokens, TTL index, `findOneAndUpdate` atomique            |
-| **Passport-JWT**      | 4       | Stratégie de validation JWT injectable (`JwtStrategy`)                      |
-| **@nestjs/jwt**       | 11      | Signature HS256, durées access 15 min / refresh 7 j                         |
-| **argon2**            | 0.40    | Hash argon2id des mots de passe et des refresh tokens                       |
-| **speakeasy**         | 2.0     | Génération et vérification TOTP (RFC 6238), window ±1                       |
-| **@nestjs/throttler** | 6       | Rate limiting — 5 requêtes / 15 min sur `/auth/login`                       |
-| **Zod**               | 3       | Validation des DTOs entrants (class-validator remplacé)                     |
+| **NestJS**            | 11      | Main framework — dependency injection, guards, decorators, modules          |
+| **Drizzle ORM**       | 0.40    | Type-safe PostgreSQL ORM — queries, migrations, `onConflictDoUpdate`        |
+| **Mongoose**          | 8       | MongoDB ODM — SSO tokens, TTL index, atomic `findOneAndUpdate`              |
+| **Passport-JWT**      | 4       | Injectable JWT validation strategy (`JwtStrategy`)                          |
+| **@nestjs/jwt**       | 11      | HS256 signing, access lifetime 15 min / refresh 7 d                         |
+| **argon2**            | 0.40    | argon2id hashing of passwords and refresh tokens                           |
+| **speakeasy**         | 2.0     | TOTP generation and verification (RFC 6238), window ±1                      |
+| **@nestjs/throttler** | 6       | Rate limiting — 5 requests / 15 min on `/auth/login`                        |
+| **Zod**               | 3       | Validation of incoming DTOs (replaced class-validator)                      |
 
-### 7.2 Frontend React (TypeScript)
+### 7.2 React frontend (TypeScript)
 
-> **Périmètre Étape 2 :** seules les pages d'authentification sont implémentées à ce stade.
-> Les pages métier (incidents, services, événements, solde de points) et le back-office Admin complet
-> sont prévus pour l'Étape 3 (31 mai 2026).
+> **Stage 2 scope:** only the authentication pages are implemented at this point.
+> The business pages (incidents, services, events, points balance) and the complete Admin back-office
+> are planned for Stage 3 (31 May 2026).
 
-**Pages existantes :**
+**Existing pages:**
 
-| Application          | Route                                           | État      |
+| Application          | Route                                           | Status    |
 | -------------------- | ----------------------------------------------- | --------- |
-| React Client (:3000) | `/login` — connexion 2 étapes                   | ✅         |
-| React Client (:3000) | `/register` — inscription + QR TOTP             | ✅         |
-| React Client (:3000) | `/dashboard` — profil + SSO token               | ✅         |
-| React Admin (:3001)  | `/login` — contrôle rôle admin                  | ✅         |
-| React Admin (:3001)  | `/dashboard` — placeholder stats                | ✅         |
-| React Client (:3000) | `/incidents`, `/services`, `/events`            | ❌ Étape 3 |
-| React Admin (:3001)  | Gestion utilisateurs, modération, stats réelles | ❌ Étape 3 |
+| React Client (:3000) | `/login` — two-step login                       | ✅         |
+| React Client (:3000) | `/register` — registration + TOTP QR            | ✅         |
+| React Client (:3000) | `/dashboard` — profile + SSO token              | ✅         |
+| React Admin (:3001)  | `/login` — admin role check                     | ✅         |
+| React Admin (:3001)  | `/dashboard` — stats placeholder                | ✅         |
+| React Client (:3000) | `/incidents`, `/services`, `/events`            | ❌ Stage 3 |
+| React Admin (:3001)  | User management, moderation, real stats         | ❌ Stage 3 |
 
-**Bibliothèques utilisées :**
+**Libraries used:**
 
-| Bibliothèque        | Version | Rôle dans le projet                                                |
+| Library             | Version | Role in the project                                               |
 | ------------------- | ------- | ------------------------------------------------------------------ |
-| **React**           | 19      | Bibliothèque UI                                                    |
+| **React**           | 19      | UI library                                                        |
 | **Vite**            | 6       | Build + Hot Module Replacement                                     |
-| **TanStack Router** | 1       | Routage file-based 100 % type-safe, `routeTree.gen.ts` auto-généré |
-| **TanStack Form**   | 1       | Gestion des formulaires et validation                              |
-| **TanStack Query**  | 5       | Cache serveur, invalidation automatique (préparé pour Étape 3)     |
-| **Shadcn/ui**       | latest  | Composants accessibles basés sur Radix UI                          |
-| **Tailwind CSS**    | v4      | Styles utilitaires                                                 |
-| **Turbo**           | 2       | Cache de build pour le monorepo                                    |
+| **TanStack Router** | 1       | 100% type-safe file-based routing, auto-generated `routeTree.gen.ts` |
+| **TanStack Form**   | 1       | Form handling and validation                                       |
+| **TanStack Query**  | 5       | Server cache, automatic invalidation (prepared for Stage 3)        |
+| **Shadcn/ui**       | latest  | Accessible components based on Radix UI                            |
+| **Tailwind CSS**    | v4      | Utility styles                                                     |
+| **Turbo**           | 2       | Build cache for the monorepo                                       |
 
 ### 7.3 Java Desktop (JSE / JavaFX)
 
-| API / Bibliothèque                                | Rôle                                                                   |
+| API / Library                                     | Role                                                                   |
 | ------------------------------------------------- | ---------------------------------------------------------------------- |
-| **JavaFX** (JSE inclus)                           | Interface graphique — `BorderPane`, `VBox`, `Label`, `Button`, `Stage` |
-| **java.net.http.HttpClient**                      | Requêtes HTTP/HTTPS vers l'API NestJS                                  |
-| **java.util.concurrent.ScheduledExecutorService** | Thread de sync — poll `/health` toutes les 30 s                        |
-| **java.sql (JDBC)** + **SQLite JDBC**             | Base locale SQLite (org.xerial:sqlite-jdbc)                            |
-| **com.sun.net.httpserver.HttpServer**             | Serveur HTTP local pour recevoir le callback SSO PKCE                  |
-| **Maven Shade Plugin**                            | Génération du Fat JAR auto-suffisant (~25 MB)                          |
+| **JavaFX** (JSE included)                         | Graphical interface — `BorderPane`, `VBox`, `Label`, `Button`, `Stage` |
+| **java.net.http.HttpClient**                      | HTTP/HTTPS requests to the NestJS API                                  |
+| **java.util.concurrent.ScheduledExecutorService** | Sync thread — polls `/health` every 30 s                              |
+| **java.sql (JDBC)** + **SQLite JDBC**             | Local SQLite database (org.xerial:sqlite-jdbc)                         |
+| **com.sun.net.httpserver.HttpServer**             | Local HTTP server to receive the SSO PKCE callback                    |
+| **Maven Shade Plugin**                            | Generation of the self-contained Fat JAR (~25 MB)                     |
 
-### 7.4 DSL Python (PLY)
+### 7.4 Python DSL (PLY)
 
-| Bibliothèque              | Rôle                                                                                        |
+| Library                   | Role                                                                                        |
 | ------------------------- | ------------------------------------------------------------------------------------------- |
-| **PLY** (Python Lex-Yacc) | Lexer (`lexer.py`) + parser (`parser.py`) — analyse syntaxique du langage de requête maison |
-| **pythonia**              | Bridge Python ↔ Node.js — appel du compilateur depuis NestJS via `POST /dsl/query`          |
+| **PLY** (Python Lex-Yacc) | Lexer (`lexer.py`) + parser (`parser.py`) — syntactic analysis of the in-house query language |
+| **pythonia**              | Python ↔ Node.js bridge — calling the compiler from NestJS via `POST /dsl/query`            |
 
 ---
 
 ## 8. Tests
 
-### 8.1 Bilan global
+### 8.1 Overall summary
 
-| Suite               | Résultat      | Outil                                         |
+| Suite               | Result        | Tooling                                       |
 | ------------------- | ------------- | --------------------------------------------- |
-| Tests unitaires API | **103 / 103** | Jest + ts-jest                                |
-| Tests E2E API       | **56 / 56**   | Jest + Supertest (MongoDB + PostgreSQL réels) |
-| Tests Desktop       | **8 / 8**     | JUnit 5 + Mockito                             |
-| Tests Web           | **14 / 14**   | Playwright (Chrome headless)                  |
+| API unit tests      | **103 / 103** | Jest + ts-jest                                |
+| API E2E tests       | **56 / 56**   | Jest + Supertest (real MongoDB + PostgreSQL)  |
+| Desktop tests       | **8 / 8**     | JUnit 5 + Mockito                             |
+| Web tests           | **14 / 14**   | Playwright (headless Chrome)                  |
 | **Total**           | **181 / 181** | —                                             |
 
-**Couverture API :** 80,58 % de branches (seuil minimum : 75 %, cible : 80 %)
+**API coverage:** 80.58% of branches (minimum threshold: 75%, target: 80%)
 
-### 8.2 Stratégie de test
+### 8.2 Testing strategy
 
 ```mermaid
 graph TD
-    T1["Tests unitaires\n(Jest — API)\nMock base de données\nLogique métier isolée"]
-    T2["Tests E2E\n(Supertest — API)\nBases réelles\nFlux complets HTTP"]
-    T3["Tests unitaires\n(JUnit 5 — Desktop)\nMock ApiService\nLogique sync + auth"]
-    T4["Tests UI\n(Playwright — Web)\nNavigateur réel\nFlux utilisateur complets"]
+    T1["Unit tests\n(Jest — API)\nMocked database\nIsolated business logic"]
+    T2["E2E tests\n(Supertest — API)\nReal databases\nFull HTTP flows"]
+    T3["Unit tests\n(JUnit 5 — Desktop)\nMocked ApiService\nSync + auth logic"]
+    T4["UI tests\n(Playwright — Web)\nReal browser\nFull user flows"]
 
-    T1 -->|"103 tests\n80% couverture"| OK1([Confiance logique])
-    T2 -->|"56 tests\nZéro mock sur BDD"| OK2([Confiance intégration])
-    T3 -->|"8 tests\nMockito"| OK3([Confiance Java])
-    T4 -->|"14 tests\nChrome headless"| OK4([Confiance UI])
+    T1 -->|"103 tests\n80% coverage"| OK1([Logic confidence])
+    T2 -->|"56 tests\nZero DB mocks"| OK2([Integration confidence])
+    T3 -->|"8 tests\nMockito"| OK3([Java confidence])
+    T4 -->|"14 tests\nheadless Chrome"| OK4([UI confidence])
 ```
 
-> **Principe des tests E2E :** aucun mock sur les bases de données. Les tests utilisent MongoDB et PostgreSQL réels, avec un `beforeAll` qui peuple les données via l'API (pas d'insertion directe en base).
+> **E2E testing principle:** no database mocks. The tests use real MongoDB and PostgreSQL, with a `beforeAll` that seeds the data via the API (no direct database inserts).
 
-### 8.3 Exemples de tests unitaires API
+### 8.3 API unit test examples
 
-**Test de sécurité — rejet du filtre de statut invalide :**
+**Security test — rejecting an invalid status filter:**
 
 ```typescript
 // api/src/incidents/incidents.controller.spec.ts
@@ -875,7 +875,7 @@ it('should throw BadRequestException for invalid status', async () => {
 });
 ```
 
-**Test de sécurité — `createdBy` forcé depuis le token JWT :**
+**Security test — `createdBy` forced from the JWT token:**
 
 ```typescript
 it('should force createdBy to req.user.sub, ignoring client value', () => {
@@ -883,11 +883,11 @@ it('should force createdBy to req.user.sub, ignoring client value', () => {
   controller.create(dto, { user: { sub: 'real-user-uuid' } });
 
   expect(insertValues).toMatchObject({ createdBy: 'real-user-uuid' });
-  // 'attacker-uuid' n'est jamais utilisé
+  // 'attacker-uuid' is never used
 });
 ```
 
-**Test de sécurité — bannissement révoque les tokens existants :**
+**Security test — banning revokes existing tokens:**
 
 ```typescript
 // api/src/auth/auth.service.spec.ts
@@ -898,7 +898,7 @@ it('should reject banned user even with valid refresh token', async () => {
 });
 ```
 
-### 8.4 Exemple de test JUnit — Desktop
+### 8.4 JUnit test example — Desktop
 
 ```java
 // AuthServiceTest.java
@@ -910,112 +910,112 @@ void exchangeSsoToken_shouldStoreTokensInMemoryOnly() throws Exception {
     authService.exchangeSsoToken("valid-sso-token");
 
     assertEquals("at123", authService.getAccessToken());
-    // Vérification critique : jamais écrit sur disque
+    // Critical check: never written to disk
     assertFalse(Files.exists(Path.of("access_token.txt")));
     assertFalse(Files.exists(Path.of("refresh_token.txt")));
 }
 ```
 
-### 8.5 Commandes pour lancer les tests
+### 8.5 Commands to run the tests
 
 ```bash
-# Tests unitaires API avec couverture
+# API unit tests with coverage
 cd api && pnpm run test:cov
 
-# Tests E2E API (nécessite MongoDB + PostgreSQL actifs)
+# API E2E tests (requires MongoDB + PostgreSQL running)
 docker compose up -d mongodb postgresql
 cd api && pnpm run test:e2e
 
-# Tests Desktop JUnit
+# Desktop JUnit tests
 cd desktop-app && ./mvnw test
 
-# Validation complète (lint + typecheck + tests + build)
+# Full validation (lint + typecheck + tests + build)
 make validate
 ```
 
 ---
 
-## 9. Démonstration Java Desktop
+## 9. Java Desktop demonstration
 
-### 9.1 Lancer l'application
+### 9.1 Launch the application
 
 ```bash
-# Build du Fat JAR (~25 MB, auto-suffisant)
+# Build the Fat JAR (~25 MB, self-contained)
 cd desktop-app && ./mvnw clean package -q
 
-# Lancement
+# Launch
 java -jar target/quartierconnect-desktop.jar
 ```
 
-### 9.2 Comptes de démonstration
+### 9.2 Demo accounts
 
 ```bash
-# Générer les données de test
+# Generate the test data
 npx ts-node scripts/seed-demo.ts
 
-# Comptes créés :
-#   alice@demo.fr     — rôle: resident
-#   bob@demo.fr       — rôle: moderator
-#   admin@demo.fr     — rôle: admin  (+ UPDATE SQL nécessaire pour définir le rôle admin)
+# Created accounts:
+#   alice@demo.fr     — role: resident
+#   bob@demo.fr       — role: moderator
+#   admin@demo.fr     — role: admin  (+ SQL UPDATE needed to set the admin role)
 
-# Mot de passe commun : Demo1234!
-# Secret TOTP : généré aléatoirement par compte — récupérer depuis PostgreSQL :
+# Shared password: Demo1234!
+# TOTP secret: randomly generated per account — retrieve it from PostgreSQL:
 #   docker exec docker-postgres-1 psql -U qc -d quartierconnect \
 #     -c "SELECT email, totp_secret FROM users;"
 
-# Générer le code TOTP en ligne de commande :
-oathtool --totp --base32 <SECRET_DU_COMPTE>
+# Generate the TOTP code from the command line:
+oathtool --totp --base32 <ACCOUNT_SECRET>
 
-# Définir le rôle admin après seed :
+# Set the admin role after seeding:
 docker exec docker-postgres-1 psql -U qc -d quartierconnect \
   -c "UPDATE users SET role = 'admin' WHERE email = 'admin@demo.fr';"
 ```
 
-### 9.3 Scénario SSO PKCE (admin déjà connecté)
+### 9.3 SSO PKCE scenario (admin already logged in)
 
 ```mermaid
 sequenceDiagram
     actor Admin
     participant J as Java Desktop
-    participant B as Navigateur
+    participant B as Browser
     participant A as API
 
-    Admin->>B: Se connecter sur localhost:3000 avec admin@demo.fr
-    Admin->>J: Lancer l'app Java
-    Admin->>J: Cliquer "Se connecter via le navigateur"
-    J->>J: Générer state UUID + démarrer HttpServer local
-    J->>B: Ouvrir /sso/authorize?state=...&redirect=localhost:PORT/cb
-    B->>B: useEffect détecte la session admin active
+    Admin->>B: Log in at localhost:3000 with admin@demo.fr
+    Admin->>J: Launch the Java app
+    Admin->>J: Click "Log in via the browser"
+    J->>J: Generate state UUID + start local HttpServer
+    J->>B: Open /sso/authorize?state=...&redirect=localhost:PORT/cb
+    B->>B: useEffect detects the active admin session
     B->>A: POST /auth/sso/generate
     A-->>B: { ssoToken }
     B->>J: Redirect → /cb?token=...&state=...
-    J->>J: Vérifier state (CSRF guard)
+    J->>J: Verify state (CSRF guard)
     J->>A: POST /auth/sso/exchange { ssoToken }
     A-->>J: { accessToken, refreshToken }
-    J->>J: Stocker en mémoire, afficher MainView
-    Note over Admin,J: Connexion transparente — zéro saisie manuelle
+    J->>J: Store in memory, show MainView
+    Note over Admin,J: Seamless login — zero manual entry
 ```
 
-### 9.4 Scénario de détection hors-ligne
+### 9.4 Offline detection scenario
 
 ```mermaid
 sequenceDiagram
     participant J as Java Desktop
     participant S as SyncService
     participant DB as SQLite
-    participant API as API NestJS
+    participant API as NestJS API
 
-    loop Toutes les 30 secondes
+    loop Every 30 seconds
         S->>API: GET /health
-        alt API inaccessible
+        alt API unreachable
             API--xS: timeout
-            S->>J: Indicateur = "Hors ligne" (rouge)
-            Note over J: L'utilisateur peut continuer\nde créer des incidents locaux
-        else API accessible
+            S->>J: Indicator = "Offline" (red)
+            Note over J: The user can keep\ncreating local incidents
+        else API reachable
             API-->>S: 200 { status: "ok" }
-            S->>J: Indicateur = "En ligne" (vert)
+            S->>J: Indicator = "Online" (green)
             S->>DB: SELECT incidents WHERE is_dirty = 1
-            DB-->>S: [incidents à synchroniser]
+            DB-->>S: [incidents to synchronize]
             S->>API: POST /incidents/sync { incidents }
             API-->>S: { upserted: N }
             S->>DB: UPDATE is_dirty = 0
@@ -1023,18 +1023,18 @@ sequenceDiagram
     end
 ```
 
-### 9.5 Points de démonstration prévus
+### 9.5 Planned demonstration points
 
-| Point                | Scénario                                                             |
+| Point                | Scenario                                                             |
 | -------------------- | -------------------------------------------------------------------- |
-| SSO PKCE auto        | Admin déjà connecté → connexion Java sans interaction                |
-| SSO PKCE manuel      | Navigateur non connecté → formulaire inline → connexion Java         |
-| Refus non-admin      | Tenter SSO avec `alice@demo.fr` (resident) → alerte                  |
-| Détection hors-ligne | `docker stop docker-api-1` → indicateur rouge en <30s                |
-| Retour en ligne      | `docker start docker-api-1` → indicateur vert                        |
-| Sync offline         | Créer un incident hors-ligne → remettre en ligne → vérifier côté API |
+| Auto SSO PKCE        | Admin already logged in → Java login with no interaction            |
+| Manual SSO PKCE      | Browser not logged in → inline form → Java login                    |
+| Non-admin rejection  | Attempt SSO with `alice@demo.fr` (resident) → alert                 |
+| Offline detection    | `docker stop docker-api-1` → red indicator in <30s                  |
+| Back online          | `docker start docker-api-1` → green indicator                       |
+| Offline sync         | Create an incident offline → go back online → verify on the API side |
 
 ---
 
-*Rapport de projet — QuartierConnect · Groupe 1 · 3AL2 · ESGI 2025-2026*
-*Rendu Étape 2 — 8 avril 2026 — Enseignant : Frédéric SANANES*
+*Project report — QuartierConnect · Group 1 · 3AL2 · ESGI 2025-2026*
+*Stage 2 submission — 8 April 2026 — Instructor: Frédéric SANANES*

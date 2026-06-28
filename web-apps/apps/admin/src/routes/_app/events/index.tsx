@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Add01Icon, Calendar01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import {
     useCreateEvent,
     useDeleteEvent,
@@ -53,6 +54,7 @@ export const Route = createFileRoute("/_app/events/")({
 });
 
 function AdminEventsPage() {
+    const { t } = useTranslation();
     const [createOpen, setCreateOpen] = useState(false);
     const [editTarget, setEditTarget] = useState<Event | null>(null);
 
@@ -68,8 +70,8 @@ function AdminEventsPage() {
 
     function handleDelete(id: string) {
         deleteEvent.mutate(id, {
-            onSuccess: () => toast.success("Événement supprimé"),
-            onError: () => toast.error("Impossible de supprimer"),
+            onSuccess: () => toast.success(t("adminPages.events.deleted")),
+            onError: () => toast.error(t("adminPages.common.deleteError")),
         });
     }
 
@@ -77,12 +79,12 @@ function AdminEventsPage() {
         <div className="p-6">
             <div className="mx-auto max-w-6xl space-y-6">
                 <PageHeader
-                    title="Événements"
-                    description="Calendrier communautaire du quartier"
+                    title={t("adminPages.events.title")}
+                    description={t("adminPages.events.description")}
                     actions={
                         <Button onClick={() => setCreateOpen(true)}>
                             <HugeiconsIcon icon={Add01Icon} />
-                            Créer
+                            {t("adminPages.common.create")}
                         </Button>
                     }
                 />
@@ -92,7 +94,7 @@ function AdminEventsPage() {
                     error={isError ? true : undefined}
                     isEmpty={events.length === 0}
                     onRetry={() => void refetch()}
-                    errorTitle="Impossible de charger les événements"
+                    errorTitle={t("adminPages.events.loadError")}
                     skeleton={
                         <div className="flex flex-col gap-2">
                             {Array.from({ length: 4 }).map((_, i) => (
@@ -109,16 +111,17 @@ function AdminEventsPage() {
                                 <EmptyMedia variant="icon">
                                     <HugeiconsIcon icon={Calendar01Icon} />
                                 </EmptyMedia>
-                                <EmptyTitle>Aucun événement</EmptyTitle>
+                                <EmptyTitle>
+                                    {t("adminPages.events.emptyTitle")}
+                                </EmptyTitle>
                                 <EmptyDescription>
-                                    Créez le premier événement pour animer la vie
-                                    du quartier.
+                                    {t("adminPages.events.emptyDescription")}
                                 </EmptyDescription>
                             </EmptyHeader>
                             <EmptyContent>
                                 <Button onClick={() => setCreateOpen(true)}>
                                     <HugeiconsIcon icon={Add01Icon} />
-                                    Créer
+                                    {t("adminPages.common.create")}
                                 </Button>
                             </EmptyContent>
                         </Empty>
@@ -128,12 +131,20 @@ function AdminEventsPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Titre</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Lieu</TableHead>
-                                    <TableHead>Quartier</TableHead>
+                                    <TableHead>
+                                        {t("adminPages.events.titleColumn")}
+                                    </TableHead>
+                                    <TableHead>
+                                        {t("adminPages.events.dateColumn")}
+                                    </TableHead>
+                                    <TableHead>
+                                        {t("adminPages.events.placeColumn")}
+                                    </TableHead>
+                                    <TableHead>
+                                        {t("incidents.fields.neighborhood")}
+                                    </TableHead>
                                     <TableHead className="text-right">
-                                        Actions
+                                        {t("adminPages.common.actions")}
                                     </TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -168,7 +179,7 @@ function AdminEventsPage() {
                                                         setEditTarget(evt)
                                                     }
                                                 >
-                                                    Modifier
+                                                    {t("adminPages.common.edit")}
                                                 </Button>
                                                 <Button
                                                     variant="destructive"
@@ -183,7 +194,7 @@ function AdminEventsPage() {
                                                 >
                                                     {deleteEvent.isPending
                                                         ? "…"
-                                                        : "Supprimer"}
+                                                        : t("common.delete")}
                                                 </Button>
                                             </div>
                                         </TableCell>
@@ -231,6 +242,7 @@ function EventDialog({
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
 }) {
+    const { t } = useTranslation();
     const toLocalDatetime = (iso?: string) =>
         iso ? new Date(iso).toISOString().slice(0, 16) : "";
 
@@ -263,20 +275,20 @@ function EventDialog({
                 { id: initial._id, data: payload },
                 {
                     onSuccess: () => {
-                        toast.success("Événement modifié");
+                        toast.success(t("adminPages.events.updated"));
                         onSuccess();
                     },
                     onError: () =>
-                        toast.error("Erreur lors de l'enregistrement"),
+                        toast.error(t("adminPages.common.saveError")),
                 },
             );
         } else {
             createEvent.mutate(payload, {
                 onSuccess: () => {
-                    toast.success("Événement créé");
+                    toast.success(t("adminPages.events.created"));
                     onSuccess();
                 },
-                onError: () => toast.error("Erreur lors de l'enregistrement"),
+                onError: () => toast.error(t("adminPages.common.saveError")),
             });
         }
     }
@@ -287,25 +299,31 @@ function EventDialog({
                 <DialogHeader>
                     <DialogTitle>
                         {initial
-                            ? "Modifier l'événement"
-                            : "Créer un événement"}
+                            ? t("adminPages.events.editTitle")
+                            : t("adminPages.events.createTitle")}
                     </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="evt-title">Titre *</Label>
+                        <Label htmlFor="evt-title">
+                            {t("adminPages.events.titleLabel")}
+                        </Label>
                         <Input
                             id="evt-title"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Ex : Fête de quartier"
+                            placeholder={t(
+                                "adminPages.events.titlePlaceholder",
+                            )}
                             maxLength={255}
                             required
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="evt-date">Date *</Label>
+                            <Label htmlFor="evt-date">
+                                {t("adminPages.events.dateLabel")}
+                            </Label>
                             <Input
                                 id="evt-date"
                                 type="datetime-local"
@@ -315,43 +333,63 @@ function EventDialog({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="evt-address">Lieu</Label>
+                            <Label htmlFor="evt-address">
+                                {t("adminPages.events.placeLabel")}
+                            </Label>
                             <Input
                                 id="evt-address"
                                 value={address}
                                 onChange={(e) => setAddress(e.target.value)}
-                                placeholder="Ex : Place du marché"
+                                placeholder={t(
+                                    "adminPages.events.placePlaceholder",
+                                )}
                             />
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="evt-category">Catégorie *</Label>
+                        <Label htmlFor="evt-category">
+                            {t("adminPages.events.categoryLabel")}
+                        </Label>
                         <Select value={category} onValueChange={setCategory}>
                             <SelectTrigger id="evt-category">
-                                <SelectValue placeholder="Choisir une catégorie" />
+                                <SelectValue
+                                    placeholder={t(
+                                        "adminPages.events.categoryPlaceholder",
+                                    )}
+                                />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="culture">Culture</SelectItem>
-                                <SelectItem value="sport">Sport</SelectItem>
+                                <SelectItem value="culture">
+                                    {t("adminPages.events.categories.culture")}
+                                </SelectItem>
+                                <SelectItem value="sport">
+                                    {t("adminPages.events.categories.sport")}
+                                </SelectItem>
                                 <SelectItem value="community">
-                                    Communauté
+                                    {t("adminPages.events.categories.community")}
                                 </SelectItem>
                                 <SelectItem value="education">
-                                    Éducation
+                                    {t("adminPages.events.categories.education")}
                                 </SelectItem>
-                                <SelectItem value="other">Autre</SelectItem>
+                                <SelectItem value="other">
+                                    {t("adminPages.events.categories.other")}
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                     {neighborhoods.length > 0 && (
                         <div className="space-y-2">
-                            <Label>Quartier</Label>
+                            <Label>{t("incidents.fields.neighborhood")}</Label>
                             <Select
                                 value={neighborhoodId}
                                 onValueChange={setNeighborhoodId}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Choisir un quartier" />
+                                    <SelectValue
+                                        placeholder={t(
+                                            "adminPages.common.chooseNeighborhood",
+                                        )}
+                                    />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {neighborhoods.map((n) => (
@@ -364,7 +402,9 @@ function EventDialog({
                         </div>
                     )}
                     <div className="space-y-2">
-                        <Label htmlFor="evt-desc">Description</Label>
+                        <Label htmlFor="evt-desc">
+                            {t("incidents.fields.description")}
+                        </Label>
                         <Textarea
                             id="evt-desc"
                             value={description}
@@ -378,7 +418,7 @@ function EventDialog({
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                         >
-                            Annuler
+                            {t("common.cancel")}
                         </Button>
                         <Button
                             type="submit"
@@ -389,8 +429,8 @@ function EventDialog({
                             {isPending
                                 ? "…"
                                 : initial
-                                  ? "Enregistrer"
-                                  : "Créer"}
+                                  ? t("common.save")
+                                  : t("adminPages.common.create")}
                         </Button>
                     </div>
                 </form>

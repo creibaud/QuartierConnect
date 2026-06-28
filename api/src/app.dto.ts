@@ -24,7 +24,7 @@ export class StatsResponseDto {
     @ApiProperty({
         example: 8,
         nullable: true,
-        description: "Incidents avec statut 'open'",
+        description: "Incidents with status 'open'",
     })
     activeIncidents: number | null;
 }

@@ -47,9 +47,9 @@ export class DocumentsController {
 
     @Get("me")
     @ApiOperation({
-        summary: "Lister mes documents",
+        summary: "List my documents",
         description:
-            "Retourne les métadonnées de tous les documents uploadés par l'utilisateur.",
+            "Returns the metadata of all documents uploaded by the user.",
     })
     @ApiResponse({ status: 200, type: [DocumentMetaDto] })
     getMyDocuments(@Request() req: AuthRequest) {
@@ -58,16 +58,16 @@ export class DocumentsController {
 
     @Post("upload")
     @ApiOperation({
-        summary: "Uploader un document (stocké dans GridFS, max 20 Mo)",
+        summary: "Upload a document (stored in GridFS, max 20 MB)",
         description:
-            "Stocke le fichier dans MongoDB GridFS et crée une entrée d'audit UPLOAD. Optionnellement lié à un quartier via `neighborhoodId`.",
+            "Stores the file in MongoDB GridFS and creates an UPLOAD audit entry. Optionally linked to a neighborhood via `neighborhoodId`.",
     })
     @ApiConsumes("multipart/form-data")
     @ApiBody({ type: DocumentUploadBodyDto })
     @ApiQuery({
         name: "neighborhoodId",
         required: false,
-        description: "ID MongoDB du quartier associé",
+        description: "MongoDB ID of the associated neighborhood",
     })
     @ApiResponse({ status: 201, type: DocumentMetaDto })
     @UseInterceptors(
@@ -84,22 +84,22 @@ export class DocumentsController {
 
     @Get(":id/download")
     @ApiOperation({
-        summary: "Télécharger un document (streaming GridFS)",
+        summary: "Download a document (GridFS streaming)",
         description:
-            "Retourne le fichier en streaming avec Content-Disposition: attachment. Crée une entrée d'audit DOWNLOAD.",
+            "Returns the file as a stream with Content-Disposition: attachment. Creates a DOWNLOAD audit entry.",
     })
     @ApiParam({
         name: "id",
-        description: "FileId GridFS (ObjectId hexadécimal)",
+        description: "GridFS FileId (hexadecimal ObjectId)",
     })
     @ApiResponse({
         status: 200,
         description:
-            "Flux binaire du fichier avec Content-Type et Content-Disposition appropriés",
+            "Binary stream of the file with appropriate Content-Type and Content-Disposition",
     })
     @ApiResponse({
         status: 404,
-        description: "Fichier introuvable ou accès refusé",
+        description: "File not found or access denied",
     })
     async download(
         @Param("id") id: string,
@@ -119,22 +119,22 @@ export class DocumentsController {
 
     @Delete(":id")
     @ApiOperation({
-        summary: "Supprimer un document (audit + delete GridFS)",
+        summary: "Delete a document (audit + GridFS delete)",
         description:
-            "Supprime le fichier de GridFS et ajoute une entrée d'audit DELETE. Seul le propriétaire ou un admin peut supprimer.",
+            "Deletes the file from GridFS and adds a DELETE audit entry. Only the owner or an admin can delete.",
     })
     @ApiParam({
         name: "id",
-        description: "FileId GridFS (ObjectId hexadécimal)",
+        description: "GridFS FileId (hexadecimal ObjectId)",
     })
     @ApiResponse({
         status: 200,
         schema: { example: { success: true } },
-        description: "Document supprimé",
+        description: "Document deleted",
     })
     @ApiResponse({
         status: 403,
-        description: "Accès refusé (propriétaire ou admin requis)",
+        description: "Access denied (owner or admin required)",
     })
     remove(@Param("id") id: string, @Request() req: AuthRequest) {
         return this.documentsService.softDelete(
@@ -148,13 +148,13 @@ export class DocumentsController {
     @UseGuards(RolesGuard)
     @Roles("moderator", "admin")
     @ApiOperation({
-        summary: "Journal d'audit d'un fichier (append-only)",
+        summary: "Audit log of a file (append-only)",
         description:
-            "Retourne toutes les entrées d'audit pour un fichier : UPLOAD, DOWNLOAD, DELETE, ACCESS. Protégé moderator/admin.",
+            "Returns all audit entries for a file: UPLOAD, DOWNLOAD, DELETE, ACCESS. Protected for moderator/admin.",
     })
     @ApiParam({
         name: "id",
-        description: "FileId GridFS (ObjectId hexadécimal)",
+        description: "GridFS FileId (hexadecimal ObjectId)",
     })
     @ApiResponse({ status: 200, type: [DocumentAuditEntryDto] })
     getAuditLog(@Param("id") id: string) {

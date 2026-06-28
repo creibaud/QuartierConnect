@@ -14,8 +14,7 @@ export class GeoJsonPolygonResponseDto {
                 [2.35, 48.87],
             ],
         ],
-        description:
-            "Tableau de rings GeoJSON — premier ring = contour extérieur",
+        description: "Array of GeoJSON rings — first ring = outer boundary",
     })
     coordinates: number[][][];
 }
@@ -31,7 +30,7 @@ export class NeighborhoodDto {
     city: string;
 
     @ApiPropertyOptional({
-        example: "Quartier populaire dans le 20e arrondissement",
+        example: "Working-class neighborhood in the 20th arrondissement",
     })
     description?: string;
 

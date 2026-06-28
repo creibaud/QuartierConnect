@@ -1,6 +1,7 @@
 package fr.quartierconnect.desktopapp.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fr.quartierconnect.desktopapp.i18n.I18n;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,7 +17,7 @@ public class VotesService {
 
     public VoteResult vote(String targetId, String targetType, String direction) {
         String token = AuthService.getInstance().getAccessToken();
-        if (token == null) return VoteResult.fail("Non authentifié");
+        if (token == null) return VoteResult.fail(I18n.get("common.notAuthenticated"));
 
         try {
             Map<String, String> body = new HashMap<>();

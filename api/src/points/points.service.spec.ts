@@ -148,6 +148,26 @@ describe("PointsService", () => {
                 true,
             );
         });
+
+        it("attaches sender and recipient emails to each transaction", async () => {
+            const tx = {
+                id: "tx-1",
+                senderId: "user-1",
+                recipientId: "user-2",
+                amount: 10,
+            };
+            const txTerminal = makeTerminal([tx]);
+            const usersTerminal = makeTerminal([
+                { id: "user-1", email: "alice@demo.fr" },
+                { id: "user-2", email: "bob@demo.fr" },
+            ]);
+            db.where
+                .mockReturnValueOnce(txTerminal)
+                .mockReturnValueOnce(usersTerminal);
+            const result = await service.getHistory("user-1", 1, 20);
+            expect(result[0].senderEmail).toBe("alice@demo.fr");
+            expect(result[0].recipientEmail).toBe("bob@demo.fr");
+        });
     });
 
     describe("transfer", () => {

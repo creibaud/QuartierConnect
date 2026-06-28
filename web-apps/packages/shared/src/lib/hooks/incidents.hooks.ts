@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import {
     createIncident,
+    deleteIncident,
     fetchIncident,
     fetchIncidents,
     updateIncidentStatus,
@@ -55,6 +56,16 @@ export function useUpdateIncidentStatus() {
         onSuccess: (updated: Incident) => {
             queryClient.invalidateQueries({ queryKey: ["incidents"] });
             queryClient.setQueryData(["incidents", updated.id], updated);
+        },
+    });
+}
+
+export function useDeleteIncident() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => deleteIncident(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["incidents"] });
         },
     });
 }

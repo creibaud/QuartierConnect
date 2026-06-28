@@ -1,6 +1,7 @@
 package fr.quartierconnect.desktopapp.plugin;
 
 import fr.quartierconnect.desktopapp.database.IncidentRepository;
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.ui.components.AppButton;
 import javafx.application.Platform;
 import javafx.scene.Node;
@@ -32,16 +33,16 @@ public class ExportPlugin implements QuartierConnectPlugin, PluginRegistry.Conte
     public void setContext(AppContext ctx) { this.context = ctx; }
 
     @Override public String getId()      { return "fr.quartierconnect.plugin.export"; }
-    @Override public String getName()    { return "Export CSV"; }
+    @Override public String getName()    { return I18n.get("plugin.export.name"); }
     @Override public String getVersion() { return "1.0.0"; }
-    @Override public String getDescription() { return "Exporte les incidents locaux au format CSV dans votre dossier personnel."; }
+    @Override public String getDescription() { return I18n.get("plugin.export.description"); }
 
     @Override
     public void onLoad() {
         FontIcon icon = new FontIcon(FontAwesomeSolid.FILE_CSV);
         icon.setIconSize(12);
 
-        injectedBtn = new AppButton("Exporter CSV", AppButton.Variant.SECONDARY);
+        injectedBtn = new AppButton(I18n.get("plugin.export.button"), AppButton.Variant.SECONDARY);
         injectedBtn.setGraphic(icon);
         injectedBtn.setGraphicTextGap(6);
         injectedBtn.setOnAction(e -> runExport(injectedBtn));
@@ -59,12 +60,11 @@ public class ExportPlugin implements QuartierConnectPlugin, PluginRegistry.Conte
 
     @Override
     public Node getPanel() {
-        Label desc = new Label("Exporte tous les incidents locaux (SQLite) dans un fichier CSV dans votre dossier personnel. "
-                + "Quand le plugin est actif, un bouton « Exporter CSV » apparaît directement dans la vue Incidents.");
+        Label desc = new Label(I18n.get("plugin.export.panelDesc"));
         desc.setStyle("-fx-font-size: 11.5px; -fx-text-fill: -color-fg-muted;");
         desc.setWrapText(true);
 
-        Label note = new Label("ℹ  Le bouton disparaît automatiquement si vous désactivez ce plugin.");
+        Label note = new Label(I18n.get("plugin.export.note"));
         note.setStyle("-fx-font-size: 10.5px; -fx-text-fill: -color-fg-subtle;");
         note.setWrapText(true);
 
@@ -99,9 +99,11 @@ public class ExportPlugin implements QuartierConnectPlugin, PluginRegistry.Conte
                 Platform.runLater(() -> {
                     btn.setDisable(false);
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                    alert.setTitle("Export réussi");
-                    alert.setHeaderText(count + " incident" + (count > 1 ? "s" : "") + " exporté" + (count > 1 ? "s" : ""));
-                    alert.setContentText("Fichier créé :\n" + path);
+                    alert.setTitle(I18n.get("plugin.export.successTitle"));
+                    alert.setHeaderText(count > 1
+                            ? I18n.get("plugin.export.successHeaderMany", count)
+                            : I18n.get("plugin.export.successHeaderOne", count));
+                    alert.setContentText(I18n.get("plugin.export.successContent", path));
                     alert.show();
                 });
             } catch (Exception ex) {
@@ -109,8 +111,8 @@ public class ExportPlugin implements QuartierConnectPlugin, PluginRegistry.Conte
                 Platform.runLater(() -> {
                     btn.setDisable(false);
                     Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Export échoué");
-                    alert.setHeaderText("Impossible d'exporter les incidents");
+                    alert.setTitle(I18n.get("plugin.export.errorTitle"));
+                    alert.setHeaderText(I18n.get("plugin.export.errorHeader"));
                     alert.setContentText(msg);
                     alert.show();
                 });

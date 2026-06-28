@@ -85,12 +85,12 @@ class ThreeWayMergerTest {
         @Test
         void localChangedTitle_keepsLocalTitle() {
             var base   = snap("Titre original", "D", "open");
-            var local  = snap("Titre modifié",  "D", "open");
+            var local  = snap("Modified title",  "D", "open");
             var remote = snap("Titre original", "D", "open");
 
             var result = merger.merge(base, local, remote);
 
-            assertEquals("Titre modifié", result.title());
+            assertEquals("Modified title", result.title());
             assertFalse(result.hasConflict());
         }
 

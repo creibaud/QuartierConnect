@@ -2,6 +2,7 @@ package fr.quartierconnect.desktopapp.views;
 
 import atlantafx.base.controls.ModalPane;
 import fr.quartierconnect.desktopapp.database.IncidentRepository;
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.plugin.AppContext;
 import fr.quartierconnect.desktopapp.plugin.CompactModePlugin;
 import fr.quartierconnect.desktopapp.plugin.ExportPlugin;
@@ -90,7 +91,7 @@ public class MainView {
         tryBackgroundReconnect();
 
         buildNavigation();
-        navigate(dashBtn, "Tableau de bord");
+        navigate(dashBtn, "dashboard");
     }
 
     private void tryBackgroundReconnect() {
@@ -102,7 +103,7 @@ public class MainView {
             if (!ApiService.isReachable()) return;
             boolean refreshed = AuthService.getInstance().refreshAccessToken();
             if (refreshed) {
-                Platform.runLater(() -> toast.showSuccess("Reconnexion automatique réussie"));
+                Platform.runLater(() -> toast.showSuccess(I18n.get("reconnect.success")));
                 syncService.syncNow();
             }
         }, "background-reconnect").start();
@@ -115,41 +116,52 @@ public class MainView {
     // ── Navigation ──────────────────────────────────────────────────────────
 
     private void buildNavigation() {
-        dashBtn      = sidebar.addNavItem(FontAwesomeSolid.HOME,           "Tableau de bord");
-        incidentsBtn = sidebar.addNavItem(FontAwesomeSolid.CLIPBOARD_LIST, "Incidents");
+        dashBtn      = sidebar.addNavItem(FontAwesomeSolid.HOME,           I18n.get("nav.dashboard"));
+        incidentsBtn = sidebar.addNavItem(FontAwesomeSolid.CLIPBOARD_LIST, I18n.get("nav.incidents"));
 
         sidebar.addSeparator();
 
-        profileBtn = sidebar.addNavItem(FontAwesomeSolid.USER, "Mon profil");
-        pluginsBtn = sidebar.addNavItem(FontAwesomeSolid.PLUG, "Plugins");
+        profileBtn = sidebar.addNavItem(FontAwesomeSolid.USER, I18n.get("nav.profile"));
+        pluginsBtn = sidebar.addNavItem(FontAwesomeSolid.PLUG, I18n.get("nav.plugins"));
 
         sidebar.addSpacer();
 
-        AppSidebar.NavItem logoutBtn = sidebar.addLogoutItem(FontAwesomeSolid.POWER_OFF, "Déconnexion");
+        AppSidebar.NavItem logoutBtn = sidebar.addLogoutItem(FontAwesomeSolid.POWER_OFF, I18n.get("nav.logout"));
 
-        dashBtn.setAction(()      -> navigate(dashBtn,      "Tableau de bord"));
-        incidentsBtn.setAction(() -> navigate(incidentsBtn, "Incidents"));
-        profileBtn.setAction(()   -> navigate(profileBtn,   "Mon profil"));
-        pluginsBtn.setAction(()   -> navigate(pluginsBtn,   "Plugins"));
+        dashBtn.setAction(()      -> navigate(dashBtn,      "dashboard"));
+        incidentsBtn.setAction(() -> navigate(incidentsBtn, "incidents"));
+        profileBtn.setAction(()   -> navigate(profileBtn,   "profile"));
+        pluginsBtn.setAction(()   -> navigate(pluginsBtn,   "plugins"));
         logoutBtn.setAction(()    -> logout());
     }
 
-    private void navigate(AppSidebar.NavItem item, String page) {
+    private void navigate(AppSidebar.NavItem item, String route) {
         sidebar.setActive(item);
-        topBar.setBreadcrumb(page);
 
-        switch (page) {
-            case "Tableau de bord" -> layout.setContent(new DashboardView(this::handleRoute, syncService, toast).getRoot());
-            case "Incidents"       -> layout.setContent(new IncidentsView(appModal, toast, syncService).getRoot());
-            case "Mon profil"      -> layout.setContent(new ProfileView(this::logout, syncService).getRoot());
-            case "Plugins"         -> layout.setContent(new PluginsView(appModal).getRoot());
+        switch (route) {
+            case "dashboard" -> {
+                topBar.setBreadcrumb(I18n.get("nav.dashboard"));
+                layout.setContent(new DashboardView(this::handleRoute, syncService, toast).getRoot());
+            }
+            case "incidents" -> {
+                topBar.setBreadcrumb(I18n.get("nav.incidents"));
+                layout.setContent(new IncidentsView(appModal, toast, syncService).getRoot());
+            }
+            case "profile" -> {
+                topBar.setBreadcrumb(I18n.get("nav.profile"));
+                layout.setContent(new ProfileView(this::logout, syncService).getRoot());
+            }
+            case "plugins" -> {
+                topBar.setBreadcrumb(I18n.get("nav.plugins"));
+                layout.setContent(new PluginsView(appModal).getRoot());
+            }
         }
     }
 
     private void handleRoute(String route) {
         switch (route) {
-            case "incidents", "create_incident" -> navigate(incidentsBtn, "Incidents");
-            case "plugins"                      -> navigate(pluginsBtn,   "Plugins");
+            case "incidents", "create_incident" -> navigate(incidentsBtn, "incidents");
+            case "plugins"                      -> navigate(pluginsBtn,   "plugins");
         }
     }
 

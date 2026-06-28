@@ -5,16 +5,27 @@ on:
     - cron: "0 3 * * *"
   push:
     tags: ["v*.*.*"]
+  pull_request:
+    branches: [main, master, develop]
+    paths:
+      - "web-apps/**"
+      - "api/**"
+      - "scripts/**"
+      - "docker/**"
+      - ".github/workflows/e2e.yml"
   workflow_dispatch:
     inputs:
       branch:
-        description: "Branche à tester"
+        description: "Branche à tester (défaut : la branche du dispatch)"
         required: false
-        default: "master"
+        default: ""
 
 concurrency:
   group: e2e-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   e2e:
@@ -37,6 +48,9 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          cache-dependency-path: |
+            api/pnpm-lock.yaml
+            web-apps/pnpm-lock.yaml
 
       - name: Préparer le .env de CI
         run: |
@@ -62,7 +76,7 @@ jobs:
           EOF
 
       - name: Démarrer la stack Docker
-        run: docker compose -f docker/docker-compose.yml up -d --build
+        run: docker compose -f docker/docker-compose.yml --env-file .env up -d --build
 
       - name: Attendre que l'API soit prête
         run: |
@@ -72,7 +86,7 @@ jobs:
             fi
             sleep 2
           done
-          docker compose -f docker/docker-compose.yml logs api --tail=100
+          docker compose -f docker/docker-compose.yml --env-file .env logs api --tail=100
           exit 1
 
       - name: Install web deps
@@ -83,18 +97,36 @@ jobs:
         working-directory: web-apps
         run: pnpm exec playwright install --with-deps chromium
 
+      - name: Appliquer les migrations Postgres (Drizzle)
+        working-directory: api
+        env:
+          DATABASE_URL: postgresql://qc:testpass@localhost:5432/quartierconnect
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec drizzle-kit migrate
+
       - name: Seed des comptes démo
         run: |
           cd api && pnpm install --frozen-lockfile
           API_URL=http://localhost/api PG_CONTAINER=docker-postgres-1 \
-            pnpm exec ts-node ../scripts/seed-demo.ts || echo "Seed failed"
+            pnpm exec tsx ../scripts/seed-demo.ts || echo "Seed failed"
 
       - name: Run Playwright
         working-directory: web-apps
         env:
           PLAYWRIGHT_BASE_URL_CLIENT: http://localhost
-          PLAYWRIGHT_BASE_URL_ADMIN: http://localhost/admin
-        run: pnpm run test:e2e
+          PLAYWRIGHT_BASE_URL_ADMIN: http://localhost:3001/admin/
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "PR smoke subset: client login + points + admin services CRUD"
+            pnpm exec playwright test \
+              e2e/client/login.spec.ts \
+              e2e/client/points.spec.ts \
+              e2e/admin/services.spec.ts
+          else
+            echo "Full E2E suite"
+            pnpm run test:e2e
+          fi
 
       - name: API E2E (Supertest)
         if: always()
@@ -107,12 +139,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-${{ github.run_id }}
-          path: web-apps/playwright-report/
+          path: |
+            web-apps/playwright-report/
+            web-apps/test-results/
           retention-days: 14
 
       - name: Dump logs en cas d'échec
         if: failure()
-        run: docker compose -f docker/docker-compose.yml logs --tail=200
+        run: docker compose -f docker/docker-compose.yml --env-file .env logs --tail=200
 
       - name: Notification Discord
         if: failure() && env.DISCORD_WEBHOOK != ''

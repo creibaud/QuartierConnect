@@ -34,9 +34,9 @@ export class SocialController {
 
     @Get("recommendations")
     @ApiOperation({
-        summary: "Recommandations personnalisées (Neo4j)",
+        summary: "Personalized recommendations (Neo4j)",
         description:
-            "Retourne services et événements recommandés basés sur le graphe Neo4j. Retourne [] si Neo4j est indisponible.",
+            "Returns recommended services and events based on the Neo4j graph. Returns [] if Neo4j is unavailable.",
     })
     @ApiResponse({ status: 200, type: [RecommendationItemDto] })
     getRecommendations(@Request() req: AuthRequest) {
@@ -45,9 +45,9 @@ export class SocialController {
 
     @Post("social/interest")
     @ApiOperation({
-        summary: "Enregistrer l'intérêt pour un événement (alimente Neo4j)",
+        summary: "Record interest in an event (feeds Neo4j)",
         description:
-            "Crée ou supprime une relation INTERESTED_IN dans Neo4j entre l'utilisateur et l'événement.",
+            "Creates or removes an INTERESTED_IN relationship in Neo4j between the user and the event.",
     })
     @ApiBody({ type: RecordInterestBodyDto })
     @ApiResponse({ status: 201, type: RecordInterestResponseDto })

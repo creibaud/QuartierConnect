@@ -25,10 +25,10 @@ function createWrapper() {
 
 const mockService = {
     _id: "svc-1",
-    title: "Bibliothèque",
+    title: "Library",
     category: "culture",
     type: "free",
-    description: "Prêt de livres",
+    description: "Book lending",
     address: "1 rue de la Paix",
     neighborhoodId: "nbh-1",
 };
@@ -78,13 +78,13 @@ describe("useCreateService", () => {
             wrapper: createWrapper(),
         });
         result.current.mutate({
-            title: "Bibliothèque",
+            title: "Library",
             category: "culture",
             type: "free",
         });
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
         expect(api.createService).toHaveBeenCalledWith({
-            title: "Bibliothèque",
+            title: "Library",
             category: "culture",
             type: "free",
         });

@@ -11,6 +11,8 @@ export interface JwtPayload {
     sub: string;
     email: string;
     role: string;
+    firstName?: string | null;
+    lastName?: string | null;
     jti?: string;
     exp?: number;
 }
@@ -57,7 +59,7 @@ export class TokenService {
             throw new UnauthorizedException({ code: "TOKEN_INVALID" });
         }
 
-        const verifiedRole = await this.db.transaction(async (tx) => {
+        const verified = await this.db.transaction(async (tx) => {
             const [user] = await tx
                 .select()
                 .from(schema.users)
@@ -85,13 +87,19 @@ export class TokenService {
                 .set({ refreshTokenHash: null })
                 .where(eq(schema.users.id, payload.sub));
 
-            return user.role;
+            return {
+                role: user.role,
+                firstName: user.firstName,
+                lastName: user.lastName,
+            };
         });
 
         return this.generatePair({
             sub: payload.sub,
             email: payload.email,
-            role: verifiedRole,
+            role: verified.role,
+            firstName: verified.firstName,
+            lastName: verified.lastName,
         });
     }
 

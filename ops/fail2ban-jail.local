@@ -1,0 +1,28 @@
+# fail2ban — configuration QuartierConnect
+#   cp ops/fail2ban-jail.local /etc/fail2ban/jail.local
+#   systemctl enable --now fail2ban
+#
+# Deux jails : SSH (fiable, toujours actif) et caddy-auth (échecs de login).
+
+[DEFAULT]
+bantime  = 1h
+findtime = 10m
+maxretry = 5
+backend  = systemd
+
+[sshd]
+enabled = true
+port    = ssh
+
+# Bannit les IP qui enchaînent les 401 sur /api/auth/login.
+# Prérequis : Caddy doit écrire ses access logs JSON dans le logpath ci-dessous
+# (bloc `log` du Caddyfile). Défense en profondeur au-dessus du rate limit
+# applicatif (LOGIN_RATE_LIMIT, @Throttle sur /auth/login).
+[caddy-auth]
+enabled  = true
+port     = http,https
+filter   = caddy-auth
+logpath  = /var/log/quartierconnect/caddy/access.log
+maxretry = 5
+findtime = 10m
+bantime  = 1h

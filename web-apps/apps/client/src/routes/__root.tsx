@@ -1,10 +1,13 @@
 import { useHead } from "@unhead/react";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { Toaster } from "sonner";
 
 const SITE_NAME = "QuartierConnect";
 
 function RootLayout() {
+    const { t } = useTranslation();
+
     useHead({
         titleTemplate: (title) =>
             title ? `${title} · ${SITE_NAME}` : SITE_NAME,
@@ -12,8 +15,7 @@ function RootLayout() {
         meta: [
             {
                 name: "description",
-                content:
-                    "QuartierConnect — votre espace résident : incidents, événements, services et vie de quartier.",
+                content: t("pages.meta.description"),
             },
             { name: "theme-color", content: "#0a0a0a" },
         ],

@@ -45,6 +45,7 @@ export interface Service {
     address?: string;
     neighborhoodId?: string;
     pointsMultiplier?: number;
+    createdBy?: string;
     location?: GeoJsonPoint;
 }
 
@@ -62,6 +63,25 @@ export interface Event {
 
 export interface PointBalance {
     balance: number;
+}
+
+export interface PointTransaction {
+    id: string;
+    senderId: string;
+    recipientId: string;
+    amount: number;
+    note: string | null;
+    senderEmail: string | null;
+    recipientEmail: string | null;
+    senderName: string | null;
+    recipientName: string | null;
+    createdAt: string;
+}
+
+export interface TransferResult {
+    transaction: PointTransaction;
+    senderBalance: number;
+    recipientBalance: number;
 }
 
 export interface PaginatedResponse<T> {
@@ -99,7 +119,11 @@ export interface Contract {
 export interface Conversation {
     _id: string;
     participants: string[];
-    participantsInfo?: { id: string; email: string | null }[];
+    participantsInfo?: {
+        id: string;
+        email: string | null;
+        name?: string | null;
+    }[];
     isGroup: boolean;
     groupName: string | null;
     neighborhoodId: string | null;
@@ -134,6 +158,15 @@ export interface DocumentMeta {
     size: number;
     uploadedBy: string;
     uploadedAt: string;
+}
+
+export interface MyProfile {
+    id: string;
+    email: string;
+    role: string;
+    firstName: string | null;
+    lastName: string | null;
+    avatarUrl: string | null;
 }
 
 export interface UserExport {

@@ -7,6 +7,9 @@ export class ParticipantInfoDto {
 
     @ApiProperty({ example: "bob@demo.fr", nullable: true })
     email: string | null;
+
+    @ApiPropertyOptional({ example: "Bob Dupont", nullable: true })
+    name: string | null;
 }
 
 export class ConversationDto {
@@ -19,13 +22,13 @@ export class ConversationDto {
             "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
             "b2c3d4e5-f6a7-8901-bcde-f12345678901",
         ],
-        description: "UUIDs des participants",
+        description: "UUIDs of the participants",
     })
     participants: string[];
 
     @ApiProperty({
         type: [ParticipantInfoDto],
-        description: "Participants avec leur email résolu",
+        description: "Participants with their resolved email",
     })
     participantsInfo: ParticipantInfoDto[];
 
@@ -39,7 +42,7 @@ export class ConversationDto {
     isGroup: boolean;
 
     @ApiPropertyOptional({
-        example: "Groupe voisins Belleville",
+        example: "Belleville neighbors group",
         nullable: true,
     })
     groupName?: string | null;
@@ -71,17 +74,17 @@ export class MessageDto {
     type: MessageType;
 
     @ApiPropertyOptional({
-        example: "Bonjour ! Toujours disponible ce samedi ?",
+        example: "Hi! Still available this Saturday?",
     })
     content?: string;
 
     @ApiPropertyOptional({
         example: "664f1a2b3c4d5e6f7a8b9c99",
-        description: "GridFS FileId (uniquement pour type FILE ou IMAGE)",
+        description: "GridFS FileId (only for type FILE or IMAGE)",
     })
     fileId?: string;
 
-    @ApiPropertyOptional({ example: "photo-jardin.jpg" })
+    @ApiPropertyOptional({ example: "garden-photo.jpg" })
     fileName?: string;
 
     @ApiProperty({ example: false })
@@ -95,7 +98,7 @@ export class FileUploadBodyDto {
     @ApiProperty({
         type: "string",
         format: "binary",
-        description: "Fichier à envoyer (max 10 Mo)",
+        description: "File to send (max 10 MB)",
     })
     file: string;
 }

@@ -55,7 +55,7 @@ test.describe("Client — Contrats", () => {
     test("shows create contract button", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         await expect(
-            page.getByRole("button", { name: /créer|nouveau|proposer/i }),
+            page.getByRole("button", { name: /créer|nouveau|proposer/i }).first(),
         ).toBeVisible();
     });
 
@@ -64,7 +64,7 @@ test.describe("Client — Contrats", () => {
     }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         await page
-            .getByRole("button", { name: /créer|nouveau|proposer/i })
+            .getByRole("button", { name: /créer|nouveau|proposer/i }).first()
             .click();
         await expect(page.getByRole("dialog")).toBeVisible();
         await expect(page.getByLabel(/titre/i)).toBeVisible();

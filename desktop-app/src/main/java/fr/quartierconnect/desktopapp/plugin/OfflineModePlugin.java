@@ -1,6 +1,7 @@
 package fr.quartierconnect.desktopapp.plugin;
 
 import atlantafx.base.controls.ToggleSwitch;
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.services.ApiService;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -24,9 +25,9 @@ public class OfflineModePlugin implements QuartierConnectPlugin, PluginRegistry.
     private HBox injectedToggle;
 
     @Override public String getId()      { return "fr.quartierconnect.plugin.offline-mode"; }
-    @Override public String getName()    { return "Mode hors ligne"; }
+    @Override public String getName()    { return I18n.get("plugin.offline.name"); }
     @Override public String getVersion() { return "1.0.0"; }
-    @Override public String getDescription() { return "Ajoute un interrupteur pour forcer le mode hors ligne et bloquer les appels réseau."; }
+    @Override public String getDescription() { return I18n.get("plugin.offline.description"); }
 
     @Override
     public void setContext(AppContext ctx) { this.context = ctx; }
@@ -39,9 +40,9 @@ public class OfflineModePlugin implements QuartierConnectPlugin, PluginRegistry.
 
         ToggleSwitch toggle = new ToggleSwitch();
         toggle.setSelected(ApiService.isOfflineMode());
-        toggle.setTooltip(new Tooltip("Forcer le mode hors ligne (bloque tous les appels réseau)"));
+        toggle.setTooltip(new Tooltip(I18n.get("plugin.offline.tooltip")));
 
-        Label lbl = new Label("Hors ligne");
+        Label lbl = new Label(I18n.get("plugin.offline.label"));
         lbl.setStyle("-fx-font-size: 10.5px; -fx-text-fill: -color-fg-subtle; -fx-padding: 0 0 0 4;");
 
         injectedToggle = new HBox(8, planeIcon, lbl, toggle);
@@ -69,15 +70,13 @@ public class OfflineModePlugin implements QuartierConnectPlugin, PluginRegistry.
 
     @Override
     public Node getPanel() {
-        Label desc = new Label(
-            "Ajoute un interrupteur dans la barre de navigation pour forcer le mode hors ligne. "
-            + "Quand activé, toutes les requêtes réseau sont bloquées — l'app fonctionne uniquement depuis SQLite. "
-            + "Pratique pour tester le comportement offline-first sans couper le réseau."
-        );
+        Label desc = new Label(I18n.get("plugin.offline.panelDesc"));
         desc.setStyle("-fx-font-size: 11.5px; -fx-text-fill: -color-fg-muted;");
         desc.setWrapText(true);
 
-        Label status = new Label(ApiService.isOfflineMode() ? "● Mode hors ligne actif" : "● Mode en ligne");
+        Label status = new Label(ApiService.isOfflineMode()
+                ? I18n.get("plugin.offline.statusOffline")
+                : I18n.get("plugin.offline.statusOnline"));
         status.setStyle("-fx-font-size: 11px; -fx-font-family: monospace; -fx-text-fill: "
                 + (ApiService.isOfflineMode() ? "-color-warning-fg" : "-color-success-fg") + ";");
 

@@ -1,14 +1,32 @@
 import { useState } from "react";
-import { Alert01Icon, ListViewIcon, MapsLocation01Icon } from "@hugeicons/core-free-icons";
+import { useTranslation } from "react-i18next";
+import {
+    Alert01Icon,
+    Delete01Icon,
+    ListViewIcon,
+    MapsLocation01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
 import { centroidOf } from "@workspace/shared/lib/geo";
 import {
+    useDeleteIncident,
     useInfiniteIncidents,
     useUpdateIncidentStatus,
 } from "@workspace/shared/lib/hooks/incidents.hooks";
 import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
 import type { Incident, Neighborhood } from "@workspace/shared/lib/types";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@workspace/ui/components/alert-dialog";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { DataState } from "@workspace/ui/components/data-state";
@@ -19,12 +37,8 @@ import {
     EmptyMedia,
     EmptyTitle,
 } from "@workspace/ui/components/empty";
+import { Map, Marker, NeighborhoodPolygon } from "@workspace/ui/components/map";
 import { PageHeader } from "@workspace/ui/components/page-header";
-import {
-    Map,
-    Marker,
-    NeighborhoodPolygon,
-} from "@workspace/ui/components/map";
 import {
     Select,
     SelectContent,
@@ -49,11 +63,16 @@ import {
 } from "@workspace/ui/components/tabs";
 import { toast } from "sonner";
 
-const STATUS_LABELS: Record<string, string> = {
-    open: "Ouvert",
-    in_progress: "En cours",
-    resolved: "Résolu",
-};
+type TranslateFn = ReturnType<typeof useTranslation>["t"];
+
+function statusLabel(t: TranslateFn, status: string): string {
+    const labels: Record<string, string> = {
+        open: t("incidents.status.open"),
+        in_progress: t("incidents.status.in_progress"),
+        resolved: t("incidents.status.resolved"),
+    };
+    return labels[status] ?? status;
+}
 
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {
     open: "default",
@@ -75,35 +94,52 @@ export const Route = createFileRoute("/_app/incidents/")({
 });
 
 function AdminIncidentsPage() {
+    const { t } = useTranslation();
     const [statusFilter, setStatusFilter] = useState<string>("all");
     const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage } =
         useInfiniteIncidents(20, statusFilter);
     const updateStatus = useUpdateIncidentStatus();
+    const deleteIncident = useDeleteIncident();
     const incidents = data?.pages.flat() ?? [];
     const { data: neighborhoods } = useNeighborhoods();
+
+    function handleDelete(incident: Incident) {
+        deleteIncident.mutate(incident.id, {
+            onSuccess: () => toast.success(t("adminPages.incidents.deleted")),
+            onError: () => toast.error(t("adminPages.incidents.deleteError")),
+        });
+    }
 
     return (
         <div className="p-6">
             <div className="mx-auto flex max-w-6xl flex-col gap-6">
                 <PageHeader
-                    title="Incidents"
-                    description="Modération et suivi des signalements"
+                    title={t("incidents.title")}
+                    description={t("adminPages.incidents.description")}
                     actions={
                         <Select
                             value={statusFilter}
                             onValueChange={setStatusFilter}
                         >
                             <SelectTrigger className="w-44">
-                                <SelectValue placeholder="Tous les statuts" />
+                                <SelectValue
+                                    placeholder={t(
+                                        "adminPages.incidents.allStatuses",
+                                    )}
+                                />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Tous</SelectItem>
-                                <SelectItem value="open">Ouverts</SelectItem>
+                                <SelectItem value="all">
+                                    {t("adminPages.incidents.filterAll")}
+                                </SelectItem>
+                                <SelectItem value="open">
+                                    {t("adminPages.incidents.filterOpen")}
+                                </SelectItem>
                                 <SelectItem value="in_progress">
-                                    En cours
+                                    {t("incidents.status.in_progress")}
                                 </SelectItem>
                                 <SelectItem value="resolved">
-                                    Résolus
+                                    {t("adminPages.incidents.filterResolved")}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
@@ -114,11 +150,11 @@ function AdminIncidentsPage() {
                     <TabsList>
                         <TabsTrigger value="list">
                             <HugeiconsIcon icon={ListViewIcon} />
-                            Liste
+                            {t("adminPages.common.listTab")}
                         </TabsTrigger>
                         <TabsTrigger value="map">
                             <HugeiconsIcon icon={MapsLocation01Icon} />
-                            Carte
+                            {t("adminPages.common.mapTab")}
                         </TabsTrigger>
                     </TabsList>
 
@@ -128,7 +164,7 @@ function AdminIncidentsPage() {
                             error={isError ? true : undefined}
                             isEmpty={incidents.length === 0}
                             onRetry={() => refetch()}
-                            errorTitle="Impossible de charger les incidents"
+                            errorTitle={t("adminPages.incidents.loadError")}
                             skeleton={
                                 <div className="flex flex-col gap-2">
                                     {Array.from({ length: 5 }).map((_, i) => (
@@ -146,12 +182,14 @@ function AdminIncidentsPage() {
                                             <HugeiconsIcon icon={Alert01Icon} />
                                         </EmptyMedia>
                                         <EmptyTitle>
-                                            Aucun incident pour l&apos;instant
+                                            {t(
+                                                "adminPages.incidents.emptyTitle",
+                                            )}
                                         </EmptyTitle>
                                         <EmptyDescription>
-                                            Les signalements des résidents
-                                            apparaîtront ici dès qu&apos;ils
-                                            seront soumis.
+                                            {t(
+                                                "adminPages.incidents.emptyDescription",
+                                            )}
                                         </EmptyDescription>
                                     </EmptyHeader>
                                 </Empty>
@@ -161,11 +199,21 @@ function AdminIncidentsPage() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Titre</TableHead>
-                                            <TableHead>Statut</TableHead>
-                                            <TableHead>Signalé le</TableHead>
+                                            <TableHead>
+                                                {t("incidents.fields.title")}
+                                            </TableHead>
+                                            <TableHead>
+                                                {t(
+                                                    "adminPages.incidents.statusColumn",
+                                                )}
+                                            </TableHead>
+                                            <TableHead>
+                                                {t(
+                                                    "adminPages.incidents.reportedAt",
+                                                )}
+                                            </TableHead>
                                             <TableHead className="text-right">
-                                                Action
+                                                {t("adminPages.common.action")}
                                             </TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -183,9 +231,10 @@ function AdminIncidentsPage() {
                                                             ] ?? "outline"
                                                         }
                                                     >
-                                                        {STATUS_LABELS[
-                                                            incident.status
-                                                        ] ?? incident.status}
+                                                        {statusLabel(
+                                                            t,
+                                                            incident.status,
+                                                        )}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-muted-foreground text-sm tabular-nums">
@@ -196,48 +245,115 @@ function AdminIncidentsPage() {
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    {NEXT_STATUSES[
-                                                        incident.status
-                                                    ]?.length > 0 ? (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            disabled={
-                                                                updateStatus.isPending
-                                                            }
-                                                            onClick={() =>
-                                                                updateStatus.mutate(
-                                                                    {
-                                                                        id: incident.id,
-                                                                        status: NEXT_STATUSES[
-                                                                            incident
-                                                                                .status
-                                                                        ][0],
-                                                                    },
-                                                                    {
-                                                                        onSuccess:
-                                                                            () =>
-                                                                                toast.success(
-                                                                                    "Statut mis à jour",
-                                                                                ),
-                                                                        onError:
-                                                                            () =>
-                                                                                toast.error(
-                                                                                    "Impossible de changer le statut",
-                                                                                ),
-                                                                    },
-                                                                )
-                                                            }
-                                                        >
-                                                            {updateStatus.isPending
-                                                                ? "…"
-                                                                : `→ ${STATUS_LABELS[NEXT_STATUSES[incident.status][0]]}`}
-                                                        </Button>
-                                                    ) : (
-                                                        <span className="text-muted-foreground text-xs">
-                                                            Terminé
-                                                        </span>
-                                                    )}
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        {NEXT_STATUSES[
+                                                            incident.status
+                                                        ]?.length > 0 ? (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                disabled={
+                                                                    updateStatus.isPending
+                                                                }
+                                                                onClick={() =>
+                                                                    updateStatus.mutate(
+                                                                        {
+                                                                            id: incident.id,
+                                                                            status: NEXT_STATUSES[
+                                                                                incident
+                                                                                    .status
+                                                                            ][0],
+                                                                        },
+                                                                        {
+                                                                            onSuccess:
+                                                                                () =>
+                                                                                    toast.success(
+                                                                                        t(
+                                                                                            "adminPages.incidents.statusUpdated",
+                                                                                        ),
+                                                                                    ),
+                                                                            onError:
+                                                                                () =>
+                                                                                    toast.error(
+                                                                                        t(
+                                                                                            "adminPages.incidents.statusUpdateError",
+                                                                                        ),
+                                                                                    ),
+                                                                        },
+                                                                    )
+                                                                }
+                                                            >
+                                                                {updateStatus.isPending
+                                                                    ? "…"
+                                                                    : `→ ${statusLabel(t, NEXT_STATUSES[incident.status][0])}`}
+                                                            </Button>
+                                                        ) : (
+                                                            <span className="text-muted-foreground text-xs">
+                                                                {t(
+                                                                    "adminPages.incidents.done",
+                                                                )}
+                                                            </span>
+                                                        )}
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger
+                                                                asChild
+                                                            >
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="text-destructive hover:text-destructive h-8 text-xs"
+                                                                    disabled={
+                                                                        deleteIncident.isPending
+                                                                    }
+                                                                >
+                                                                    <HugeiconsIcon
+                                                                        icon={
+                                                                            Delete01Icon
+                                                                        }
+                                                                    />
+                                                                    {t(
+                                                                        "common.delete",
+                                                                    )}
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>
+                                                                        {t(
+                                                                            "adminPages.incidents.deleteConfirmTitle",
+                                                                        )}
+                                                                    </AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        {t(
+                                                                            "adminPages.incidents.deleteConfirmDescription",
+                                                                            {
+                                                                                title: incident.title,
+                                                                            },
+                                                                        )}
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>
+                                                                        {t(
+                                                                            "common.cancel",
+                                                                        )}
+                                                                    </AlertDialogCancel>
+                                                                    <AlertDialogAction
+                                                                        variant="destructive"
+                                                                        onClick={() =>
+                                                                            handleDelete(
+                                                                                incident,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        {t(
+                                                                            "common.delete",
+                                                                        )}
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -251,7 +367,7 @@ function AdminIncidentsPage() {
                                             className="w-full"
                                             onClick={() => fetchNextPage()}
                                         >
-                                            Voir plus
+                                            {t("adminPages.common.loadMore")}
                                         </Button>
                                     </div>
                                 )}
@@ -278,6 +394,7 @@ function IncidentsMap({
     incidents: Incident[];
     neighborhoods: Neighborhood[];
 }) {
+    const { t } = useTranslation();
     const firstNeighborhood = neighborhoods.find((n) => n.geometry);
     const incidentsWithCoords = incidents.filter(
         (i) => i.lat !== null && i.lng !== null,
@@ -309,8 +426,8 @@ function IncidentsMap({
                         <div className="space-y-1">
                             <p className="font-medium">{inc.title}</p>
                             <p className="text-xs">
-                                Statut :{" "}
-                                {STATUS_LABELS[inc.status] ?? inc.status}
+                                {t("adminPages.incidents.statusColumn")} :{" "}
+                                {statusLabel(t, inc.status)}
                             </p>
                         </div>
                     }

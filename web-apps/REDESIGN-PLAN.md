@@ -2,7 +2,7 @@
 
 Applies `DESIGN.md` patterns to every page. Both apps already share the new blue
 palette, the sidebar-07 layout, and unhead titles. This plan is the per-page
-work to make pages "plus belles et adaptées". Priorities: **P1** = visible/structural,
+work to make pages "prettier and better adapted". Priorities: **P1** = visible/structural,
 **P2** = polish, **P3** = nice-to-have.
 
 ## Phase 0 — Foundations (do first, unblocks everything)
@@ -34,11 +34,11 @@ Plus secondary: **Form/dialog** (Field groups), **Chat** (messages), **Editor** 
 | `dashboard` | Dashboard | KPI cards: value `text-3xl tabular-nums`, subtle trend, clickable to section; tighten quick-access grid; drop redundant copy | P1 |
 | `users` | Table | PageHeader + search/role `Select` filter; role→`Badge` (§8); compact rows; `DataState` (skeleton/empty/error); ban via `AlertDialog`; `aria-sort` | P1 |
 | `incidents` | Map | `ToggleGroup` list/map/calendar; map min-height + reserved space; status `Badge`; neighborhood `Select`; `DataState`; sync map↔list selection | P1 |
-| `events` | Table/Cards | PageHeader + view toggle; event cards or table with date `tabular-nums`; empty state with "Créer un événement" CTA | P2 |
+| `events` | Table/Cards | PageHeader + view toggle; event cards or table with date `tabular-nums`; empty state with "Create an event" CTA | P2 |
 | `neighborhoods` | Map+Table | list + map of polygons; create/edit in `Dialog` with `Field` form; empty state | P2 |
 | `community-votes` | Table/Cards | vote cards with progress (`Progress`) + result `Badge`; clear open/closed state | P2 |
 | `services` | Table/Cards | directory cards grid; category filter (`ToggleGroup`); empty state | P2 |
-| `dsl` | Editor | two-pane: query editor + results; monospaced input; run button primary; error `Alert`; empty "Écrivez une requête" | P3 |
+| `dsl` | Editor | two-pane: query editor + results; monospaced input; run button primary; error `Alert`; empty "Write a query" | P3 |
 
 ## Client (teal/sky, airy, `max-w-5xl` centered)
 

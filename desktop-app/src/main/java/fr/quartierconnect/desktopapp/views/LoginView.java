@@ -1,5 +1,6 @@
 package fr.quartierconnect.desktopapp.views;
 
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.services.ApiService;
 import fr.quartierconnect.desktopapp.services.AuthService;
 import fr.quartierconnect.desktopapp.services.SsoCallbackServer;
@@ -35,7 +36,7 @@ public class LoginView {
     private final StackPane root;
 
     private final Label  errorLabel    = new Label();
-    private final Button ssoButton     = new Button("Se connecter via le navigateur");
+    private final Button ssoButton     = new Button(I18n.get("login.sso"));
     private final Button offlineButton = new Button();
 
     public LoginView(Stage stage, Consumer<String> openBrowser) {
@@ -68,11 +69,11 @@ public class LoginView {
         logoImg.setEffect(whiten);
 
         // App name
-        Label appName = new Label("QuartierConnect");
+        Label appName = new Label(I18n.get("app.name"));
         appName.getStyleClass().add("login-app-name");
 
         // Tagline
-        Label tagline = new Label("Connectez-vous via votre navigateur\npour accéder à l'administration.");
+        Label tagline = new Label(I18n.get("login.tagline"));
         tagline.getStyleClass().add("login-tagline");
         tagline.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
 
@@ -100,7 +101,7 @@ public class LoginView {
         offlineButton.setOnAction(e -> continueOffline());
 
         // Footer
-        Label footer = new Label("Connexion sécurisée · SSO + TOTP");
+        Label footer = new Label(I18n.get("login.footer"));
         footer.getStyleClass().add("login-footer");
 
         // Card
@@ -129,12 +130,12 @@ public class LoginView {
                 boolean apiUp = ApiService.isReachable();
                 if (!apiUp) {
                     Platform.runLater(() ->
-                        showError("Serveur inaccessible. Vérifiez que l'API est démarrée."));
+                        showError(I18n.get("login.error.serverUnreachable")));
                 }
                 return;
             }
 
-            Platform.runLater(() -> setSsoLoading(true, "Connexion automatique…"));
+            Platform.runLater(() -> setSsoLoading(true, I18n.get("login.autoConnecting")));
 
             boolean apiUp = ApiService.isReachable();
             if (apiUp) {
@@ -152,13 +153,13 @@ public class LoginView {
                 } else {
                     Platform.runLater(() -> {
                         setSsoLoading(false, null);
-                        showOfflineOption("Session expirée. Reconnectez-vous via le navigateur ou continuez hors ligne.");
+                        showOfflineOption(I18n.get("login.error.sessionExpired"));
                     });
                 }
             } else {
                 Platform.runLater(() -> {
                     setSsoLoading(false, null);
-                    showOfflineOption("Serveur inaccessible. Vous pouvez continuer hors ligne avec votre dernière session.");
+                    showOfflineOption(I18n.get("login.error.serverUnreachableOffline"));
                 });
             }
         }, "startup-session-check").start();
@@ -170,7 +171,7 @@ public class LoginView {
         new Thread(() -> {
             if (!ApiService.isReachable()) {
                 Platform.runLater(() -> {
-                    showError("Serveur inaccessible. Vérifiez que l'API est démarrée (localhost:5000).");
+                    showError(I18n.get("login.error.serverUnreachablePort"));
                     setSsoLoading(false);
                 });
                 return;
@@ -185,7 +186,7 @@ public class LoginView {
             } catch (Exception e) {
                 log.severe("Cannot start SSO callback server: " + e.getMessage());
                 Platform.runLater(() -> {
-                    showError("Impossible de démarrer le serveur SSO local.");
+                    showError(I18n.get("login.error.ssoServerStart"));
                     setSsoLoading(false);
                 });
                 return;
@@ -206,7 +207,7 @@ public class LoginView {
             } catch (Exception e) {
                 log.warning("SSO PKCE flow failed: " + e.getMessage());
                 Platform.runLater(() -> {
-                    showError("Connexion SSO annulée ou expirée.");
+                    showError(I18n.get("login.error.ssoCancelled"));
                     setSsoLoading(false);
                 });
             }
@@ -221,8 +222,8 @@ public class LoginView {
         showError(message);
         String email = AuthService.getInstance().getCurrentUserEmail();
         offlineButton.setText(email != null
-            ? "Continuer hors ligne (" + email + ")"
-            : "Continuer hors ligne");
+            ? I18n.get("login.offline.continueWithEmail", email)
+            : I18n.get("login.offline.continue"));
         offlineButton.setVisible(true);
         offlineButton.setManaged(true);
     }
@@ -253,8 +254,8 @@ public class LoginView {
             ssoButton.setText(customText);
         } else {
             ssoButton.setText(loading
-                ? "En attente du navigateur…"
-                : "Se connecter via le navigateur");
+                ? I18n.get("login.sso.waiting")
+                : I18n.get("login.sso"));
         }
     }
 }

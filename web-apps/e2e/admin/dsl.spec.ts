@@ -7,7 +7,7 @@ import {
     uniqueEmail,
 } from "../helpers/auth";
 
-test.use({ baseURL: "http://localhost:3001" });
+test.use({ baseURL: process.env.PLAYWRIGHT_BASE_URL_ADMIN ?? "http://localhost:3001/" });
 
 test.describe("Admin — Éditeur DSL", () => {
     let adminAccessToken: string;
@@ -41,7 +41,7 @@ test.describe("Admin — Éditeur DSL", () => {
             adminAccessToken,
             adminRefreshToken,
         );
-        await page.goto("/dsl");
+        await page.goto("dsl");
         await expect(page).toHaveURL(/\/dsl/);
     });
 
@@ -111,7 +111,7 @@ test.describe("Admin — Éditeur DSL", () => {
             tokens.accessToken,
             tokens.refreshToken,
         );
-        await page.goto("/dsl");
+        await page.goto("dsl");
         await expect(page).toHaveURL(/\/login/);
     });
 });

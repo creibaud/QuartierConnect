@@ -43,6 +43,15 @@ export class MessagingService {
         return !!conversation && conversation.participants.includes(userId);
     }
 
+    async assertParticipant(
+        conversationId: string,
+        userId: string,
+    ): Promise<void> {
+        if (!(await this.isParticipant(conversationId, userId))) {
+            throw new ForbiddenException("Not a participant");
+        }
+    }
+
     async findConversations(userId: string) {
         const conversations = await this.conversationModel
             .find({ participants: userId })
@@ -57,17 +66,29 @@ export class MessagingService {
                   .select({
                       id: schema.users.id,
                       email: schema.users.email,
+                      firstName: schema.users.firstName,
+                      lastName: schema.users.lastName,
                   })
                   .from(schema.users)
                   .where(inArray(schema.users.id, participantIds))
             : [];
         const emailById = new Map(users.map((user) => [user.id, user.email]));
+        const nameById = new Map(
+            users.map((user) => [
+                user.id,
+                [user.firstName, user.lastName]
+                    .filter(Boolean)
+                    .join(" ")
+                    .trim() || null,
+            ]),
+        );
 
         return conversations.map((conv) => ({
             ...conv.toObject(),
             participantsInfo: conv.participants.map((id) => ({
                 id,
                 email: emailById.get(id) ?? null,
+                name: nameById.get(id) ?? null,
             })),
         }));
     }
@@ -80,7 +101,7 @@ export class MessagingService {
             throw new BadRequestException({
                 code: "NO_OTHER_PARTICIPANTS",
                 message:
-                    "Une conversation doit inclure au moins un autre participant.",
+                    "A conversation must include at least one other participant.",
             });
         }
 
@@ -124,7 +145,7 @@ export class MessagingService {
             if (missing.length > 0) {
                 throw new NotFoundException({
                     code: "USER_EMAIL_NOT_FOUND",
-                    message: `Aucun utilisateur pour : ${missing.join(", ")}`,
+                    message: `No user found for: ${missing.join(", ")}`,
                 });
             }
             for (const row of rows) {
@@ -136,7 +157,7 @@ export class MessagingService {
             throw new BadRequestException({
                 code: "PARTICIPANTS_REQUIRED",
                 message:
-                    "Fournir `participants` (UUIDs) ou `participantEmails` (emails).",
+                    "Provide `participants` (UUIDs) or `participantEmails` (emails).",
             });
         }
 

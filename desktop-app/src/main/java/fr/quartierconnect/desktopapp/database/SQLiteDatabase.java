@@ -94,12 +94,12 @@ public class SQLiteDatabase {
             """;
 
         Object[][] demos = {
-            {null, "Lampadaire cassé rue de la Paix", "Le lampadaire n°47 est éteint depuis 3 jours, risque pour les piétons.", "open", twoDays, twoDays},
-            {null, "Nid de poule avenue Voltaire", "Nid de poule de 30cm, dangereux pour les cyclistes.", "in_progress", yesterday, yesterday},
-            {null, "Graffitis école primaire Rousseau", "Tags obscènes sur le mur est, à effacer avant la rentrée.", "open", yesterday, yesterday},
-            {null, "Conteneur débordant rue du Moulin", "Poubelle non collectée depuis 5 jours.", "resolved", twoDays, now},
-            {null, "Fuite d'eau trottoir nord", "Flaque persistante depuis 48h, risque de verglas.", "open", now, now},
-            {null, "Banc cassé parc central", "Banc en bois détérioré, risque de blessure pour les enfants.", "in_progress", yesterday, now},
+            {null, "Broken streetlight on Peace Street", "Streetlight no. 47 has been out for 3 days, a hazard for pedestrians.", "open", twoDays, twoDays},
+            {null, "Pothole on Voltaire Avenue", "A 30cm pothole, dangerous for cyclists.", "in_progress", yesterday, yesterday},
+            {null, "Graffiti at Rousseau primary school", "Obscene tags on the east wall, to be removed before the new term.", "open", yesterday, yesterday},
+            {null, "Overflowing bin on Mill Street", "Garbage not collected for 5 days.", "resolved", twoDays, now},
+            {null, "Water leak on north sidewalk", "Persistent puddle for 48h, risk of black ice.", "open", now, now},
+            {null, "Broken bench in central park", "Damaged wooden bench, risk of injury to children.", "in_progress", yesterday, now},
         };
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -130,30 +130,30 @@ public class SQLiteDatabase {
         Object[][] conflicts = {
             {
                 "demo-conflict-001",
-                "Éclairage défaillant place de la République",    // local title (edited)
-                "Les habitants signalent plusieurs pannes ce mois.", // local desc
+                "Faulty lighting at Republic Square",             // local title (edited)
+                "Residents report several outages this month.",   // local desc
                 "open",
                 yesterday, yesterday,
-                "Éclairage défaillant place de la République",    // base title (original)
-                "Problème signalé par la mairie.",                // base desc
+                "Faulty lighting at Republic Square",             // base title (original)
+                "Problem reported by the town hall.",             // base desc
                 "open",
                 yesterday,
-                "Problème d'éclairage — pris en charge par les services techniques", // remote title
-                "Intervention planifiée le 15 du mois.",          // remote desc
+                "Lighting issue - handled by the technical services", // remote title
+                "Intervention scheduled for the 15th of the month.",  // remote desc
                 "in_progress"                                     // remote status
             },
             {
                 "demo-conflict-002",
-                "Trottoir dégradé impasse des Lilas",
-                "La surface est irrégulière, risque de chute pour les personnes âgées.",
+                "Damaged sidewalk on Lilac Lane",
+                "The surface is uneven, a fall risk for elderly people.",
                 "in_progress",
                 yesterday, now,
-                "Trottoir dégradé impasse des Lilas",
-                "Surface abîmée signalée.",
+                "Damaged sidewalk on Lilac Lane",
+                "Damaged surface reported.",
                 "open",
                 yesterday,
-                "Trottoir dégradé impasse des Lilas",
-                "Réparation effectuée par les équipes ce matin.",
+                "Damaged sidewalk on Lilac Lane",
+                "Repair carried out by the teams this morning.",
                 "resolved"
             }
         };
@@ -199,30 +199,30 @@ public class SQLiteDatabase {
         Object[][] conflicts = {
             {
                 UUID.randomUUID().toString(),
-                "Fuite d'eau carrefour Nord [local modifié]",
-                "La fuite a empiré, signalement mairie en urgence.",
+                "Water leak at North junction [local edited]",
+                "The leak has worsened, urgent report to the town hall.",
                 "in_progress",
                 yesterday, yesterday,
-                "Fuite d'eau carrefour Nord",
-                "Légère fuite signalée par un habitant.",
+                "Water leak at North junction",
+                "Minor leak reported by a resident.",
                 "open",
                 yesterday,
-                "Fuite d'eau carrefour Nord [serveur]",
-                "Intervention équipe technique prévue demain.",
+                "Water leak at North junction [server]",
+                "Technical team intervention scheduled for tomorrow.",
                 "resolved"
             },
             {
                 UUID.randomUUID().toString(),
-                "Éclairage parking Saint-Jean",
-                "4 lampadaires sur 6 défaillants depuis lundi.",
+                "Lighting at Saint-Jean parking lot",
+                "4 of 6 streetlights faulty since Monday.",
                 "open",
                 yesterday, now,
-                "Éclairage parking Saint-Jean",
-                "1 lampadaire défaillant signalé.",
+                "Lighting at Saint-Jean parking lot",
+                "1 faulty streetlight reported.",
                 "open",
                 yesterday,
-                "Éclairage parking Saint-Jean",
-                "Technicien sur place, réparation en cours.",
+                "Lighting at Saint-Jean parking lot",
+                "Technician on site, repair in progress.",
                 "in_progress"
             }
         };

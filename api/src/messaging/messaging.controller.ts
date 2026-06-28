@@ -3,10 +3,12 @@ import {
     Body,
     Controller,
     Get,
+    NotFoundException,
     Param,
     Post,
     Query,
     Request,
+    Res,
     UploadedFile,
     UseGuards,
     UseInterceptors,
@@ -23,6 +25,7 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
+import { Response } from "express";
 import { GridFSBucket, ObjectId } from "mongodb";
 import { Connection } from "mongoose";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -59,9 +62,9 @@ export class MessagingController {
 
     @Get("conversations")
     @ApiOperation({
-        summary: "Lister mes conversations",
+        summary: "List my conversations",
         description:
-            "Retourne toutes les conversations où l'utilisateur est participant.",
+            "Returns all conversations where the user is a participant.",
     })
     @ApiResponse({ status: 200, type: [ConversationDto] })
     findConversations(@Request() req: AuthRequest) {
@@ -70,9 +73,9 @@ export class MessagingController {
 
     @Post("conversations")
     @ApiOperation({
-        summary: "Créer une conversation",
+        summary: "Create a conversation",
         description:
-            "Crée une conversation 1-à-1 ou de groupe. Pour une conversation 1-à-1, `participants` = [autreUserId].",
+            "Creates a one-to-one or group conversation. For a one-to-one conversation, `participants` = [otherUserId].",
     })
     @ApiResponse({ status: 201, type: ConversationDto })
     createConversation(
@@ -84,10 +87,10 @@ export class MessagingController {
 
     @Get("conversations/:id/messages")
     @ApiOperation({
-        summary: "Historique des messages (paginé)",
-        description: "Messages triés du plus récent au plus ancien.",
+        summary: "Message history (paginated)",
+        description: "Messages sorted from newest to oldest.",
     })
-    @ApiParam({ name: "id", description: "ID MongoDB de la conversation" })
+    @ApiParam({ name: "id", description: "MongoDB ID of the conversation" })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "50" })
     @ApiResponse({ status: 200, type: [MessageDto] })
@@ -107,13 +110,13 @@ export class MessagingController {
 
     @Post("conversations/:id/upload")
     @ApiOperation({
-        summary: "Envoyer un fichier dans une conversation (GridFS)",
+        summary: "Send a file in a conversation (GridFS)",
         description:
-            "Upload un fichier (max 10 Mo). Crée un message de type FILE ou IMAGE selon le MIME type. Le fichier est accessible via son fileId GridFS.",
+            "Uploads a file (max 10 MB). Creates a message of type FILE or IMAGE depending on the MIME type. The file is accessible via its GridFS fileId.",
     })
     @ApiConsumes("multipart/form-data")
     @ApiBody({ type: FileUploadBodyDto })
-    @ApiParam({ name: "id", description: "ID MongoDB de la conversation" })
+    @ApiParam({ name: "id", description: "MongoDB ID of the conversation" })
     @ApiResponse({ status: 201, type: MessageDto })
     @UseInterceptors(
         FileInterceptor("file", { limits: { fileSize: 10 * 1024 * 1024 } }),
@@ -152,5 +155,48 @@ export class MessagingController {
 
         this.gateway.emitToConversation(conversationId, "new_message", message);
         return message;
+    }
+
+    @Get("files/:fileId")
+    @ApiOperation({
+        summary: "Download a conversation file (GridFS)",
+        description:
+            "Streams a file stored in GridFS. Only participants of the file's conversation may access it.",
+    })
+    @ApiParam({ name: "fileId", description: "GridFS file id" })
+    @ApiResponse({ status: 200, description: "Binary file stream" })
+    @ApiResponse({ status: 403, description: "Not a participant" })
+    @ApiResponse({ status: 404, description: "File not found" })
+    async getFile(
+        @Param("fileId") fileId: string,
+        @Request() req: AuthRequest,
+        @Res() res: Response,
+    ) {
+        if (!ObjectId.isValid(fileId)) {
+            throw new BadRequestException("Invalid file id");
+        }
+
+        const objectId = new ObjectId(fileId);
+        const [file] = await this.bucket.find({ _id: objectId }).toArray();
+        if (!file) throw new NotFoundException("File not found");
+
+        const conversationId = file.metadata?.conversationId as
+            | string
+            | undefined;
+        if (!conversationId) throw new NotFoundException("File not found");
+        await this.messagingService.assertParticipant(
+            conversationId,
+            req.user.sub,
+        );
+
+        const contentType =
+            (file.metadata?.contentType as string | undefined) ??
+            "application/octet-stream";
+        const safeName = file.filename.replace(/[\r\n"]/g, "");
+        res.set({
+            "Content-Type": contentType,
+            "Content-Disposition": `inline; filename="${safeName}"`,
+        });
+        this.bucket.openDownloadStream(objectId).pipe(res);
     }
 }

@@ -8,6 +8,11 @@ import {
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
 
+/** Absolute URL for a server asset path (e.g. an avatar served by the API). */
+export function assetUrl(path: string): string {
+    return `${BASE_URL}${path}`;
+}
+
 interface ApiError {
     statusCode: number;
     message: string;
@@ -41,6 +46,7 @@ async function apiFetch(
         "Content-Type": "application/json",
         ...(init.headers as Record<string, string>),
     };
+    if (init.body instanceof FormData) delete headers["Content-Type"];
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
     const res = await fetch(`${BASE_URL}${path}`, {
@@ -121,8 +127,11 @@ export async function apiGet<T>(path: string): Promise<T> {
     return data as T;
 }
 
-export async function apiDelete<T>(path: string): Promise<T> {
-    const res = await apiFetch(path, { method: "DELETE" });
+export async function apiDelete<T>(path: string, body?: unknown): Promise<T> {
+    const res = await apiFetch(path, {
+        method: "DELETE",
+        body: body ? JSON.stringify(body) : undefined,
+    });
     if (res.status === 204) return undefined as T;
     const data = await res.json();
     if (!res.ok) {
@@ -133,6 +142,25 @@ export async function apiDelete<T>(path: string): Promise<T> {
         });
     }
     return data as T;
+}
+
+export async function apiBlob(path: string): Promise<Blob> {
+    const res = await apiFetch(path, { method: "GET" });
+    if (!res.ok) {
+        throw Object.assign(new Error("Request failed"), {
+            status: res.status,
+        });
+    }
+    return res.blob();
+}
+
+/**
+ * Fetches a protected resource with the auth header and returns an object URL.
+ * The caller is responsible for revoking the URL with `URL.revokeObjectURL`.
+ */
+export async function apiBlobUrl(path: string): Promise<string> {
+    const blob = await apiBlob(path);
+    return URL.createObjectURL(blob);
 }
 
 export async function apiUpload<T>(

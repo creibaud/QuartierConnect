@@ -1,38 +1,38 @@
-# Rapport QA — QuartierConnect Étape 4
+# QA Report — QuartierConnect Stage 4
 
-> **Date** 29 mai 2026 · **Version** 0.2.0 · **Total** 734 tests automatisés · **Résultat** 734/734 ✓
-
----
-
-## Table des matières
-
-1. [Vue d'ensemble](#1-vue-densemble)
-2. [Tests unitaires API — NestJS/Jest](#2-tests-unitaires-api--nestjsjest)
-3. [Tests unitaires Web — Vitest shared hooks](#3-tests-unitaires-web--vitest-shared-hooks)
-4. [Tests E2E API — Supertest](#4-tests-e2e-api--supertest)
-5. [Tests unitaires Java — JUnit 5](#5-tests-unitaires-java--junit-5)
-6. [Tests DSL — pytest](#6-tests-dsl--pytest)
-7. [Tests E2E Web — Playwright](#7-tests-e2e-web--playwright)
-8. [Coverage API](#8-coverage-api)
-9. [Architecture des tests](#9-architecture-des-tests)
-10. [Stratégie de test par composant](#10-stratégie-de-test-par-composant)
+> **Date** 29 May 2026 · **Version** 0.2.0 · **Total** 734 automated tests · **Result** 734/734 ✓
 
 ---
 
-## 1. Vue d'ensemble
+## Table of contents
 
-| Composant | Framework | Tests | Résultat |
+1. [Overview](#1-overview)
+2. [API unit tests — NestJS/Jest](#2-api-unit-tests--nestjsjest)
+3. [Web unit tests — Vitest shared hooks](#3-web-unit-tests--vitest-shared-hooks)
+4. [API E2E tests — Supertest](#4-api-e2e-tests--supertest)
+5. [Java unit tests — JUnit 5](#5-java-unit-tests--junit-5)
+6. [DSL tests — pytest](#6-dsl-tests--pytest)
+7. [Web E2E tests — Playwright](#7-web-e2e-tests--playwright)
+8. [API coverage](#8-api-coverage)
+9. [Test architecture](#9-test-architecture)
+10. [Testing strategy per component](#10-testing-strategy-per-component)
+
+---
+
+## 1. Overview
+
+| Component | Framework | Tests | Result |
 |-----------|-----------|-------|----------|
-| API NestJS — unitaires | Jest | 260 | 260/260 ✓ |
+| NestJS API — unit | Jest | 260 | 260/260 ✓ |
 | Web shared hooks | Vitest | 76 | 76/76 ✓ |
 | Web UI components | Vitest | 11 | 11/11 ✓ |
-| API NestJS — E2E | Jest + Supertest | 148 | 148/148 ✓ |
+| NestJS API — E2E | Jest + Supertest | 148 | 148/148 ✓ |
 | Java Desktop | JUnit 5 + Maven Surefire | 139 | 139/139 ✓ |
-| DSL Python | pytest | 21 | 21/21 ✓ |
+| Python DSL | pytest | 21 | 21/21 ✓ |
 | Web Playwright | Playwright | 81 | 81/81 ✓ |
 | **TOTAL** | | **736** | **736/736 ✓** |
 
-> Note : les 148 tests E2E nécessitent MongoDB + PostgreSQL (make docker-up). Les 79 tests Playwright nécessitent les apps sur :3000/:3001/:5000.
+> Note: the 148 E2E tests require MongoDB + PostgreSQL (make docker-up). The 79 Playwright tests require the apps on :3000/:3001/:5000.
 
 ```mermaid
 flowchart BT
@@ -41,10 +41,10 @@ flowchart BT
     classDef unit fill:#3b82f6,color:#fff,stroke:none
     classDef comp fill:#22c55e,color:#fff,stroke:none
 
-    E2EUI["E2E UI — Playwright<br/>79 tests · Chromium headless<br/>:3000 / :3001 / :5000"]
-    E2EAPI["E2E API — Supertest<br/>148 tests · BDD réelles<br/>MongoDB + PostgreSQL"]
-    UNIT["Unitaires — Jest + Vitest<br/>333 tests · Mocks injectés<br/>NestJS (260) + Shared (73)"]
-    COMP["Composants — JUnit 5 + pytest<br/>160 tests · Isolation fichier<br/>Java (139) + DSL (21)"]
+    E2EUI["E2E UI — Playwright<br/>79 tests · Headless Chromium<br/>:3000 / :3001 / :5000"]
+    E2EAPI["E2E API — Supertest<br/>148 tests · Real databases<br/>MongoDB + PostgreSQL"]
+    UNIT["Unit — Jest + Vitest<br/>333 tests · Injected mocks<br/>NestJS (260) + Shared (73)"]
+    COMP["Components — JUnit 5 + pytest<br/>160 tests · File isolation<br/>Java (139) + DSL (21)"]
 
     COMP --> UNIT --> E2EAPI --> E2EUI
 
@@ -56,62 +56,62 @@ flowchart BT
 
 ---
 
-## 2. Tests unitaires API — NestJS/Jest
+## 2. API unit tests — NestJS/Jest
 
-**260 tests · 30 suites · 0 échec**
+**260 tests · 30 suites · 0 failures**
 
-### Couverture par module
+### Coverage by module
 
-| Suite | Tests | Ce qui est testé |
+| Suite | Tests | What is tested |
 |-------|-------|-----------------|
 | `auth.service.spec.ts` | 14 | register, login, SSO generate/exchange, argon2, TOTP |
-| `auth.controller.spec.ts` | 12 | Routes HTTP, codes d'erreur, DTOs, cookie qc_rt set/clear, refresh cookie+body |
-| `token.service.spec.ts` | 12 | generatePair, rotateRefreshToken (transaction FOR UPDATE), revokeAccessToken, isAccessTokenRevoked |
+| `auth.controller.spec.ts` | 12 | HTTP routes, error codes, DTOs, qc_rt cookie set/clear, refresh cookie+body |
+| `token.service.spec.ts` | 12 | generatePair, rotateRefreshToken (FOR UPDATE transaction), revokeAccessToken, isAccessTokenRevoked |
 | `totp.service.spec.ts` | 6 | verify, anti-replay, purgeExpiredCodes, generateSecret |
-| `jwt.strategy.spec.ts` | 8 | validate payload valide/invalide/rôle, TOKEN_REVOKED (JTI), skip JTI check absent, null payload |
-| `roles.guard.spec.ts` | 5 | admin/resident/moderator/banned/sans rôle |
+| `jwt.strategy.spec.ts` | 8 | validate valid/invalid/role payload, TOKEN_REVOKED (JTI), skip JTI check when absent, null payload |
+| `roles.guard.spec.ts` | 5 | admin/resident/moderator/banned/no role |
 | `neighborhoods.controller.spec.ts` | 8 | CRUD + GeoJSON + SocialService mock |
 | `neighborhoods.service.spec.ts` | 6 | assertNoOverlap, geoIntersects, conflicts |
 | `services.controller.spec.ts` | 11 | CRUD, ownership, filters, SocialService |
 | `events.controller.spec.ts` | 7 | CRUD, markInterest, SocialService |
-| `incidents.controller.spec.ts` | 12 | CRUD, machine d'états, soft delete, sync |
-| `points.service.spec.ts` | 11 | transfer ACID, balance, history, MIN_BALANCE=-10 |
+| `incidents.controller.spec.ts` | 12 | CRUD, state machine, soft delete, sync |
+| `points.service.spec.ts` | 11 | ACID transfer, balance, history, MIN_BALANCE=-10 |
 | `points.controller.spec.ts` | 5 | GET balance, GET history, POST transfer |
 | `users.controller.spec.ts` | 6 | list, ban, role update, stats |
-| `me.controller.spec.ts` | 8 | export RGPD, profil, delete account |
+| `me.controller.spec.ts` | 8 | GDPR export, profile, delete account |
 | `contracts.service.spec.ts` | 10 | create, sign, TOTP validation, SHA-256, workflow |
-| `contracts.controller.spec.ts` | 7 | routes, accès, création |
+| `contracts.controller.spec.ts` | 7 | routes, access, creation |
 | `messaging.service.spec.ts` | 8 | conversations, messages, participants |
-| `messaging.controller.spec.ts` | 5 | routes REST, pagination |
+| `messaging.controller.spec.ts` | 5 | REST routes, pagination |
 | `messaging.gateway.spec.ts` | 10 | WebSocket connect (auto-join), join, send, disconnect |
 | `votes.service.spec.ts` | 9 | cast, toggle, getScore, strategies |
 | `votes.controller.spec.ts` | 5 | allowedTypes, score, strategy factory |
 | `community-votes.service.spec.ts` | 12 | create, cast, results, quorum, close, types |
 | `documents.service.spec.ts` | 5 | upload, download, audit log |
-| `documents.controller.spec.ts` | 4 | routes, accès |
+| `documents.controller.spec.ts` | 4 | routes, access |
 | `social.service.spec.ts` | 26 | sync* + retry backoff + exhaustion, isRetriable (ServiceUnavailable/SessionExpired), deleteNode union type, recordEventInterest, recommendations |
 | `social.controller.spec.ts` | 4 | GET /recommendations |
-| `dsl.service.spec.ts` | 8 | bridge Python, collections, erreurs |
-| `dsl.controller.spec.ts` | 5 | POST /dsl/query, erreurs syntaxe |
+| `dsl.service.spec.ts` | 8 | Python bridge, collections, errors |
+| `dsl.controller.spec.ts` | 5 | POST /dsl/query, syntax errors |
 | `app.controller.spec.ts` | 5 | GET /health, version, uptime |
 
-### Exemples de cas de test clés
+### Examples of key test cases
 
 ```typescript
-// Rotation de token avec révocation mutuelle
+// Token rotation with mutual revocation
 it('throws TOKEN_REVOKED when hash is null (already used)', async () => {
   mockDb.where.mockResolvedValue([{ ...mockUser, refreshTokenHash: null }]);
   await expect(service.rotateRefreshToken('rt')).rejects.toThrow(UnauthorizedException);
 });
 
-// Anti-replay TOTP
+// TOTP anti-replay
 it('rejects replayed TOTP code within 90s window', () => {
   jest.spyOn(speakeasy.totp, 'verify').mockReturnValue(true);
-  expect(service.verify('SECRET', '123456')).toBe(true);   // 1ère utilisation OK
-  expect(service.verify('SECRET', '123456')).toBe(false);  // Replay bloqué
+  expect(service.verify('SECRET', '123456')).toBe(true);   // 1st use OK
+  expect(service.verify('SECRET', '123456')).toBe(false);  // Replay blocked
 });
 
-// Transaction ACID avec balance minimum
+// ACID transaction with minimum balance
 it('throws BadRequestException when balance would go below -10', async () => {
   mockDb.execute.mockResolvedValue([{ balance: -8 }]);
   await expect(service.transfer('sender', { recipientId: 'r', amount: 5 }))
@@ -128,30 +128,30 @@ it('removes vote when same type cast again', async () => {
 
 ---
 
-## 3. Tests unitaires Web — Vitest shared hooks
+## 3. Web unit tests — Vitest shared hooks
 
-**73 tests · 14 hooks · 0 échec**
+**73 tests · 14 hooks · 0 failures**
 
-Ces tests couvrent le package `packages/shared` du monorepo web. Ils valident les hooks TanStack Query, les utilitaires API, la gestion des tokens et le refresh silencieux.
+These tests cover the `packages/shared` package of the web monorepo. They validate the TanStack Query hooks, the API utilities, token management and silent refresh.
 
-| Hook / Utilitaire | Tests | Ce qui est testé |
+| Hook / Utility | Tests | What is tested |
 |-------------------|-------|-----------------|
-| `useAuth` | 6 | login, logout, register, état connexion, rôle, token persisté |
-| `useIncidents` | 5 | list, create, patch, delete, invalidation cache |
-| `useServices` | 5 | list, create, patch, delete, filtre quartier |
+| `useAuth` | 6 | login, logout, register, connection state, role, persisted token |
+| `useIncidents` | 5 | list, create, patch, delete, cache invalidation |
+| `useServices` | 5 | list, create, patch, delete, neighborhood filter |
 | `useEvents` | 5 | list, create, patch, delete, markInterest |
 | `useNeighborhoods` | 4 | list, create, patch, delete |
-| `useContracts` | 5 | list, create, sign, status, 403 non-signataire |
+| `useContracts` | 5 | list, create, sign, status, 403 non-signatory |
 | `useVotes` | 4 | cast up/down, toggle, score |
 | `useCommunityVotes` | 5 | create, cast, results, close, types |
-| `usePoints` | 4 | balance, transfer, history, error MIN |
+| `usePoints` | 4 | balance, transfer, history, MIN error |
 | `useMessages` | 5 | conversations, messages, send, read, paginate |
 | `useDocuments` | 3 | upload, download, list |
-| `useMe` | 4 | profil, export RGPD, delete, update |
-| `apiPost / apiGet` | 4 | Bearer header, retry 401, refresh silencieux |
-| `ensureAuthenticated` | 4 | redirect si non-auth, pass si auth, rôle admin |
+| `useMe` | 4 | profile, GDPR export, delete, update |
+| `apiPost / apiGet` | 4 | Bearer header, 401 retry, silent refresh |
+| `ensureAuthenticated` | 4 | redirect if not authenticated, pass if authenticated, admin role |
 
-### Exemple de cas de test
+### Example test case
 
 ```typescript
 // packages/shared/src/lib/__tests__/useAuth.test.ts
@@ -169,13 +169,13 @@ it('refreshes token silently when 401 is received', async () => {
 
 ---
 
-## 4. Tests E2E API — Supertest
+## 4. API E2E tests — Supertest
 
-**148 tests · 10 fichiers · Bases de données réelles**
+**148 tests · 10 files · Real databases**
 
-### Fichiers
+### Files
 
-| Fichier | Tests | Modules couverts |
+| File | Tests | Modules covered |
 |---------|-------|-----------------|
 | `auth.e2e-spec.ts` | 15 | register, login (valid/invalid/banned), rate-limit, refresh, logout, SSO |
 | `api.e2e-spec.ts` | 44 | neighborhoods, services, events, incidents, points, users, contracts, votes, DSL |
@@ -183,19 +183,19 @@ it('refreshes token silently when 401 is received', async () => {
 | `messaging-ws.e2e-spec.ts` | 21 | WebSocket connect, join, send, broadcast, disconnect |
 | `modules.e2e-spec.ts` | 40 | community-votes, documents, social, DSL, me |
 | `neighborhoods.e2e-spec.ts` | 15 | CRUD, GeoJSON, overlap detection |
-| `points.e2e-spec.ts` | 12 | transfer ACID, balance, history |
-| `rgpd.e2e-spec.ts` | 8 | export RGPD, account deletion |
+| `points.e2e-spec.ts` | 12 | ACID transfer, balance, history |
+| `rgpd.e2e-spec.ts` | 8 | GDPR export, account deletion |
 | `social.e2e-spec.ts` | 4 | recommendations, Neo4j nodes |
 | `app.e2e-spec.ts` | 2 | GET /health, version |
 
-### Stratégie E2E
+### E2E strategy
 
-- `beforeAll` : seed via API uniquement (pas de mock BDD)
-- Base MongoDB dédiée : `quartierconnect-test`
-- Base PostgreSQL dédiée : `quartierconnect_test`
-- Nettoyage automatique après chaque suite
+- `beforeAll`: seed via the API only (no DB mock)
+- Dedicated MongoDB database: `quartierconnect-test`
+- Dedicated PostgreSQL database: `quartierconnect_test`
+- Automatic cleanup after each suite
 
-### Cas E2E clés (auth)
+### Key E2E cases (auth)
 
 ```typescript
 it('POST /auth/login rejects wrong TOTP', async () => {
@@ -217,20 +217,20 @@ it('POST /auth/login is rate-limited after 5 attempts', async () => {
 
 ---
 
-## 5. Tests unitaires Java — JUnit 5
+## 5. Java unit tests — JUnit 5
 
-**139 tests · 19 classes · 0 échec**
+**139 tests · 19 classes · 0 failures**
 
-| Classe | Tests | Ce qui est testé |
+| Class | Tests | What is tested |
 |--------|-------|-----------------|
 | `SQLiteSessionTest` | 5 | saveSession, loadSession, overwrite, clearSession, idempotent init |
-| `IncidentRepositoryTest` | 11 | queryList/countWhere (DRY), tombstone delete (deleted_at), tombstoneOrphans, updateBase, merge remote-only, conflit flagué, résolution conflit, listDirty exclut conflits |
+| `IncidentRepositoryTest` | 11 | queryList/countWhere (DRY), tombstone delete (deleted_at), tombstoneOrphans, updateBase, merge remote-only, flagged conflict, conflict resolution, listDirty excludes conflicts |
 | `AuthServiceOfflineTest` | 13 | tryResume, refresh, isTokenExpired, getCurrentUserEmail offline |
-| `ApiServiceOfflineTest` | 2 | isReachable() sur connexion refusée / hostname inconnu |
+| `ApiServiceOfflineTest` | 2 | isReachable() on refused connection / unknown hostname |
 | `AuthServiceTest` | 6 | login, exchangeSsoToken, clearSession, applyTokens, parseJwtPayload |
-| `SsoCallbackServerTest` | 7 | démarrage, écoute callback, état valide/invalide, timeout |
-| `SyncServiceTest` | 8 | start/stop lifecycle, idempotence, post-shutdown stop, listener enregistré, statut offline, justPushed race condition fix, orphan cleanup |
-| `ThreeWayMergerTest` | 29 | null base → LWW remote, pas de changement → local, local-only, remote-only, même changement, conflit vrai, cas limites multiples |
+| `SsoCallbackServerTest` | 7 | startup, callback listening, valid/invalid state, timeout |
+| `SyncServiceTest` | 8 | start/stop lifecycle, idempotence, post-shutdown stop, registered listener, offline status, justPushed race condition fix, orphan cleanup |
+| `ThreeWayMergerTest` | 29 | null base → LWW remote, no change → local, local-only, remote-only, same change, true conflict, multiple edge cases |
 | `ContractsServiceTest` | 4 | list, create, sign, findOne |
 | `EventsServiceTest` | 4 | list, findOne, create, interest |
 | `NeighborhoodsServiceTest` | 3 | list, findOne, create |
@@ -239,11 +239,11 @@ it('POST /auth/login is rate-limited after 5 attempts', async () => {
 | `UpdateServiceTest` | 5 | checkUpdate, versionParsing, skip, apply |
 | `VotesServiceTest` | 4 | cast, toggle, getScore, strategies |
 | `PluginRegistryTest` | 7 | register, unregister, lifecycle, fail gracefully, EventBus integration, ContextAwarePlugin |
-| `TokenVaultTest` | 10 | round-trip save/load, overwrite, null access/refresh token, les deux null, clear idempotent, multiples saves, save-clear-save |
+| `TokenVaultTest` | 10 | round-trip save/load, overwrite, null access/refresh token, both null, clear idempotent, multiple saves, save-clear-save |
 | `ApiIntegrationTest` | 8 | execute() single method, error sanitization, retry on 401 |
 | `ToastManagerTest` | 4 | show, dismiss, auto-dismiss, queue |
 
-### Cas offline clés
+### Key offline cases
 
 ```java
 @Test
@@ -256,8 +256,8 @@ void tryResume_withValidAccessToken_returnsTrue() {
 @Test
 void tryResume_withExpiredAccessToken_butValidRefresh_returnsTrue() {
     SQLiteDatabase.saveSession("alice@demo.fr", expiredJwt, validRefreshJwt);
-    // Pas de réseau — offline mode
-    assertTrue(authService.tryResumeFromDatabase()); // true car refreshToken présent
+    // No network — offline mode
+    assertTrue(authService.tryResumeFromDatabase()); // true because refreshToken present
 }
 
 @Test
@@ -268,16 +268,16 @@ void isReachable_returnsFalse_whenConnectionRefused() {
 
 ---
 
-## 6. Tests DSL — pytest
+## 6. DSL tests — pytest
 
-**21 tests · 2 fichiers · 0 échec**
+**21 tests · 2 files · 0 failures**
 
-| Fichier | Tests | Ce qui est testé |
+| File | Tests | What is tested |
 |---------|-------|-----------------|
-| `test_lexer.py` | 8 | tokens FIND/COUNT/WHERE/LIMIT, STRING, NUMBER, opérateurs, caractère illégal |
-| `test_compiler.py` | 13 | FIND simple, WHERE, LIMIT, combiné, COUNT, comparateurs, LIKE, OR, collections non autorisées, erreurs syntaxe |
+| `test_lexer.py` | 8 | FIND/COUNT/WHERE/LIMIT tokens, STRING, NUMBER, operators, illegal character |
+| `test_compiler.py` | 13 | simple FIND, WHERE, LIMIT, combined, COUNT, comparators, LIKE, OR, disallowed collections, syntax errors |
 
-### Cas de test DSL
+### DSL test cases
 
 ```python
 def test_find_where_limit():
@@ -300,34 +300,34 @@ def test_find_where_or():
 
 ---
 
-## 7. Tests E2E Web — Playwright
+## 7. Web E2E tests — Playwright
 
-**79 tests · 16 fichiers · Navigateur Chromium**
+**79 tests · 16 files · Chromium browser**
 
-| Fichier | Tests | Ce qui est testé |
+| File | Tests | What is tested |
 |---------|-------|-----------------|
-| `admin/dashboard.spec.ts` | 3 | Heading, stats live, navigation |
-| `admin/dsl.spec.ts` | 7 | Éditeur DSL, exécution, Ctrl+Enter, erreurs syntaxe |
-| `admin/events.spec.ts` | 6 | CRUD événements complet (création, modification, suppression) |
-| `admin/incidents.spec.ts` | 5 | Modération, filtres statut, accès non-admin |
-| `admin/login.spec.ts` | 3 | Login admin, refus résident, redirect dashboard |
-| `admin/neighborhoods.spec.ts` | 5 | CRUD quartiers |
-| `admin/services.spec.ts` | 6 | CRUD services |
-| `admin/users.spec.ts` | 5 | Liste, rôles, bannissement, redirect non-admin |
-| `client/contracts.spec.ts` | 4 | Page contrats, dialog création |
-| `client/dashboard.spec.ts` | 3 | Email affiché, token SSO, logout |
-| `client/events.spec.ts` | 5 | Calendrier, liste, création événement |
-| `client/incidents.spec.ts` | 5 | Liste, création, navigation vers détail |
-| `client/incidents-detail.spec.ts` | 5 | Titre, statut, votes, lien retour, 404 |
-| `client/login.spec.ts` | 3 | TOTP step, erreur mdp, redirect dashboard |
-| `client/register.spec.ts` | 4 | QR code, erreur mdp, doublon email, flow complet |
-| `client/services.spec.ts` | 4 | Heading, filtre quartier, option "tous", sans erreur |
+| `admin/dashboard.spec.ts` | 3 | Heading, live stats, navigation |
+| `admin/dsl.spec.ts` | 7 | DSL editor, execution, Ctrl+Enter, syntax errors |
+| `admin/events.spec.ts` | 6 | Full event CRUD (create, edit, delete) |
+| `admin/incidents.spec.ts` | 5 | Moderation, status filters, non-admin access |
+| `admin/login.spec.ts` | 3 | Admin login, resident rejection, redirect to dashboard |
+| `admin/neighborhoods.spec.ts` | 5 | Neighborhood CRUD |
+| `admin/services.spec.ts` | 6 | Service CRUD |
+| `admin/users.spec.ts` | 5 | List, roles, banning, non-admin redirect |
+| `client/contracts.spec.ts` | 4 | Contracts page, creation dialog |
+| `client/dashboard.spec.ts` | 3 | Displayed email, SSO token, logout |
+| `client/events.spec.ts` | 5 | Calendar, list, event creation |
+| `client/incidents.spec.ts` | 5 | List, creation, navigation to detail |
+| `client/incidents-detail.spec.ts` | 5 | Title, status, votes, back link, 404 |
+| `client/login.spec.ts` | 3 | TOTP step, password error, redirect to dashboard |
+| `client/register.spec.ts` | 4 | QR code, password error, duplicate email, full flow |
+| `client/services.spec.ts` | 4 | Heading, neighborhood filter, "all" option, no error |
 
 ---
 
-## 8. Coverage API
+## 8. API coverage
 
-Seuils définis dans `api/package.json` :
+Thresholds defined in `api/package.json`:
 
 ```json
 "coverageThreshold": {
@@ -340,9 +340,9 @@ Seuils définis dans `api/package.json` :
 }
 ```
 
-**Résultat mesuré :**
+**Measured result:**
 
-| Métrique | Seuil | Valeur | Statut |
+| Metric | Threshold | Value | Status |
 |----------|-------|--------|--------|
 | Statements | 80% | 95.7% | ✓ |
 | Branches | 75% | 86.1% | ✓ |
@@ -351,40 +351,40 @@ Seuils définis dans `api/package.json` :
 
 ---
 
-## 9. Architecture des tests
+## 9. Test architecture
 
 ```mermaid
 graph TB
-    subgraph UnitAPI["Tests unitaires API (Jest)"]
-        MOCK[Mocks injectés<br/>Model Mongoose, DrizzleDB,<br/>SocialService, JwtService]
-        ISOLATED[Isolation totale<br/>aucune BDD réelle]
+    subgraph UnitAPI["API unit tests (Jest)"]
+        MOCK[Injected mocks<br/>Mongoose Model, DrizzleDB,<br/>SocialService, JwtService]
+        ISOLATED[Total isolation<br/>no real DB]
         MOCK --> ISOLATED
     end
 
-    subgraph E2EAPI["Tests E2E API (Supertest)"]
-        REAL[BDD réelles dédiées<br/>MongoDB + PostgreSQL test]
-        SEED[Seed via API au beforeAll<br/>zéro mock BDD]
+    subgraph E2EAPI["API E2E tests (Supertest)"]
+        REAL[Dedicated real DBs<br/>MongoDB + PostgreSQL test]
+        SEED[Seed via API at beforeAll<br/>zero DB mock]
         REAL --> SEED
     end
 
-    subgraph JAVA["Tests Java (JUnit 5)"]
-        TMPFILE[SQLite fichier temp<br/>Files.createTempFile deleteOnExit]
-        HTTPMOCK[Serveur HTTP mock WireMock]
+    subgraph JAVA["Java tests (JUnit 5)"]
+        TMPFILE[Temp SQLite file<br/>Files.createTempFile deleteOnExit]
+        HTTPMOCK[WireMock HTTP mock server]
         TMPFILE --> HTTPMOCK
     end
 
-    subgraph DSL["Tests DSL (pytest)"]
-        PURE[Tests unitaires purs<br/>compile_query string → dict]
+    subgraph DSL["DSL tests (pytest)"]
+        PURE[Pure unit tests<br/>compile_query string → dict]
     end
 
-    subgraph PW["Tests E2E Playwright"]
-        BROWSER[Navigateur Chromium headless<br/>UI réelle :3000/:3001/:5000]
+    subgraph PW["Playwright E2E tests"]
+        BROWSER[Headless Chromium browser<br/>Real UI :3000/:3001/:5000]
     end
 ```
 
-### Isolation SQLite en tests Java
+### SQLite isolation in Java tests
 
-Problème résolu : `jdbc:sqlite::memory:` crée une BDD différente par connexion. Solution : fichier temporaire partagé.
+Problem solved: `jdbc:sqlite::memory:` creates a different DB per connection. Solution: a shared temporary file.
 
 ```java
 @BeforeEach
@@ -398,46 +398,46 @@ void setUp() throws Exception {
 
 ---
 
-## 10. Stratégie de test par composant
+## 10. Testing strategy per component
 
-### API — ce qui est toujours testé dans chaque controller
+### API — what is always tested in every controller
 
-1. Route GET liste : pagination, filtres
-2. Route GET :id : 200 OK + 404 Not Found
-3. Route POST : création, ownership depuis JWT
-4. Route PATCH : autorisation owner/admin + 403 + 404
-5. Route DELETE : admin only + 404
-6. Intégration SocialService mock (syncX appelé ou non)
+1. GET list route: pagination, filters
+2. GET :id route: 200 OK + 404 Not Found
+3. POST route: creation, ownership from JWT
+4. PATCH route: owner/admin authorization + 403 + 404
+5. DELETE route: admin only + 404
+6. SocialService mock integration (syncX called or not)
 
-### Points — cas aux limites testés
+### Points — edge cases tested
 
-- Transfert à soi-même → `BadRequestException`
-- Balance négative < -10 → `BadRequestException`
-- `FOR UPDATE` PostgreSQL → isolation transaction
-- Récipient inexistant → comportement prévisible
+- Transfer to self → `BadRequestException`
+- Negative balance < -10 → `BadRequestException`
+- PostgreSQL `FOR UPDATE` → transaction isolation
+- Nonexistent recipient → predictable behavior
 
-### Contrats — flow complet testé
+### Contracts — full flow tested
 
-- Création → hash SHA-256 du contenu
-- Signature → validation TOTP obligatoire
-- Déjà signé → `BadRequestException`
-- Pas signataire → `ForbiddenException`
-- Tous signent → status `signed`
+- Creation → SHA-256 hash of the content
+- Signature → mandatory TOTP validation
+- Already signed → `BadRequestException`
+- Not a signatory → `ForbiddenException`
+- Everyone signs → status `signed`
 
-### CommunityVotes — types de scrutin testés
+### CommunityVotes — ballot types tested
 
-- `binary` avec 2 choices → `BadRequestException`
-- `weighted` sans weights → `BadRequestException`
-- Vote après expiration `endsAt` → `BadRequestException`
-- Vote en double → `ConflictException`
-- Fermeture par non-créateur non-admin → `ForbiddenException`
+- `binary` with 2 choices → `BadRequestException`
+- `weighted` without weights → `BadRequestException`
+- Vote after `endsAt` expiry → `BadRequestException`
+- Duplicate vote → `ConflictException`
+- Closure by a non-creator non-admin → `ForbiddenException`
 
-### Commandes
+### Commands
 
 ```bash
-make test          # unitaires seulement (rapide)
-make test-cov      # avec coverage
-make test-e2e      # E2E API (make docker-up requis)
-make test-e2e-web  # Playwright (apps lancées requis)
-make validate      # tout en séquence
+make test          # unit only (fast)
+make test-cov      # with coverage
+make test-e2e      # API E2E (make docker-up required)
+make test-e2e-web  # Playwright (running apps required)
+make validate      # everything in sequence
 ```

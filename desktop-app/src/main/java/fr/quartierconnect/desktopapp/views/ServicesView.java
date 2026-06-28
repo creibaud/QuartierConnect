@@ -1,5 +1,6 @@
 package fr.quartierconnect.desktopapp.views;
 
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.services.ApiService;
 import fr.quartierconnect.desktopapp.services.AuthService;
 import fr.quartierconnect.desktopapp.services.NeighborhoodsService;
@@ -48,16 +49,16 @@ public class ServicesView {
     }
 
     private VBox buildLayout() {
-        Label pageTitle = new Label("Gestion des services");
+        Label pageTitle = new Label(I18n.get("services.title"));
         pageTitle.getStyleClass().add("content-title");
 
-        Label pageSubtitle = new Label("Administration des services proposés dans les quartiers");
+        Label pageSubtitle = new Label(I18n.get("services.subtitle"));
         pageSubtitle.getStyleClass().add("content-subtitle");
 
-        AppButton createBtn = new AppButton("+ Créer un service", AppButton.Variant.PRIMARY);
+        AppButton createBtn = new AppButton(I18n.get("services.create"), AppButton.Variant.PRIMARY);
         createBtn.setOnAction(e -> openCreateForm());
 
-        AppButton refreshBtn = new AppButton("↺ Actualiser", AppButton.Variant.SECONDARY);
+        AppButton refreshBtn = new AppButton(I18n.get("services.refresh"), AppButton.Variant.SECONDARY);
         refreshBtn.setOnAction(e -> loadAsync());
 
         HBox header = new HBox(8, new VBox(4, pageTitle, pageSubtitle), refreshBtn, createBtn);
@@ -75,7 +76,7 @@ public class ServicesView {
     }
 
     private void buildTable() {
-        TableColumn<ServicesService.ServiceSummary, String> titleCol = new TableColumn<>("Titre");
+        TableColumn<ServicesService.ServiceSummary, String> titleCol = new TableColumn<>(I18n.get("services.col.title"));
         titleCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().title()));
         titleCol.setCellFactory(col -> new TableCell<>() {
             @Override
@@ -86,18 +87,18 @@ public class ServicesView {
             }
         });
 
-        TableColumn<ServicesService.ServiceSummary, String> neighborhoodCol = new TableColumn<>("Quartier");
+        TableColumn<ServicesService.ServiceSummary, String> neighborhoodCol = new TableColumn<>(I18n.get("services.col.neighborhood"));
         neighborhoodCol.setPrefWidth(160);
         neighborhoodCol.setCellValueFactory(c -> new SimpleStringProperty(
                 c.getValue().neighborhoodName() != null ? c.getValue().neighborhoodName() : "—"));
 
-        TableColumn<ServicesService.ServiceSummary, String> votesCol = new TableColumn<>("Votes");
+        TableColumn<ServicesService.ServiceSummary, String> votesCol = new TableColumn<>(I18n.get("services.col.votes"));
         votesCol.setPrefWidth(100);
         votesCol.setResizable(false);
         votesCol.setCellValueFactory(c -> new SimpleStringProperty(
                 "▲ " + c.getValue().upvotes() + "  ▼ " + c.getValue().downvotes()));
 
-        TableColumn<ServicesService.ServiceSummary, Void> actionsCol = new TableColumn<>("Actions");
+        TableColumn<ServicesService.ServiceSummary, Void> actionsCol = new TableColumn<>(I18n.get("services.col.actions"));
         actionsCol.setPrefWidth(120);
         actionsCol.setResizable(false);
         actionsCol.setCellFactory(col -> new TableCell<>() {
@@ -108,7 +109,7 @@ public class ServicesView {
                     setGraphic(null);
                 } else {
                     ServicesService.ServiceSummary service = getTableView().getItems().get(getIndex());
-                    AppButton deleteBtn = new AppButton("Supprimer", AppButton.Variant.DESTRUCTIVE);
+                    AppButton deleteBtn = new AppButton(I18n.get("services.delete"), AppButton.Variant.DESTRUCTIVE);
                     deleteBtn.setOnAction(e -> deleteService(service));
                     HBox box = new HBox(deleteBtn);
                     box.setAlignment(Pos.CENTER_LEFT);
@@ -121,7 +122,7 @@ public class ServicesView {
         table.getColumns().addAll(titleCol, neighborhoodCol, votesCol, actionsCol);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.getStyleClass().add("admin-table");
-        table.setPlaceholder(new Label("Aucun service"));
+        table.setPlaceholder(new Label(I18n.get("services.empty")));
         table.setFixedCellSize(42);
     }
 
@@ -138,7 +139,7 @@ public class ServicesView {
                 skeletonHolder.getChildren().clear();
                 table.setVisible(true);
                 if (services.isEmpty()) {
-                    table.setPlaceholder(new EmptyState("Aucun service.", "Créez le premier service avec le bouton ci-dessus."));
+                    table.setPlaceholder(new EmptyState(I18n.get("services.empty.title"), I18n.get("services.empty.subtitle")));
                 } else {
                     table.getItems().setAll(services);
                 }
@@ -153,31 +154,31 @@ public class ServicesView {
                 ApiService.delete("/services/" + service.id(), token);
                 Platform.runLater(() -> {
                     loadAsync();
-                    toast.showSuccess("Service supprimé ✓");
+                    toast.showSuccess(I18n.get("services.deleted"));
                 });
             } catch (Exception ex) {
-                Platform.runLater(() -> toast.showError("Erreur — " + ex.getMessage()));
+                Platform.runLater(() -> toast.showError(I18n.get("common.error", ex.getMessage())));
             }
         }, "service-delete").start();
     }
 
     private void openCreateForm() {
-        Label titleFormLabel = new Label("Titre *");
+        Label titleFormLabel = new Label(I18n.get("services.form.titleLabel"));
         titleFormLabel.getStyleClass().add("form-label");
         TextField titleField = new TextField();
-        titleField.setPromptText("Ex : Bibliothèque municipale");
+        titleField.setPromptText(I18n.get("services.form.titlePrompt"));
 
-        Label descFormLabel = new Label("Description");
+        Label descFormLabel = new Label(I18n.get("services.form.descLabel"));
         descFormLabel.getStyleClass().add("form-label");
         TextArea descField = new TextArea();
-        descField.setPromptText("Décrivez le service…");
+        descField.setPromptText(I18n.get("services.form.descPrompt"));
         descField.setPrefRowCount(2);
         descField.setWrapText(true);
 
-        Label neighborhoodFormLabel = new Label("Quartier");
+        Label neighborhoodFormLabel = new Label(I18n.get("services.form.neighborhoodLabel"));
         neighborhoodFormLabel.getStyleClass().add("form-label");
         ComboBox<NeighborhoodsService.NeighborhoodSummary> neighborhoodCombo = new ComboBox<>();
-        neighborhoodCombo.setPromptText("Sélectionner un quartier…");
+        neighborhoodCombo.setPromptText(I18n.get("services.form.neighborhoodPrompt"));
         neighborhoodCombo.setMaxWidth(Double.MAX_VALUE);
 
         new Thread(() -> {
@@ -200,18 +201,18 @@ public class ServicesView {
         errorMsg.setVisible(false);
         errorMsg.setManaged(false);
 
-        AppButton submitBtn = new AppButton("Créer", AppButton.Variant.PRIMARY);
-        AppButton cancelBtn = new AppButton("Annuler", AppButton.Variant.SECONDARY);
+        AppButton submitBtn = new AppButton(I18n.get("services.form.submit"), AppButton.Variant.PRIMARY);
+        AppButton cancelBtn = new AppButton(I18n.get("services.form.cancel"), AppButton.Variant.SECONDARY);
         cancelBtn.setOnAction(e -> appModal.hide());
 
         submitBtn.setOnAction(e -> {
             String titleText = titleField.getText().trim();
             if (titleText.isEmpty()) {
-                showError(errorMsg, "Le titre est obligatoire.");
+                showError(errorMsg, I18n.get("services.form.titleRequired"));
                 return;
             }
             submitBtn.setDisable(true);
-            submitBtn.setText("Création…");
+            submitBtn.setText(I18n.get("services.form.creating"));
 
             String description = descField.getText().trim();
             NeighborhoodsService.NeighborhoodSummary selectedNeighborhood = neighborhoodCombo.getValue();
@@ -232,13 +233,13 @@ public class ServicesView {
                     Platform.runLater(() -> {
                         appModal.hide();
                         loadAsync();
-                        toast.showSuccess("Service créé ✓");
+                        toast.showSuccess(I18n.get("services.created"));
                     });
                 } catch (Exception ex) {
                     Platform.runLater(() -> {
                         submitBtn.setDisable(false);
-                        submitBtn.setText("Créer");
-                        showError(errorMsg, "Erreur réseau — réessayez.");
+                        submitBtn.setText(I18n.get("services.form.submit"));
+                        showError(errorMsg, I18n.get("services.form.networkError"));
                     });
                 }
             }, "service-create").start();
@@ -253,7 +254,7 @@ public class ServicesView {
                 neighborhoodFormLabel, neighborhoodCombo,
                 errorMsg, buttons);
         content.setPadding(new Insets(20));
-        appModal.show("Créer un service", content);
+        appModal.show(I18n.get("services.form.modalTitle"), content);
     }
 
     private void showError(Label errorMsg, String message) {

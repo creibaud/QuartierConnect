@@ -2,48 +2,47 @@ import { useState } from "react";
 import QRCode from "react-qr-code";
 import { useHead } from "@unhead/react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { apiPost } from "@workspace/shared/lib/api";
 import { setTokens, type LoginResponse } from "@workspace/shared/lib/auth";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
 import { Button } from "@workspace/ui/components/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent } from "@workspace/ui/components/card";
 import { Spinner } from "@workspace/ui/components/spinner";
 import { useAppForm } from "@workspace/ui/lib/form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { AuthLayout } from "../components/auth-layout";
 
 interface RegisterResponse {
     otpauthUrl: string;
 }
-
-const registerSchema = z
-    .object({
-        email: z.string().email("Email invalide"),
-        password: z.string().min(8, "8 caractères minimum"),
-        confirmPassword: z.string(),
-    })
-    .refine((data) => data.password === data.confirmPassword, {
-        message: "Les mots de passe ne correspondent pas",
-        path: ["confirmPassword"],
-    });
-
-const totpSchema = z.object({
-    totpCode: z.string().length(6, "Le code doit contenir 6 chiffres"),
-});
 
 export const Route = createFileRoute("/register")({
     component: RegisterPage,
 });
 
 function RegisterPage() {
-    useHead({ title: "Inscription" });
+    const { t } = useTranslation();
+    useHead({ title: t("pages.register.pageTitle") });
     const navigate = useNavigate();
+
+    const registerSchema = z
+        .object({
+            firstName: z.string().min(1, t("auth.validation.required")),
+            lastName: z.string().min(1, t("auth.validation.required")),
+            email: z.string().email(t("auth.validation.invalidEmail")),
+            password: z.string().min(8, t("auth.validation.passwordMin")),
+            confirmPassword: z.string(),
+        })
+        .refine((data) => data.password === data.confirmPassword, {
+            message: t("auth.validation.passwordMismatch"),
+            path: ["confirmPassword"],
+        });
+
+    const totpSchema = z.object({
+        totpCode: z.string().length(6, t("auth.validation.totpLength")),
+    });
     const [step, setStep] = useState<"form" | "qrcode">("form");
     const [otpauthUrl, setOtpauthUrl] = useState("");
     const [loginCredentials, setLoginCredentials] = useState({
@@ -53,13 +52,21 @@ function RegisterPage() {
     const [serverError, setServerError] = useState<string | null>(null);
 
     const registerForm = useAppForm({
-        defaultValues: { email: "", password: "", confirmPassword: "" },
+        defaultValues: {
+            firstName: "",
+            lastName: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+        },
         validators: { onSubmit: registerSchema },
         onSubmit: async ({ value }) => {
             try {
                 const data = await apiPost<RegisterResponse>("/auth/register", {
                     email: value.email,
                     password: value.password,
+                    firstName: value.firstName,
+                    lastName: value.lastName,
                 });
                 setOtpauthUrl(data.otpauthUrl);
                 setLoginCredentials({
@@ -71,13 +78,12 @@ function RegisterPage() {
             } catch (err) {
                 const apiErr = err as { code?: string; message?: string };
                 const messages: Record<string, string> = {
-                    EMAIL_ALREADY_EXISTS:
-                        "Cette adresse email est déjà utilisée",
+                    EMAIL_ALREADY_EXISTS: t("auth.errors.emailExists"),
                 };
                 setServerError(
                     messages[apiErr.code ?? ""] ??
                         apiErr.message ??
-                        "Erreur lors de l'inscription",
+                        t("auth.errors.registerFailed"),
                 );
             }
         },
@@ -94,10 +100,10 @@ function RegisterPage() {
                     totpCode: value.totpCode,
                 });
                 setTokens(data.accessToken);
-                toast.success("Compte créé avec succès !");
+                toast.success(t("pages.register.accountCreated"));
                 navigate({ to: "/dashboard" });
             } catch {
-                setServerError("Code invalide. Vérifiez votre application.");
+                setServerError(t("auth.errors.invalidTotpCheckApp"));
                 totpForm.setFieldValue("totpCode", "");
             }
         },
@@ -105,16 +111,8 @@ function RegisterPage() {
 
     if (step === "form") {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 dark:bg-zinc-950">
-                <Card className="w-full max-w-sm">
-                    <CardHeader className="text-center">
-                        <CardTitle className="text-2xl">
-                            Créer un compte
-                        </CardTitle>
-                        <CardDescription>
-                            Rejoignez QuartierConnect
-                        </CardDescription>
-                    </CardHeader>
+            <AuthLayout subtitle={t("pages.register.subtitle")}>
+                <Card className="border-border/60 shadow-foreground/5 shadow-lg">
                     <CardContent className="space-y-4">
                         {serverError && (
                             <Alert variant="destructive">
@@ -130,29 +128,53 @@ function RegisterPage() {
                             }}
                             className="space-y-4"
                         >
+                            <div className="grid grid-cols-2 gap-3">
+                                <registerForm.AppField name="firstName">
+                                    {(field) => (
+                                        <field.TextField
+                                            label={t(
+                                                "pages.register.firstName",
+                                            )}
+                                            placeholder="Alice"
+                                            autoFocus
+                                        />
+                                    )}
+                                </registerForm.AppField>
+                                <registerForm.AppField name="lastName">
+                                    {(field) => (
+                                        <field.TextField
+                                            label={t("pages.register.lastName")}
+                                            placeholder="Martin"
+                                        />
+                                    )}
+                                </registerForm.AppField>
+                            </div>
                             <registerForm.AppField name="email">
                                 {(field) => (
                                     <field.TextField
-                                        label="Email"
+                                        label={t("auth.email")}
                                         type="email"
                                         placeholder="alice@demo.fr"
-                                        autoFocus
                                     />
                                 )}
                             </registerForm.AppField>
                             <registerForm.AppField name="password">
                                 {(field) => (
                                     <field.TextField
-                                        label="Mot de passe"
+                                        label={t("auth.password")}
                                         type="password"
-                                        placeholder="8 caractères minimum"
+                                        placeholder={t(
+                                            "auth.validation.passwordMin",
+                                        )}
                                     />
                                 )}
                             </registerForm.AppField>
                             <registerForm.AppField name="confirmPassword">
                                 {(field) => (
                                     <field.TextField
-                                        label="Confirmer le mot de passe"
+                                        label={t(
+                                            "pages.register.confirmPassword",
+                                        )}
                                         type="password"
                                     />
                                 )}
@@ -169,46 +191,40 @@ function RegisterPage() {
                                         {isSubmitting ? (
                                             <Spinner className="mr-2" />
                                         ) : null}
-                                        Créer mon compte
+                                        {t("pages.register.createMyAccount")}
                                     </Button>
                                 )}
                             </registerForm.Subscribe>
                             <p className="text-muted-foreground text-center text-sm">
-                                Déjà inscrit ?{" "}
+                                {t("pages.register.alreadyRegistered")}{" "}
                                 <Link
                                     to="/login"
-                                    className="text-primary underline-offset-4 hover:underline"
+                                    className="text-primary font-medium underline-offset-4 hover:underline"
                                 >
-                                    Se connecter
+                                    {t("auth.login")}
                                 </Link>
                             </p>
                         </form>
                     </CardContent>
                 </Card>
-            </div>
+            </AuthLayout>
         );
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 dark:bg-zinc-950">
-            <Card className="w-full max-w-sm">
-                <CardHeader className="text-center">
-                    <CardTitle className="text-2xl">
-                        Configurer le MFA
-                    </CardTitle>
-                    <CardDescription>
-                        Scannez ce QR code avec Google Authenticator, Authy ou
-                        une app compatible TOTP
-                    </CardDescription>
-                </CardHeader>
+        <AuthLayout subtitle={t("pages.register.mfaSubtitle")}>
+            <Card className="border-border/60 shadow-foreground/5 shadow-lg">
                 <CardContent className="space-y-6">
                     {serverError && (
                         <Alert variant="destructive">
                             <AlertDescription>{serverError}</AlertDescription>
                         </Alert>
                     )}
-                    <div className="flex justify-center rounded-lg bg-white p-4">
-                        <QRCode value={otpauthUrl} size={200} />
+                    <div
+                        data-testid="totp-qr"
+                        className="flex justify-center rounded-xl border bg-white p-4"
+                    >
+                        <QRCode value={otpauthUrl} size={196} />
                     </div>
                     <form
                         onSubmit={(e) => {
@@ -219,7 +235,9 @@ function RegisterPage() {
                     >
                         <totpForm.AppField name="totpCode">
                             {(field) => (
-                                <field.OtpField label="Code de vérification" />
+                                <field.OtpField
+                                    label={t("pages.register.verificationCode")}
+                                />
                             )}
                         </totpForm.AppField>
                         <totpForm.Subscribe selector={(s) => s.isSubmitting}>
@@ -232,13 +250,13 @@ function RegisterPage() {
                                     {isSubmitting ? (
                                         <Spinner className="mr-2" />
                                     ) : null}
-                                    Confirmer et se connecter
+                                    {t("pages.register.confirmAndLogin")}
                                 </Button>
                             )}
                         </totpForm.Subscribe>
                     </form>
                 </CardContent>
             </Card>
-        </div>
+        </AuthLayout>
     );
 }

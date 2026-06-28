@@ -10,7 +10,7 @@ export class SignatureDto {
 
     @ApiProperty({
         example: "a3f1b2c4d5e6...",
-        description: "SHA-256 du contenu au moment de la signature",
+        description: "SHA-256 of the content at the time of signing",
     })
     hash: string;
 }
@@ -19,12 +19,12 @@ export class ContractDto {
     @ApiProperty({ example: "664f1a2b3c4d5e6f7a8b9c20" })
     _id: string;
 
-    @ApiProperty({ example: "Accord de service jardinage" })
+    @ApiProperty({ example: "Gardening service agreement" })
     title: string;
 
     @ApiProperty({
         example:
-            "Je, soussigné, m'engage à fournir des services de jardinage chaque samedi...",
+            "I, the undersigned, agree to provide gardening services every Saturday...",
     })
     content: string;
 
@@ -45,7 +45,7 @@ export class ContractDto {
 
     @ApiProperty({
         example: "a3f1b2c4...",
-        description: "SHA-256 du champ `content`",
+        description: "SHA-256 of the `content` field",
     })
     contentHash: string;
 

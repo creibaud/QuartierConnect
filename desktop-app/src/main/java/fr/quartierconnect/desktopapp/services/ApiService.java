@@ -1,5 +1,6 @@
 package fr.quartierconnect.desktopapp.services;
 
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import javafx.application.Platform;
 
 import java.net.URI;
@@ -72,7 +73,7 @@ public class ApiService {
 
     private static String execute(String method, String path, String jsonBody,
                                    String bearerToken, boolean retried) throws Exception {
-        if (offlineMode) throw new java.io.IOException("Mode hors ligne activé");
+        if (offlineMode) throw new java.io.IOException(I18n.get("common.offlineModeEnabled"));
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(getBaseUrl() + path))
@@ -96,11 +97,11 @@ public class ApiService {
                 return execute(method, path, jsonBody,
                         AuthService.getInstance().getAccessToken(), true);
             }
-            throw new RuntimeException("Session expirée");
+            throw new RuntimeException(I18n.get("common.sessionExpired"));
         }
 
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new RuntimeException("Erreur API — " + response.statusCode());
+            throw new RuntimeException(I18n.get("common.apiError", response.statusCode()));
         }
 
         return response.body();

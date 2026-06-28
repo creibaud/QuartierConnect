@@ -1,55 +1,55 @@
-# DSL — Micro-langage de requête QuartierConnect
+# DSL — QuartierConnect query micro-language
 
-> **Composant** : `dsl/` · **Technologie** : Python PLY + pythonia bridge · **Version** : 0.1.3 · **Date** : 7 avril 2026
-
----
-
-## Table des matières
-
-1. [Présentation](#1-présentation)
-2. [Architecture du pipeline](#2-architecture-du-pipeline)
-3. [Lexer — Analyse lexicale](#3-lexer--analyse-lexicale)
-4. [Parser — Grammaire LALR(1)](#4-parser--grammaire-lalr1)
-5. [Compiler — Validation et compilation](#5-compiler--validation-et-compilation)
-6. [Bridge NestJS → Python](#6-bridge-nestjs--python)
-7. [Exemples complets](#7-exemples-complets)
-8. [Gestion des erreurs](#8-gestion-des-erreurs)
-9. [Sécurité](#9-sécurité)
+> **Component**: `dsl/` · **Technology**: Python PLY + pythonia bridge · **Version**: 0.1.3 · **Date**: 7 April 2026
 
 ---
 
-## 1. Présentation
+## Table of contents
 
-Le DSL QuartierConnect est un **micro-langage de requête** permettant aux administrateurs d'interroger les collections MongoDB sans écrire de code. Il est exposé via `POST /dsl/query` et accessible depuis le panneau admin React.
-
-**Pourquoi un DSL et pas MongoDB directement ?**
-
-- Sécurité : les requêtes MongoDB brutes peuvent exprimer des injections complexes
-- Simplicité : syntaxe proche du langage naturel, accessible sans formation MongoDB
-- Contrôle : whitelist de collections, pas d'opérations destructives
+1. [Introduction](#1-introduction)
+2. [Pipeline architecture](#2-pipeline-architecture)
+3. [Lexer — Lexical analysis](#3-lexer--lexical-analysis)
+4. [Parser — LALR(1) grammar](#4-parser--lalr1-grammar)
+5. [Compiler — Validation and compilation](#5-compiler--validation-and-compilation)
+6. [NestJS → Python bridge](#6-nestjs--python-bridge)
+7. [Complete examples](#7-complete-examples)
+8. [Error handling](#8-error-handling)
+9. [Security](#9-security)
 
 ---
 
-## 2. Architecture du pipeline
+## 1. Introduction
 
-### 2.1 Vue linéaire
+The QuartierConnect DSL is a **query micro-language** that lets administrators query the MongoDB collections without writing code. It is exposed via `POST /dsl/query` and accessible from the React admin panel.
+
+**Why a DSL rather than MongoDB directly?**
+
+- Security: raw MongoDB queries can express complex injections
+- Simplicity: a near-natural-language syntax, usable without MongoDB training
+- Control: a collection whitelist, no destructive operations
+
+---
+
+## 2. Pipeline architecture
+
+### 2.1 Linear view
 
 ```mermaid
 flowchart LR
-    A["Texte DSL<br/>ex: FIND incidents WHERE status='open' LIMIT 10"]
-    B["Lexer PLY<br/>dsl/lexer.py - lex.lex()"]
+    A["DSL text<br/>e.g. FIND incidents WHERE status='open' LIMIT 10"]
+    B["PLY Lexer<br/>dsl/lexer.py - lex.lex()"]
     C["Tokens<br/>FIND IDENTIFIER WHERE IDENTIFIER EQ STRING LIMIT NUMBER"]
-    D["Parser PLY<br/>dsl/parser.py - yacc.yacc() LALR1"]
-    E["AST Python dict<br/>type - collection - filter - limit"]
-    F["Compiler<br/>dsl/compiler.py - validation whitelist collections"]
-    G["MongoDB query dict<br/>pret pour motor.find() ou motor.count_documents()"]
-    H["Motor Python async<br/>dsl/main.py - execute()"]
-    I["Resultat JSON<br/>liste de documents ou entier"]
+    D["PLY Parser<br/>dsl/parser.py - yacc.yacc() LALR1"]
+    E["Python dict AST<br/>type - collection - filter - limit"]
+    F["Compiler<br/>dsl/compiler.py - collection whitelist validation"]
+    G["MongoDB query dict<br/>ready for motor.find() or motor.count_documents()"]
+    H["Python async Motor<br/>dsl/main.py - execute()"]
+    I["JSON result<br/>list of documents or integer"]
 
     A --> B --> C --> D --> E --> F --> G --> H --> I
 ```
 
-### 2.2 Intégration NestJS-Python via pythonia bridge
+### 2.2 NestJS-Python integration via the pythonia bridge
 
 ```mermaid
 sequenceDiagram
@@ -62,23 +62,23 @@ sequenceDiagram
     Admin->>NestJS: POST /dsl/query - Bearer JWT admin - body: {query: "FIND incidents WHERE status='open'"}
     NestJS->>NestJS: JwtAuthGuard + RolesGuard admin
     NestJS->>Svc: execute(query)
-    Svc->>Svc: Validation longueur <= 500 caracteres
+    Svc->>Svc: Length validation <= 500 characters
     Svc->>PY: pythonia.importFrom('dsl.main', 'execute')
     PY->>PY: lexer - parser - compiler
-    PY->>Mongo: motor.find ou count_documents
-    Mongo-->>PY: curseur ou entier
+    PY->>Mongo: motor.find or count_documents
+    Mongo-->>PY: cursor or integer
     PY-->>Svc: JSON string
-    Svc-->>NestJS: resultat parse
+    Svc-->>NestJS: parsed result
     NestJS-->>Admin: 200 - {results: [...], count: N}
 ```
 
 ---
 
-## 3. Lexer — Analyse lexicale
+## 3. Lexer — Lexical analysis
 
-Fichier : `dsl/lexer.py`
+File: `dsl/lexer.py`
 
-### 3.1 Mots réservés
+### 3.1 Reserved words
 
 ```python
 reserved = {
@@ -87,11 +87,11 @@ reserved = {
 }
 ```
 
-Les mots réservés sont **insensibles à la casse** : `find`, `FIND`, `Find` sont tous reconnus.
+Reserved words are **case-insensitive**: `find`, `FIND`, `Find` are all recognized.
 
-### 3.2 Règles de tokens
+### 3.2 Token rules
 
-| Token | Regex | Exemple |
+| Token | Regex | Example |
 |-------|-------|---------|
 | `STRING` | `"([^"\\]|\\.)*"\|'([^'\\]|\\.)*'` | `"open"`, `'Paris'` |
 | `NUMBER` | `\d+(\.\d+)?` | `42`, `3.14` |
@@ -106,15 +106,15 @@ Les mots réservés sont **insensibles à la casse** : `find`, `FIND`, `Find` so
 | `RPAREN` | `\)` | `)` |
 | `COMMA` | `,` | `,` |
 
-Les espaces, tabulations et retours à la ligne sont ignorés (`t_ignore = ' \t\n'`).
+Spaces, tabs, and line breaks are ignored (`t_ignore = ' \t\n'`).
 
 ---
 
-## 4. Parser — Grammaire LALR(1)
+## 4. Parser — LALR(1) grammar
 
-Fichier : `dsl/parser.py`
+File: `dsl/parser.py`
 
-### 4.1 Grammaire complète
+### 4.1 Full grammar
 
 ```
 query : FIND IDENTIFIER
@@ -139,10 +139,10 @@ condition : IDENTIFIER EQ value         → {field: value}
 value : STRING | NUMBER | IDENTIFIER
 ```
 
-### 4.2 Exemple d'AST généré
+### 4.2 Example of a generated AST
 
 ```python
-# Entrée : "FIND incidents WHERE status = 'open' LIMIT 10"
+# Input: "FIND incidents WHERE status = 'open' LIMIT 10"
 {
     'type': 'find',
     'collection': 'incidents',
@@ -150,7 +150,7 @@ value : STRING | NUMBER | IDENTIFIER
     'limit': 10,
 }
 
-# Entrée : "FIND incidents WHERE status = 'open' OR status = 'in_progress'"
+# Input: "FIND incidents WHERE status = 'open' OR status = 'in_progress'"
 {
     'type': 'find',
     'collection': 'incidents',
@@ -158,7 +158,7 @@ value : STRING | NUMBER | IDENTIFIER
     'limit': None,
 }
 
-# Entrée : "COUNT neighborhoods WHERE city = 'Paris'"
+# Input: "COUNT neighborhoods WHERE city = 'Paris'"
 {
     'type': 'count',
     'collection': 'neighborhoods',
@@ -168,11 +168,11 @@ value : STRING | NUMBER | IDENTIFIER
 
 ---
 
-## 5. Compiler — Validation et compilation
+## 5. Compiler — Validation and compilation
 
-Fichier : `dsl/compiler.py`
+File: `dsl/compiler.py`
 
-### 5.1 Whitelist de collections
+### 5.1 Collection whitelist
 
 ```python
 ALLOWED_COLLECTIONS = {
@@ -190,7 +190,7 @@ def compile_query(query_string: str) -> dict:
     return ast
 ```
 
-### 5.2 Exécution
+### 5.2 Execution
 
 ```python
 # main.py
@@ -209,11 +209,11 @@ async def execute(query_string: str) -> list | int:
 
 ---
 
-## 6. Bridge NestJS → Python
+## 6. NestJS → Python bridge
 
-Fichier : `api/src/dsl/dsl.service.ts`
+File: `api/src/dsl/dsl.service.ts`
 
-La bibliothèque **pythonia** permet d'appeler des fonctions Python depuis Node.js de manière synchrone.
+The **pythonia** library allows calling Python functions from Node.js synchronously.
 
 ```typescript
 // dsl.service.ts
@@ -237,9 +237,9 @@ async query(@Body() dto: DslQueryDto) {
 
 ---
 
-## 7. Exemples complets
+## 7. Complete examples
 
-### Requêtes basiques
+### Basic queries
 
 ```
 FIND incidents
@@ -252,7 +252,7 @@ COUNT incidents
 → db.incidents.countDocuments({})
 ```
 
-### Requêtes avec filtres
+### Queries with filters
 
 ```
 FIND incidents WHERE status = 'open'
@@ -265,17 +265,17 @@ FIND services WHERE type = 'free' OR type = 'exchange'
 → db.services.find({$or:[{type:'free'},{type:'exchange'}]})
 ```
 
-### Recherche textuelle (LIKE)
+### Text search (LIKE)
 
 ```
-FIND services WHERE title LIKE 'jardin'
-→ db.services.find({title:{$regex:'jardin',$options:'i'}})
+FIND services WHERE title LIKE 'garden'
+→ db.services.find({title:{$regex:'garden',$options:'i'}})
 
 FIND neighborhoods WHERE name LIKE 'belle'
 → db.neighborhoods.find({name:{$regex:'belle',$options:'i'}})
 ```
 
-### Comparaisons numériques
+### Numeric comparisons
 
 ```
 FIND incidents WHERE priority > 3
@@ -287,23 +287,23 @@ FIND events WHERE maxAttendees >= 50 LIMIT 10
 
 ---
 
-## 8. Gestion des erreurs
+## 8. Error handling
 
-| Erreur | Cause | Message retourné |
+| Error | Cause | Returned message |
 |--------|-------|-----------------|
-| `SyntaxError` | Token illégal : `FIND !@#` | `"Illegal character '!' at position 5"` |
-| `SyntaxError` | Grammaire incorrecte : `FIND WHERE incidents` | `"Syntax error at 'WHERE'"` |
-| `SyntaxError` | Fin prématurée : `FIND incidents WHERE` | `"Unexpected end of input"` |
-| `ValueError` | Collection non autorisée : `FIND passwords` | `"Unknown collection 'passwords'. Allowed: ..."` |
+| `SyntaxError` | Illegal token: `FIND !@#` | `"Illegal character '!' at position 5"` |
+| `SyntaxError` | Invalid grammar: `FIND WHERE incidents` | `"Syntax error at 'WHERE'"` |
+| `SyntaxError` | Premature end: `FIND incidents WHERE` | `"Unexpected end of input"` |
+| `ValueError` | Disallowed collection: `FIND passwords` | `"Unknown collection 'passwords'. Allowed: ..."` |
 
 ---
 
-## 9. Sécurité
+## 9. Security
 
-| Vecteur | Mitigation |
+| Vector | Mitigation |
 |---------|-----------|
-| Collections arbitraires | Whitelist stricte de 5 collections |
-| Opérations destructives | Seul FIND et COUNT — pas de DELETE/UPDATE/INSERT |
-| Injections MongoDB | Les valeurs passent par le moteur — pas de concaténation |
-| Accès non autorisé | Route protégée par `@Roles('admin')` |
-| Ressources excessives | `limit(1000)` maximum par requête |
+| Arbitrary collections | Strict whitelist of 5 collections |
+| Destructive operations | FIND and COUNT only — no DELETE/UPDATE/INSERT |
+| MongoDB injections | Values go through the engine — no concatenation |
+| Unauthorized access | Route protected by `@Roles('admin')` |
+| Excessive resources | `limit(1000)` maximum per query |
