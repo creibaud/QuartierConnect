@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import { PageHeader } from "@workspace/ui/components/page-header";
 import { NeighborhoodCard } from "@/features/account/components/neighborhood-card";
+import { NeighborhoodMapCard } from "@/features/account/components/neighborhood-map-card";
 import { PrivacyCard } from "@/features/account/components/privacy-card";
 import { ProfileCard } from "@/features/account/components/profile-card";
 import { SecurityCard } from "@/features/account/components/security-card";
@@ -48,6 +49,10 @@ export function AccountPage() {
 
                 <motion.div variants={fadeUp}>
                     <NeighborhoodCard />
+                </motion.div>
+
+                <motion.div variants={fadeUp}>
+                    <NeighborhoodMapCard />
                 </motion.div>
 
                 <motion.div variants={fadeUp}>

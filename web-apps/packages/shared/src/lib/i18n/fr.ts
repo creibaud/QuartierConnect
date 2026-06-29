@@ -227,6 +227,15 @@ export default {
             currentNeighborhood: "Quartier : {{name}}",
             noNeighborhood: "Aucun quartier affecté",
             pendingCoverage: "En attente de couverture",
+            neighborhoodMap: "Carte du quartier",
+            noMapAvailable:
+                "Aucune adresse ou quartier n'est encore enregistré.",
+            setAddress: "Renseigner mon adresse",
+            homeMarker: "Chez moi",
+            myLocationMarker: "Ma position",
+            locateMe: "Me localiser",
+            locationDenied: "Localisation refusée par le navigateur",
+            locationError: "Erreur lors de la localisation",
         },
         dashboard: {
             welcome: "Bonjour",
