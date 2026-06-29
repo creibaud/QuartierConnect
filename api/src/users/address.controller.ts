@@ -75,8 +75,9 @@ export class AddressController {
     }
 
     private async syncNeo4j(userId: string, neighborhoodId: string): Promise<void> {
-        const session = this.neo4jDriver.session();
+        let session: ReturnType<Driver["session"]> | undefined;
         try {
+            session = this.neo4jDriver.session();
             await session.run(
                 `MATCH (u:User {id: $userId})
                  MATCH (n:Neighborhood {id: $neighborhoodId})
@@ -84,9 +85,9 @@ export class AddressController {
                 { userId, neighborhoodId },
             );
         } catch {
-            // Neo4j unavailable — Postgres assignment remains valid
+            // Neo4j indisponible — l'affectation Postgres reste valable
         } finally {
-            await session.close();
+            await session?.close();
         }
     }
 }
