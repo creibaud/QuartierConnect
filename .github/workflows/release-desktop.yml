@@ -86,15 +86,12 @@ jobs:
         include:
           - os: ubuntu-latest
             type: deb
-            shell: bash
             script: bash desktop-app/packaging/jpackage-build.sh deb
           - os: macos-latest
             type: dmg
-            shell: bash
             script: bash desktop-app/packaging/jpackage-build.sh dmg
           - os: windows-latest
             type: msi
-            shell: pwsh
             script: desktop-app/packaging/jpackage-build.ps1
 
     steps:
@@ -114,8 +111,16 @@ jobs:
         env:
           TAG: ${{ github.event.inputs.tag || github.ref_name }}
 
-      - name: Build installateur
-        shell: ${{ matrix.shell }}
+      - name: Build installateur (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          APP_VERSION: ${{ steps.ver.outputs.version }}
+        run: ${{ matrix.script }}
+
+      - name: Build installateur (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
         env:
           APP_VERSION: ${{ steps.ver.outputs.version }}
         run: ${{ matrix.script }}
