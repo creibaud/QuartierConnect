@@ -374,6 +374,10 @@ export default {
             interestedCta: "I'm interested",
             respondedCta: "Responded",
             responderCount: "{{count}} responder(s)",
+            directionOffer: "Offer",
+            directionRequest: "Request",
+            allDirections: "All directions",
+            respondError: "Unable to respond to this service",
         },
         votes: {
             title: "Community votes",

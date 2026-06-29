@@ -376,6 +376,10 @@ export default {
             interestedCta: "Je suis intéressé",
             respondedCta: "Répondu",
             responderCount: "{{count}} répondant(s)",
+            directionOffer: "Offre",
+            directionRequest: "Demande",
+            allDirections: "Toutes les directions",
+            respondError: "Impossible de répondre à ce service",
         },
         votes: {
             title: "Votes communautaires",
