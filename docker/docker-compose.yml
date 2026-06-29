@@ -50,8 +50,9 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "mongosh --quiet -u ${MONGO_ROOT_USER:-root} -p ${MONGO_ROOT_PASSWORD} --eval \"db.adminCommand('ping')\""]
       interval: 5s
-      timeout: 5s
+      timeout: 10s
       retries: 5
+      start_period: 40s   # grace for first-run init on slow hosts (fresh volume / macOS Docker Desktop / CI)
 
   neo4j:
     image: neo4j:5
