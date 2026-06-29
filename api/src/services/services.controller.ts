@@ -105,7 +105,7 @@ export class ServicesController {
         type LeanResponse = { serviceId: unknown; responderId: string; createdAt: Date };
         const responses = (await this.responseModel
             .find({ serviceId: { $in: ids } })
-            .lean()) as unknown as LeanResponse[];
+            .lean()) as LeanResponse[];
         const responderIds = [...new Set(responses.map((r) => r.responderId))];
         const users = responderIds.length
             ? await this.db
