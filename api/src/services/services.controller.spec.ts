@@ -135,6 +135,23 @@ describe("ServicesController", () => {
         expect(result[0]).toMatchObject({ responderCount: 1, hasResponded: true });
     });
 
+    it("GET /services sets hasResponded false when caller did not respond", async () => {
+        const req = authReq("resident", "me", "n1");
+        responseModel.find = jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([
+                { serviceId: "svc-id-1", responderId: "other-user" },
+            ]),
+        });
+        const result = await controller.findAll(undefined, undefined, undefined, "1", "20", req as any);
+        expect(result[0]).toMatchObject({ responderCount: 1, hasResponded: false });
+    });
+
+    it("GET /services returns [] when the caller has no neighborhood", async () => {
+        const req = { user: { sub: "u", role: "resident", neighborhoodId: null } };
+        const result = await controller.findAll(undefined, undefined, undefined, "1", "20", req as any);
+        expect(result).toEqual([]);
+    });
+
     it("GET /services/:id throws 404 when not found", async () => {
         model.findById.mockReturnValue({
             exec: jest.fn().mockResolvedValue(null),

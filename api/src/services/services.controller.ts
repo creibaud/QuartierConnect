@@ -92,9 +92,16 @@ export class ServicesController {
         @Query("direction") direction?: string,
         @Query("page") page = "1",
         @Query("limit") limit = "20",
+        // Default required by TS1016 (a required param can't follow the optional
+        // @Query params); harmless because the neighborhood guard below rejects it.
         @Request() req: AuthRequest = { user: { sub: "", role: "" } },
     ) {
-        const filter: Record<string, unknown> = { neighborhoodId: req.user.neighborhoodId };
+        // Scope to the caller's neighborhood. Without one, Mongoose would strip
+        // `neighborhoodId: undefined` and leak every neighborhood's services.
+        if (!req.user.neighborhoodId) return [];
+        const filter: Record<string, unknown> = {
+            neighborhoodId: req.user.neighborhoodId,
+        };
         if (category) filter.category = category;
         if (type) filter.type = type;
         if (direction) filter.direction = direction;
