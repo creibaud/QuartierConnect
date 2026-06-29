@@ -28,6 +28,10 @@ export class NeighborhoodsService {
             .exec();
     }
 
+    findById(id: string): Promise<NeighborhoodDocument | null> {
+        return this.neighborhoodModel.findById(id).exec();
+    }
+
     findContainingPoint(
         lng: number,
         lat: number,

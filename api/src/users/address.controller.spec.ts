@@ -1,6 +1,6 @@
 import { AddressController } from "./address.controller";
 
-function makeDb() {
+function makeUpdateDb() {
     const set = jest.fn().mockReturnThis();
     const where = jest.fn().mockResolvedValue(undefined);
     return {
@@ -8,9 +8,18 @@ function makeDb() {
     } as unknown as never;
 }
 
+function makeSelectDb(rows: unknown[]) {
+    const where = jest.fn().mockResolvedValue(rows);
+    const from = jest.fn(() => ({ where }));
+    return {
+        select: jest.fn(() => ({ from })),
+        update: jest.fn(),
+    } as unknown as never;
+}
+
 describe("AddressController", () => {
     const geocoding = { geocode: jest.fn() };
-    const neighborhoods = { findContainingPoint: jest.fn() };
+    const neighborhoods = { findContainingPoint: jest.fn(), findById: jest.fn() };
     const run = jest.fn();
     const neo4j = { session: () => ({ run, close: jest.fn() }) };
 
@@ -35,7 +44,7 @@ describe("AddressController", () => {
             _id: { toString: () => "nb-12" },
             name: "Paris 12e",
         });
-        const ctrl = controller(makeDb());
+        const ctrl = controller(makeUpdateDb());
         const res = await ctrl.submit(
             { user: { sub: "u1" } } as never,
             { address: "12 rue de Reuilly" },
@@ -56,7 +65,7 @@ describe("AddressController", () => {
             displayName: "Somewhere",
         });
         neighborhoods.findContainingPoint.mockResolvedValue(null);
-        const ctrl = controller(makeDb());
+        const ctrl = controller(makeUpdateDb());
         const res = await ctrl.submit(
             { user: { sub: "u1" } } as never,
             { address: "nowhere" },
@@ -70,11 +79,51 @@ describe("AddressController", () => {
 
     it("returns not_found when geocoding fails", async () => {
         geocoding.geocode.mockResolvedValue(null);
-        const ctrl = controller(makeDb());
+        const ctrl = controller(makeUpdateDb());
         const res = await ctrl.submit(
             { user: { sub: "u1" } } as never,
             { address: "???" },
         );
         expect(res).toEqual({ status: "not_found" });
+    });
+
+    describe("GET location", () => {
+        const mockGeometry = {
+            type: "Polygon" as const,
+            coordinates: [[[2.3, 48.8], [2.4, 48.8], [2.4, 48.9], [2.3, 48.8]]],
+        };
+
+        it("returns coords and neighborhood details when user is assigned", async () => {
+            const db = makeSelectDb([{
+                addressLat: 48.84,
+                addressLng: 2.39,
+                neighborhoodId: "nb-12",
+            }]);
+            neighborhoods.findById.mockResolvedValue({
+                _id: { toString: () => "nb-12" },
+                name: "12ème Ardt",
+                geometry: mockGeometry,
+            });
+            const ctrl = controller(db);
+            const res = await ctrl.location({ user: { sub: "u1" } } as never);
+            expect(neighborhoods.findById).toHaveBeenCalledWith("nb-12");
+            expect(res).toEqual({
+                lat: 48.84,
+                lng: 2.39,
+                neighborhood: { id: "nb-12", name: "12ème Ardt", geometry: mockGeometry },
+            });
+        });
+
+        it("returns nulls when user has no address", async () => {
+            const db = makeSelectDb([{
+                addressLat: null,
+                addressLng: null,
+                neighborhoodId: null,
+            }]);
+            const ctrl = controller(db);
+            const res = await ctrl.location({ user: { sub: "u1" } } as never);
+            expect(neighborhoods.findById).not.toHaveBeenCalled();
+            expect(res).toEqual({ lat: null, lng: null, neighborhood: null });
+        });
     });
 });

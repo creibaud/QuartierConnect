@@ -9,6 +9,12 @@ export type AddressSubmitResult = {
     neighborhoodId?: string | null;
 };
 
+export type MyLocation = {
+    lat: number | null;
+    lng: number | null;
+    neighborhood: { id: string; name: string; geometry: object } | null;
+};
+
 export function gateState(s: NeighborhoodStatus): "ok" | "needs-address" | "pending" {
     if (!s.hasAddress) return "needs-address";
     if (!s.neighborhoodId) return "pending";

@@ -60,6 +60,37 @@ export class AddressController {
         };
     }
 
+    @Get("location")
+    @ApiOperation({ summary: "My coordinates and neighborhood details" })
+    async location(@Request() req: AuthRequest) {
+        const [row] = await this.db
+            .select({
+                addressLat: schema.users.addressLat,
+                addressLng: schema.users.addressLng,
+                neighborhoodId: schema.users.neighborhoodId,
+            })
+            .from(schema.users)
+            .where(eq(schema.users.id, req.user.sub));
+
+        if (!row?.addressLat || !row?.addressLng) {
+            return { lat: null, lng: null, neighborhood: null };
+        }
+
+        let neighborhood: { id: string; name: string; geometry: object | null } | null = null;
+        if (row.neighborhoodId) {
+            const doc = await this.neighborhoods.findById(row.neighborhoodId);
+            if (doc) {
+                neighborhood = {
+                    id: doc._id.toString(),
+                    name: doc.name,
+                    geometry: doc.geometry ?? null,
+                };
+            }
+        }
+
+        return { lat: row.addressLat, lng: row.addressLng, neighborhood };
+    }
+
     @Get("neighborhood-status")
     @ApiOperation({ summary: "My address/neighborhood status (for the gate)" })
     async status(@Request() req: AuthRequest) {
