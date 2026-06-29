@@ -28,6 +28,21 @@ export class NeighborhoodsService {
             .exec();
     }
 
+    findContainingPoint(
+        lng: number,
+        lat: number,
+    ): Promise<NeighborhoodDocument | null> {
+        return this.neighborhoodModel
+            .findOne({
+                geometry: {
+                    $geoIntersects: {
+                        $geometry: { type: "Point", coordinates: [lng, lat] },
+                    },
+                },
+            })
+            .exec();
+    }
+
     async assertNoOverlap(
         geometry: GeoJsonPolygon,
         excludeId?: string,

@@ -91,4 +91,23 @@ describe("NeighborhoodsService", () => {
             geometry: { $geoIntersects: { $geometry: samplePolygon } },
         });
     });
+
+    it("findContainingPoint queries $geoIntersects with a Point [lng,lat]", async () => {
+        const findOne = jest.fn().mockReturnValue({
+            exec: jest.fn().mockResolvedValue({ name: "Paris 12e" }),
+        });
+        (service as unknown as { neighborhoodModel: { findOne: jest.Mock } })
+            .neighborhoodModel.findOne = findOne;
+
+        const result = await service.findContainingPoint(2.387, 48.8399);
+
+        expect(findOne).toHaveBeenCalledWith({
+            geometry: {
+                $geoIntersects: {
+                    $geometry: { type: "Point", coordinates: [2.387, 48.8399] },
+                },
+            },
+        });
+        expect(result).toEqual({ name: "Paris 12e" });
+    });
 });
