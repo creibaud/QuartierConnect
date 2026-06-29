@@ -211,13 +211,20 @@ function RegisterPage() {
         );
     }
 
-    const totpSecret =
-        otpauthUrl ? (new URL(otpauthUrl).searchParams.get("secret") ?? "") : "";
+    const totpSecret = (() => {
+        if (!otpauthUrl) return "";
+        try {
+            return new URL(otpauthUrl).searchParams.get("secret") ?? "";
+        } catch {
+            return "";
+        }
+    })();
 
     const copySecret = () => {
-        navigator.clipboard.writeText(totpSecret).then(() => {
-            toast.success(t("pages.register.secretCopied"));
-        });
+        navigator.clipboard
+            .writeText(totpSecret)
+            .then(() => toast.success(t("pages.register.secretCopied")))
+            .catch(() => toast.error(t("pages.register.copyFailed")));
     };
 
     return (

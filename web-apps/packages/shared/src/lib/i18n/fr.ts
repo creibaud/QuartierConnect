@@ -178,6 +178,7 @@ export default {
             secretLabel: "Clé manuelle (si scan impossible)",
             copySecret: "Copier",
             secretCopied: "Clé copiée !",
+            copyFailed: "Impossible de copier — copie manuelle.",
         },
         account: {
             pageTitle: "Mon compte",
