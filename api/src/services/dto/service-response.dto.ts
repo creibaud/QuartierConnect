@@ -44,4 +44,10 @@ export class ServiceDto {
 
     @ApiProperty({ example: "2026-04-05T10:00:00.000Z" })
     updatedAt: string;
+
+    @ApiProperty({
+        example: "offer",
+        enum: ["offer", "request"],
+    })
+    direction: string;
 }
