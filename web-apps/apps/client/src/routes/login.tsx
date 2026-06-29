@@ -6,17 +6,12 @@ import { apiPost } from "@workspace/shared/lib/api";
 import { setTokens, type LoginResponse } from "@workspace/shared/lib/auth";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
 import { Button } from "@workspace/ui/components/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent } from "@workspace/ui/components/card";
 import { Spinner } from "@workspace/ui/components/spinner";
 import { useAppForm } from "@workspace/ui/lib/form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { AuthLayout } from "../components/auth-layout";
 
 export const Route = createFileRoute("/login")({
     component: LoginPage,
@@ -81,16 +76,14 @@ function LoginPage() {
     });
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 dark:bg-zinc-950">
-            <Card className="w-full max-w-sm">
-                <CardHeader className="text-center">
-                    <CardTitle className="text-2xl">QuartierConnect</CardTitle>
-                    <CardDescription>
-                        {step === "credentials"
-                            ? t("pages.login.subtitle")
-                            : t("pages.login.twoFactorSubtitle")}
-                    </CardDescription>
-                </CardHeader>
+        <AuthLayout
+            subtitle={
+                step === "credentials"
+                    ? t("pages.login.subtitle")
+                    : t("pages.login.twoFactorSubtitle")
+            }
+        >
+            <Card className="border-border/60 shadow-foreground/5 shadow-lg">
                 <CardContent className="space-y-4">
                     {serverError && (
                         <Alert variant="destructive">
@@ -131,7 +124,7 @@ function LoginPage() {
                                 {t("pages.login.noAccount")}{" "}
                                 <Link
                                     to="/register"
-                                    className="text-primary underline-offset-4 hover:underline"
+                                    className="text-primary font-medium underline-offset-4 hover:underline"
                                 >
                                     {t("auth.register")}
                                 </Link>
@@ -157,9 +150,7 @@ function LoginPage() {
                                     <field.OtpField label={t("auth.totpCode")} />
                                 )}
                             </totpForm.AppField>
-                            <totpForm.Subscribe
-                                selector={(s) => s.isSubmitting}
-                            >
+                            <totpForm.Subscribe selector={(s) => s.isSubmitting}>
                                 {(isSubmitting) => (
                                     <Button
                                         type="submit"
@@ -188,6 +179,6 @@ function LoginPage() {
                     )}
                 </CardContent>
             </Card>
-        </div>
+        </AuthLayout>
     );
 }

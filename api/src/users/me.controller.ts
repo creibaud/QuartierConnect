@@ -4,6 +4,7 @@ import {
     Delete,
     Get,
     Inject,
+    Patch,
     Request,
     UnauthorizedException,
     UseGuards,
@@ -16,6 +17,7 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
+import * as argon2 from "argon2";
 import { eq } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Model } from "mongoose";
@@ -26,7 +28,12 @@ import { TotpService } from "../auth/totp.service";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { NEO4J_DRIVER } from "../social/neo4j/neo4j.provider";
-import { DeleteAccountBodyDto, GdprExportDto } from "./dto/user-responses.dto";
+import {
+    ChangePasswordDto,
+    DeleteAccountBodyDto,
+    GdprExportDto,
+    UpdateProfileDto,
+} from "./dto/user-responses.dto";
 
 interface AuthRequest {
     user: { sub: string };
@@ -107,6 +114,88 @@ export class MeController {
             transactions,
             socialData,
         };
+    }
+
+    @Get("profile")
+    @ApiOperation({ summary: "Get my profile" })
+    async getProfile(@Request() req: AuthRequest) {
+        const [profile] = await this.db
+            .select({
+                id: schema.users.id,
+                email: schema.users.email,
+                role: schema.users.role,
+                firstName: schema.users.firstName,
+                lastName: schema.users.lastName,
+                avatarUrl: schema.users.avatarUrl,
+            })
+            .from(schema.users)
+            .where(eq(schema.users.id, req.user.sub));
+        return profile ?? null;
+    }
+
+    @Patch("profile")
+    @ApiOperation({ summary: "Update my profile (name, avatar)" })
+    @ApiBody({ type: UpdateProfileDto })
+    async updateProfile(
+        @Request() req: AuthRequest,
+        @Body() body: UpdateProfileDto,
+    ) {
+        const update: Partial<{
+            firstName: string;
+            lastName: string;
+            updatedAt: Date;
+        }> = { updatedAt: new Date() };
+        if (body.firstName !== undefined) update.firstName = body.firstName;
+        if (body.lastName !== undefined) update.lastName = body.lastName;
+
+        const [profile] = await this.db
+            .update(schema.users)
+            .set(update)
+            .where(eq(schema.users.id, req.user.sub))
+            .returning({
+                id: schema.users.id,
+                email: schema.users.email,
+                role: schema.users.role,
+                firstName: schema.users.firstName,
+                lastName: schema.users.lastName,
+                avatarUrl: schema.users.avatarUrl,
+            });
+        return profile;
+    }
+
+    @Patch("password")
+    @ApiOperation({
+        summary: "Change my password",
+        description:
+            "Verifies the current password, then stores the new password hash.",
+    })
+    @ApiBody({ type: ChangePasswordDto })
+    @ApiResponse({ status: 200, schema: { example: { success: true } } })
+    @ApiResponse({ status: 401, description: "Current password is incorrect" })
+    async changePassword(
+        @Request() req: AuthRequest,
+        @Body() body: ChangePasswordDto,
+    ) {
+        const userId = req.user.sub;
+        const [user] = await this.db
+            .select({ passwordHash: schema.users.passwordHash })
+            .from(schema.users)
+            .where(eq(schema.users.id, userId));
+
+        if (
+            !user ||
+            !(await argon2.verify(user.passwordHash, body.currentPassword))
+        ) {
+            throw new UnauthorizedException("Current password is incorrect");
+        }
+
+        const passwordHash = await argon2.hash(body.newPassword);
+        await this.db
+            .update(schema.users)
+            .set({ passwordHash, updatedAt: new Date() })
+            .where(eq(schema.users.id, userId));
+
+        return { success: true };
     }
 
     @Delete()

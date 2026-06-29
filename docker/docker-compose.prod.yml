@@ -1,9 +1,15 @@
 # Overrides production — appliqués par-dessus docker-compose.yml :
 #   docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml up -d --build
 #
-# Objectif : redémarrage automatique des conteneurs et logs bornés.
-# Ce fichier n'ajoute que des réglages d'exploitation ; la topologie reste
-# définie dans docker-compose.yml.
+# Objectif : exploitation sur un VPS mono-hôte — redémarrage auto, logs bornés,
+# et limites mémoire pour qu'un conteneur emballé ne fasse pas tomber l'hôte
+# entier. La topologie reste définie dans docker-compose.yml.
+#
+# Les limites mémoire visent un VPS de 4 à 8 Go (somme des plafonds ~3,5 Go,
+# le reste pour l'hôte). Ajuste `deploy.resources.limits.memory` à ta machine.
+# `deploy.resources` est bien appliqué par docker compose v2 hors swarm.
+# Pas de limite CPU dure : la contention CPU ralentit sans crasher, et brider
+# le JVM Neo4j ou les bases ferait plus de mal que de bien.
 
 services:
   api:
@@ -15,6 +21,12 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+        reservations:
+          memory: 128m
 
   client:
     restart: unless-stopped
@@ -23,6 +35,10 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 192m
 
   admin:
     restart: unless-stopped
@@ -31,17 +47,70 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 192m
 
   mongo:
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+        reservations:
+          memory: 256m
 
   neo4j:
     restart: unless-stopped
+    # Épingle heap + pagecache pour que le JVM respecte la limite cgroup
+    # ci-dessous. Sinon Neo4j dimensionne son heap sur la RAM de l'hôte et se
+    # fait OOM-kill dès que la limite du conteneur est plus basse.
+    environment:
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 1280m
+        reservations:
+          memory: 640m
 
   postgres:
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+        reservations:
+          memory: 128m
 
   caddy:
     restart: unless-stopped
     volumes:
       - /var/log/quartierconnect/caddy:/var/log/caddy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 128m

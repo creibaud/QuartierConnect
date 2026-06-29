@@ -7,17 +7,12 @@ import { apiPost } from "@workspace/shared/lib/api";
 import { setTokens, type LoginResponse } from "@workspace/shared/lib/auth";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
 import { Button } from "@workspace/ui/components/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent } from "@workspace/ui/components/card";
 import { Spinner } from "@workspace/ui/components/spinner";
 import { useAppForm } from "@workspace/ui/lib/form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { AuthLayout } from "../components/auth-layout";
 
 interface RegisterResponse {
     otpauthUrl: string;
@@ -34,6 +29,8 @@ function RegisterPage() {
 
     const registerSchema = z
         .object({
+            firstName: z.string().min(1, t("auth.validation.required")),
+            lastName: z.string().min(1, t("auth.validation.required")),
             email: z.string().email(t("auth.validation.invalidEmail")),
             password: z.string().min(8, t("auth.validation.passwordMin")),
             confirmPassword: z.string(),
@@ -55,13 +52,21 @@ function RegisterPage() {
     const [serverError, setServerError] = useState<string | null>(null);
 
     const registerForm = useAppForm({
-        defaultValues: { email: "", password: "", confirmPassword: "" },
+        defaultValues: {
+            firstName: "",
+            lastName: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+        },
         validators: { onSubmit: registerSchema },
         onSubmit: async ({ value }) => {
             try {
                 const data = await apiPost<RegisterResponse>("/auth/register", {
                     email: value.email,
                     password: value.password,
+                    firstName: value.firstName,
+                    lastName: value.lastName,
                 });
                 setOtpauthUrl(data.otpauthUrl);
                 setLoginCredentials({
@@ -106,16 +111,8 @@ function RegisterPage() {
 
     if (step === "form") {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 dark:bg-zinc-950">
-                <Card className="w-full max-w-sm">
-                    <CardHeader className="text-center">
-                        <CardTitle className="text-2xl">
-                            {t("pages.register.title")}
-                        </CardTitle>
-                        <CardDescription>
-                            {t("pages.register.subtitle")}
-                        </CardDescription>
-                    </CardHeader>
+            <AuthLayout subtitle={t("pages.register.subtitle")}>
+                <Card className="border-border/60 shadow-foreground/5 shadow-lg">
                     <CardContent className="space-y-4">
                         {serverError && (
                             <Alert variant="destructive">
@@ -131,13 +128,33 @@ function RegisterPage() {
                             }}
                             className="space-y-4"
                         >
+                            <div className="grid grid-cols-2 gap-3">
+                                <registerForm.AppField name="firstName">
+                                    {(field) => (
+                                        <field.TextField
+                                            label={t(
+                                                "pages.register.firstName",
+                                            )}
+                                            placeholder="Alice"
+                                            autoFocus
+                                        />
+                                    )}
+                                </registerForm.AppField>
+                                <registerForm.AppField name="lastName">
+                                    {(field) => (
+                                        <field.TextField
+                                            label={t("pages.register.lastName")}
+                                            placeholder="Martin"
+                                        />
+                                    )}
+                                </registerForm.AppField>
+                            </div>
                             <registerForm.AppField name="email">
                                 {(field) => (
                                     <field.TextField
                                         label={t("auth.email")}
                                         type="email"
                                         placeholder="alice@demo.fr"
-                                        autoFocus
                                     />
                                 )}
                             </registerForm.AppField>
@@ -155,7 +172,9 @@ function RegisterPage() {
                             <registerForm.AppField name="confirmPassword">
                                 {(field) => (
                                     <field.TextField
-                                        label={t("pages.register.confirmPassword")}
+                                        label={t(
+                                            "pages.register.confirmPassword",
+                                        )}
                                         type="password"
                                     />
                                 )}
@@ -180,7 +199,7 @@ function RegisterPage() {
                                 {t("pages.register.alreadyRegistered")}{" "}
                                 <Link
                                     to="/login"
-                                    className="text-primary underline-offset-4 hover:underline"
+                                    className="text-primary font-medium underline-offset-4 hover:underline"
                                 >
                                     {t("auth.login")}
                                 </Link>
@@ -188,29 +207,24 @@ function RegisterPage() {
                         </form>
                     </CardContent>
                 </Card>
-            </div>
+            </AuthLayout>
         );
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 dark:bg-zinc-950">
-            <Card className="w-full max-w-sm">
-                <CardHeader className="text-center">
-                    <CardTitle className="text-2xl">
-                        {t("pages.register.mfaTitle")}
-                    </CardTitle>
-                    <CardDescription>
-                        {t("pages.register.mfaSubtitle")}
-                    </CardDescription>
-                </CardHeader>
+        <AuthLayout subtitle={t("pages.register.mfaSubtitle")}>
+            <Card className="border-border/60 shadow-foreground/5 shadow-lg">
                 <CardContent className="space-y-6">
                     {serverError && (
                         <Alert variant="destructive">
                             <AlertDescription>{serverError}</AlertDescription>
                         </Alert>
                     )}
-                    <div className="flex justify-center rounded-lg bg-white p-4">
-                        <QRCode value={otpauthUrl} size={200} />
+                    <div
+                        data-testid="totp-qr"
+                        className="flex justify-center rounded-xl border bg-white p-4"
+                    >
+                        <QRCode value={otpauthUrl} size={196} />
                     </div>
                     <form
                         onSubmit={(e) => {
@@ -243,6 +257,6 @@ function RegisterPage() {
                     </form>
                 </CardContent>
             </Card>
-        </div>
+        </AuthLayout>
     );
 }

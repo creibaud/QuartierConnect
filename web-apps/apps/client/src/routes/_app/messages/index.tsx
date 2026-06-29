@@ -62,8 +62,8 @@ function conversationLabel(
         return conv.groupName ?? t("pages.messages.group");
     }
     const others = (conv.participantsInfo ?? [])
-        .filter((p) => p.id !== currentUserId && p.email)
-        .map((p) => p.email as string);
+        .filter((p) => p.id !== currentUserId && (p.name || p.email))
+        .map((p) => (p.name ?? p.email) as string);
     if (others.length === 0) return t("pages.messages.conversation");
     if (others.length <= 2) return others.join(", ");
     return `${others[0]} +${others.length - 1}`;
