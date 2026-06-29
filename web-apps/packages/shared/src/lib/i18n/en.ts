@@ -234,6 +234,8 @@ export default {
             locateMe: "Locate me",
             locationDenied: "Location access denied by the browser",
             locationError: "Location error",
+            locationApproximate:
+                "Approximate position (~{{km}} km, network-based). On mobile (GPS), it will be more precise.",
         },
         dashboard: {
             welcome: "Hello",

@@ -236,6 +236,8 @@ export default {
             locateMe: "Me localiser",
             locationDenied: "Localisation refusée par le navigateur",
             locationError: "Erreur lors de la localisation",
+            locationApproximate:
+                "Position approximative (~{{km}} km, basée sur le réseau). Sur mobile (GPS), elle sera précise.",
         },
         dashboard: {
             welcome: "Bonjour",
