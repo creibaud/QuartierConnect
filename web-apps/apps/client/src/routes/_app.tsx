@@ -10,6 +10,8 @@ import {
 import { useHead } from "@unhead/react";
 import { ensureAuthenticated } from "@workspace/shared/lib/api";
 import { usePointBalance } from "@workspace/shared/lib/hooks/points.hooks";
+import { fetchNeighborhoodStatus } from "@/features/onboarding/hooks/address.hooks";
+import { gateState } from "@/features/onboarding/lib/address-state";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -37,6 +39,14 @@ export const Route = createFileRoute("/_app")({
         const user = await ensureAuthenticated();
         if (!user) {
             throw redirect({ to: "/login" });
+        }
+        if (user.role !== "admin") {
+            const status = await fetchNeighborhoodStatus();
+            const state = gateState(status);
+            if (state === "needs-address") {
+                throw redirect({ to: "/onboarding/address" });
+            }
+            // task-11: if (state === "pending") throw redirect({ to: "/onboarding/pending" });
         }
     },
     component: AppLayout,

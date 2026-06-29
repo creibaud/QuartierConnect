@@ -13,6 +13,8 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OnboardingPendingRouteImport } from './routes/onboarding/pending'
+import { Route as OnboardingAddressRouteImport } from './routes/onboarding/address'
 import { Route as AppVotesIndexRouteImport } from './routes/_app/votes/index'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 import { Route as AppServicesIndexRouteImport } from './routes/_app/services/index'
@@ -42,6 +44,16 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingPendingRoute = OnboardingPendingRouteImport.update({
+  id: '/onboarding/pending',
+  path: '/onboarding/pending',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingAddressRoute = OnboardingAddressRouteImport.update({
+  id: '/onboarding/address',
+  path: '/onboarding/address',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppVotesIndexRoute = AppVotesIndexRouteImport.update({
@@ -104,6 +116,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/onboarding/address': typeof OnboardingAddressRoute
+  '/onboarding/pending': typeof OnboardingPendingRoute
   '/incidents/$id': typeof AppIncidentsIdRoute
   '/contracts/': typeof AppContractsIndexRoute
   '/dashboard/': typeof AppDashboardIndexRoute
@@ -120,6 +134,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/onboarding/address': typeof OnboardingAddressRoute
+  '/onboarding/pending': typeof OnboardingPendingRoute
   '/incidents/$id': typeof AppIncidentsIdRoute
   '/contracts': typeof AppContractsIndexRoute
   '/dashboard': typeof AppDashboardIndexRoute
@@ -138,6 +154,8 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/onboarding/address': typeof OnboardingAddressRoute
+  '/onboarding/pending': typeof OnboardingPendingRoute
   '/_app/incidents/$id': typeof AppIncidentsIdRoute
   '/_app/contracts/': typeof AppContractsIndexRoute
   '/_app/dashboard/': typeof AppDashboardIndexRoute
@@ -156,6 +174,8 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/onboarding/address'
+    | '/onboarding/pending'
     | '/incidents/$id'
     | '/contracts/'
     | '/dashboard/'
@@ -172,6 +192,8 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/onboarding/address'
+    | '/onboarding/pending'
     | '/incidents/$id'
     | '/contracts'
     | '/dashboard'
@@ -189,6 +211,8 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/register'
+    | '/onboarding/address'
+    | '/onboarding/pending'
     | '/_app/incidents/$id'
     | '/_app/contracts/'
     | '/_app/dashboard/'
@@ -207,6 +231,8 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  OnboardingAddressRoute: typeof OnboardingAddressRoute
+  OnboardingPendingRoute: typeof OnboardingPendingRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -237,6 +263,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/pending': {
+      id: '/onboarding/pending'
+      path: '/onboarding/pending'
+      fullPath: '/onboarding/pending'
+      preLoaderRoute: typeof OnboardingPendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/address': {
+      id: '/onboarding/address'
+      path: '/onboarding/address'
+      fullPath: '/onboarding/address'
+      preLoaderRoute: typeof OnboardingAddressRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/votes/': {
@@ -354,6 +394,8 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  OnboardingAddressRoute: OnboardingAddressRoute,
+  OnboardingPendingRoute: OnboardingPendingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

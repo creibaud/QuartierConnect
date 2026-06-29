@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@workspace/shared/lib/api";
-import type { NeighborhoodStatus } from "../lib/address-state";
+import type { AddressSubmitResult, NeighborhoodStatus } from "../lib/address-state";
 
 const NEIGHBORHOOD_STATUS_KEY = ["neighborhood", "status"] as const;
 
@@ -20,7 +20,7 @@ export function useSubmitAddress() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (address: string) =>
-            apiPost<void>("/users/me/address", { address }),
+            apiPost<AddressSubmitResult>("/users/me/address", { address }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: NEIGHBORHOOD_STATUS_KEY });
         },
