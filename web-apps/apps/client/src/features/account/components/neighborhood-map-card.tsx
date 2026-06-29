@@ -22,7 +22,7 @@ import {
 type GeolocationState =
     | { status: "idle" }
     | { status: "pending" }
-    | { status: "granted"; lat: number; lng: number }
+    | { status: "granted"; lat: number; lng: number; accuracy: number }
     | { status: "denied" }
     | { status: "error" };
 
@@ -56,6 +56,7 @@ export function NeighborhoodMapCard() {
                     status: "granted",
                     lat: pos.coords.latitude,
                     lng: pos.coords.longitude,
+                    accuracy: pos.coords.accuracy,
                 }),
             (err) => {
                 setGeoState({
@@ -63,7 +64,7 @@ export function NeighborhoodMapCard() {
                         err.code === err.PERMISSION_DENIED ? "denied" : "error",
                 });
             },
-            { enableHighAccuracy: true, timeout: 10_000 },
+            { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 },
         );
     }
 
@@ -143,27 +144,37 @@ export function NeighborhoodMapCard() {
                         />
                     )}
                 </Map>
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={locateMe}
-                        disabled={geoState.status === "pending"}
-                    >
-                        {geoState.status === "pending"
-                            ? t("common.loading")
-                            : t("pages.account.locateMe")}
-                    </Button>
-                    {geoState.status === "denied" && (
-                        <p className="text-muted-foreground text-xs">
-                            {t("pages.account.locationDenied")}
-                        </p>
-                    )}
-                    {geoState.status === "error" && (
-                        <p className="text-muted-foreground text-xs">
-                            {t("pages.account.locationError")}
-                        </p>
-                    )}
+                <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={locateMe}
+                            disabled={geoState.status === "pending"}
+                        >
+                            {geoState.status === "pending"
+                                ? t("common.loading")
+                                : t("pages.account.locateMe")}
+                        </Button>
+                        {geoState.status === "denied" && (
+                            <p className="text-muted-foreground text-xs">
+                                {t("pages.account.locationDenied")}
+                            </p>
+                        )}
+                        {geoState.status === "error" && (
+                            <p className="text-muted-foreground text-xs">
+                                {t("pages.account.locationError")}
+                            </p>
+                        )}
+                    </div>
+                    {geoState.status === "granted" &&
+                        geoState.accuracy > 1000 && (
+                            <p className="text-muted-foreground text-xs">
+                                {t("pages.account.locationApproximate", {
+                                    km: Math.round(geoState.accuracy / 1000),
+                                })}
+                            </p>
+                        )}
                 </div>
             </CardContent>
         </Card>
