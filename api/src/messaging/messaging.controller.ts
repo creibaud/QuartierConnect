@@ -85,6 +85,24 @@ export class MessagingController {
         return this.messagingService.createConversation(dto, req.user.sub);
     }
 
+    @Post("conversations/with/:userId")
+    @ApiOperation({
+        summary: "Find or create a 1-1 conversation with a user",
+        description:
+            "Returns the existing direct conversation with the target user, or creates one if none exists. Idempotent.",
+    })
+    @ApiParam({ name: "userId", description: "Postgres UUID of the other user" })
+    @ApiResponse({ status: 201, schema: { example: { id: "64b..." } } })
+    findOrCreateWith(
+        @Param("userId") userId: string,
+        @Request() req: AuthRequest,
+    ) {
+        return this.messagingService.findOrCreateDirectConversation(
+            req.user.sub,
+            userId,
+        );
+    }
+
     @Get("conversations/:id/messages")
     @ApiOperation({
         summary: "Message history (paginated)",
