@@ -131,18 +131,23 @@ export class NeighborhoodsController {
             );
 
         for (const u of pending) {
-            if (u.lat == null || u.lng == null) continue;
-            const match = await this.neighborhoodsService.findContainingPoint(
-                u.lng,
-                u.lat,
-            );
-            if (!match) continue;
-            const neighborhoodId = match._id.toString();
-            await this.db
-                .update(schema.users)
-                .set({ neighborhoodId, updatedAt: new Date() })
-                .where(eq(schema.users.id, u.id));
-            await syncLivesIn(this.neo4jDriver, u.id, neighborhoodId);
+            try {
+                if (u.lat == null || u.lng == null) continue;
+                const match =
+                    await this.neighborhoodsService.findContainingPoint(
+                        u.lng,
+                        u.lat,
+                    );
+                if (!match) continue;
+                const neighborhoodId = match._id.toString();
+                await this.db
+                    .update(schema.users)
+                    .set({ neighborhoodId, updatedAt: new Date() })
+                    .where(eq(schema.users.id, u.id));
+                await syncLivesIn(this.neo4jDriver, u.id, neighborhoodId);
+            } catch {
+                // best-effort: skip this resident, continue reassigning the rest
+            }
         }
     }
 
