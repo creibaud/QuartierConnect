@@ -10,6 +10,9 @@ export class ServiceResponse {
 
     @Prop({ required: true, index: true })
     responderId: string;
+
+    // Managed by `timestamps: { createdAt: true }`; declared for type inference on .lean().
+    createdAt: Date;
 }
 
 export const ServiceResponseSchema =
