@@ -1,4 +1,8 @@
-import { ForbiddenException, NotFoundException } from "@nestjs/common";
+import {
+    BadRequestException,
+    ForbiddenException,
+    NotFoundException,
+} from "@nestjs/common";
 import { getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
@@ -243,6 +247,91 @@ describe("MessagingService", () => {
             await expect(
                 service.sendMessage("conv-1", "user-99", "Hi"),
             ).rejects.toThrow(ForbiddenException);
+        });
+    });
+
+    describe("findOrCreateDirectConversation", () => {
+        it("returns existing conversation id without calling save", async () => {
+            const findOneMock = jest.fn().mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ _id: "c1" }),
+            });
+            const saveMock = jest.fn();
+            const ConvModelCtor = jest
+                .fn()
+                .mockImplementation(() => ({ save: saveMock }));
+            Object.assign(ConvModelCtor, convModel, { findOne: findOneMock });
+
+            const moduleA: TestingModule = await Test.createTestingModule({
+                providers: [
+                    MessagingService,
+                    {
+                        provide: getModelToken(Conversation.name),
+                        useValue: ConvModelCtor,
+                    },
+                    {
+                        provide: getModelToken(Message.name),
+                        useValue: msgModel,
+                    },
+                    { provide: DRIZZLE_TOKEN, useValue: mockDb },
+                ],
+            }).compile();
+            const svcA = moduleA.get<MessagingService>(MessagingService);
+
+            const result = await svcA.findOrCreateDirectConversation(
+                "me",
+                "other",
+            );
+            expect(result).toEqual({ id: "c1" });
+            expect(saveMock).not.toHaveBeenCalled();
+        });
+
+        it("creates and returns new conversation id when none exists", async () => {
+            const newId = "new-conv-1";
+            const saveMock = jest
+                .fn()
+                .mockResolvedValue({ _id: newId });
+            const findOneMock = jest.fn().mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+            const ConvModelCtor = jest
+                .fn()
+                .mockImplementation(() => ({ save: saveMock }));
+            Object.assign(ConvModelCtor, convModel, { findOne: findOneMock });
+
+            const moduleB: TestingModule = await Test.createTestingModule({
+                providers: [
+                    MessagingService,
+                    {
+                        provide: getModelToken(Conversation.name),
+                        useValue: ConvModelCtor,
+                    },
+                    {
+                        provide: getModelToken(Message.name),
+                        useValue: msgModel,
+                    },
+                    { provide: DRIZZLE_TOKEN, useValue: mockDb },
+                ],
+            }).compile();
+            const svcB = moduleB.get<MessagingService>(MessagingService);
+
+            const result = await svcB.findOrCreateDirectConversation(
+                "me",
+                "other",
+            );
+            expect(result).toEqual({ id: newId });
+            expect(saveMock).toHaveBeenCalledTimes(1);
+        });
+
+        it("throws BadRequestException with SELF_CONVERSATION when ids are equal", async () => {
+            await expect(
+                service.findOrCreateDirectConversation("user-1", "user-1"),
+            ).rejects.toBeInstanceOf(BadRequestException);
+
+            await expect(
+                service.findOrCreateDirectConversation("user-1", "user-1"),
+            ).rejects.toMatchObject({
+                response: { code: "SELF_CONVERSATION" },
+            });
         });
     });
 

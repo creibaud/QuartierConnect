@@ -218,6 +218,27 @@ export class MessagingService {
         return saved;
     }
 
+    async findOrCreateDirectConversation(
+        userId: string,
+        otherUserId: string,
+    ): Promise<{ id: string }> {
+        if (userId === otherUserId)
+            throw new BadRequestException({ code: "SELF_CONVERSATION" });
+        const participants = Array.from(new Set([userId, otherUserId]));
+        const existing = await this.conversationModel
+            .findOne({
+                isGroup: false,
+                participants: { $all: participants, $size: 2 },
+            })
+            .exec();
+        if (existing) return { id: String(existing._id) };
+        const created = await new this.conversationModel({
+            participants,
+            isGroup: false,
+        }).save();
+        return { id: String(created._id) };
+    }
+
     async sendFileMessage(
         conversationId: string,
         senderId: string,
