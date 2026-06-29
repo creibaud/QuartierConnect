@@ -41,7 +41,7 @@ import {
 import { Service, ServiceDocument } from "./schemas/service.schema";
 
 interface AuthRequest {
-    user: { sub: string; role: string };
+    user: { sub: string; role: string; neighborhoodId?: string | null };
 }
 
 @ApiTags("Services")
@@ -58,10 +58,12 @@ export class ServicesController {
     ) {}
 
     @Get()
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
     @ApiOperation({
         summary: "List services",
         description:
-            "Returns service listings, filterable by category and type.",
+            "Returns service listings scoped to the caller's neighborhood, filterable by category, type, and direction.",
     })
     @ApiQuery({
         name: "category",
@@ -75,23 +77,42 @@ export class ServicesController {
         enum: ["free", "paid", "exchange"],
         description: "Service type",
     })
+    @ApiQuery({
+        name: "direction",
+        required: false,
+        enum: ["offer", "request"],
+        description: "Service direction",
+    })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
     @ApiResponse({ status: 200, type: [ServiceDto] })
-    findAll(
+    async findAll(
         @Query("category") category?: string,
         @Query("type") type?: string,
+        @Query("direction") direction?: string,
         @Query("page") page = "1",
         @Query("limit") limit = "20",
+        @Request() req: AuthRequest = { user: { sub: "", role: "" } },
     ) {
-        const filter: Record<string, string> = {};
-        if (category) filter.category = String(category);
-        if (type) filter.type = String(type);
+        const filter: Record<string, unknown> = { neighborhoodId: req.user.neighborhoodId };
+        if (category) filter.category = category;
+        if (type) filter.type = type;
+        if (direction) filter.direction = direction;
 
         const pageNum = Math.max(1, parseInt(page) || 1);
         const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
         const skip = (pageNum - 1) * limitNum;
-        return this.serviceModel.find(filter).skip(skip).limit(limitNum).exec();
+        const services = await this.serviceModel.find(filter).skip(skip).limit(limitNum).lean();
+        const ids = services.map((s) => s._id);
+        const responses = await this.responseModel.find({ serviceId: { $in: ids } }).lean();
+        return services.map((s) => {
+            const forService = responses.filter((r) => String(r.serviceId) === String(s._id));
+            return {
+                ...s,
+                responderCount: forService.length,
+                hasResponded: forService.some((r) => r.responderId === req.user.sub),
+            };
+        });
     }
 
     @Get("mine")
