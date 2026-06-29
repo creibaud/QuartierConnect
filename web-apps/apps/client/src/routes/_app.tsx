@@ -11,7 +11,7 @@ import { useHead } from "@unhead/react";
 import { ensureAuthenticated } from "@workspace/shared/lib/api";
 import { usePointBalance } from "@workspace/shared/lib/hooks/points.hooks";
 import { fetchNeighborhoodStatus } from "@/features/onboarding/hooks/address.hooks";
-import { gateState } from "@/features/onboarding/lib/address-state";
+import { gateState, type NeighborhoodStatus } from "@/features/onboarding/lib/address-state";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -41,12 +41,19 @@ export const Route = createFileRoute("/_app")({
             throw redirect({ to: "/login" });
         }
         if (user.role !== "admin") {
-            const status = await fetchNeighborhoodStatus();
-            const state = gateState(status);
-            if (state === "needs-address") {
-                throw redirect({ to: "/onboarding/address" });
+            let status: NeighborhoodStatus | null = null;
+            try {
+                status = await fetchNeighborhoodStatus();
+            } catch {
+                // Fail-open: a transient status-fetch error must not block navigation
             }
-            if (state === "pending") throw redirect({ to: "/onboarding/pending" });
+            if (status !== null) {
+                const state = gateState(status);
+                if (state === "needs-address") {
+                    throw redirect({ to: "/onboarding/address" });
+                }
+                if (state === "pending") throw redirect({ to: "/onboarding/pending" });
+            }
         }
     },
     component: AppLayout,

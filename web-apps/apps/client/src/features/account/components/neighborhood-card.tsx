@@ -62,13 +62,13 @@ export function NeighborhoodCard() {
         });
     }
 
-    const neighborhoodBadge = () => {
+    function NeighborhoodBadge() {
         if (!status) return null;
         if (status.neighborhoodId) {
             return (
                 <Badge variant="secondary">
                     {t("pages.account.currentNeighborhood", {
-                        name: location?.neighborhood?.name ?? status.neighborhoodId,
+                        name: location?.neighborhood?.name ?? "…",
                     })}
                 </Badge>
             );
@@ -85,7 +85,7 @@ export function NeighborhoodCard() {
                 {t("pages.account.noNeighborhood")}
             </Badge>
         );
-    };
+    }
 
     return (
         <Card>
@@ -100,7 +100,7 @@ export function NeighborhoodCard() {
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
-                    {neighborhoodBadge()}
+                    <NeighborhoodBadge />
                     <form onSubmit={handleSubmit} className="space-y-3">
                         <div className="space-y-2">
                             <Label htmlFor="neighborhood-address">
