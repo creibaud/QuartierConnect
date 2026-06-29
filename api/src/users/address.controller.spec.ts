@@ -125,5 +125,18 @@ describe("AddressController", () => {
             expect(neighborhoods.findById).not.toHaveBeenCalled();
             expect(res).toEqual({ lat: null, lng: null, neighborhood: null });
         });
+
+        it("returns coords with neighborhood:null when neighborhoodId is set but findById returns null (stale ref)", async () => {
+            const db = makeSelectDb([{
+                addressLat: 48.84,
+                addressLng: 2.39,
+                neighborhoodId: "nb-deleted",
+            }]);
+            neighborhoods.findById.mockResolvedValue(null);
+            const ctrl = controller(db);
+            const res = await ctrl.location({ user: { sub: "u1" } } as never);
+            expect(neighborhoods.findById).toHaveBeenCalledWith("nb-deleted");
+            expect(res).toEqual({ lat: 48.84, lng: 2.39, neighborhood: null });
+        });
     });
 });
