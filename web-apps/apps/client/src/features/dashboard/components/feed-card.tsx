@@ -51,11 +51,22 @@ export function Rows({ count = 3 }: { count?: number }) {
     );
 }
 
-export function EmptyBlock({ icon, text }: { icon: IconSvgElement; text: string }) {
+export function EmptyBlock({
+    icon,
+    title,
+    subtitle,
+}: {
+    icon: IconSvgElement;
+    title: string;
+    subtitle?: string;
+}) {
     return (
-        <div className="text-muted-foreground flex flex-col items-center gap-2 py-6 text-center text-sm">
-            <HugeiconsIcon icon={icon} className="size-7 opacity-30" />
-            {text}
+        <div className="border-border/70 bg-muted/30 flex flex-col items-center gap-2 rounded-xl border border-dashed px-4 py-7 text-center">
+            <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-full">
+                <HugeiconsIcon icon={icon} className="size-5" />
+            </span>
+            <p className="text-sm font-medium">{title}</p>
+            {subtitle ? <p className="text-muted-foreground max-w-[34ch] text-xs">{subtitle}</p> : null}
         </div>
     );
 }

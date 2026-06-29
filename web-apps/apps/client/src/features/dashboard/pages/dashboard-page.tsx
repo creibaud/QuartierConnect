@@ -7,6 +7,7 @@ import { isStaffRole } from "../lib/dashboard-role";
 import { DashboardHeader } from "../components/dashboard-header";
 import { ModerationOverview } from "../components/moderation-overview";
 import { PointsSummaryCard } from "../components/points-summary-card";
+import { TransactionsCard } from "../components/transactions-card";
 import { OpenVotesCard } from "../components/open-votes-card";
 import { UpcomingEventsCard } from "../components/upcoming-events-card";
 import { ServicesCard } from "../components/services-card";
@@ -60,8 +61,11 @@ export function DashboardPage() {
                 animate="visible"
                 className="grid gap-4 lg:grid-cols-2"
             >
-                <motion.div variants={fadeUp} className="lg:col-span-2">
-                    <PointsSummaryCard currentEmail={user.email} />
+                <motion.div variants={fadeUp}>
+                    <PointsSummaryCard />
+                </motion.div>
+                <motion.div variants={fadeUp}>
+                    <TransactionsCard currentEmail={user.email} />
                 </motion.div>
                 <motion.div variants={fadeUp}>
                     <OpenVotesCard />
