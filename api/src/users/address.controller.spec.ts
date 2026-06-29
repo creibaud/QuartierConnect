@@ -1,19 +1,18 @@
 import { AddressController } from "./address.controller";
 
-function makeDb(updateReturn: unknown) {
+function makeDb() {
     const set = jest.fn().mockReturnThis();
-    const where = jest.fn().mockReturnThis();
-    const returning = jest.fn().mockResolvedValue([updateReturn]);
+    const where = jest.fn().mockResolvedValue(undefined);
     return {
-        update: jest.fn(() => ({ set, where, returning })),
-        _set: set,
+        update: jest.fn(() => ({ set, where })),
     } as unknown as never;
 }
 
 describe("AddressController", () => {
     const geocoding = { geocode: jest.fn() };
     const neighborhoods = { findContainingPoint: jest.fn() };
-    const neo4j = { session: () => ({ run: jest.fn(), close: jest.fn() }) };
+    const run = jest.fn();
+    const neo4j = { session: () => ({ run, close: jest.fn() }) };
 
     function controller(db: never) {
         return new AddressController(
@@ -36,7 +35,7 @@ describe("AddressController", () => {
             _id: { toString: () => "nb-12" },
             name: "Paris 12e",
         });
-        const ctrl = controller(makeDb({}));
+        const ctrl = controller(makeDb());
         const res = await ctrl.submit(
             { user: { sub: "u1" } } as never,
             { address: "12 rue de Reuilly" },
@@ -47,6 +46,7 @@ describe("AddressController", () => {
             neighborhoodId: "nb-12",
             displayName: "Paris 12e",
         });
+        expect(run).toHaveBeenCalledTimes(1);
     });
 
     it("returns pending when the point is outside every polygon", async () => {
@@ -56,7 +56,7 @@ describe("AddressController", () => {
             displayName: "Somewhere",
         });
         neighborhoods.findContainingPoint.mockResolvedValue(null);
-        const ctrl = controller(makeDb({}));
+        const ctrl = controller(makeDb());
         const res = await ctrl.submit(
             { user: { sub: "u1" } } as never,
             { address: "nowhere" },
@@ -70,7 +70,7 @@ describe("AddressController", () => {
 
     it("returns not_found when geocoding fails", async () => {
         geocoding.geocode.mockResolvedValue(null);
-        const ctrl = controller(makeDb({}));
+        const ctrl = controller(makeDb());
         const res = await ctrl.submit(
             { user: { sub: "u1" } } as never,
             { address: "???" },
