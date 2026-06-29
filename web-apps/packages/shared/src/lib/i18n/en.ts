@@ -370,6 +370,10 @@ export default {
                 "it-support": "IT support",
                 other: "Other",
             },
+            proposeCta: "Offer help",
+            interestedCta: "I'm interested",
+            respondedCta: "Responded",
+            responderCount: "{{count}} responder(s)",
         },
         votes: {
             title: "Community votes",
