@@ -213,6 +213,34 @@ describe("ServicesController", () => {
         );
     });
 
+    it("GET /services/responded returns services the user has responded to", async () => {
+        responseModel.find = jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([{ serviceId: "s1" }]),
+        });
+        model.find = jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([{ _id: "s1", title: "T" }]),
+            skip: jest.fn().mockReturnThis(),
+            limit: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue([]) }),
+        });
+
+        const result = await controller.findResponded({ user: { sub: "me", role: "resident" } } as any);
+
+        expect(responseModel.find).toHaveBeenCalledWith({ responderId: "me" });
+        expect(model.find).toHaveBeenCalledWith({ _id: { $in: ["s1"] } });
+        expect(result).toEqual([{ _id: "s1", title: "T" }]);
+    });
+
+    it("GET /services/responded returns [] when no responses", async () => {
+        responseModel.find = jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([]),
+        });
+
+        const result = await controller.findResponded({ user: { sub: "me", role: "resident" } } as any);
+
+        expect(result).toEqual([]);
+        expect(model.find).not.toHaveBeenCalled();
+    });
+
     it("GET /services/mine returns own services with responders enriched from Drizzle", async () => {
         const D = new Date("2025-01-01");
         model.find.mockReturnValue({
