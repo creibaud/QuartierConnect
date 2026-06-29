@@ -66,17 +66,29 @@ export class MessagingService {
                   .select({
                       id: schema.users.id,
                       email: schema.users.email,
+                      firstName: schema.users.firstName,
+                      lastName: schema.users.lastName,
                   })
                   .from(schema.users)
                   .where(inArray(schema.users.id, participantIds))
             : [];
         const emailById = new Map(users.map((user) => [user.id, user.email]));
+        const nameById = new Map(
+            users.map((user) => [
+                user.id,
+                [user.firstName, user.lastName]
+                    .filter(Boolean)
+                    .join(" ")
+                    .trim() || null,
+            ]),
+        );
 
         return conversations.map((conv) => ({
             ...conv.toObject(),
             participantsInfo: conv.participants.map((id) => ({
                 id,
                 email: emailById.get(id) ?? null,
+                name: nameById.get(id) ?? null,
             })),
         }));
     }

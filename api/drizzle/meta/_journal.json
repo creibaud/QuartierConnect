@@ -22,6 +22,20 @@
       "when": 1780059443209,
       "tag": "0002_incident_coords",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782660428413,
+      "tag": "0003_add_user_names",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782666085480,
+      "tag": "0004_add_avatar_url",
+      "breakpoints": true
     }
   ]
 }

@@ -152,8 +152,12 @@ function TransactionRow({
     const { t } = useTranslation();
     const isIncoming = transaction.recipientId === currentUserId;
     const otherParty = isIncoming
-        ? (transaction.senderEmail ?? transaction.senderId)
-        : (transaction.recipientEmail ?? transaction.recipientId);
+        ? (transaction.senderName ??
+          transaction.senderEmail ??
+          transaction.senderId)
+        : (transaction.recipientName ??
+          transaction.recipientEmail ??
+          transaction.recipientId);
     const date = new Date(transaction.createdAt).toLocaleDateString("fr-FR");
 
     return (

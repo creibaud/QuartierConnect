@@ -7,6 +7,9 @@ export class ParticipantInfoDto {
 
     @ApiProperty({ example: "bob@demo.fr", nullable: true })
     email: string | null;
+
+    @ApiPropertyOptional({ example: "Bob Dupont", nullable: true })
+    name: string | null;
 }
 
 export class ConversationDto {

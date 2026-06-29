@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppVotesIndexRouteImport } from './routes/_app/votes/index'
+import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 import { Route as AppServicesIndexRouteImport } from './routes/_app/services/index'
 import { Route as AppRecommendationsIndexRouteImport } from './routes/_app/recommendations/index'
 import { Route as AppPointsIndexRouteImport } from './routes/_app/points/index'
@@ -46,6 +47,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppVotesIndexRoute = AppVotesIndexRouteImport.update({
   id: '/votes/',
   path: '/votes/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppServicesIndexRoute = AppServicesIndexRouteImport.update({
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/points/': typeof AppPointsIndexRoute
   '/recommendations/': typeof AppRecommendationsIndexRoute
   '/services/': typeof AppServicesIndexRoute
+  '/settings/': typeof AppSettingsIndexRoute
   '/votes/': typeof AppVotesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/points': typeof AppPointsIndexRoute
   '/recommendations': typeof AppRecommendationsIndexRoute
   '/services': typeof AppServicesIndexRoute
+  '/settings': typeof AppSettingsIndexRoute
   '/votes': typeof AppVotesIndexRoute
 }
 export interface FileRoutesById {
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/_app/points/': typeof AppPointsIndexRoute
   '/_app/recommendations/': typeof AppRecommendationsIndexRoute
   '/_app/services/': typeof AppServicesIndexRoute
+  '/_app/settings/': typeof AppSettingsIndexRoute
   '/_app/votes/': typeof AppVotesIndexRoute
 }
 export interface FileRouteTypes {
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/points/'
     | '/recommendations/'
     | '/services/'
+    | '/settings/'
     | '/votes/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/points'
     | '/recommendations'
     | '/services'
+    | '/settings'
     | '/votes'
   id:
     | '__root__'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/_app/points/'
     | '/_app/recommendations/'
     | '/_app/services/'
+    | '/_app/settings/'
     | '/_app/votes/'
   fileRoutesById: FileRoutesById
 }
@@ -232,6 +244,13 @@ declare module '@tanstack/react-router' {
       path: '/votes'
       fullPath: '/votes/'
       preLoaderRoute: typeof AppVotesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/': {
+      id: '/_app/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AppSettingsIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/services/': {
@@ -310,6 +329,7 @@ interface AppRouteChildren {
   AppPointsIndexRoute: typeof AppPointsIndexRoute
   AppRecommendationsIndexRoute: typeof AppRecommendationsIndexRoute
   AppServicesIndexRoute: typeof AppServicesIndexRoute
+  AppSettingsIndexRoute: typeof AppSettingsIndexRoute
   AppVotesIndexRoute: typeof AppVotesIndexRoute
 }
 
@@ -323,6 +343,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPointsIndexRoute: AppPointsIndexRoute,
   AppRecommendationsIndexRoute: AppRecommendationsIndexRoute,
   AppServicesIndexRoute: AppServicesIndexRoute,
+  AppSettingsIndexRoute: AppSettingsIndexRoute,
   AppVotesIndexRoute: AppVotesIndexRoute,
 }
 

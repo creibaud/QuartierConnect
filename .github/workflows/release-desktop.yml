@@ -13,8 +13,8 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    name: Build + publish JAR
+  jar:
+    name: Build JAR + create release
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -59,11 +59,76 @@ jobs:
           body: |
             ## QuartierConnect Desktop ${{ github.event.inputs.tag || github.ref_name }}
 
+            ### Installateurs natifs
+            Téléchargez le paquet correspondant à votre système ci-dessous :
+            - **Linux** : `.deb` → `sudo apt install ./QuartierConnect_*.deb`
+            - **Windows** : `.msi` → double-clic
+            - **macOS** : `.dmg` → glisser dans Applications
+
+            ### Sans installation (JAR)
             ```bash
             wget https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.tag || github.ref_name }}/quartierconnect-desktop.jar
             java -jar quartierconnect-desktop.jar
             ```
 
             ${{ steps.changelog.outputs.changelog }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  installers:
+    name: Installateur ${{ matrix.type }} (${{ matrix.os }})
+    needs: jar
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            type: deb
+            script: bash desktop-app/packaging/jpackage-build.sh deb
+          - os: macos-latest
+            type: dmg
+            script: bash desktop-app/packaging/jpackage-build.sh dmg
+          - os: windows-latest
+            type: msi
+            script: desktop-app/packaging/jpackage-build.ps1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Calculer la version
+        id: ver
+        shell: bash
+        run: echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+        env:
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+      - name: Build installateur (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          APP_VERSION: ${{ steps.ver.outputs.version }}
+        run: ${{ matrix.script }}
+
+      - name: Build installateur (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          APP_VERSION: ${{ steps.ver.outputs.version }}
+        run: ${{ matrix.script }}
+
+      - name: Attacher l'installateur à la release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: desktop-app/target/installer/*.${{ matrix.type }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

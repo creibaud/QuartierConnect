@@ -73,6 +73,8 @@ export interface PointTransaction {
     note: string | null;
     senderEmail: string | null;
     recipientEmail: string | null;
+    senderName: string | null;
+    recipientName: string | null;
     createdAt: string;
 }
 
@@ -117,7 +119,11 @@ export interface Contract {
 export interface Conversation {
     _id: string;
     participants: string[];
-    participantsInfo?: { id: string; email: string | null }[];
+    participantsInfo?: {
+        id: string;
+        email: string | null;
+        name?: string | null;
+    }[];
     isGroup: boolean;
     groupName: string | null;
     neighborhoodId: string | null;
@@ -152,6 +158,15 @@ export interface DocumentMeta {
     size: number;
     uploadedBy: string;
     uploadedAt: string;
+}
+
+export interface MyProfile {
+    id: string;
+    email: string;
+    role: string;
+    firstName: string | null;
+    lastName: string | null;
+    avatarUrl: string | null;
 }
 
 export interface UserExport {
