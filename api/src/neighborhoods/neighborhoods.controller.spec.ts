@@ -1,6 +1,8 @@
 import { NotFoundException } from "@nestjs/common";
 import { getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
+import { DRIZZLE_TOKEN } from "../database/drizzle.module";
+import { NEO4J_DRIVER } from "../social/neo4j/neo4j.provider";
 import { SocialService } from "../social/social.service";
 import { NeighborhoodsController } from "./neighborhoods.controller";
 import { NeighborhoodsService } from "./neighborhoods.service";
@@ -16,8 +18,17 @@ const mockNeighborhood = {
 describe("NeighborhoodsController", () => {
     let controller: NeighborhoodsController;
     let model: any;
+    let dbUpdateSet: jest.Mock;
+    let dbSelectWhere: jest.Mock;
+    let findContainingPoint: jest.Mock;
 
     beforeEach(async () => {
+        dbUpdateSet = jest.fn().mockReturnValue({
+            where: jest.fn().mockResolvedValue(undefined),
+        });
+        dbSelectWhere = jest.fn().mockResolvedValue([]);
+        findContainingPoint = jest.fn().mockResolvedValue(null);
+
         const findChain = {
             skip: jest.fn().mockReturnThis(),
             limit: jest.fn().mockReturnThis(),
@@ -45,6 +56,7 @@ describe("NeighborhoodsController", () => {
                     provide: NeighborhoodsService,
                     useValue: {
                         assertNoOverlap: jest.fn().mockResolvedValue(undefined),
+                        findContainingPoint,
                     },
                 },
                 {
@@ -54,6 +66,26 @@ describe("NeighborhoodsController", () => {
                             .fn()
                             .mockResolvedValue(undefined),
                         deleteNode: jest.fn().mockResolvedValue(undefined),
+                    },
+                },
+                {
+                    provide: DRIZZLE_TOKEN,
+                    useValue: {
+                        select: jest.fn().mockReturnValue({
+                            from: jest.fn().mockReturnValue({
+                                where: dbSelectWhere,
+                            }),
+                        }),
+                        update: jest.fn().mockReturnValue({ set: dbUpdateSet }),
+                    },
+                },
+                {
+                    provide: NEO4J_DRIVER,
+                    useValue: {
+                        session: jest.fn().mockReturnValue({
+                            run: jest.fn().mockResolvedValue(undefined),
+                            close: jest.fn().mockResolvedValue(undefined),
+                        }),
                     },
                 },
             ],
@@ -119,6 +151,20 @@ describe("NeighborhoodsController", () => {
         });
         await expect(controller.remove("bad-id")).rejects.toThrow(
             NotFoundException,
+        );
+    });
+
+    it("reassigns pending users covered by the newly created neighborhood", async () => {
+        dbSelectWhere.mockResolvedValueOnce([
+            { id: "u1", lat: 48.8399, lng: 2.387 },
+        ]);
+        findContainingPoint.mockResolvedValueOnce({
+            _id: { toString: () => "nb-12" },
+        });
+        const validCreateDto = { name: "Belleville", city: "Paris" };
+        await controller.create(validCreateDto);
+        expect(dbUpdateSet).toHaveBeenCalledWith(
+            expect.objectContaining({ neighborhoodId: "nb-12" }),
         );
     });
 });
