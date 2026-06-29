@@ -59,6 +59,7 @@ export default {
         neighborhoods: "Neighborhoods",
         communityVotes: "Community votes",
         dsl: "DSL Editor",
+        coverage: "Pending addresses",
     },
     roles: {
         resident: "Resident",
@@ -755,6 +756,19 @@ export default {
             syntaxTitle: "DSL Syntax",
             availableCollections: "Available collections",
             syntaxLabel: "Syntax",
+        },
+        coverage: {
+            title: "Pending addresses",
+            description:
+                "Residents whose address falls outside any mapped neighborhood.",
+            loadError: "Unable to load pending addresses",
+            emptyTitle: "No pending addresses",
+            emptyDescription:
+                "All residents are covered by an existing neighborhood.",
+            residentColumn: "Resident",
+            addressColumn: "Address",
+            drawNeighborhood: "Draw a neighborhood",
+            pendingLabel: "Pending coverage",
         },
     },
 } as const;

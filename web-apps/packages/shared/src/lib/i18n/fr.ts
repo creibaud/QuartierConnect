@@ -59,6 +59,7 @@ export default {
         neighborhoods: "Quartiers",
         communityVotes: "Votes communautaires",
         dsl: "Éditeur DSL",
+        coverage: "Adresses en attente",
     },
     roles: {
         resident: "Résident",
@@ -768,6 +769,19 @@ export default {
             syntaxTitle: "Syntaxe DSL",
             availableCollections: "Collections disponibles",
             syntaxLabel: "Syntaxe",
+        },
+        coverage: {
+            title: "Adresses en attente",
+            description:
+                "Résidents dont l'adresse ne correspond à aucun quartier délimité.",
+            loadError: "Impossible de charger les adresses en attente",
+            emptyTitle: "Aucune adresse en attente",
+            emptyDescription:
+                "Tous les résidents sont couverts par un quartier existant.",
+            residentColumn: "Résident",
+            addressColumn: "Adresse",
+            drawNeighborhood: "Dessiner un quartier",
+            pendingLabel: "En attente de couverture",
         },
     },
 } as const;

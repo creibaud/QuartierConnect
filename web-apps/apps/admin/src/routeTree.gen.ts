@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SsoAuthorizeRouteImport } from './routes/sso/authorize'
 import { Route as AppUsersIndexRouteImport } from './routes/_app/users/index'
+import { Route as AppUncoveredAddressesIndexRouteImport } from './routes/_app/uncovered-addresses/index'
 import { Route as AppServicesIndexRouteImport } from './routes/_app/services/index'
 import { Route as AppNeighborhoodsIndexRouteImport } from './routes/_app/neighborhoods/index'
 import { Route as AppIncidentsIndexRouteImport } from './routes/_app/incidents/index'
@@ -46,6 +47,12 @@ const AppUsersIndexRoute = AppUsersIndexRouteImport.update({
   path: '/users/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppUncoveredAddressesIndexRoute =
+  AppUncoveredAddressesIndexRouteImport.update({
+    id: '/uncovered-addresses/',
+    path: '/uncovered-addresses/',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppServicesIndexRoute = AppServicesIndexRouteImport.update({
   id: '/services/',
   path: '/services/',
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/incidents/': typeof AppIncidentsIndexRoute
   '/neighborhoods/': typeof AppNeighborhoodsIndexRoute
   '/services/': typeof AppServicesIndexRoute
+  '/uncovered-addresses/': typeof AppUncoveredAddressesIndexRoute
   '/users/': typeof AppUsersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -106,6 +114,7 @@ export interface FileRoutesByTo {
   '/incidents': typeof AppIncidentsIndexRoute
   '/neighborhoods': typeof AppNeighborhoodsIndexRoute
   '/services': typeof AppServicesIndexRoute
+  '/uncovered-addresses': typeof AppUncoveredAddressesIndexRoute
   '/users': typeof AppUsersIndexRoute
 }
 export interface FileRoutesById {
@@ -121,6 +130,7 @@ export interface FileRoutesById {
   '/_app/incidents/': typeof AppIncidentsIndexRoute
   '/_app/neighborhoods/': typeof AppNeighborhoodsIndexRoute
   '/_app/services/': typeof AppServicesIndexRoute
+  '/_app/uncovered-addresses/': typeof AppUncoveredAddressesIndexRoute
   '/_app/users/': typeof AppUsersIndexRoute
 }
 export interface FileRouteTypes {
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/incidents/'
     | '/neighborhoods/'
     | '/services/'
+    | '/uncovered-addresses/'
     | '/users/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/incidents'
     | '/neighborhoods'
     | '/services'
+    | '/uncovered-addresses'
     | '/users'
   id:
     | '__root__'
@@ -163,6 +175,7 @@ export interface FileRouteTypes {
     | '/_app/incidents/'
     | '/_app/neighborhoods/'
     | '/_app/services/'
+    | '/_app/uncovered-addresses/'
     | '/_app/users/'
   fileRoutesById: FileRoutesById
 }
@@ -208,6 +221,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/users/'
       preLoaderRoute: typeof AppUsersIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/uncovered-addresses/': {
+      id: '/_app/uncovered-addresses/'
+      path: '/uncovered-addresses'
+      fullPath: '/uncovered-addresses/'
+      preLoaderRoute: typeof AppUncoveredAddressesIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/services/': {
@@ -270,6 +290,7 @@ interface AppRouteChildren {
   AppIncidentsIndexRoute: typeof AppIncidentsIndexRoute
   AppNeighborhoodsIndexRoute: typeof AppNeighborhoodsIndexRoute
   AppServicesIndexRoute: typeof AppServicesIndexRoute
+  AppUncoveredAddressesIndexRoute: typeof AppUncoveredAddressesIndexRoute
   AppUsersIndexRoute: typeof AppUsersIndexRoute
 }
 
@@ -281,6 +302,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIncidentsIndexRoute: AppIncidentsIndexRoute,
   AppNeighborhoodsIndexRoute: AppNeighborhoodsIndexRoute,
   AppServicesIndexRoute: AppServicesIndexRoute,
+  AppUncoveredAddressesIndexRoute: AppUncoveredAddressesIndexRoute,
   AppUsersIndexRoute: AppUsersIndexRoute,
 }
 
