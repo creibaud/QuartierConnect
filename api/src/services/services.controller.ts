@@ -21,7 +21,7 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
-import { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
@@ -29,6 +29,10 @@ import { SocialService } from "../social/social.service";
 import { CreateServiceDto } from "./dto/create-service.dto";
 import { ServiceDto } from "./dto/service-response.dto";
 import { UpdateServiceDto } from "./dto/update-service.dto";
+import {
+    ServiceResponse,
+    ServiceResponseDocument,
+} from "./schemas/service-response.schema";
 import { Service, ServiceDocument } from "./schemas/service.schema";
 
 interface AuthRequest {
@@ -41,6 +45,8 @@ export class ServicesController {
     constructor(
         @InjectModel(Service.name)
         private readonly serviceModel: Model<ServiceDocument>,
+        @InjectModel(ServiceResponse.name)
+        private readonly responseModel: Model<ServiceResponseDocument>,
         private readonly socialService: SocialService,
     ) {}
 
@@ -183,6 +189,42 @@ export class ServicesController {
             );
         }
         return updated;
+    }
+
+    @Post(":id/respond")
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: "Respond to a service listing (idempotent)" })
+    @ApiParam({ name: "id", description: "MongoDB ID of the service" })
+    @ApiResponse({ status: 201, schema: { example: { status: "ok" } } })
+    @ApiResponse({ status: 403, description: "Cannot respond to own service" })
+    @ApiResponse({ status: 404, description: "Service not found" })
+    async respond(@Param("id") id: string, @Request() req: AuthRequest) {
+        const service = await this.serviceModel.findById(id);
+        if (!service) throw new NotFoundException({ code: "SERVICE_NOT_FOUND" });
+        if (service.createdBy === req.user.sub)
+            throw new ForbiddenException({ code: "OWN_SERVICE" });
+        const serviceId = new Types.ObjectId(id);
+        await this.responseModel.updateOne(
+            { serviceId, responderId: req.user.sub },
+            { $setOnInsert: { serviceId, responderId: req.user.sub } },
+            { upsert: true },
+        );
+        return { status: "ok" as const };
+    }
+
+    @Delete(":id/respond")
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: "Withdraw response from a service listing" })
+    @ApiParam({ name: "id", description: "MongoDB ID of the service" })
+    @ApiResponse({ status: 200, schema: { example: { status: "ok" } } })
+    async unrespond(@Param("id") id: string, @Request() req: AuthRequest) {
+        await this.responseModel.deleteOne({
+            serviceId: new Types.ObjectId(id),
+            responderId: req.user.sub,
+        });
+        return { status: "ok" as const };
     }
 
     @Delete(":id")

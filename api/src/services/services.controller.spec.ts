@@ -2,6 +2,7 @@ import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
 import { SocialService } from "../social/social.service";
+import { ServiceResponse } from "./schemas/service-response.schema";
 import { Service } from "./schemas/service.schema";
 import { ServicesController } from "./services.controller";
 
@@ -21,6 +22,7 @@ const authReq = (role = "resident", sub = "user-uuid-1") => ({
 describe("ServicesController", () => {
     let controller: ServicesController;
     let model: any;
+    let responseModel: any;
 
     beforeEach(async () => {
         model = {
@@ -42,10 +44,19 @@ describe("ServicesController", () => {
             }),
         };
 
+        responseModel = {
+            updateOne: jest.fn().mockResolvedValue({ upsertedCount: 1 }),
+            deleteOne: jest.fn().mockResolvedValue({ deletedCount: 1 }),
+        };
+
         const module: TestingModule = await Test.createTestingModule({
             controllers: [ServicesController],
             providers: [
                 { provide: getModelToken(Service.name), useValue: model },
+                {
+                    provide: getModelToken(ServiceResponse.name),
+                    useValue: responseModel,
+                },
                 {
                     provide: SocialService,
                     useValue: {
@@ -109,6 +120,7 @@ describe("ServicesController", () => {
                 description: "Desc",
                 category: "home",
                 type: "free",
+                direction: "offer",
             },
             authReq() as any,
         );
@@ -148,5 +160,41 @@ describe("ServicesController", () => {
     it("DELETE /services/:id removes the service", async () => {
         const result = await controller.remove("svc-id-1");
         expect(result).toEqual({ success: true });
+    });
+
+    it("respond is idempotent and forbids own service", async () => {
+        const id1 = "aaaaaaaaaaaaaaaaaaaaaaaa";
+        const id2 = "bbbbbbbbbbbbbbbbbbbbbbbb";
+        // service owned by someone else → upsert called
+        model.findById.mockResolvedValue({ _id: id1, createdBy: "owner" });
+        await controller.respond(id1, { user: { sub: "me" } } as any);
+        expect(responseModel.updateOne).toHaveBeenCalledWith(
+            { serviceId: expect.anything(), responderId: "me" },
+            { $setOnInsert: { responderId: "me", serviceId: expect.anything() } },
+            { upsert: true },
+        );
+        // own service → 403
+        model.findById.mockResolvedValue({ _id: id2, createdBy: "me" });
+        await expect(controller.respond(id2, { user: { sub: "me" } } as any)).rejects.toThrow();
+    });
+
+    it("respond throws 404 when service not found", async () => {
+        model.findById.mockResolvedValue(null);
+        await expect(
+            controller.respond("aaaaaaaaaaaaaaaaaaaaaaaa", {
+                user: { sub: "me" },
+            } as any),
+        ).rejects.toThrow(NotFoundException);
+    });
+
+    it("unrespond is a no-op when response absent", async () => {
+        responseModel.deleteOne.mockResolvedValue({ deletedCount: 0 });
+        const result = await controller.unrespond("aaaaaaaaaaaaaaaaaaaaaaaa", {
+            user: { sub: "me" },
+        } as any);
+        expect(result).toEqual({ status: "ok" });
+        expect(responseModel.deleteOne).toHaveBeenCalledWith(
+            expect.objectContaining({ responderId: "me" }),
+        );
     });
 });
