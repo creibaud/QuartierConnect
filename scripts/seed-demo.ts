@@ -277,6 +277,36 @@ async function seedContent(token: string): Promise<void> {
   });
 }
 
+/** Assign an address + neighborhood to the non-admin demo residents so they
+ *  pass the address gate (admins are gate-exempt). Without this, alice/bob are
+ *  redirected to /onboarding/address and the client E2E suite can't reach the app. */
+async function assignNeighborhoodToResidents(token: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/neighborhoods`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const nbhs = (res.ok ? await res.json() : []) as Array<{ _id: string }>;
+  const neighborhoodId = nbhs[0]?._id;
+  if (!neighborhoodId) {
+    process.stdout.write(
+      "  ! no neighborhood available — residents not assigned\n",
+    );
+    return;
+  }
+  for (const { email, role } of ACCOUNTS) {
+    if (role === "admin") continue;
+    try {
+      pgQuery(
+        `UPDATE users SET address='1 rue de la Demo, 75001 Paris', address_lat=48.8566, address_lng=2.3522, neighborhood_id='${neighborhoodId}' WHERE email='${email}'`,
+      );
+      process.stdout.write(
+        `  → ${email} assigned to neighborhood ${neighborhoodId}\n`,
+      );
+    } catch {
+      process.stdout.write(`  ! could not assign neighborhood for ${email}\n`);
+    }
+  }
+}
+
 async function main(): Promise<void> {
   console.log("QuartierConnect — Demo Seed");
   console.log(`API: ${BASE_URL}`);
@@ -290,6 +320,7 @@ async function main(): Promise<void> {
   const adminToken = await loginAdmin();
   if (adminToken) {
     await seedNeighborhoods(adminToken);
+    await assignNeighborhoodToResidents(adminToken);
     await seedContent(adminToken);
   } else {
     console.warn("  ! admin login failed — skipping neighborhood seed");

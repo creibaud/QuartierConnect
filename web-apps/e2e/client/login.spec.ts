@@ -45,21 +45,26 @@ test.describe("Client — Login parcours", () => {
         await page.getByLabel("Email").fill(testEmail);
         await page.getByLabel("Mot de passe").fill("WrongPass999!");
         await page.getByRole("button", { name: /continuer/i }).click();
-        await page.getByLabel(/code totp/i).fill("000000");
-        await page.getByRole("button", { name: /se connecter/i }).click();
+        // input-otp ignores .fill(); type the digits — the 6th triggers auto-submit
+        await page.getByLabel(/code totp/i).pressSequentially("000000");
         await expect(page.getByRole("alert")).toContainText(
             /incorrect|invalide/i,
         );
     });
 
-    test("redirects to /dashboard after valid login", async ({ page }) => {
+    test("redirects new user to address onboarding after valid login", async ({
+        page,
+    }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         await page.goto("/login");
         await page.getByLabel("Email").fill(testEmail);
         await page.getByLabel("Mot de passe").fill(DEMO_PASSWORD);
         await page.getByRole("button", { name: /continuer/i }).click();
-        await page.getByLabel(/code totp/i).fill(currentTotp(testSecret));
-        await page.getByRole("button", { name: /se connecter/i }).click();
-        await expect(page).toHaveURL(/\/dashboard/);
+        // input-otp ignores .fill(); type the digits — the 6th triggers auto-submit
+        await page
+            .getByLabel(/code totp/i)
+            .pressSequentially(currentTotp(testSecret));
+        // Freshly-registered user has no address → the gate sends them to onboarding
+        await expect(page).toHaveURL(/\/onboarding\/address/);
     });
 });

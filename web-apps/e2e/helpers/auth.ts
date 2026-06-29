@@ -1,7 +1,25 @@
+import { execSync } from "child_process";
 import * as crypto from "crypto";
 
 const API = "http://localhost:5000";
 export const DEMO_PASSWORD = "Demo1234!";
+
+const PG_CONTAINER = process.env.PG_CONTAINER ?? "docker-postgres-1";
+const PG_USER = process.env.POSTGRES_USER ?? "qc";
+const PG_DB = process.env.POSTGRES_DB ?? "quartierconnect";
+
+/** Give a registered user an address + neighborhood directly in Postgres so they
+ *  pass the client address gate (mirrors scripts/seed-demo.ts). No-op without docker. */
+export function assignAddress(email: string): void {
+    try {
+        execSync(
+            `docker exec ${PG_CONTAINER} psql -U "${PG_USER}" -d "${PG_DB}" -c "UPDATE users SET address='1 rue de la Demo, 75001 Paris', address_lat=48.8566, address_lng=2.3522, neighborhood_id='e2e-neighborhood' WHERE email='${email}'"`,
+            { stdio: "pipe" },
+        );
+    } catch {
+        // docker/psql unavailable (e.g. local run) — gate-dependent tests will fail visibly
+    }
+}
 
 /** RFC 6238 TOTP — pure Node crypto, no external dependency.
  *  @param timeOffsetSeconds — shift the clock by N seconds (e.g. -30 = previous window)

@@ -113,7 +113,9 @@
             "!**/main.ts",
             "!**/*.module.ts",
             "!**/*.dto.ts",
-            "!**/index.ts"
+            "!**/index.ts",
+            "!**/seed-*.ts",
+            "!**/migrate-*.ts"
         ],
         "coverageDirectory": "../coverage",
         "testEnvironment": "node",
