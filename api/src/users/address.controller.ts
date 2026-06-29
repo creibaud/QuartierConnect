@@ -66,6 +66,7 @@ export class AddressController {
     async location(@Request() req: AuthRequest) {
         const [row] = await this.db
             .select({
+                address: schema.users.address,
                 addressLat: schema.users.addressLat,
                 addressLng: schema.users.addressLng,
                 neighborhoodId: schema.users.neighborhoodId,
@@ -74,7 +75,7 @@ export class AddressController {
             .where(eq(schema.users.id, req.user.sub));
 
         if (row?.addressLat == null || row?.addressLng == null) {
-            return { lat: null, lng: null, neighborhood: null };
+            return { address: row?.address ?? null, lat: null, lng: null, neighborhood: null };
         }
 
         let neighborhood: { id: string; name: string; geometry: GeoJsonPolygon | null } | null = null;
@@ -89,7 +90,7 @@ export class AddressController {
             }
         }
 
-        return { lat: row.addressLat, lng: row.addressLng, neighborhood };
+        return { address: row.address ?? null, lat: row.addressLat, lng: row.addressLng, neighborhood };
     }
 
     @Get("neighborhood-status")
