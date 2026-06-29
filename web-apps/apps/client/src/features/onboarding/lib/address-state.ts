@@ -15,6 +15,7 @@ export type GeoJsonPolygon = {
 };
 
 export type MyLocation = {
+    address: string | null;
     lat: number | null;
     lng: number | null;
     neighborhood: { id: string; name: string; geometry: GeoJsonPolygon } | null;

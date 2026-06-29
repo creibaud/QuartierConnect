@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Home01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useTranslation } from "react-i18next";
@@ -26,6 +26,14 @@ export function NeighborhoodCard() {
     const submitAddress = useSubmitAddress();
 
     const [address, setAddress] = useState("");
+    const addressInitialized = useRef(false);
+
+    useEffect(() => {
+        if (!addressInitialized.current && location?.address != null) {
+            setAddress(location.address);
+            addressInitialized.current = true;
+        }
+    }, [location?.address]);
 
     function handleSubmit(event: React.FormEvent) {
         event.preventDefault();
@@ -40,9 +48,11 @@ export function NeighborhoodCard() {
                             name: result.displayName ?? result.neighborhoodId,
                         }),
                     );
+                    addressInitialized.current = false;
                     setAddress("");
                 } else if (result.status === "pending") {
                     toast.info(t("pages.account.addressPending"));
+                    addressInitialized.current = false;
                     setAddress("");
                 } else {
                     toast.error(t("pages.account.addressNotFound"));

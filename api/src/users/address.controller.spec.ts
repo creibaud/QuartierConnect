@@ -95,6 +95,7 @@ describe("AddressController", () => {
 
         it("returns coords and neighborhood details when user is assigned", async () => {
             const db = makeSelectDb([{
+                address: "12 rue de Reuilly, Paris",
                 addressLat: 48.84,
                 addressLng: 2.39,
                 neighborhoodId: "nb-12",
@@ -108,6 +109,7 @@ describe("AddressController", () => {
             const res = await ctrl.location({ user: { sub: "u1" } } as never);
             expect(neighborhoods.findById).toHaveBeenCalledWith("nb-12");
             expect(res).toEqual({
+                address: "12 rue de Reuilly, Paris",
                 lat: 48.84,
                 lng: 2.39,
                 neighborhood: { id: "nb-12", name: "12ème Ardt", geometry: mockGeometry },
@@ -116,6 +118,7 @@ describe("AddressController", () => {
 
         it("returns nulls when user has no address", async () => {
             const db = makeSelectDb([{
+                address: null,
                 addressLat: null,
                 addressLng: null,
                 neighborhoodId: null,
@@ -123,11 +126,12 @@ describe("AddressController", () => {
             const ctrl = controller(db);
             const res = await ctrl.location({ user: { sub: "u1" } } as never);
             expect(neighborhoods.findById).not.toHaveBeenCalled();
-            expect(res).toEqual({ lat: null, lng: null, neighborhood: null });
+            expect(res).toEqual({ address: null, lat: null, lng: null, neighborhood: null });
         });
 
         it("returns coords with neighborhood:null when neighborhoodId is set but findById returns null (stale ref)", async () => {
             const db = makeSelectDb([{
+                address: "some street",
                 addressLat: 48.84,
                 addressLng: 2.39,
                 neighborhoodId: "nb-deleted",
@@ -136,7 +140,7 @@ describe("AddressController", () => {
             const ctrl = controller(db);
             const res = await ctrl.location({ user: { sub: "u1" } } as never);
             expect(neighborhoods.findById).toHaveBeenCalledWith("nb-deleted");
-            expect(res).toEqual({ lat: 48.84, lng: 2.39, neighborhood: null });
+            expect(res).toEqual({ address: "some street", lat: 48.84, lng: 2.39, neighborhood: null });
         });
     });
 });
