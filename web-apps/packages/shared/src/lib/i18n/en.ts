@@ -173,6 +173,11 @@ export default {
                 "Scan this QR code with Google Authenticator, Authy or a TOTP-compatible app",
             verificationCode: "Verification code",
             confirmAndLogin: "Confirm and sign in",
+            mfaStep1: "Scan the QR code with your authenticator app (Google Authenticator, Authy…)",
+            mfaStep2: "Enter the 6-digit code displayed in the app",
+            secretLabel: "Manual key (if scanning is not possible)",
+            copySecret: "Copy",
+            secretCopied: "Key copied!",
         },
         account: {
             pageTitle: "My account",
