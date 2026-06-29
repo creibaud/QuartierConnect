@@ -32,6 +32,7 @@ export function useSubmitAddress() {
             apiPost<AddressSubmitResult>("/users/me/address", { address }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: NEIGHBORHOOD_STATUS_KEY });
+            queryClient.invalidateQueries({ queryKey: MY_LOCATION_KEY });
         },
     });
 }

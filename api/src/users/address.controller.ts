@@ -8,6 +8,7 @@ import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { GeocodingService } from "../geocoding/geocoding.service";
 import { NeighborhoodsService } from "../neighborhoods/neighborhoods.service";
+import type { GeoJsonPolygon } from "../neighborhoods/schemas/neighborhood.schema";
 import { syncLivesIn } from "../social/lives-in.util";
 import { NEO4J_DRIVER } from "../social/neo4j/neo4j.provider";
 import { SubmitAddressDto } from "./dto/address.dto";
@@ -72,11 +73,11 @@ export class AddressController {
             .from(schema.users)
             .where(eq(schema.users.id, req.user.sub));
 
-        if (!row?.addressLat || !row?.addressLng) {
+        if (row?.addressLat == null || row?.addressLng == null) {
             return { lat: null, lng: null, neighborhood: null };
         }
 
-        let neighborhood: { id: string; name: string; geometry: object | null } | null = null;
+        let neighborhood: { id: string; name: string; geometry: GeoJsonPolygon | null } | null = null;
         if (row.neighborhoodId) {
             const doc = await this.neighborhoods.findById(row.neighborhoodId);
             if (doc) {
