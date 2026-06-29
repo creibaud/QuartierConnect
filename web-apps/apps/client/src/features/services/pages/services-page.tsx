@@ -86,13 +86,12 @@ export function ServicesPage() {
     const neighborhoods = neighborhoodsData ?? [];
 
     const { data, isLoading, isError, fetchNextPage, hasNextPage, refetch } =
-        useInfiniteServices(selectedNeighborhood);
+        useInfiniteServices(
+            selectedNeighborhood,
+            selectedDirection === "all" ? undefined : selectedDirection,
+        );
 
-    const allServices = data?.pages.flat() ?? [];
-    const services =
-        selectedDirection === "all"
-            ? allServices
-            : allServices.filter((s) => s.direction === selectedDirection);
+    const services = data?.pages.flat() ?? [];
     const servicesWithCoords = services.filter((s) => s.location);
 
     const focusedNeighborhood =

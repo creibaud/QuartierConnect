@@ -81,6 +81,9 @@ export function ServiceCard({
                             {directionLabel}
                         </Badge>
                         <Badge variant="outline">{service.category}</Badge>
+                        <Badge variant="outline">
+                            {t(`pages.services.types.${service.type}`)}
+                        </Badge>
                     </div>
                 </div>
                 {service.address && (
@@ -238,7 +241,7 @@ function ServiceManageButtons({
                 className="text-muted-foreground"
             >
                 <HugeiconsIcon icon={Edit01Icon} />
-                <span className="sr-only">{t("common.save")}</span>
+                <span className="sr-only">{t("common.edit")}</span>
             </Button>
             <AlertDialog>
                 <AlertDialogTrigger asChild>

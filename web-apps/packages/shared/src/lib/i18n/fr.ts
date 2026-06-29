@@ -4,6 +4,7 @@ export default {
         error: "Une erreur est survenue",
         retry: "Réessayer",
         save: "Enregistrer",
+        edit: "Modifier",
         cancel: "Annuler",
         confirm: "Confirmer",
         delete: "Supprimer",
