@@ -21,6 +21,7 @@ describe("NeighborhoodsController", () => {
     let dbUpdateSet: jest.Mock;
     let dbSelectWhere: jest.Mock;
     let findContainingPoint: jest.Mock;
+    let neo4jRun: jest.Mock;
 
     beforeEach(async () => {
         dbUpdateSet = jest.fn().mockReturnValue({
@@ -28,6 +29,7 @@ describe("NeighborhoodsController", () => {
         });
         dbSelectWhere = jest.fn().mockResolvedValue([]);
         findContainingPoint = jest.fn().mockResolvedValue(null);
+        neo4jRun = jest.fn().mockResolvedValue(undefined);
 
         const findChain = {
             skip: jest.fn().mockReturnThis(),
@@ -83,7 +85,7 @@ describe("NeighborhoodsController", () => {
                     provide: NEO4J_DRIVER,
                     useValue: {
                         session: jest.fn().mockReturnValue({
-                            run: jest.fn().mockResolvedValue(undefined),
+                            run: neo4jRun,
                             close: jest.fn().mockResolvedValue(undefined),
                         }),
                     },
@@ -166,5 +168,6 @@ describe("NeighborhoodsController", () => {
         expect(dbUpdateSet).toHaveBeenCalledWith(
             expect.objectContaining({ neighborhoodId: "nb-12" }),
         );
+        expect(neo4jRun).toHaveBeenCalledTimes(1);
     });
 });
