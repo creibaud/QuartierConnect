@@ -211,6 +211,22 @@ function RegisterPage() {
         );
     }
 
+    const totpSecret = (() => {
+        if (!otpauthUrl) return "";
+        try {
+            return new URL(otpauthUrl).searchParams.get("secret") ?? "";
+        } catch {
+            return "";
+        }
+    })();
+
+    const copySecret = () => {
+        navigator.clipboard
+            .writeText(totpSecret)
+            .then(() => toast.success(t("pages.register.secretCopied")))
+            .catch(() => toast.error(t("pages.register.copyFailed")));
+    };
+
     return (
         <AuthLayout subtitle={t("pages.register.mfaSubtitle")}>
             <Card className="border-border/60 shadow-foreground/5 shadow-lg">
@@ -220,12 +236,43 @@ function RegisterPage() {
                             <AlertDescription>{serverError}</AlertDescription>
                         </Alert>
                     )}
-                    <div
-                        data-testid="totp-qr"
-                        className="flex justify-center rounded-xl border bg-white p-4"
-                    >
-                        <QRCode value={otpauthUrl} size={196} />
+
+                    <div className="space-y-3">
+                        <p className="text-muted-foreground flex items-start gap-2 text-sm">
+                            <span className="bg-primary text-primary-foreground mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-bold">
+                                1
+                            </span>
+                            {t("pages.register.mfaStep1")}
+                        </p>
+                        <div
+                            data-testid="totp-qr"
+                            className="flex justify-center rounded-xl border bg-white p-5"
+                        >
+                            <QRCode value={otpauthUrl} size={200} />
+                        </div>
+                        {totpSecret && (
+                            <div className="space-y-1">
+                                <p className="text-muted-foreground text-xs">
+                                    {t("pages.register.secretLabel")}
+                                </p>
+                                <div className="flex items-center gap-2 rounded-md border px-3 py-2">
+                                    <code className="text-foreground flex-1 break-all font-mono text-sm tracking-widest">
+                                        {totpSecret}
+                                    </code>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="shrink-0"
+                                        onClick={copySecret}
+                                    >
+                                        {t("pages.register.copySecret")}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
+
                     <form
                         onSubmit={(e) => {
                             e.preventDefault();
@@ -233,13 +280,27 @@ function RegisterPage() {
                         }}
                         className="space-y-4"
                     >
-                        <totpForm.AppField name="totpCode">
-                            {(field) => (
-                                <field.OtpField
-                                    label={t("pages.register.verificationCode")}
-                                />
-                            )}
-                        </totpForm.AppField>
+                        <p className="text-muted-foreground flex items-start gap-2 text-sm">
+                            <span className="bg-primary text-primary-foreground mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-bold">
+                                2
+                            </span>
+                            {t("pages.register.mfaStep2")}
+                        </p>
+                        <div className="flex flex-col items-center">
+                            <totpForm.AppField name="totpCode">
+                                {(field) => (
+                                    <field.OtpField
+                                        label={t(
+                                            "pages.register.verificationCode",
+                                        )}
+                                        autoFocus
+                                        onComplete={() =>
+                                            totpForm.handleSubmit()
+                                        }
+                                    />
+                                )}
+                            </totpForm.AppField>
+                        </div>
                         <totpForm.Subscribe selector={(s) => s.isSubmitting}>
                             {(isSubmitting) => (
                                 <Button

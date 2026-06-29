@@ -6,6 +6,7 @@ import {
     CodeSquareIcon,
     CustomerServiceIcon,
     DashboardSquare01Icon,
+    MapsLocation01Icon,
     UserMultipleIcon,
 } from "@hugeicons/core-free-icons";
 
@@ -17,6 +18,11 @@ export const adminNavItems: NavItem[] = [
     { title: "nav.incidents", to: "/incidents", icon: Alert01Icon },
     { title: "nav.events", to: "/events", icon: Calendar01Icon },
     { title: "nav.neighborhoods", to: "/neighborhoods", icon: Building01Icon },
+    {
+        title: "nav.coverage",
+        to: "/uncovered-addresses",
+        icon: MapsLocation01Icon,
+    },
     {
         title: "nav.communityVotes",
         to: "/community-votes",

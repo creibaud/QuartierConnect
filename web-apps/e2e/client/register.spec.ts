@@ -80,7 +80,9 @@ test.describe("Client — Register parcours", () => {
         await expect(page.getByRole("alert")).toContainText(/déjà utilisée/i);
     });
 
-    test("full registration → TOTP confirm → dashboard", async ({ page }) => {
+    test("full registration → TOTP confirm → address onboarding", async ({
+        page,
+    }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         const email = uniqueEmail();
         await page.goto("/register");
@@ -111,11 +113,12 @@ test.describe("Client — Register parcours", () => {
         await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 8000 });
 
         if (totpSecret) {
+            // input-otp ignores .fill(); type the digits — the 6th auto-submits
             await page
                 .getByLabel(/code de vérification/i)
-                .fill(currentTotp(totpSecret));
-            await page.getByRole("button", { name: /confirmer/i }).click();
-            await expect(page).toHaveURL(/\/dashboard/);
+                .pressSequentially(currentTotp(totpSecret));
+            // New user has no address yet → the gate routes to onboarding
+            await expect(page).toHaveURL(/\/onboarding\/address/);
         } else {
             await expect(
                 page.getByLabel(/code de vérification/i),

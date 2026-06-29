@@ -36,6 +36,13 @@
       "when": 1782666085480,
       "tag": "0004_add_avatar_url",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782739563723,
+      "tag": "0005_user_address",
+      "breakpoints": true
     }
   ]
 }

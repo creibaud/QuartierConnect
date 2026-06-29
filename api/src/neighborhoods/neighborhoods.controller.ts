@@ -3,6 +3,7 @@ import {
     Controller,
     Delete,
     Get,
+    Inject,
     NotFoundException,
     Param,
     Patch,
@@ -19,10 +20,17 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
+import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Model } from "mongoose";
+import { Driver } from "neo4j-driver";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
+import { DRIZZLE_TOKEN } from "../database/drizzle.module";
+import * as schema from "../database/schema";
+import { syncLivesIn } from "../social/lives-in.util";
+import { NEO4J_DRIVER } from "../social/neo4j/neo4j.provider";
 import { SocialService } from "../social/social.service";
 import { CreateNeighborhoodDto } from "./dto/create-neighborhood.dto";
 import { NeighborhoodDto } from "./dto/neighborhood-response.dto";
@@ -41,6 +49,10 @@ export class NeighborhoodsController {
         private readonly neighborhoodModel: Model<NeighborhoodDocument>,
         private readonly neighborhoodsService: NeighborhoodsService,
         private readonly socialService: SocialService,
+        @Inject(DRIZZLE_TOKEN)
+        private readonly db: PostgresJsDatabase<typeof schema>,
+        @Inject(NEO4J_DRIVER)
+        private readonly neo4jDriver: Driver,
     ) {}
 
     @Get()
@@ -99,7 +111,74 @@ export class NeighborhoodsController {
             created._id.toString(),
             created.name,
         );
+        await this.reassignPending();
         return created;
+    }
+
+    private async reassignPending(): Promise<void> {
+        const pending = await this.db
+            .select({
+                id: schema.users.id,
+                lat: schema.users.addressLat,
+                lng: schema.users.addressLng,
+            })
+            .from(schema.users)
+            .where(
+                and(
+                    isNull(schema.users.neighborhoodId),
+                    isNotNull(schema.users.addressLat),
+                ),
+            );
+
+        for (const u of pending) {
+            try {
+                if (u.lat == null || u.lng == null) continue;
+                const match =
+                    await this.neighborhoodsService.findContainingPoint(
+                        u.lng,
+                        u.lat,
+                    );
+                if (!match) continue;
+                const neighborhoodId = match._id.toString();
+                await this.db
+                    .update(schema.users)
+                    .set({ neighborhoodId, updatedAt: new Date() })
+                    .where(eq(schema.users.id, u.id));
+                await syncLivesIn(this.neo4jDriver, u.id, neighborhoodId);
+            } catch {
+                // best-effort: skip this resident, continue reassigning the rest
+            }
+        }
+    }
+
+    @Get("uncovered-addresses")
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles("admin")
+    @ApiBearerAuth()
+    @ApiOperation({ summary: "Pending residents not covered by any neighborhood" })
+    async uncoveredAddresses() {
+        const rows = await this.db
+            .select({
+                id: schema.users.id,
+                firstName: schema.users.firstName,
+                lat: schema.users.addressLat,
+                lng: schema.users.addressLng,
+                address: schema.users.address,
+            })
+            .from(schema.users)
+            .where(
+                and(
+                    isNull(schema.users.neighborhoodId),
+                    isNotNull(schema.users.addressLat),
+                ),
+            );
+        return rows.map((r) => ({
+            userId: r.id,
+            firstName: r.firstName,
+            lat: r.lat,
+            lng: r.lng,
+            address: r.address,
+        }));
     }
 
     @Patch(":id")

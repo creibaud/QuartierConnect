@@ -59,6 +59,7 @@ export default {
         neighborhoods: "Quartiers",
         communityVotes: "Votes communautaires",
         dsl: "Éditeur DSL",
+        coverage: "Adresses en attente",
     },
     roles: {
         resident: "Résident",
@@ -172,6 +173,12 @@ export default {
                 "Scannez ce QR code avec Google Authenticator, Authy ou une app compatible TOTP",
             verificationCode: "Code de vérification",
             confirmAndLogin: "Confirmer et se connecter",
+            mfaStep1: "Scannez le QR code avec votre application d'authentification (Google Authenticator, Authy…)",
+            mfaStep2: "Saisissez le code à 6 chiffres affiché dans l'application",
+            secretLabel: "Clé manuelle (si scan impossible)",
+            copySecret: "Copier",
+            secretCopied: "Clé copiée !",
+            copyFailed: "Impossible de copier — copie manuelle.",
         },
         account: {
             pageTitle: "Mon compte",
@@ -216,6 +223,27 @@ export default {
             strengthStrong: "Très fort",
             cancel: "Annuler",
             confirmDelete: "Supprimer définitivement",
+            neighborhood: "Mon quartier",
+            addressLabel: "Adresse",
+            addressPlaceholder: "Ex : 12 rue de la Paix, Paris",
+            updateAddress: "Mettre à jour",
+            addressAssigned: "Quartier mis à jour : {{name}}",
+            addressPending: "Adresse enregistrée, en attente de couverture.",
+            addressNotFound: "Adresse introuvable. Vérifiez et réessayez.",
+            currentNeighborhood: "Quartier : {{name}}",
+            noNeighborhood: "Aucun quartier affecté",
+            pendingCoverage: "En attente de couverture",
+            neighborhoodMap: "Carte du quartier",
+            noMapAvailable:
+                "Aucune adresse ou quartier n'est encore enregistré.",
+            setAddress: "Renseigner mon adresse",
+            homeMarker: "Chez moi",
+            myLocationMarker: "Ma position",
+            locateMe: "Me localiser",
+            locationDenied: "Localisation refusée par le navigateur",
+            locationError: "Erreur lors de la localisation",
+            locationApproximate:
+                "Position approximative (~{{km}} km, basée sur le réseau). Sur mobile (GPS), elle sera précise.",
         },
         dashboard: {
             welcome: "Bonjour",
@@ -442,6 +470,22 @@ export default {
             noneSelectedTitle: "Aucune conversation sélectionnée",
             noneSelectedDescription:
                 "Choisissez une conversation dans la liste ou démarrez-en une nouvelle.",
+        },
+        onboarding: {
+            address: {
+                subtitle: "Rejoignez votre quartier en quelques secondes.",
+                label: "Votre adresse",
+                confirm: "Confirmer mon adresse",
+                recognized: "Adresse reconnue :",
+                notFound: "Adresse introuvable. Vérifiez et réessayez.",
+                error: "Une erreur est survenue. Réessayez.",
+            },
+            pending: {
+                subtitle: "Votre adresse est en attente de couverture.",
+                description:
+                    "Aucun quartier ne couvre encore votre adresse. Le superadmin a été prévenu et ajoutera votre quartier bientôt.",
+                fixAddress: "Corriger mon adresse",
+            },
         },
         events: {
             title: "Événements",
@@ -758,6 +802,19 @@ export default {
             syntaxTitle: "Syntaxe DSL",
             availableCollections: "Collections disponibles",
             syntaxLabel: "Syntaxe",
+        },
+        coverage: {
+            title: "Adresses en attente",
+            description:
+                "Résidents dont l'adresse ne correspond à aucun quartier délimité.",
+            loadError: "Impossible de charger les adresses en attente",
+            emptyTitle: "Aucune adresse en attente",
+            emptyDescription:
+                "Tous les résidents sont couverts par un quartier existant.",
+            residentColumn: "Résident",
+            addressColumn: "Adresse",
+            drawNeighborhood: "Dessiner un quartier",
+            pendingLabel: "En attente de couverture",
         },
     },
 } as const;
