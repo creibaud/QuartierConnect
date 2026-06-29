@@ -136,20 +136,29 @@ function LoginPage() {
                                 e.preventDefault();
                                 totpForm.handleSubmit();
                             }}
-                            className="space-y-4"
+                            className="space-y-6"
                         >
-                            <p className="text-muted-foreground text-sm">
-                                {t("pages.login.totpFor")}{" "}
-                                <span className="text-foreground font-medium">
+                            <div className="space-y-1 text-center">
+                                <p className="text-muted-foreground text-sm">
+                                    {t("pages.login.totpFor")}
+                                </p>
+                                <p className="text-foreground text-sm font-medium">
                                     {credentials.email}
-                                </span>
-                                .
-                            </p>
-                            <totpForm.AppField name="totpCode">
-                                {(field) => (
-                                    <field.OtpField label={t("auth.totpCode")} />
-                                )}
-                            </totpForm.AppField>
+                                </p>
+                            </div>
+                            <div className="flex flex-col items-center gap-2">
+                                <totpForm.AppField name="totpCode">
+                                    {(field) => (
+                                        <field.OtpField
+                                            label={t("auth.totpCode")}
+                                            autoFocus
+                                            onComplete={() =>
+                                                totpForm.handleSubmit()
+                                            }
+                                        />
+                                    )}
+                                </totpForm.AppField>
+                            </div>
                             <totpForm.Subscribe selector={(s) => s.isSubmitting}>
                                 {(isSubmitting) => (
                                     <Button
