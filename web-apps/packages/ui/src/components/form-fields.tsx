@@ -55,7 +55,15 @@ export function TextField({
     );
 }
 
-export function OtpField({ label }: { label: string }) {
+export function OtpField({
+    label,
+    autoFocus,
+    onComplete,
+}: {
+    label: string;
+    autoFocus?: boolean;
+    onComplete?: () => void;
+}) {
     const field = useFieldContext<string>();
     return (
         <div className="space-y-2">
@@ -66,6 +74,8 @@ export function OtpField({ label }: { label: string }) {
                 onChange={(v) => field.handleChange(v)}
                 onBlur={field.handleBlur}
                 aria-label={label}
+                autoFocus={autoFocus}
+                onComplete={onComplete}
             >
                 <InputOTPGroup>
                     <InputOTPSlot index={0} />

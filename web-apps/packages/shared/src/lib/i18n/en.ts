@@ -59,6 +59,7 @@ export default {
         neighborhoods: "Neighborhoods",
         communityVotes: "Community votes",
         dsl: "DSL Editor",
+        coverage: "Pending addresses",
     },
     roles: {
         resident: "Resident",
@@ -172,6 +173,12 @@ export default {
                 "Scan this QR code with Google Authenticator, Authy or a TOTP-compatible app",
             verificationCode: "Verification code",
             confirmAndLogin: "Confirm and sign in",
+            mfaStep1: "Scan the QR code with your authenticator app (Google Authenticator, Authy…)",
+            mfaStep2: "Enter the 6-digit code displayed in the app",
+            secretLabel: "Manual key (if scanning is not possible)",
+            copySecret: "Copy",
+            secretCopied: "Key copied!",
+            copyFailed: "Couldn't copy — copy it manually.",
         },
         account: {
             pageTitle: "My account",
@@ -215,6 +222,26 @@ export default {
             strengthStrong: "Very strong",
             cancel: "Cancel",
             confirmDelete: "Delete permanently",
+            neighborhood: "My neighborhood",
+            addressLabel: "Address",
+            addressPlaceholder: "E.g. 12 rue de la Paix, Paris",
+            updateAddress: "Update",
+            addressAssigned: "Neighborhood updated: {{name}}",
+            addressPending: "Address saved, waiting for coverage.",
+            addressNotFound: "Address not found. Please check and try again.",
+            currentNeighborhood: "Neighborhood: {{name}}",
+            noNeighborhood: "No neighborhood assigned",
+            pendingCoverage: "Waiting for coverage",
+            neighborhoodMap: "Neighborhood map",
+            noMapAvailable: "No address or neighborhood registered yet.",
+            setAddress: "Set my address",
+            homeMarker: "My home",
+            myLocationMarker: "My location",
+            locateMe: "Locate me",
+            locationDenied: "Location access denied by the browser",
+            locationError: "Location error",
+            locationApproximate:
+                "Approximate position (~{{km}} km, network-based). On mobile (GPS), it will be more precise.",
         },
         dashboard: {
             welcome: "Hello",
@@ -440,6 +467,22 @@ export default {
             noneSelectedTitle: "No conversation selected",
             noneSelectedDescription:
                 "Choose a conversation from the list or start a new one.",
+        },
+        onboarding: {
+            address: {
+                subtitle: "Join your neighborhood in seconds.",
+                label: "Your address",
+                confirm: "Confirm my address",
+                recognized: "Address recognised:",
+                notFound: "Address not found. Please check and try again.",
+                error: "An error occurred. Please try again.",
+            },
+            pending: {
+                subtitle: "Your address is awaiting coverage.",
+                description:
+                    "No neighborhood covers your address yet. The superadmin has been notified and will add your neighborhood soon.",
+                fixAddress: "Correct my address",
+            },
         },
         events: {
             title: "Events",
@@ -745,6 +788,19 @@ export default {
             syntaxTitle: "DSL Syntax",
             availableCollections: "Available collections",
             syntaxLabel: "Syntax",
+        },
+        coverage: {
+            title: "Pending addresses",
+            description:
+                "Residents whose address falls outside any mapped neighborhood.",
+            loadError: "Unable to load pending addresses",
+            emptyTitle: "No pending addresses",
+            emptyDescription:
+                "All residents are covered by an existing neighborhood.",
+            residentColumn: "Resident",
+            addressColumn: "Address",
+            drawNeighborhood: "Draw a neighborhood",
+            pendingLabel: "Pending coverage",
         },
     },
 } as const;
