@@ -20,7 +20,10 @@ interface GeoJsonFeatureCollection {
     features: GeoJsonFeature[];
 }
 
-function toPolygon(feature: GeoJsonFeature): { type: "Polygon"; coordinates: number[][][] } {
+function toPolygon(feature: GeoJsonFeature): {
+    type: "Polygon";
+    coordinates: number[][][];
+} {
     if (feature.geometry.type === "Polygon") {
         return {
             type: "Polygon",
@@ -35,9 +38,9 @@ function toPolygon(feature: GeoJsonFeature): { type: "Polygon"; coordinates: num
 
 async function seedParis(): Promise<void> {
     const geojsonPath = path.join(__dirname, "paris-arrondissements.geojson");
-    const collection: GeoJsonFeatureCollection = JSON.parse(
+    const collection = JSON.parse(
         fs.readFileSync(geojsonPath, "utf-8"),
-    );
+    ) as GeoJsonFeatureCollection;
 
     const mongoUri = process.env.MONGO_URI;
     const neo4jUri = process.env.NEO4J_URI ?? "bolt://localhost:7687";
@@ -73,7 +76,9 @@ async function seedParis(): Promise<void> {
                 { name },
                 {
                     $set: { name, city: "Paris", geometry },
-                    $setOnInsert: { _id: new ObjectId() as unknown as ObjectId },
+                    $setOnInsert: {
+                        _id: new ObjectId() as unknown as ObjectId,
+                    },
                 },
                 { upsert: true, returnDocument: "after" },
             );
