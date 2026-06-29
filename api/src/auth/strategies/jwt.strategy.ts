@@ -40,7 +40,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         }
 
         const [user] = await this.db
-            .select({ role: schema.users.role })
+            .select({
+                role: schema.users.role,
+                neighborhoodId: schema.users.neighborhoodId,
+                address: schema.users.address,
+            })
             .from(schema.users)
             .where(eq(schema.users.id, payload.sub))
             .limit(1);
@@ -57,6 +61,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             sub: payload.sub,
             email: payload.email,
             role: user.role,
+            neighborhoodId: user.neighborhoodId ?? null,
+            hasAddress: !!user.address,
             jti: payload.jti,
             exp: payload.exp,
         };
