@@ -4,6 +4,7 @@ import {
     Delete,
     ForbiddenException,
     Get,
+    Inject,
     NotFoundException,
     Param,
     Patch,
@@ -21,10 +22,14 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
+import { inArray } from "drizzle-orm";
+import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Model, Types } from "mongoose";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
+import { DRIZZLE_TOKEN } from "../database/drizzle.module";
+import * as schema from "../database/schema";
 import { SocialService } from "../social/social.service";
 import { CreateServiceDto } from "./dto/create-service.dto";
 import { ServiceDto } from "./dto/service-response.dto";
@@ -48,6 +53,8 @@ export class ServicesController {
         @InjectModel(ServiceResponse.name)
         private readonly responseModel: Model<ServiceResponseDocument>,
         private readonly socialService: SocialService,
+        @Inject(DRIZZLE_TOKEN)
+        private readonly db: PostgresJsDatabase<typeof schema>,
     ) {}
 
     @Get()
@@ -85,6 +92,39 @@ export class ServicesController {
         const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
         const skip = (pageNum - 1) * limitNum;
         return this.serviceModel.find(filter).skip(skip).limit(limitNum).exec();
+    }
+
+    @Get("mine")
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: "My service listings with responders" })
+    @ApiResponse({ status: 200, description: "Own services enriched with responders" })
+    async findMine(@Request() req: AuthRequest) {
+        const services = await this.serviceModel.find({ createdBy: req.user.sub }).lean();
+        const ids = services.map((s) => s._id);
+        type LeanResponse = { serviceId: unknown; responderId: string; createdAt: Date };
+        const responses = (await this.responseModel
+            .find({ serviceId: { $in: ids } })
+            .lean()) as unknown as LeanResponse[];
+        const responderIds = [...new Set(responses.map((r) => r.responderId))];
+        const users = responderIds.length
+            ? await this.db
+                  .select({ id: schema.users.id, firstName: schema.users.firstName, avatarUrl: schema.users.avatarUrl })
+                  .from(schema.users)
+                  .where(inArray(schema.users.id, responderIds))
+            : [];
+        const byId = new Map(users.map((u) => [u.id, u]));
+        return services.map((s) => ({
+            ...s,
+            responders: responses
+                .filter((r) => String(r.serviceId) === String(s._id))
+                .map((r) => ({
+                    userId: r.responderId,
+                    firstName: byId.get(r.responderId)?.firstName ?? null,
+                    avatarUrl: byId.get(r.responderId)?.avatarUrl ?? null,
+                    createdAt: r.createdAt,
+                })),
+        }));
     }
 
     @Get(":id")
