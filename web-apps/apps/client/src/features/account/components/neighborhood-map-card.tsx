@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MapsLocation01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
@@ -43,6 +43,11 @@ export function NeighborhoodMapCard() {
     }, [geometry]);
 
     const mapRef = useFitBounds(polygonPositions);
+
+    useEffect(() => {
+        if (geoState.status !== "granted") return;
+        mapRef.current?.flyTo([geoState.lat, geoState.lng], 15);
+    }, [geoState, mapRef]);
 
     function locateMe() {
         if (!navigator.geolocation) {
@@ -119,63 +124,66 @@ export function NeighborhoodMapCard() {
                     )}
                 </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-                <Map
-                    ref={mapRef}
-                    center={homePosition}
-                    zoom={14}
-                    className="h-64 w-full"
-                >
-                    <NeighborhoodPolygon
-                        geometry={
-                            geometry as unknown as GeoJSON.Polygon
-                        }
-                        label={location.neighborhood?.name}
-                    />
-                    <Marker
-                        position={homePosition}
-                        popup={t("pages.account.homeMarker")}
-                    />
-                    {geoState.status === "granted" && (
-                        <Marker
-                            position={[geoState.lat, geoState.lng]}
-                            variant="service"
-                            popup={t("pages.account.myLocationMarker")}
+            <CardContent className="space-y-2">
+                {/* isolate creates a new stacking context so Leaflet's high z-indexes
+                    (400–1000) are contained within this wrapper and cannot paint
+                    over the sticky app header (z-20). */}
+                <div className="relative isolate">
+                    <Map
+                        ref={mapRef}
+                        center={homePosition}
+                        zoom={14}
+                        className="h-64 w-full"
+                    >
+                        <NeighborhoodPolygon
+                            geometry={
+                                geometry as unknown as GeoJSON.Polygon
+                            }
+                            label={location.neighborhood?.name}
                         />
-                    )}
-                </Map>
-                <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-3">
+                        <Marker
+                            position={homePosition}
+                            popup={t("pages.account.homeMarker")}
+                        />
+                        {geoState.status === "granted" && (
+                            <Marker
+                                position={[geoState.lat, geoState.lng]}
+                                variant="service"
+                                popup={t("pages.account.myLocationMarker")}
+                            />
+                        )}
+                    </Map>
+                    <div className="absolute top-2 right-2 z-[1000] flex flex-col items-end gap-1">
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={locateMe}
                             disabled={geoState.status === "pending"}
+                            className="bg-background/90 shadow-sm backdrop-blur-sm"
                         >
                             {geoState.status === "pending"
                                 ? t("common.loading")
                                 : t("pages.account.locateMe")}
                         </Button>
                         {geoState.status === "denied" && (
-                            <p className="text-muted-foreground text-xs">
+                            <p className="bg-background/90 rounded px-2 py-1 text-xs text-muted-foreground backdrop-blur-sm">
                                 {t("pages.account.locationDenied")}
                             </p>
                         )}
                         {geoState.status === "error" && (
-                            <p className="text-muted-foreground text-xs">
+                            <p className="bg-background/90 rounded px-2 py-1 text-xs text-muted-foreground backdrop-blur-sm">
                                 {t("pages.account.locationError")}
                             </p>
                         )}
                     </div>
-                    {geoState.status === "granted" &&
-                        geoState.accuracy > 1000 && (
-                            <p className="text-muted-foreground text-xs">
-                                {t("pages.account.locationApproximate", {
-                                    km: Math.round(geoState.accuracy / 1000),
-                                })}
-                            </p>
-                        )}
                 </div>
+                {geoState.status === "granted" && geoState.accuracy > 1000 && (
+                    <p className="text-muted-foreground text-xs">
+                        {t("pages.account.locationApproximate", {
+                            km: Math.round(geoState.accuracy / 1000),
+                        })}
+                    </p>
+                )}
             </CardContent>
         </Card>
     );
