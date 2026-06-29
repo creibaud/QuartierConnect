@@ -73,7 +73,7 @@ export function ModerationOverview({ now }: { now: number }) {
                     {incidentsLoading ? (
                         <Rows count={3} />
                     ) : incidents.length === 0 ? (
-                        <EmptyBlock icon={Alert01Icon} text={t("pages.dashboard.moderation.noIncidents")} />
+                        <EmptyBlock icon={Alert01Icon} title={t("pages.dashboard.moderation.noIncidents")} />
                     ) : (
                         <ul className="space-y-2">
                             {incidents.slice(0, 4).map((i) => (
@@ -93,7 +93,7 @@ export function ModerationOverview({ now }: { now: number }) {
                     {votesLoading ? (
                         <Rows count={3} />
                     ) : openVotes.length === 0 ? (
-                        <EmptyBlock icon={ThumbsUpIcon} text={t("pages.dashboard.moderation.noPendingVotes")} />
+                        <EmptyBlock icon={ThumbsUpIcon} title={t("pages.dashboard.moderation.noPendingVotes")} />
                     ) : (
                         <ul className="space-y-2">
                             {openVotes.map((v) => (
