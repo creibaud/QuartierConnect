@@ -16,8 +16,8 @@ const mockService = {
     createdBy: "user-uuid-1",
 };
 
-const authReq = (role = "resident", sub = "user-uuid-1") => ({
-    user: { sub, role },
+const authReq = (role = "resident", sub = "user-uuid-1", neighborhoodId = "n1") => ({
+    user: { sub, role, neighborhoodId },
 });
 
 describe("ServicesController", () => {
@@ -32,6 +32,7 @@ describe("ServicesController", () => {
                 skip: jest.fn().mockReturnThis(),
                 limit: jest.fn().mockReturnValue({
                     exec: jest.fn().mockResolvedValue([mockService]),
+                    lean: jest.fn().mockResolvedValue([mockService]),
                 }),
                 lean: jest.fn().mockResolvedValue([mockService]),
             }),
@@ -86,37 +87,52 @@ describe("ServicesController", () => {
     });
 
     it("GET /services returns all (no filter)", async () => {
-        const result = await controller.findAll();
+        const result = await controller.findAll(undefined, undefined, undefined, "1", "20", authReq() as any);
         expect(result).toHaveLength(1);
+        expect(model.find).toHaveBeenCalledWith({ neighborhoodId: "n1" });
     });
 
     it("GET /services?category=home filters by category", async () => {
-        await controller.findAll("home");
-        expect(model.find).toHaveBeenCalledWith({ category: "home" });
+        await controller.findAll("home", undefined, undefined, "1", "20", authReq() as any);
+        expect(model.find).toHaveBeenCalledWith({ neighborhoodId: "n1", category: "home" });
     });
 
     it("GET /services?type=free filters by type", async () => {
-        await controller.findAll(undefined, "free");
-        expect(model.find).toHaveBeenCalledWith({ type: "free" });
+        await controller.findAll(undefined, "free", undefined, "1", "20", authReq() as any);
+        expect(model.find).toHaveBeenCalledWith({ neighborhoodId: "n1", type: "free" });
     });
 
     it("GET /services with unknown category returns empty array (no 400)", async () => {
         model.find.mockReturnValue({
             skip: jest.fn().mockReturnThis(),
-            limit: jest
-                .fn()
-                .mockReturnValue({ exec: jest.fn().mockResolvedValue([]) }),
+            limit: jest.fn().mockReturnValue({
+                exec: jest.fn().mockResolvedValue([]),
+                lean: jest.fn().mockResolvedValue([]),
+            }),
         });
-        const result = await controller.findAll("invalid-category");
+        const result = await controller.findAll("invalid-category", undefined, undefined, "1", "20", authReq() as any);
         expect(result).toHaveLength(0);
     });
 
     it("GET /services?category=home&type=free filters by both", async () => {
-        await controller.findAll("home", "free");
-        expect(model.find).toHaveBeenCalledWith({
-            category: "home",
-            type: "free",
+        await controller.findAll("home", "free", undefined, "1", "20", authReq() as any);
+        expect(model.find).toHaveBeenCalledWith({ neighborhoodId: "n1", category: "home", type: "free" });
+    });
+
+    it("GET /services?direction=offer filters by direction", async () => {
+        await controller.findAll(undefined, undefined, "offer", "1", "20", authReq() as any);
+        expect(model.find).toHaveBeenCalledWith({ neighborhoodId: "n1", direction: "offer" });
+    });
+
+    it("GET /services includes responderCount and hasResponded", async () => {
+        const req = authReq("resident", "me", "n1");
+        responseModel.find = jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([
+                { serviceId: "svc-id-1", responderId: "me" },
+            ]),
         });
+        const result = await controller.findAll(undefined, undefined, undefined, "1", "20", req as any);
+        expect(result[0]).toMatchObject({ responderCount: 1, hasResponded: true });
     });
 
     it("GET /services/:id throws 404 when not found", async () => {
