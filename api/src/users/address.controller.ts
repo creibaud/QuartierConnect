@@ -8,6 +8,7 @@ import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { GeocodingService } from "../geocoding/geocoding.service";
 import { NeighborhoodsService } from "../neighborhoods/neighborhoods.service";
+import { syncLivesIn } from "../social/lives-in.util";
 import { NEO4J_DRIVER } from "../social/neo4j/neo4j.provider";
 import { SubmitAddressDto } from "./dto/address.dto";
 
@@ -49,7 +50,8 @@ export class AddressController {
             })
             .where(eq(schema.users.id, req.user.sub));
 
-        if (neighborhoodId) await this.syncNeo4j(req.user.sub, neighborhoodId);
+        if (neighborhoodId)
+            await syncLivesIn(this.neo4jDriver, req.user.sub, neighborhoodId);
 
         return {
             status: neighborhoodId ? ("assigned" as const) : ("pending" as const),
@@ -74,20 +76,4 @@ export class AddressController {
         };
     }
 
-    private async syncNeo4j(userId: string, neighborhoodId: string): Promise<void> {
-        let session: ReturnType<Driver["session"]> | undefined;
-        try {
-            session = this.neo4jDriver.session();
-            await session.run(
-                `MATCH (u:User {id: $userId})
-                 MATCH (n:Neighborhood {id: $neighborhoodId})
-                 MERGE (u)-[:LIVES_IN]->(n)`,
-                { userId, neighborhoodId },
-            );
-        } catch {
-            // Neo4j indisponible — l'affectation Postgres reste valable
-        } finally {
-            await session?.close();
-        }
-    }
 }
