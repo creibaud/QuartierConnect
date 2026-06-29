@@ -4,6 +4,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
+    useMyLocation,
     useNeighborhoodStatus,
     useSubmitAddress,
 } from "@/features/onboarding/hooks/address.hooks";
@@ -21,6 +22,7 @@ import { Label } from "@workspace/ui/components/label";
 export function NeighborhoodCard() {
     const { t } = useTranslation();
     const { data: status } = useNeighborhoodStatus();
+    const { data: location } = useMyLocation();
     const submitAddress = useSubmitAddress();
 
     const [address, setAddress] = useState("");
@@ -56,7 +58,7 @@ export function NeighborhoodCard() {
             return (
                 <Badge variant="secondary">
                     {t("pages.account.currentNeighborhood", {
-                        name: status.neighborhoodId,
+                        name: location?.neighborhood?.name ?? status.neighborhoodId,
                     })}
                 </Badge>
             );
