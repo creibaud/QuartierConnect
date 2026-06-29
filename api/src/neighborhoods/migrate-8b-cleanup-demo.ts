@@ -39,7 +39,7 @@ async function cleanupDemo(): Promise<void> {
 
         const demoIds = demoNeighborhoods.map((n) => n._id.toString());
         process.stdout.write(
-            `Found ${demoNeighborhoods.length} demo neighborhood(s): ${demoNeighborhoods.map((n: { name: string }) => n.name).join(", ")}\n`,
+            `Found ${demoNeighborhoods.length} demo neighborhood(s): ${demoNeighborhoods.map((n) => String(n.name)).join(", ")}\n`,
         );
 
         // Step 2: collect service/event IDs to clean in Neo4j
