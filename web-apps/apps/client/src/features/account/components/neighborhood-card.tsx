@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import { Home01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useTranslation } from "react-i18next";
@@ -19,25 +19,52 @@ import {
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 
+type TFunc = ReturnType<typeof useTranslation>["t"];
+type NeighborhoodStatus = { hasAddress: boolean; neighborhoodId: string | null };
+
+function NeighborhoodBadge({
+    status,
+    neighborhoodName,
+    t,
+}: {
+    status: NeighborhoodStatus | undefined;
+    neighborhoodName: string | null | undefined;
+    t: TFunc;
+}) {
+    if (!status) return null;
+    if (status.neighborhoodId) {
+        return (
+            <Badge variant="secondary">
+                {t("pages.account.currentNeighborhood", {
+                    name: neighborhoodName ?? "…",
+                })}
+            </Badge>
+        );
+    }
+    if (status.hasAddress) {
+        return (
+            <Badge variant="outline" className="text-muted-foreground">
+                {t("pages.account.pendingCoverage")}
+            </Badge>
+        );
+    }
+    return (
+        <Badge variant="outline" className="text-muted-foreground">
+            {t("pages.account.noNeighborhood")}
+        </Badge>
+    );
+}
+
 export function NeighborhoodCard() {
     const { t } = useTranslation();
     const { data: status } = useNeighborhoodStatus();
     const { data: location } = useMyLocation();
     const submitAddress = useSubmitAddress();
 
-    const [address, setAddress] = useState("");
-    const addressInitialized = useRef(false);
-
-    useEffect(() => {
-        if (!addressInitialized.current && location?.address != null) {
-            setAddress(location.address);
-            addressInitialized.current = true;
-        }
-    }, [location?.address]);
-
-    function handleSubmit(event: React.FormEvent) {
+    function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        const trimmed = address.trim();
+        const form = event.currentTarget;
+        const trimmed = String(new FormData(form).get("address") ?? "").trim();
         if (!trimmed) return;
 
         submitAddress.mutate(trimmed, {
@@ -48,43 +75,16 @@ export function NeighborhoodCard() {
                             name: result.displayName ?? result.neighborhoodId,
                         }),
                     );
-                    addressInitialized.current = false;
-                    setAddress("");
+                    form.reset();
                 } else if (result.status === "pending") {
                     toast.info(t("pages.account.addressPending"));
-                    addressInitialized.current = false;
-                    setAddress("");
+                    form.reset();
                 } else {
                     toast.error(t("pages.account.addressNotFound"));
                 }
             },
             onError: () => toast.error(t("pages.account.updateError")),
         });
-    }
-
-    function NeighborhoodBadge() {
-        if (!status) return null;
-        if (status.neighborhoodId) {
-            return (
-                <Badge variant="secondary">
-                    {t("pages.account.currentNeighborhood", {
-                        name: location?.neighborhood?.name ?? "…",
-                    })}
-                </Badge>
-            );
-        }
-        if (status.hasAddress) {
-            return (
-                <Badge variant="outline" className="text-muted-foreground">
-                    {t("pages.account.pendingCoverage")}
-                </Badge>
-            );
-        }
-        return (
-            <Badge variant="outline" className="text-muted-foreground">
-                {t("pages.account.noNeighborhood")}
-            </Badge>
-        );
     }
 
     return (
@@ -100,28 +100,30 @@ export function NeighborhoodCard() {
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
-                    <NeighborhoodBadge />
+                    <NeighborhoodBadge
+                        status={status}
+                        neighborhoodName={location?.neighborhood?.name}
+                        t={t}
+                    />
                     <form onSubmit={handleSubmit} className="space-y-3">
                         <div className="space-y-2">
                             <Label htmlFor="neighborhood-address">
                                 {t("pages.account.addressLabel")}
                             </Label>
+                            {/* Uncontrolled + key: pre-fills the current address and
+                                re-applies it when the loaded value changes, without a
+                                state-syncing effect. */}
                             <Input
+                                key={location?.address ?? "empty"}
                                 id="neighborhood-address"
-                                value={address}
-                                onChange={(e) => setAddress(e.target.value)}
-                                placeholder={t(
-                                    "pages.account.addressPlaceholder",
-                                )}
+                                name="address"
+                                defaultValue={location?.address ?? ""}
+                                placeholder={t("pages.account.addressPlaceholder")}
                                 disabled={submitAddress.isPending}
+                                required
                             />
                         </div>
-                        <Button
-                            type="submit"
-                            disabled={
-                                submitAddress.isPending || !address.trim()
-                            }
-                        >
+                        <Button type="submit" disabled={submitAddress.isPending}>
                             {t("pages.account.updateAddress")}
                         </Button>
                     </form>

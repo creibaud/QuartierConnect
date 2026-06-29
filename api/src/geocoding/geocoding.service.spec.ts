@@ -13,9 +13,14 @@ describe("GeocodingService", () => {
     it("returns coordinates for a found address", async () => {
         fetchMock.mockResolvedValue({
             ok: true,
-            json: async () => [
-                { lat: "48.8399", lon: "2.3870", display_name: "Paris 12e" },
-            ],
+            json: () =>
+                Promise.resolve([
+                    {
+                        lat: "48.8399",
+                        lon: "2.3870",
+                        display_name: "Paris 12e",
+                    },
+                ]),
         });
         const result = await service.geocode("12 rue de Reuilly, Paris");
         expect(result).toEqual({
@@ -26,7 +31,10 @@ describe("GeocodingService", () => {
     });
 
     it("returns null when no result", async () => {
-        fetchMock.mockResolvedValue({ ok: true, json: async () => [] });
+        fetchMock.mockResolvedValue({
+            ok: true,
+            json: () => Promise.resolve([]),
+        });
         expect(await service.geocode("nowhere")).toBeNull();
     });
 
