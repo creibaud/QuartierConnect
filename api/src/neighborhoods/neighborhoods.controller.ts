@@ -151,6 +151,36 @@ export class NeighborhoodsController {
         }
     }
 
+    @Get("uncovered-addresses")
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles("admin")
+    @ApiBearerAuth()
+    @ApiOperation({ summary: "Pending residents not covered by any neighborhood" })
+    async uncoveredAddresses() {
+        const rows = await this.db
+            .select({
+                id: schema.users.id,
+                firstName: schema.users.firstName,
+                lat: schema.users.addressLat,
+                lng: schema.users.addressLng,
+                address: schema.users.address,
+            })
+            .from(schema.users)
+            .where(
+                and(
+                    isNull(schema.users.neighborhoodId),
+                    isNotNull(schema.users.addressLat),
+                ),
+            );
+        return rows.map((r) => ({
+            userId: r.id,
+            firstName: r.firstName,
+            lat: r.lat,
+            lng: r.lng,
+            address: r.address,
+        }));
+    }
+
     @Patch(":id")
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles("admin")

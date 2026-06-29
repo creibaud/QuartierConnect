@@ -156,6 +156,16 @@ describe("NeighborhoodsController", () => {
         );
     });
 
+    it("uncoveredAddresses returns pending residents with their point", async () => {
+        dbSelectWhere.mockResolvedValueOnce([
+            { id: "u1", firstName: "Alice", lat: 1, lng: 2, address: "x" },
+        ]);
+        const res = await controller.uncoveredAddresses();
+        expect(res).toEqual([
+            { userId: "u1", firstName: "Alice", lat: 1, lng: 2, address: "x" },
+        ]);
+    });
+
     it("reassigns pending users covered by the newly created neighborhood", async () => {
         dbSelectWhere.mockResolvedValueOnce([
             { id: "u1", lat: 48.8399, lng: 2.387 },
