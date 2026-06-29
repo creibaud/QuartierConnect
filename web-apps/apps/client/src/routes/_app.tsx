@@ -46,7 +46,7 @@ export const Route = createFileRoute("/_app")({
             if (state === "needs-address") {
                 throw redirect({ to: "/onboarding/address" });
             }
-            // task-11: if (state === "pending") throw redirect({ to: "/onboarding/pending" });
+            if (state === "pending") throw redirect({ to: "/onboarding/pending" });
         }
     },
     component: AppLayout,
