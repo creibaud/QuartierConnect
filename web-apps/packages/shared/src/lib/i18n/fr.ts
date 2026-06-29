@@ -372,6 +372,10 @@ export default {
                 "it-support": "Aide informatique",
                 other: "Autre",
             },
+            proposeCta: "Proposer",
+            interestedCta: "Je suis intéressé",
+            respondedCta: "Répondu",
+            responderCount: "{{count}} répondant(s)",
         },
         votes: {
             title: "Votes communautaires",

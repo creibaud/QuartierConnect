@@ -47,6 +47,9 @@ export interface Service {
     pointsMultiplier?: number;
     createdBy?: string;
     location?: GeoJsonPoint;
+    direction: "offer" | "request";
+    responderCount?: number;
+    hasResponded?: boolean;
 }
 
 export interface Event {
