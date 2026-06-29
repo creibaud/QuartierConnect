@@ -468,6 +468,22 @@ export default {
             noneSelectedDescription:
                 "Choose a conversation from the list or start a new one.",
         },
+        onboarding: {
+            address: {
+                subtitle: "Join your neighborhood in seconds.",
+                label: "Your address",
+                confirm: "Confirm my address",
+                recognized: "Address recognised:",
+                notFound: "Address not found. Please check and try again.",
+                error: "An error occurred. Please try again.",
+            },
+            pending: {
+                subtitle: "Your address is awaiting coverage.",
+                description:
+                    "No neighborhood covers your address yet. The superadmin has been notified and will add your neighborhood soon.",
+                fixAddress: "Correct my address",
+            },
+        },
         events: {
             title: "Events",
             description: "Gatherings and activities in your neighborhood.",

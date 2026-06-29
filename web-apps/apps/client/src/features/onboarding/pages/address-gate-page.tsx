@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
@@ -10,6 +11,7 @@ import { AuthLayout } from "@/components/auth-layout";
 import { useSubmitAddress } from "../hooks/address.hooks";
 
 export function AddressGatePage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [addressInput, setAddressInput] = useState("");
     const [confirmedName, setConfirmedName] = useState<string | null>(null);
@@ -21,9 +23,7 @@ export function AddressGatePage() {
         submitAddress(addressInput, {
             onSuccess: (result) => {
                 if (result.status === "not_found") {
-                    toast.error(
-                        "Adresse introuvable. Vérifiez et réessayez.",
-                    );
+                    toast.error(t("pages.onboarding.address.notFound"));
                     return;
                 }
                 setConfirmedName(result.displayName ?? addressInput);
@@ -31,25 +31,24 @@ export function AddressGatePage() {
                     if (result.status === "assigned") {
                         void navigate({ to: "/" });
                     } else {
-                        // Task 11 fills the pending screen content
                         void navigate({ to: "/onboarding/pending" });
                     }
                 }, 1200);
             },
             onError: () => {
-                toast.error("Une erreur est survenue. Réessayez.");
+                toast.error(t("pages.onboarding.address.error"));
             },
         });
     }
 
     return (
-        <AuthLayout subtitle="Rejoignez votre quartier en quelques secondes.">
+        <AuthLayout subtitle={t("pages.onboarding.address.subtitle")}>
             <Card className="border-border/60 shadow-foreground/5 shadow-lg">
                 <CardContent className="space-y-4">
                     {confirmedName ? (
                         <div className="space-y-2 py-2 text-center text-sm">
                             <p className="text-muted-foreground">
-                                Adresse reconnue :
+                                {t("pages.onboarding.address.recognized")}
                             </p>
                             <p className="text-foreground font-medium">
                                 {confirmedName}
@@ -59,7 +58,9 @@ export function AddressGatePage() {
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="address">Votre adresse</Label>
+                                <Label htmlFor="address">
+                                    {t("pages.onboarding.address.label")}
+                                </Label>
                                 <Input
                                     id="address"
                                     type="text"
@@ -80,7 +81,7 @@ export function AddressGatePage() {
                                 {isPending ? (
                                     <Spinner className="mr-2" />
                                 ) : null}
-                                Confirmer mon adresse
+                                {t("pages.onboarding.address.confirm")}
                             </Button>
                         </form>
                     )}

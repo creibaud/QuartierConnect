@@ -471,6 +471,22 @@ export default {
             noneSelectedDescription:
                 "Choisissez une conversation dans la liste ou démarrez-en une nouvelle.",
         },
+        onboarding: {
+            address: {
+                subtitle: "Rejoignez votre quartier en quelques secondes.",
+                label: "Votre adresse",
+                confirm: "Confirmer mon adresse",
+                recognized: "Adresse reconnue :",
+                notFound: "Adresse introuvable. Vérifiez et réessayez.",
+                error: "Une erreur est survenue. Réessayez.",
+            },
+            pending: {
+                subtitle: "Votre adresse est en attente de couverture.",
+                description:
+                    "Aucun quartier ne couvre encore votre adresse. Le superadmin a été prévenu et ajoutera votre quartier bientôt.",
+                fixAddress: "Corriger mon adresse",
+            },
+        },
         events: {
             title: "Événements",
             description: "Les rendez-vous et animations de votre quartier.",
