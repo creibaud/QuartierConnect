@@ -127,6 +127,18 @@ export class ServicesController {
         }));
     }
 
+    @Get("responded")
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: "Services the current user has responded to" })
+    @ApiResponse({ status: 200, type: [ServiceDto] })
+    async findResponded(@Request() req: AuthRequest) {
+        const responses = await this.responseModel.find({ responderId: req.user.sub }).lean();
+        const ids = responses.map((r) => r.serviceId);
+        if (!ids.length) return [];
+        return this.serviceModel.find({ _id: { $in: ids } }).lean();
+    }
+
     @Get(":id")
     @ApiOperation({ summary: "Service details" })
     @ApiParam({
