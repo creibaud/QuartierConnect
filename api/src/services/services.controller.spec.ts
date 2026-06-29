@@ -1,6 +1,7 @@
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
+import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import { SocialService } from "../social/social.service";
 import { ServiceResponse } from "./schemas/service-response.schema";
 import { Service } from "./schemas/service.schema";
@@ -23,6 +24,7 @@ describe("ServicesController", () => {
     let controller: ServicesController;
     let model: any;
     let responseModel: any;
+    let db: any;
 
     beforeEach(async () => {
         model = {
@@ -31,6 +33,7 @@ describe("ServicesController", () => {
                 limit: jest.fn().mockReturnValue({
                     exec: jest.fn().mockResolvedValue([mockService]),
                 }),
+                lean: jest.fn().mockResolvedValue([mockService]),
             }),
             findById: jest.fn().mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockService),
@@ -45,8 +48,19 @@ describe("ServicesController", () => {
         };
 
         responseModel = {
+            find: jest.fn().mockReturnValue({
+                lean: jest.fn().mockResolvedValue([]),
+            }),
             updateOne: jest.fn().mockResolvedValue({ upsertedCount: 1 }),
             deleteOne: jest.fn().mockResolvedValue({ deletedCount: 1 }),
+        };
+
+        db = {
+            select: jest.fn().mockReturnValue({
+                from: jest.fn().mockReturnValue({
+                    where: jest.fn().mockResolvedValue([]),
+                }),
+            }),
         };
 
         const module: TestingModule = await Test.createTestingModule({
@@ -64,6 +78,7 @@ describe("ServicesController", () => {
                         deleteNode: jest.fn().mockResolvedValue(undefined),
                     },
                 },
+                { provide: DRIZZLE_TOKEN, useValue: db },
             ],
         }).compile();
 
@@ -196,5 +211,29 @@ describe("ServicesController", () => {
         expect(responseModel.deleteOne).toHaveBeenCalledWith(
             expect.objectContaining({ responderId: "me" }),
         );
+    });
+
+    it("GET /services/mine returns own services with responders enriched from Drizzle", async () => {
+        const D = new Date("2025-01-01");
+        model.find.mockReturnValue({
+            lean: jest.fn().mockResolvedValue([{ _id: "s1", title: "Plomberie", createdBy: "me" }]),
+            skip: jest.fn().mockReturnThis(),
+            limit: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue([]) }),
+        });
+        responseModel.find = jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([{ serviceId: "s1", responderId: "u2", createdAt: D }]),
+        });
+        db.select.mockReturnValue({
+            from: jest.fn().mockReturnValue({
+                where: jest.fn().mockResolvedValue([{ id: "u2", firstName: "Bob", avatarUrl: null }]),
+            }),
+        });
+
+        const result = await controller.findMine({ user: { sub: "me", role: "resident" } } as any);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].responders).toEqual([
+            { userId: "u2", firstName: "Bob", avatarUrl: null, createdAt: D },
+        ]);
     });
 });
