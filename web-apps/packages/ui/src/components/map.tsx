@@ -91,7 +91,7 @@ export const Map = forwardRef<MapRef, MapProps>(function Map(
             ref={ref}
         >
             {children}
-            <MapcnControls showZoom position="top-left" />
+            <MapcnControls showZoom showCompass position="top-left" />
         </MapLibreMap>
     );
 });
@@ -288,6 +288,7 @@ export function MapControls({
     const { t } = useTranslation();
     const [pending, setPending] = useState(false);
     const [livePosition, setLivePosition] = useState<LatLng | null>(null);
+    const [is3D, setIs3D] = useState(false);
     const autoLocatedRef = useRef(false);
 
     useEffect(() => {
@@ -346,6 +347,13 @@ export function MapControls({
             { padding: 40 },
         );
     }, [map, fitGeometry]);
+
+    const toggle3D = useCallback(() => {
+        if (!map) return;
+        const pitched = map.getPitch() > 0;
+        map.easeTo({ pitch: pitched ? 0 : 55, duration: 500 });
+        setIs3D(!pitched);
+    }, [map]);
 
     const container = map?.getContainer();
 
@@ -410,6 +418,24 @@ export function MapControls({
                         </TooltipContent>
                     </Tooltip>
                 )}
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            type="button"
+                            variant={is3D ? "default" : "outline"}
+                            size="icon"
+                            onClick={toggle3D}
+                            aria-label={t("map.toggle3D")}
+                            className="bg-background/90 text-xs font-semibold shadow-sm backdrop-blur-sm"
+                        >
+                            {is3D ? "2D" : "3D"}
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                        {t("map.toggle3D")}
+                    </TooltipContent>
+                </Tooltip>
             </div>
         </TooltipProvider>
     );
