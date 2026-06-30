@@ -381,7 +381,7 @@ function CreateIncidentDialog({
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="incident-address">{t("address.searchPlaceholder")}</Label>
+                        <Label htmlFor="incident-address">{t("pages.incidents.addressLabel")}</Label>
                         <AddressAutocomplete
                             id="incident-address"
                             value={address}
