@@ -15,14 +15,16 @@ interface ResponderRowProps {
 }
 
 export function ResponderRow({ responder }: ResponderRowProps) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const contact = useContact();
 
     const displayName =
         responder.firstName ?? t("pages.services.mine.unknownUser");
     const initials = displayName.charAt(0).toUpperCase();
-    const date = new Date(responder.createdAt).toLocaleDateString("fr-FR");
+    const date = new Date(responder.createdAt).toLocaleDateString(
+        i18n.language,
+    );
 
     async function handleContact() {
         try {
