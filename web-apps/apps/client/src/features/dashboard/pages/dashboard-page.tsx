@@ -46,7 +46,8 @@ export function DashboardPage() {
     };
 
     return (
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 p-6 md:p-8">
+        <div className="p-6 md:p-8">
+            <div className="mx-auto flex max-w-7xl flex-col gap-6">
             <DashboardHeader
                 firstName={firstName}
                 email={user.email}
@@ -83,6 +84,7 @@ export function DashboardPage() {
                     <RecommendationsCard />
                 </motion.div>
             </motion.div>
+            </div>
         </div>
     );
 }
