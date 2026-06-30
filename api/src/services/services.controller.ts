@@ -96,12 +96,15 @@ export class ServicesController {
         // @Query params); harmless because the neighborhood guard below rejects it.
         @Request() req: AuthRequest = { user: { sub: "", role: "" } },
     ) {
-        // Scope to the caller's neighborhood. Without one, Mongoose would strip
+        // Admin/moderator moderate across all neighborhoods (the admin app lists
+        // through this same endpoint); residents are scoped to their own. A non-staff
+        // caller without a neighborhood gets nothing — otherwise Mongoose would strip
         // `neighborhoodId: undefined` and leak every neighborhood's services.
-        if (!req.user.neighborhoodId) return [];
-        const filter: Record<string, unknown> = {
-            neighborhoodId: req.user.neighborhoodId,
-        };
+        const isStaff =
+            req.user.role === "admin" || req.user.role === "moderator";
+        if (!isStaff && !req.user.neighborhoodId) return [];
+        const filter: Record<string, unknown> = {};
+        if (!isStaff) filter.neighborhoodId = req.user.neighborhoodId;
         if (category) filter.category = category;
         if (type) filter.type = type;
         if (direction) filter.direction = direction;
@@ -199,6 +202,7 @@ export class ServicesController {
     async create(@Body() dto: CreateServiceDto, @Request() req: AuthRequest) {
         const created = await this.serviceModel.create({
             ...dto,
+            neighborhoodId: dto.neighborhoodId ?? req.user.neighborhoodId ?? undefined,
             createdBy: req.user.sub,
         });
         void this.socialService.syncService(

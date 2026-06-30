@@ -152,6 +152,22 @@ describe("ServicesController", () => {
         expect(result).toEqual([]);
     });
 
+    it("GET /services admin with no neighborhoodId sees all services (no scope)", async () => {
+        const req = { user: { sub: "admin1", role: "admin" } };
+        const result = await controller.findAll(undefined, undefined, undefined, "1", "20", req as any);
+        expect(result).not.toEqual([]);
+        const calledFilter = model.find.mock.calls[0][0];
+        expect(calledFilter).not.toHaveProperty("neighborhoodId");
+    });
+
+    it("GET /services moderator with no neighborhoodId sees all services (no scope)", async () => {
+        const req = { user: { sub: "mod1", role: "moderator" } };
+        const result = await controller.findAll(undefined, undefined, undefined, "1", "20", req as any);
+        expect(result).not.toEqual([]);
+        const calledFilter = model.find.mock.calls[0][0];
+        expect(calledFilter).not.toHaveProperty("neighborhoodId");
+    });
+
     it("GET /services/:id throws 404 when not found", async () => {
         model.findById.mockReturnValue({
             exec: jest.fn().mockResolvedValue(null),
@@ -174,6 +190,26 @@ describe("ServicesController", () => {
         );
         expect(model.create).toHaveBeenCalledWith(
             expect.objectContaining({ createdBy: "user-uuid-1" }),
+        );
+    });
+
+    it("POST /services defaults neighborhoodId from JWT when dto omits it", async () => {
+        await controller.create(
+            { title: "T", description: "D", category: "home", type: "free", direction: "offer" },
+            authReq("resident", "user-uuid-1", "n1") as any,
+        );
+        expect(model.create).toHaveBeenCalledWith(
+            expect.objectContaining({ neighborhoodId: "n1" }),
+        );
+    });
+
+    it("POST /services uses dto.neighborhoodId when explicitly provided", async () => {
+        await controller.create(
+            { title: "T", description: "D", category: "home", type: "free", direction: "offer", neighborhoodId: "n2" },
+            authReq("resident", "user-uuid-1", "n1") as any,
+        );
+        expect(model.create).toHaveBeenCalledWith(
+            expect.objectContaining({ neighborhoodId: "n2" }),
         );
     });
 
