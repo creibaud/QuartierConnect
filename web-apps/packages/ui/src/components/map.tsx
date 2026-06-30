@@ -427,7 +427,10 @@ export function MapControls({
                             size="icon"
                             onClick={toggle3D}
                             aria-label={t("map.toggle3D")}
-                            className="bg-background/90 text-xs font-semibold shadow-sm backdrop-blur-sm"
+                            className={cn(
+                                "text-xs font-semibold shadow-sm backdrop-blur-sm",
+                                !is3D && "bg-background/90",
+                            )}
                         >
                             {is3D ? "2D" : "3D"}
                         </Button>
