@@ -25,6 +25,7 @@ import {
 import MarkerClusterGroup from "react-leaflet-markercluster";
 import {
     Home01Icon,
+    InformationCircleIcon,
     Location01Icon,
     Maximize01Icon,
 } from "@hugeicons/core-free-icons";
@@ -36,6 +37,13 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet-draw/dist/leaflet.draw.css";
 import { Button } from "@workspace/ui/components/button";
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@workspace/ui/components/dialog";
+import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
@@ -43,11 +51,31 @@ import {
 } from "@workspace/ui/components/tooltip";
 import { cn } from "@workspace/ui/lib/utils";
 
-const OSM_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-const OSM_ATTRIBUTION =
-    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+const TILE_LIGHT =
+    "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+const TILE_DARK =
+    "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+const TILE_ATTRIBUTION =
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 export type LatLng = [number, number];
+
+export function useIsDark(): boolean {
+    const [isDark, setIsDark] = useState(
+        () =>
+            typeof document !== "undefined" &&
+            document.documentElement.classList.contains("dark"),
+    );
+    useEffect(() => {
+        const el = document.documentElement;
+        const update = () => setIsDark(el.classList.contains("dark"));
+        update();
+        const observer = new MutationObserver(update);
+        observer.observe(el, { attributes: true, attributeFilter: ["class"] });
+        return () => observer.disconnect();
+    }, []);
+    return isDark;
+}
 
 interface MapProps {
     center: LatLng;
@@ -61,6 +89,7 @@ export const Map = forwardRef<L.Map, MapProps>(function Map(
     { center, zoom = 13, className, children, scrollWheelZoom = false },
     ref,
 ) {
+    const isDark = useIsDark();
     return (
         <MapContainer
             center={center}
@@ -71,9 +100,15 @@ export const Map = forwardRef<L.Map, MapProps>(function Map(
             )}
             ref={ref as Ref<L.Map>}
             scrollWheelZoom={scrollWheelZoom}
+            attributionControl={false}
         >
-            <TileLayer url={OSM_URL} attribution={OSM_ATTRIBUTION} />
+            <TileLayer
+                key={isDark ? "dark" : "light"}
+                url={isDark ? TILE_DARK : TILE_LIGHT}
+                attribution={TILE_ATTRIBUTION}
+            />
             {children}
+            <MapAttribution />
         </MapContainer>
     );
 });
@@ -376,7 +411,7 @@ export function MapControls({ home, fitGeometry }: MapControlsProps) {
                         <Button
                             type="button"
                             variant="outline"
-                            size="icon-sm"
+                            size="icon"
                             onClick={locateMe}
                             disabled={pending}
                             aria-label={t("map.myPosition")}
@@ -396,7 +431,7 @@ export function MapControls({ home, fitGeometry }: MapControlsProps) {
                             <Button
                                 type="button"
                                 variant="outline"
-                                size="icon-sm"
+                                size="icon"
                                 onClick={() => map.flyTo(home, 16)}
                                 aria-label={t("map.home")}
                                 className="bg-background/90 shadow-sm backdrop-blur-sm"
@@ -416,7 +451,7 @@ export function MapControls({ home, fitGeometry }: MapControlsProps) {
                             <Button
                                 type="button"
                                 variant="outline"
-                                size="icon-sm"
+                                size="icon"
                                 onClick={() =>
                                     map.fitBounds(fitPositions, {
                                         padding: [40, 40],
@@ -447,6 +482,100 @@ export function MapControls({ home, fitGeometry }: MapControlsProps) {
                     popup={t("map.youAreHere")}
                 />
             ) : null}
+        </>
+    );
+}
+
+/**
+ * Bottom-right credit button that replaces Leaflet's default attribution text.
+ * Rendered automatically by `Map`; opens a dialog listing the data/tile credits.
+ */
+function MapAttribution() {
+    const map = useMap();
+    const { t } = useTranslation();
+    const [open, setOpen] = useState(false);
+
+    const overlayRef = useCallback((node: HTMLDivElement | null) => {
+        if (!node) return;
+        L.DomEvent.disableClickPropagation(node);
+        L.DomEvent.disableScrollPropagation(node);
+    }, []);
+
+    const button = (
+        <TooltipProvider>
+            <div
+                ref={overlayRef}
+                className="absolute right-2 bottom-2 z-[1000]"
+            >
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            onClick={() => setOpen(true)}
+                            aria-label={t("map.attribution")}
+                            className="bg-background/90 shadow-sm backdrop-blur-sm"
+                        >
+                            <HugeiconsIcon icon={InformationCircleIcon} />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                        {t("map.attribution")}
+                    </TooltipContent>
+                </Tooltip>
+            </div>
+        </TooltipProvider>
+    );
+
+    return (
+        <>
+            {createPortal(button, map.getContainer())}
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t("map.attributionTitle")}</DialogTitle>
+                        <DialogDescription>
+                            {t("map.attributionBody")}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <ul className="space-y-1 text-sm">
+                        <li>
+                            <a
+                                href="https://leafletjs.com"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary underline underline-offset-2"
+                            >
+                                Leaflet
+                            </a>
+                        </li>
+                        <li>
+                            &copy;{" "}
+                            <a
+                                href="https://www.openstreetmap.org/copyright"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary underline underline-offset-2"
+                            >
+                                OpenStreetMap
+                            </a>{" "}
+                            contributors
+                        </li>
+                        <li>
+                            &copy;{" "}
+                            <a
+                                href="https://carto.com/attributions"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary underline underline-offset-2"
+                            >
+                                CARTO
+                            </a>
+                        </li>
+                    </ul>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

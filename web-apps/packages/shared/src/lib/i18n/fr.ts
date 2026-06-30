@@ -74,6 +74,9 @@ export default {
         home: "Chez moi",
         myNeighborhood: "Voir mon quartier",
         youAreHere: "Vous êtes ici",
+        attribution: "Crédits",
+        attributionTitle: "Crédits de la carte",
+        attributionBody: "Données et tuiles fournies par :",
     },
     roles: {
         resident: "Résident",
