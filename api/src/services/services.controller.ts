@@ -25,9 +25,7 @@ import {
 import { inArray } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Model, Types } from "mongoose";
-import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { RolesGuard } from "../auth/guards/roles.guard";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { SocialService } from "../social/social.service";
@@ -252,6 +250,7 @@ export class ServicesController {
             changes.description = dto.description;
         if (dto.category !== undefined) changes.category = dto.category;
         if (dto.type !== undefined) changes.type = dto.type;
+        if (dto.direction !== undefined) changes.direction = dto.direction;
         if (dto.neighborhoodId !== undefined)
             changes.neighborhoodId = dto.neighborhoodId;
         if (dto.pointsMultiplier !== undefined)
@@ -312,10 +311,12 @@ export class ServicesController {
     }
 
     @Delete(":id")
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles("admin")
+    @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    @ApiOperation({ summary: "Delete a service (admin only)" })
+    @ApiOperation({
+        summary: "Delete a service",
+        description: "The owner or an admin can delete it.",
+    })
     @ApiParam({ name: "id", description: "MongoDB ID of the service" })
     @ApiResponse({
         status: 200,
@@ -324,13 +325,19 @@ export class ServicesController {
     })
     @ApiResponse({
         status: 403,
-        description: "Insufficient role (admin required)",
+        description: "Access denied (owner or admin only)",
     })
     @ApiResponse({ status: 404, description: "Service not found" })
-    async remove(@Param("id") id: string) {
-        const deleted = await this.serviceModel.findByIdAndDelete(id).exec();
-        if (!deleted) throw new NotFoundException("Service not found");
-        void this.socialService.deleteNode("Service", deleted._id.toString());
+    async remove(@Param("id") id: string, @Request() req: AuthRequest) {
+        const service = await this.serviceModel.findById(id).exec();
+        if (!service) throw new NotFoundException("Service not found");
+        if (service.createdBy !== req.user.sub && req.user.role !== "admin") {
+            throw new ForbiddenException(
+                "You can only delete your own services",
+            );
+        }
+        await this.serviceModel.findByIdAndDelete(id).exec();
+        void this.socialService.deleteNode("Service", service._id.toString());
         return { success: true };
     }
 }
