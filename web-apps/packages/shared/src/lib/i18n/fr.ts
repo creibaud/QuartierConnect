@@ -69,6 +69,11 @@ export default {
             moderation: "Modération",
         },
     },
+    address: {
+        searchPlaceholder: "Saisissez une adresse…",
+        noSuggestions: "Aucune adresse trouvée",
+        outsideQuartier: "Cette adresse est hors de votre quartier — l'annonce restera visible par votre quartier.",
+    },
     map: {
         myPosition: "Ma position",
         home: "Chez moi",
