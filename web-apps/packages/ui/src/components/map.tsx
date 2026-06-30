@@ -268,17 +268,49 @@ interface MapControlsProps {
     home?: LatLng | null;
     /** Neighborhood polygon for the "fit to neighborhood" button. */
     fitGeometry?: GeoJSON.Polygon | null;
+    /**
+     * On mount, request the browser geolocation (prompting permission) and
+     * center on the live position; fall back to `home` if denied/unavailable.
+     */
+    autoLocate?: boolean;
 }
 
 /**
  * Three-button overlay (locate / home / neighborhood) portaled into the
  * MapLibre container so it floats at top-right over the map.
  */
-export function MapControls({ home, fitGeometry }: MapControlsProps) {
+export function MapControls({
+    home,
+    fitGeometry,
+    autoLocate = false,
+}: MapControlsProps) {
     const { map } = useMap();
     const { t } = useTranslation();
     const [pending, setPending] = useState(false);
     const [livePosition, setLivePosition] = useState<LatLng | null>(null);
+    const autoLocatedRef = useRef(false);
+
+    useEffect(() => {
+        if (!autoLocate || !map || autoLocatedRef.current) return;
+        autoLocatedRef.current = true;
+        const flyHome = () => {
+            if (home) map.flyTo({ center: [home[1], home[0]], zoom: 15 });
+        };
+        if (!navigator.geolocation) {
+            flyHome();
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                setLivePosition([lat, lng]);
+                map.flyTo({ center: [lng, lat], zoom: 15 });
+            },
+            flyHome,
+            { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
+        );
+    }, [autoLocate, map, home]);
 
     const locateMe = useCallback(() => {
         if (!map || !navigator.geolocation) return;

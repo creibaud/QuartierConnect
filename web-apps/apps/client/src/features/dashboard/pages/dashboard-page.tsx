@@ -47,13 +47,14 @@ export function DashboardPage() {
 
     return (
         <div className="mx-auto flex max-w-5xl flex-col gap-6 p-6 md:p-8">
-            <CommunityMapCard />
             <DashboardHeader
                 firstName={firstName}
                 email={user.email}
                 roleLabel={roleLabel}
                 reduce={reduce}
             />
+
+            <CommunityMapCard />
 
             {staff && <ModerationOverview now={now} />}
 

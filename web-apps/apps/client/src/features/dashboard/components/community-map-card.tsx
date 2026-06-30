@@ -76,6 +76,7 @@ export function CommunityMapCard() {
                         <MapControls
                             home={home ? [home.lat, home.lng] : null}
                             fitGeometry={neighborhood.geometry}
+                            autoLocate
                         />
                         <MapLegend
                             entries={[

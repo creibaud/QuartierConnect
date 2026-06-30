@@ -268,6 +268,7 @@ export default {
             welcome: "Bonjour",
             yourPoints: "Vos points",
             participationPoints: "Points de participation",
+            viewPointsHistory: "Voir l'historique",
             mappedNeighborhoods: "Quartiers cartographiés",
             aroundYou: "Autour de chez vous",
             myNeighborhood: "Mon quartier — {{name}}",
