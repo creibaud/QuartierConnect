@@ -69,6 +69,12 @@ export default {
             moderation: "Moderation",
         },
     },
+    map: {
+        myPosition: "My location",
+        home: "Home",
+        myNeighborhood: "See my neighborhood",
+        youAreHere: "You are here",
+    },
     roles: {
         resident: "Resident",
         moderator: "Moderator",
@@ -181,7 +187,8 @@ export default {
                 "Scan this QR code with Google Authenticator, Authy or a TOTP-compatible app",
             verificationCode: "Verification code",
             confirmAndLogin: "Confirm and sign in",
-            mfaStep1: "Scan the QR code with your authenticator app (Google Authenticator, Authy…)",
+            mfaStep1:
+                "Scan the QR code with your authenticator app (Google Authenticator, Authy…)",
             mfaStep2: "Enter the 6-digit code displayed in the app",
             secretLabel: "Manual key (if scanning is not possible)",
             copySecret: "Copy",
@@ -277,7 +284,8 @@ export default {
             noTransactions: "No transactions yet",
             openVotes: "Ongoing votes",
             noOpenVotes: "No ongoing votes",
-            noOpenVotesHint: "Neighborhood votes will show up here as soon as there are any.",
+            noOpenVotesHint:
+                "Neighborhood votes will show up here as soon as there are any.",
             voted: "Voted",
             respond: "Respond",
             voteParticipants_one: "{{count}} voter",
@@ -285,15 +293,22 @@ export default {
             voteEndsOn: "Ends {{date}}",
             upcomingEvents: "Upcoming events",
             noUpcomingEvents: "No upcoming events",
-            noUpcomingEventsHint: "Upcoming neighborhood gatherings will appear here.",
+            noUpcomingEventsHint:
+                "Upcoming neighborhood gatherings will appear here.",
             recommendationsForYou: "Recommendations for you",
             noRecommendations: "No recommendations yet",
-            noRecommendationsHint: "Take part and connect with neighbors to get suggestions.",
+            noRecommendationsHint:
+                "Take part and connect with neighbors to get suggestions.",
             neighborhoodServices: "Neighborhood services",
             noServices: "No services available",
             noServicesHint: "Services offered near you will appear here.",
-            noTransactionsHint: "Take part in neighborhood life to earn your first points.",
-            recoType: { service: "Service", event: "Event", neighbor: "Neighbor" },
+            noTransactionsHint:
+                "Take part in neighborhood life to earn your first points.",
+            recoType: {
+                service: "Service",
+                event: "Event",
+                neighbor: "Neighbor",
+            },
             quickActions: "Quick actions",
             moderation: {
                 title: "Moderation area",
