@@ -243,7 +243,9 @@ interface MapClickHandlerProps {
 export function MapClickHandler({ onClick }: MapClickHandlerProps) {
     const { map, isLoaded } = useMap();
     const onClickRef = useRef(onClick);
-    onClickRef.current = onClick;
+    useEffect(() => {
+        onClickRef.current = onClick;
+    });
 
     useEffect(() => {
         if (!map || !isLoaded) return;
