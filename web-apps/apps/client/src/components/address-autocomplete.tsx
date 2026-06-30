@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiGet } from "@workspace/shared/lib/api";
 import { Input } from "@workspace/ui/components/input";
+import { ScrollArea } from "@workspace/ui/components/scroll-area";
 
 export type AddressSuggestion = { label: string; lat: number; lng: number };
 
@@ -57,25 +58,29 @@ export function AddressAutocomplete({ id, value, onChange, onSelect, placeholder
                 autoComplete="off"
             />
             {open && value.trim().length >= 3 && suggestions.length > 0 && (
-                <ul className="bg-popover absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md border p-1 text-sm shadow-md">
-                    {suggestions.map((s) => (
-                        <li key={`${s.lat},${s.lng},${s.label}`}>
-                            <button
-                                type="button"
-                                className="hover:bg-muted w-full rounded px-2 py-1.5 text-left"
-                                onClick={() => {
-                                    justSelected.current = true;
-                                    onChange(s.label);
-                                    onSelect(s);
-                                    setOpen(false);
-                                    setSuggestions([]);
-                                }}
-                            >
-                                {s.label}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+                <div className="bg-popover absolute z-20 mt-1 w-full rounded-md border text-sm shadow-md">
+                    <ScrollArea viewportClassName="max-h-56">
+                        <ul className="p-1">
+                            {suggestions.map((s) => (
+                                <li key={`${s.lat},${s.lng},${s.label}`}>
+                                    <button
+                                        type="button"
+                                        className="hover:bg-muted w-full rounded px-2 py-1.5 text-left"
+                                        onClick={() => {
+                                            justSelected.current = true;
+                                            onChange(s.label);
+                                            onSelect(s);
+                                            setOpen(false);
+                                            setSuggestions([]);
+                                        }}
+                                    >
+                                        {s.label}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </ScrollArea>
+                </div>
             )}
         </div>
     );
