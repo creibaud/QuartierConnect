@@ -166,6 +166,7 @@ export function ServicesPage() {
                                     {myLocation?.lat != null &&
                                         myLocation?.lng != null && (
                                             <Marker
+                                                variant="home"
                                                 position={[
                                                     myLocation.lat,
                                                     myLocation.lng,
