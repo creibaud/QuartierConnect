@@ -4,7 +4,6 @@ import { Add01Icon, CustomerServiceIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import { centroidOf, pointToLatLng } from "@workspace/shared/lib/geo";
-import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
 import {
     useCreateService,
     useInfiniteServices,
@@ -53,6 +52,7 @@ import {
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { toast } from "sonner";
+import { useMyLocation } from "@/features/onboarding/hooks/address.hooks";
 import { ServiceCard } from "../components/service-card";
 
 const SERVICE_CATEGORIES = [
@@ -77,8 +77,7 @@ export function ServicesPage() {
     const [createOpen, setCreateOpen] = useState(false);
     const [editTarget, setEditTarget] = useState<Service | null>(null);
 
-    const { data: neighborhoodsData } = useNeighborhoods();
-    const neighborhoods = neighborhoodsData ?? [];
+    const { data: myLocation } = useMyLocation();
 
     const { data, isLoading, isError, fetchNextPage, hasNextPage, refetch } =
         useInfiniteServices(
@@ -89,14 +88,9 @@ export function ServicesPage() {
     const services = data?.pages.flat() ?? [];
     const servicesWithCoords = services.filter((s) => s.location);
 
-    // Residents are server-scoped to their own neighborhood; focus the map on
-    // the neighborhood of the returned services.
-    const userNeighborhoodId = services.find(
-        (s) => s.neighborhoodId,
-    )?.neighborhoodId;
-    const focusedNeighborhood =
-        neighborhoods.find((n) => n._id === userNeighborhoodId) ??
-        neighborhoods.find((n) => n.geometry);
+    // Focus the map on the user's OWN neighborhood — the same source as the
+    // account "Mon quartier" card — so it never disagrees with their profile.
+    const focusedNeighborhood = myLocation?.neighborhood ?? null;
 
     function canManage(service: Service): boolean {
         if (!currentUser) return false;
