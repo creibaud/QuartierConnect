@@ -95,7 +95,7 @@ export function NeighborhoodMapCard() {
                         ref={mapRef}
                         center={homePosition}
                         zoom={14}
-                        className="h-64 w-full"
+                        className="h-[420px] w-full"
                     >
                         <NeighborhoodPolygon
                             geometry={
