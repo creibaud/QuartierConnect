@@ -157,7 +157,7 @@ export function Marker({
 
 // ─── MapLegend ───────────────────────────────────────────────────────────────
 
-interface MapLegendEntry {
+export interface MapLegendEntry {
     variant: MarkerVariant;
     label: string;
 }
@@ -170,7 +170,7 @@ export function MapLegend({ entries }: { entries: MapLegendEntry[] }) {
             <ul className="space-y-1">
                 {entries.map((entry) => (
                     <li
-                        key={entry.variant}
+                        key={`${entry.variant}-${entry.label}`}
                         className="flex items-center gap-2"
                     >
                         <span
