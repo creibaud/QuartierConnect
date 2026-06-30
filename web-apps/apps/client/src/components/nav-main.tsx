@@ -22,13 +22,23 @@ export interface NavGroup {
     items: NavItem[];
 }
 
-function isItemActive(pathname: string, to: string): boolean {
-    return pathname === to || pathname.startsWith(`${to}/`);
+function findActiveNavItem(
+    items: NavItem[],
+    pathname: string,
+): NavItem | undefined {
+    return (
+        items.find((item) => pathname === item.to) ??
+        items.find((item) => pathname.startsWith(`${item.to}/`))
+    );
 }
 
 export function NavMain({ groups, role }: { groups: NavGroup[]; role: string }) {
     const { pathname } = useLocation();
     const { t } = useTranslation();
+    const activeItem = findActiveNavItem(
+        groups.flatMap((group) => group.items),
+        pathname,
+    );
 
     return (
         <>
@@ -46,7 +56,7 @@ export function NavMain({ groups, role }: { groups: NavGroup[]; role: string }) 
                                 <SidebarMenuItem key={item.to}>
                                     <SidebarMenuButton
                                         asChild
-                                        isActive={isItemActive(pathname, item.to)}
+                                        isActive={item === activeItem}
                                         tooltip={t(item.title)}
                                     >
                                         <Link to={item.to}>
