@@ -528,6 +528,42 @@ describe("ServicesController", () => {
         expect(model.create.mock.calls[0][0].location).toBeUndefined();
     });
 
+    it("PATCH /services/:id geocodes a changed address into location", async () => {
+        geocoding.geocode.mockResolvedValue({
+            lat: 48.85,
+            lng: 2.35,
+            displayName: "x",
+        });
+        await controller.update(
+            "svc-id-1",
+            { address: "1 rue X" } as any,
+            authReq() as any,
+        );
+        expect(geocoding.geocode).toHaveBeenCalledWith("1 rue X");
+        expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+            "svc-id-1",
+            {
+                $set: {
+                    address: "1 rue X",
+                    location: { type: "Point", coordinates: [2.35, 48.85] },
+                },
+            },
+            { new: true },
+        );
+    });
+
+    it("PATCH /services/:id keeps the stored location when geocode fails", async () => {
+        geocoding.geocode.mockResolvedValue(null);
+        await controller.update(
+            "svc-id-1",
+            { address: "bad" } as any,
+            authReq() as any,
+        );
+        const setArg = model.findByIdAndUpdate.mock.calls[0][1].$set;
+        expect(setArg.address).toBe("bad");
+        expect(setArg.location).toBeUndefined();
+    });
+
     it("GET /services/mine returns own services with responders enriched from Drizzle", async () => {
         const D = new Date("2025-01-01");
         model.find.mockReturnValue({
