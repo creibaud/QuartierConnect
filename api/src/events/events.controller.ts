@@ -23,6 +23,7 @@ import {
 } from "@nestjs/swagger";
 import { Model } from "mongoose";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { GeocodingService } from "../geocoding/geocoding.service";
 import { SocialService } from "../social/social.service";
 import { CreateEventDto } from "./dto/create-event.dto";
 import { EventDto, EventInterestResponseDto } from "./dto/event-response.dto";
@@ -40,7 +41,20 @@ export class EventsController {
         @InjectModel(Event.name)
         private readonly eventModel: Model<EventDocument>,
         private readonly socialService: SocialService,
+        private readonly geocoding: GeocodingService,
     ) {}
+
+    private async resolveLocation(
+        address?: string,
+        location?: { type: "Point"; coordinates: [number, number] },
+    ): Promise<{ type: "Point"; coordinates: [number, number] } | undefined> {
+        if (location) return location;
+        if (!address) return undefined;
+        const geo = await this.geocoding.geocode(address);
+        return geo
+            ? { type: "Point", coordinates: [geo.lng, geo.lat] }
+            : undefined;
+    }
 
     @Get()
     @ApiOperation({
@@ -110,8 +124,10 @@ export class EventsController {
     @ApiResponse({ status: 201, type: EventDto, description: "Event created" })
     @ApiResponse({ status: 401, description: "Not authenticated" })
     async create(@Body() dto: CreateEventDto, @Request() req: AuthRequest) {
+        const location = await this.resolveLocation(dto.address, dto.location);
         const created = await this.eventModel.create({
             ...dto,
+            location,
             createdBy: req.user.sub,
         });
         void this.socialService.syncEvent(
@@ -167,12 +183,19 @@ export class EventsController {
         if (dto.date !== undefined) changes.date = dto.date;
         if (dto.neighborhoodId !== undefined)
             changes.neighborhoodId = dto.neighborhoodId;
-        if (dto.address !== undefined) changes.address = dto.address;
         if (dto.location !== undefined)
             changes.location = {
                 type: dto.location.type,
                 coordinates: dto.location.coordinates,
             };
+        if (dto.address !== undefined) {
+            changes.address = dto.address;
+            const location = await this.resolveLocation(
+                dto.address,
+                dto.location,
+            );
+            if (location) changes.location = location;
+        }
 
         const event = await this.eventModel
             .findByIdAndUpdate(String(id), { $set: changes }, { new: true })
