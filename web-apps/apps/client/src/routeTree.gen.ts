@@ -25,6 +25,7 @@ import { Route as AppIncidentsIndexRouteImport } from './routes/_app/incidents/i
 import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
 import { Route as AppDashboardIndexRouteImport } from './routes/_app/dashboard/index'
 import { Route as AppContractsIndexRouteImport } from './routes/_app/contracts/index'
+import { Route as AppServicesMineRouteImport } from './routes/_app/services/mine'
 import { Route as AppIncidentsIdRouteImport } from './routes/_app/incidents/$id'
 
 const RegisterRoute = RegisterRouteImport.update({
@@ -106,6 +107,11 @@ const AppContractsIndexRoute = AppContractsIndexRouteImport.update({
   path: '/contracts/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppServicesMineRoute = AppServicesMineRouteImport.update({
+  id: '/services/mine',
+  path: '/services/mine',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppIncidentsIdRoute = AppIncidentsIdRouteImport.update({
   id: '/incidents/$id',
   path: '/incidents/$id',
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/onboarding/address': typeof OnboardingAddressRoute
   '/onboarding/pending': typeof OnboardingPendingRoute
   '/incidents/$id': typeof AppIncidentsIdRoute
+  '/services/mine': typeof AppServicesMineRoute
   '/contracts/': typeof AppContractsIndexRoute
   '/dashboard/': typeof AppDashboardIndexRoute
   '/events/': typeof AppEventsIndexRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/onboarding/address': typeof OnboardingAddressRoute
   '/onboarding/pending': typeof OnboardingPendingRoute
   '/incidents/$id': typeof AppIncidentsIdRoute
+  '/services/mine': typeof AppServicesMineRoute
   '/contracts': typeof AppContractsIndexRoute
   '/dashboard': typeof AppDashboardIndexRoute
   '/events': typeof AppEventsIndexRoute
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/onboarding/address': typeof OnboardingAddressRoute
   '/onboarding/pending': typeof OnboardingPendingRoute
   '/_app/incidents/$id': typeof AppIncidentsIdRoute
+  '/_app/services/mine': typeof AppServicesMineRoute
   '/_app/contracts/': typeof AppContractsIndexRoute
   '/_app/dashboard/': typeof AppDashboardIndexRoute
   '/_app/events/': typeof AppEventsIndexRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/onboarding/address'
     | '/onboarding/pending'
     | '/incidents/$id'
+    | '/services/mine'
     | '/contracts/'
     | '/dashboard/'
     | '/events/'
@@ -195,6 +205,7 @@ export interface FileRouteTypes {
     | '/onboarding/address'
     | '/onboarding/pending'
     | '/incidents/$id'
+    | '/services/mine'
     | '/contracts'
     | '/dashboard'
     | '/events'
@@ -214,6 +225,7 @@ export interface FileRouteTypes {
     | '/onboarding/address'
     | '/onboarding/pending'
     | '/_app/incidents/$id'
+    | '/_app/services/mine'
     | '/_app/contracts/'
     | '/_app/dashboard/'
     | '/_app/events/'
@@ -349,6 +361,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppContractsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/services/mine': {
+      id: '/_app/services/mine'
+      path: '/services/mine'
+      fullPath: '/services/mine'
+      preLoaderRoute: typeof AppServicesMineRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/incidents/$id': {
       id: '/_app/incidents/$id'
       path: '/incidents/$id'
@@ -361,6 +380,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppIncidentsIdRoute: typeof AppIncidentsIdRoute
+  AppServicesMineRoute: typeof AppServicesMineRoute
   AppContractsIndexRoute: typeof AppContractsIndexRoute
   AppDashboardIndexRoute: typeof AppDashboardIndexRoute
   AppEventsIndexRoute: typeof AppEventsIndexRoute
@@ -375,6 +395,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppIncidentsIdRoute: AppIncidentsIdRoute,
+  AppServicesMineRoute: AppServicesMineRoute,
   AppContractsIndexRoute: AppContractsIndexRoute,
   AppDashboardIndexRoute: AppDashboardIndexRoute,
   AppEventsIndexRoute: AppEventsIndexRoute,

@@ -44,7 +44,7 @@ export function useContact() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (userId: string) =>
-            apiPost<unknown>(`/messaging/conversations/with/${userId}`),
+            apiPost<{ id: string }>(`/messaging/conversations/with/${userId}`),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["services"] });
         },
