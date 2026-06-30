@@ -326,6 +326,17 @@ export default {
                 upcomingEvents: "Upcoming events",
                 services: "Services",
             },
+            communityMap: {
+                title: "Neighborhood map",
+                description: "Services, events and incidents near you.",
+                legend: {
+                    serviceOffer: "Service — offer",
+                    serviceRequest: "Service — request",
+                    event: "Event",
+                    incident: "Neighborhood incident",
+                    home: "My home",
+                },
+            },
         },
         points: {
             title: "Points",

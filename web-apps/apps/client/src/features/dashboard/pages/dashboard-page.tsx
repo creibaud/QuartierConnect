@@ -12,6 +12,7 @@ import { OpenVotesCard } from "../components/open-votes-card";
 import { UpcomingEventsCard } from "../components/upcoming-events-card";
 import { ServicesCard } from "../components/services-card";
 import { RecommendationsCard } from "../components/recommendations-card";
+import { CommunityMapCard } from "../components/community-map-card";
 
 export function DashboardPage() {
     const { t } = useTranslation();
@@ -46,6 +47,7 @@ export function DashboardPage() {
 
     return (
         <div className="mx-auto flex max-w-5xl flex-col gap-6 p-6 md:p-8">
+            <CommunityMapCard />
             <DashboardHeader
                 firstName={firstName}
                 email={user.email}
