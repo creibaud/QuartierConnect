@@ -37,6 +37,33 @@ export class GeocodingService {
         }
     }
 
+    async search(
+        query: string,
+    ): Promise<Array<{ label: string; lat: number; lng: number }>> {
+        await this.throttle();
+        const url = `${ENDPOINT}?format=jsonv2&limit=5&q=${encodeURIComponent(query)}`;
+        try {
+            const res = await fetch(url, {
+                headers: { "User-Agent": USER_AGENT },
+                signal: AbortSignal.timeout(5000),
+            });
+            if (!res.ok) return [];
+            const data = (await res.json()) as Array<{
+                lat: string;
+                lon: string;
+                display_name: string;
+            }>;
+            return data.map((d) => ({
+                label: d.display_name,
+                lat: Number(d.lat),
+                lng: Number(d.lon),
+            }));
+        } catch (err) {
+            this.logger.warn(`Geocoding search failed: ${String(err)}`);
+            return [];
+        }
+    }
+
     private async throttle(): Promise<void> {
         const wait = this.lastCall + MIN_INTERVAL_MS - Date.now();
         if (wait > 0) await new Promise((r) => setTimeout(r, wait));

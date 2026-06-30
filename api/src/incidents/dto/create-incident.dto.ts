@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
+    IsIn,
     IsNotEmpty,
     IsNumber,
     IsOptional,
@@ -55,4 +56,12 @@ export class CreateIncidentDto {
     @Min(-180)
     @Max(180)
     lng?: number;
+
+    @ApiPropertyOptional({
+        enum: ["neighborhood", "reporting", "bug"],
+        default: "neighborhood",
+    })
+    @IsOptional()
+    @IsIn(["neighborhood", "reporting", "bug"])
+    category?: string;
 }

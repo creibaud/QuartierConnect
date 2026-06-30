@@ -24,6 +24,7 @@ export function createIncident(data: {
     neighborhoodId?: string;
     lat?: number;
     lng?: number;
+    category?: "neighborhood" | "reporting" | "bug";
 }): Promise<Incident> {
     return apiPost<Incident>("/incidents", data);
 }

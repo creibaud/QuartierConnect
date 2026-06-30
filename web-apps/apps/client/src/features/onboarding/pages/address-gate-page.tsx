@@ -4,9 +4,9 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent } from "@workspace/ui/components/card";
-import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { Spinner } from "@workspace/ui/components/spinner";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { AuthLayout } from "@/components/auth-layout";
 import { useSubmitAddress } from "../hooks/address.hooks";
 
@@ -61,16 +61,12 @@ export function AddressGatePage() {
                                 <Label htmlFor="address">
                                     {t("pages.onboarding.address.label")}
                                 </Label>
-                                <Input
+                                <AddressAutocomplete
                                     id="address"
-                                    type="text"
-                                    placeholder="12 rue de Reuilly, 75012 Paris"
                                     value={addressInput}
-                                    onChange={(e) =>
-                                        setAddressInput(e.target.value)
-                                    }
-                                    required
-                                    autoFocus
+                                    onChange={setAddressInput}
+                                    onSelect={(s) => setAddressInput(s.label)}
+                                    placeholder="12 rue de Reuilly, 75012 Paris"
                                 />
                             </div>
                             <Button

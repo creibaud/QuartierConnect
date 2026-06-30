@@ -12,6 +12,7 @@ import { OpenVotesCard } from "../components/open-votes-card";
 import { UpcomingEventsCard } from "../components/upcoming-events-card";
 import { ServicesCard } from "../components/services-card";
 import { RecommendationsCard } from "../components/recommendations-card";
+import { CommunityMapCard } from "../components/community-map-card";
 
 export function DashboardPage() {
     const { t } = useTranslation();
@@ -45,13 +46,15 @@ export function DashboardPage() {
     };
 
     return (
-        <div className="mx-auto w-full max-w-5xl space-y-6 p-6 md:p-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 p-6 md:p-8">
             <DashboardHeader
                 firstName={firstName}
                 email={user.email}
                 roleLabel={roleLabel}
                 reduce={reduce}
             />
+
+            <CommunityMapCard />
 
             {staff && <ModerationOverview now={now} />}
 

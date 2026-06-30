@@ -83,4 +83,19 @@ export class CreateServiceDto {
     @IsOptional()
     @IsObject()
     location?: { type: "Point"; coordinates: [number, number] };
+
+    @ApiProperty({
+        description: "Service direction: offer or request",
+        enum: ["offer", "request"],
+        example: "offer",
+    })
+    @IsIn(["offer", "request"])
+    direction: string;
+
+    @ApiPropertyOptional({
+        description: "Free-text address (geocoded to location)",
+    })
+    @IsString()
+    @IsOptional()
+    address?: string;
 }

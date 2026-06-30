@@ -32,6 +32,12 @@ export class Service {
 
     @Prop({ type: GeoPointSchema, required: false })
     location?: GeoPoint;
+
+    @Prop({ required: true, enum: ["offer", "request"], default: "offer" })
+    direction: string;
+
+    @Prop()
+    address?: string;
 }
 
 export const ServiceSchema = SchemaFactory.createForClass(Service);

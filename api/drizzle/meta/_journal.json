@@ -43,6 +43,13 @@
       "when": 1782739563723,
       "tag": "0005_user_address",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782850509311,
+      "tag": "0006_yellow_pete_wisdom",
+      "breakpoints": true
     }
   ]
 }

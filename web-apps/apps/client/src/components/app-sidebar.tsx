@@ -14,16 +14,13 @@ import {
 } from "@workspace/ui/components/sidebar";
 
 import { BrandLogo } from "@/components/brand-logo";
-import { clientNavItems } from "@/components/nav-items";
+import { clientNavGroups } from "@/components/nav-items";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { t } = useTranslation();
     const role = getCurrentUser()?.role ?? "resident";
-    const navItems = clientNavItems.filter(
-        (item) => !item.roles || item.roles.includes(role),
-    );
     const spaceLabel =
         role === "resident"
             ? t("pages.sidebar.residentSpace")
@@ -53,7 +50,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </SidebarMenu>
             </SidebarHeader>
             <SidebarContent>
-                <NavMain items={navItems} />
+                <NavMain groups={clientNavGroups} role={role} />
             </SidebarContent>
             <SidebarFooter>
                 <NavUser />

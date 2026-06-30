@@ -12,15 +12,20 @@ import {
 } from "../api/services.api";
 import type { Service } from "../types";
 
-export function useInfiniteServices(neighborhoodId?: string, limit = 20) {
+export function useInfiniteServices(
+    neighborhoodId?: string,
+    direction?: "offer" | "request",
+    limit = 20,
+) {
     return useInfiniteQuery({
-        queryKey: ["services", neighborhoodId ?? "all"],
+        queryKey: ["services", neighborhoodId ?? "all", direction ?? "all"],
         queryFn: ({ pageParam }: { pageParam: number }) =>
             fetchServices({
                 neighborhoodId:
                     neighborhoodId !== "all" ? neighborhoodId : undefined,
                 page: pageParam,
                 limit,
+                direction,
             }),
         getNextPageParam: (lastPage: Service[], allPages: Service[][]) =>
             lastPage.length === limit ? allPages.length + 1 : undefined,
