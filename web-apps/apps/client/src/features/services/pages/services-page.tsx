@@ -162,6 +162,18 @@ export function ServicesPage() {
                                         geometry={focusedNeighborhood.geometry}
                                         label={focusedNeighborhood.name}
                                     />
+                                    {myLocation?.lat != null &&
+                                        myLocation?.lng != null && (
+                                            <Marker
+                                                position={[
+                                                    myLocation.lat,
+                                                    myLocation.lng,
+                                                ]}
+                                                popup={t(
+                                                    "pages.account.homeMarker",
+                                                )}
+                                            />
+                                        )}
                                     <UserLocation
                                         fallbackCenter={centroidOf(
                                             focusedNeighborhood.geometry,
