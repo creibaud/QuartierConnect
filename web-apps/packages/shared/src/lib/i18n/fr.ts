@@ -461,6 +461,12 @@ export default {
             report: "Signaler",
             reportSuccess: "Incident signalé",
             reportError: "Impossible de signaler l'incident",
+            categoryLabel: "Catégorie *",
+            categories: {
+                neighborhood: "Problème de quartier",
+                reporting: "Signalement (modération)",
+                bug: "Bug technique",
+            },
         },
         incidentDetail: {
             title: "Incident",

@@ -457,6 +457,12 @@ export default {
             report: "Report",
             reportSuccess: "Incident reported",
             reportError: "Unable to report the incident",
+            categoryLabel: "Category *",
+            categories: {
+                neighborhood: "Neighborhood issue",
+                reporting: "Report (moderation)",
+                bug: "Technical bug",
+            },
         },
         incidentDetail: {
             title: "Incident",
