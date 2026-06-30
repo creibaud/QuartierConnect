@@ -253,9 +253,11 @@ async function seedContent(token: string): Promise<void> {
   }
 
   const services = [
-    { title: "Aide au jardinage le week-end", description: "Je propose mon aide pour désherber et tailler les haies le samedi matin.", category: "gardening", type: "exchange", neighborhoodId },
-    { title: "Cours de soutien scolaire", description: "Étudiant disponible pour aider collégiens et lycéens en maths.", category: "other", type: "paid", neighborhoodId },
-    { title: "Garde d'animaux", description: "Je garde vos animaux de compagnie pendant vos absences.", category: "childcare", type: "free", neighborhoodId },
+    { title: "Aide au jardinage le week-end", description: "Je propose mon aide pour désherber et tailler les haies le samedi matin.", category: "gardening", type: "exchange", direction: "offer", neighborhoodId },
+    { title: "Cours de soutien scolaire", description: "Étudiant disponible pour aider collégiens et lycéens en maths.", category: "other", type: "paid", direction: "offer", neighborhoodId },
+    { title: "Garde d'animaux", description: "Je garde vos animaux de compagnie pendant vos absences.", category: "childcare", type: "free", direction: "offer", neighborhoodId },
+    { title: "Recherche covoiturage pour le marché", description: "Je cherche un trajet partagé vers le marché le dimanche matin.", category: "transport", type: "free", direction: "request", neighborhoodId },
+    { title: "Cherche aide pour petit déménagement", description: "Besoin d'un coup de main pour déplacer quelques meubles ce mois-ci.", category: "handyman", type: "paid", direction: "request", neighborhoodId },
   ];
   for (const s of services) {
     await fetch(`${BASE_URL}/services`, { method: "POST", headers, body: JSON.stringify(s) });

@@ -88,8 +88,10 @@ status: ## Vérifier l'état des services Docker
 	@echo ""
 
 # ─── Développement ─────────────────────────────────────────────────────────────
-dev: ## Lancer API + client + admin en parallèle (hot reload)
+dev: ## Lancer bases Docker (mongo/postgres/neo4j) + API + client + admin (hot reload)
 	@echo "$(RUN) $(BOLD)Démarrage en mode développement...$(RESET)"
+	@echo "$(RUN) Bases de données Docker (mongo, postgres, neo4j)..."
+	@$(COMPOSE) up -d mongo postgres neo4j
 	@make -j3 dev-api dev-client dev-admin
 
 dev-api: ## Lancer l'API NestJS seule (port 5000, hot reload)
