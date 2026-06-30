@@ -69,6 +69,12 @@ export default {
             moderation: "Modération",
         },
     },
+    map: {
+        myPosition: "Ma position",
+        home: "Chez moi",
+        myNeighborhood: "Voir mon quartier",
+        youAreHere: "Vous êtes ici",
+    },
     roles: {
         resident: "Résident",
         moderator: "Modérateur",
@@ -181,8 +187,10 @@ export default {
                 "Scannez ce QR code avec Google Authenticator, Authy ou une app compatible TOTP",
             verificationCode: "Code de vérification",
             confirmAndLogin: "Confirmer et se connecter",
-            mfaStep1: "Scannez le QR code avec votre application d'authentification (Google Authenticator, Authy…)",
-            mfaStep2: "Saisissez le code à 6 chiffres affiché dans l'application",
+            mfaStep1:
+                "Scannez le QR code avec votre application d'authentification (Google Authenticator, Authy…)",
+            mfaStep2:
+                "Saisissez le code à 6 chiffres affiché dans l'application",
             secretLabel: "Clé manuelle (si scan impossible)",
             copySecret: "Copier",
             secretCopied: "Clé copiée !",
@@ -279,7 +287,8 @@ export default {
             noTransactions: "Aucune transaction pour le moment",
             openVotes: "Votes en cours",
             noOpenVotes: "Aucun vote en cours",
-            noOpenVotesHint: "Les votes du quartier apparaîtront ici dès qu'il y en aura.",
+            noOpenVotesHint:
+                "Les votes du quartier apparaîtront ici dès qu'il y en aura.",
             voted: "Voté",
             respond: "Répondre",
             voteParticipants_one: "{{count}} votant·e",
@@ -287,15 +296,23 @@ export default {
             voteEndsOn: "Clôt le {{date}}",
             upcomingEvents: "Prochains événements",
             noUpcomingEvents: "Aucun événement à venir",
-            noUpcomingEventsHint: "Les prochains rendez-vous du quartier s'afficheront ici.",
+            noUpcomingEventsHint:
+                "Les prochains rendez-vous du quartier s'afficheront ici.",
             recommendationsForYou: "Recommandations pour toi",
             noRecommendations: "Pas encore de recommandation",
-            noRecommendationsHint: "Participe et connecte-toi à tes voisins pour recevoir des suggestions.",
+            noRecommendationsHint:
+                "Participe et connecte-toi à tes voisins pour recevoir des suggestions.",
             neighborhoodServices: "Services du quartier",
             noServices: "Aucun service disponible",
-            noServicesHint: "Les services proposés près de chez toi apparaîtront ici.",
-            noTransactionsHint: "Participe à la vie du quartier pour gagner tes premiers points.",
-            recoType: { service: "Service", event: "Événement", neighbor: "Voisin" },
+            noServicesHint:
+                "Les services proposés près de chez toi apparaîtront ici.",
+            noTransactionsHint:
+                "Participe à la vie du quartier pour gagner tes premiers points.",
+            recoType: {
+                service: "Service",
+                event: "Événement",
+                neighbor: "Voisin",
+            },
             quickActions: "Actions rapides",
             moderation: {
                 title: "Espace modération",

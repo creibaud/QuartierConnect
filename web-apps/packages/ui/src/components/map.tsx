@@ -1,29 +1,46 @@
 "use client";
 
 import {
-    type ReactNode,
-    type Ref,
-    type RefObject,
     forwardRef,
+    useCallback,
     useEffect,
     useMemo,
     useRef,
+    useState,
+    type ReactNode,
+    type Ref,
+    type RefObject,
 } from "react";
+import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import {
-    MapContainer,
-    TileLayer,
     Marker as LeafletMarker,
+    MapContainer,
     Polygon,
     Popup,
+    TileLayer,
     useMap,
     useMapEvents,
 } from "react-leaflet";
-import L from "leaflet";
 import MarkerClusterGroup from "react-leaflet-markercluster";
+import {
+    Home01Icon,
+    Location01Icon,
+    Maximize01Icon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet-draw/dist/leaflet.draw.css";
+import { Button } from "@workspace/ui/components/button";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@workspace/ui/components/tooltip";
 import { cn } from "@workspace/ui/lib/utils";
 
 const OSM_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -49,7 +66,7 @@ export const Map = forwardRef<L.Map, MapProps>(function Map(
             center={center}
             zoom={zoom}
             className={cn(
-                "leaflet-container rounded-md border bg-card",
+                "leaflet-container bg-card rounded-md border",
                 className,
             )}
             ref={ref as Ref<L.Map>}
@@ -194,10 +211,7 @@ export function MarkerCluster({
     maxClusterRadius = 50,
 }: MarkerClusterProps) {
     return (
-        <MarkerClusterGroup
-            chunkedLoading
-            maxClusterRadius={maxClusterRadius}
-        >
+        <MarkerClusterGroup chunkedLoading maxClusterRadius={maxClusterRadius}>
             {children}
         </MarkerClusterGroup>
     );
@@ -295,4 +309,144 @@ export function useFitBounds(positions: LatLng[]): RefObject<L.Map | null> {
         ref.current.fitBounds(bounds, { padding: [40, 40] });
     }, [positions]);
     return ref;
+}
+
+interface MapControlsProps {
+    /** The user's home (address) point. Omit to hide the "home" button. */
+    home?: LatLng | null;
+    /** The user's neighborhood polygon. Omit to hide the "see neighborhood" button. */
+    fitGeometry?: GeoJSON.Polygon | null;
+}
+
+/**
+ * Overlay control buttons for any `<Map>`. Render it INSIDE a `<Map>` (it reads
+ * the Leaflet instance from context). Buttons (icon + tooltip): recenter on the
+ * live geolocation, on the home point, and fit to the neighborhood. The button
+ * row is portaled into the Leaflet container with event propagation disabled so
+ * clicks don't pan the map.
+ */
+export function MapControls({ home, fitGeometry }: MapControlsProps) {
+    const map = useMap();
+    const { t } = useTranslation();
+    const [live, setLive] = useState<LatLng | null>(null);
+    const [pending, setPending] = useState(false);
+
+    const fitPositions = useMemo<LatLng[]>(
+        () =>
+            fitGeometry
+                ? fitGeometry.coordinates[0].map(
+                      ([lng, lat]) => [lat, lng] as LatLng,
+                  )
+                : [],
+        [fitGeometry],
+    );
+
+    const locateMe = useCallback(() => {
+        if (!navigator.geolocation) return;
+        setPending(true);
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const point: LatLng = [
+                    pos.coords.latitude,
+                    pos.coords.longitude,
+                ];
+                setLive(point);
+                setPending(false);
+                map.flyTo(point, 16);
+            },
+            () => setPending(false),
+            { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 },
+        );
+    }, [map]);
+
+    const overlayRef = useCallback((node: HTMLDivElement | null) => {
+        if (!node) return;
+        L.DomEvent.disableClickPropagation(node);
+        L.DomEvent.disableScrollPropagation(node);
+    }, []);
+
+    const overlay = (
+        <TooltipProvider>
+            <div
+                ref={overlayRef}
+                className="absolute top-2 right-2 z-[1000] flex flex-col gap-1"
+            >
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            onClick={locateMe}
+                            disabled={pending}
+                            aria-label={t("map.myPosition")}
+                            className="bg-background/90 shadow-sm backdrop-blur-sm"
+                        >
+                            <HugeiconsIcon icon={Location01Icon} />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                        {t("map.myPosition")}
+                    </TooltipContent>
+                </Tooltip>
+
+                {home ? (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon-sm"
+                                onClick={() => map.flyTo(home, 16)}
+                                aria-label={t("map.home")}
+                                className="bg-background/90 shadow-sm backdrop-blur-sm"
+                            >
+                                <HugeiconsIcon icon={Home01Icon} />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="left">
+                            {t("map.home")}
+                        </TooltipContent>
+                    </Tooltip>
+                ) : null}
+
+                {fitPositions.length > 0 ? (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon-sm"
+                                onClick={() =>
+                                    map.fitBounds(fitPositions, {
+                                        padding: [40, 40],
+                                    })
+                                }
+                                aria-label={t("map.myNeighborhood")}
+                                className="bg-background/90 shadow-sm backdrop-blur-sm"
+                            >
+                                <HugeiconsIcon icon={Maximize01Icon} />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="left">
+                            {t("map.myNeighborhood")}
+                        </TooltipContent>
+                    </Tooltip>
+                ) : null}
+            </div>
+        </TooltipProvider>
+    );
+
+    return (
+        <>
+            {createPortal(overlay, map.getContainer())}
+            {live ? (
+                <Marker
+                    position={live}
+                    variant="service"
+                    popup={t("map.youAreHere")}
+                />
+            ) : null}
+        </>
+    );
 }
