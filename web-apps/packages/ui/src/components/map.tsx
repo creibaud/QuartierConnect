@@ -98,31 +98,31 @@ export const Map = forwardRef<MapRef, MapProps>(function Map(
 
 // ─── Marker ────────────────────────────────────────────────────────────────
 
-type MarkerVariant = "default" | "service" | "incident" | "event";
+type MarkerVariant =
+    | "serviceOffer"
+    | "serviceRequest"
+    | "event"
+    | "incident"
+    | "home"
+    | "service"
+    | "default";
 
-const VARIANT_COLORS: Record<MarkerVariant, string> = {
-    default: "#18181B",
-    service: "#16a34a",
+export const MARKER_COLORS: Record<MarkerVariant, string> = {
+    serviceOffer: "#16a34a",
+    serviceRequest: "#f59e0b",
+    event: "#2563eb",
     incident: "#dc2626",
-    event: "#16a34a",
+    home: "#7c3aed",
+    service: "#16a34a",
+    default: "#64748b",
 };
 
-function PinIcon({ color }: { color: string }) {
+function MarkerDot({ color }: { color: string }) {
     return (
-        <svg
-            viewBox="0 0 24 24"
-            width="28"
-            height="36"
-            xmlns="http://www.w3.org/2000/svg"
-        >
-            <path
-                d="M12 2 C 7 2 3 6 3 11 C 3 17 12 22 12 22 C 12 22 21 17 21 11 C 21 6 17 2 12 2 Z"
-                fill={color}
-                stroke="white"
-                strokeWidth="2"
-            />
-            <circle cx="12" cy="11" r="3" fill="white" />
-        </svg>
+        <div
+            className="size-3.5 rounded-full border-2 border-white shadow-md"
+            style={{ backgroundColor: color }}
+        />
     );
 }
 
@@ -133,16 +133,14 @@ interface MarkerProps {
     onClick?: () => void;
 }
 
-/**
- * Pin marker. `position` is [lat, lng]; swapped to [lng, lat] for MapLibre.
- */
+/** Dot marker. `position` is [lat, lng]; swapped to [lng, lat] for MapLibre. */
 export function Marker({
     position,
     variant = "default",
     popup,
     onClick,
 }: MarkerProps) {
-    const color = VARIANT_COLORS[variant];
+    const color = MARKER_COLORS[variant];
     return (
         <MapMarker
             longitude={position[1]}
@@ -150,10 +148,42 @@ export function Marker({
             onClick={onClick ? () => onClick() : undefined}
         >
             <MarkerContent>
-                <PinIcon color={color} />
+                <MarkerDot color={color} />
             </MarkerContent>
             {popup && <MarkerPopup>{popup}</MarkerPopup>}
         </MapMarker>
+    );
+}
+
+// ─── MapLegend ───────────────────────────────────────────────────────────────
+
+interface MapLegendEntry {
+    variant: MarkerVariant;
+    label: string;
+}
+
+/** Overlay key explaining marker colors. Renders null when empty. */
+export function MapLegend({ entries }: { entries: MapLegendEntry[] }) {
+    if (entries.length === 0) return null;
+    return (
+        <div className="bg-background/90 text-foreground absolute bottom-3 left-3 z-10 rounded-md border p-2 text-xs shadow-sm backdrop-blur">
+            <ul className="space-y-1">
+                {entries.map((entry) => (
+                    <li
+                        key={entry.variant}
+                        className="flex items-center gap-2"
+                    >
+                        <span
+                            className="size-2.5 rounded-full border border-white"
+                            style={{
+                                backgroundColor: MARKER_COLORS[entry.variant],
+                            }}
+                        />
+                        {entry.label}
+                    </li>
+                ))}
+            </ul>
+        </div>
     );
 }
 
