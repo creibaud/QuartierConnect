@@ -470,6 +470,7 @@ export default {
             titlePlaceholder: "E.g. Broken streetlight on Rue de la Paix",
             descriptionPlaceholder: "Describe the incident in detail…",
             locationPick: "Location — click on the map",
+            addressLabel: "Address",
             sending: "Sending…",
             report: "Report",
             reportSuccess: "Incident reported",

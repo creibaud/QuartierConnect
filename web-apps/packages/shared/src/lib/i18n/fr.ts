@@ -475,6 +475,7 @@ export default {
             titlePlaceholder: "Ex : Lampadaire cassé rue de la Paix",
             descriptionPlaceholder: "Décrivez l'incident en détail…",
             locationPick: "Lieu — cliquez sur la carte",
+            addressLabel: "Adresse",
             sending: "Envoi…",
             report: "Signaler",
             reportSuccess: "Incident signalé",
