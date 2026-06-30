@@ -68,7 +68,7 @@ export function ServiceCard({
     return (
         <Card>
             <CardHeader>
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex flex-wrap items-start justify-between gap-2">
                     <CardTitle className="text-base">{service.title}</CardTitle>
                     <div className="flex shrink-0 items-center gap-1">
                         <Badge
@@ -80,7 +80,9 @@ export function ServiceCard({
                         >
                             {directionLabel}
                         </Badge>
-                        <Badge variant="outline">{service.category}</Badge>
+                        <Badge variant="outline">
+                            {t(`pages.services.categories.${service.category}`)}
+                        </Badge>
                         <Badge variant="outline">
                             {t(`pages.services.types.${service.type}`)}
                         </Badge>
@@ -96,7 +98,7 @@ export function ServiceCard({
                         {service.description}
                     </p>
                 )}
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                     <ServiceVoteButtons serviceId={service._id} />
                     <div className="flex items-center gap-2">
                         <span className="text-muted-foreground text-xs">

@@ -100,7 +100,7 @@ function MyAdsTab() {
                 {services.map((service) => (
                     <Card key={service._id}>
                         <CardHeader>
-                            <div className="flex items-start justify-between gap-2">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
                                 <CardTitle className="text-base">
                                     {service.title}
                                 </CardTitle>
@@ -119,7 +119,9 @@ function MyAdsTab() {
                                               )}
                                     </Badge>
                                     <Badge variant="outline">
-                                        {service.category}
+                                        {t(
+                                            `pages.services.categories.${service.category}`,
+                                        )}
                                     </Badge>
                                 </div>
                             </div>
@@ -190,7 +192,7 @@ function MyResponsesTab() {
                 {services.map((service) => (
                     <Card key={service._id}>
                         <CardHeader>
-                            <div className="flex items-start justify-between gap-2">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
                                 <CardTitle className="text-base">
                                     {service.title}
                                 </CardTitle>
@@ -209,7 +211,9 @@ function MyResponsesTab() {
                                               )}
                                     </Badge>
                                     <Badge variant="outline">
-                                        {service.category}
+                                        {t(
+                                            `pages.services.categories.${service.category}`,
+                                        )}
                                     </Badge>
                                 </div>
                             </div>
