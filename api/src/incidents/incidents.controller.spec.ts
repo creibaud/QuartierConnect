@@ -12,7 +12,11 @@ const mockIncident = {
     deletedAt: null,
 };
 
-const authReq = (sub = "user-uuid-1") => ({ user: { sub, role: "resident" } });
+const authReq = (
+    sub = "user-uuid-1",
+    role = "resident",
+    neighborhoodId: string | null = "n1",
+) => ({ user: { sub, role, neighborhoodId } });
 
 function buildMockDb(defaultRows = [mockIncident]) {
     const mock: any = {};
@@ -68,13 +72,34 @@ describe("IncidentsController", () => {
         controller = module.get<IncidentsController>(IncidentsController);
     });
 
-    it("GET /incidents returns list without filter", async () => {
-        await controller.findAll();
+    it("GET /incidents returns list without filter (resident, scoped)", async () => {
+        await controller.findAll(undefined, "1", "20", authReq() as any);
         expect(mockDb.select).toHaveBeenCalled();
     });
 
     it("GET /incidents?status=open filters by status", async () => {
-        await controller.findAll("open");
+        await controller.findAll("open", "1", "20", authReq() as any);
+        expect(mockDb.select).toHaveBeenCalled();
+    });
+
+    it("GET /incidents returns [] for a resident with no neighborhood", async () => {
+        const result = await controller.findAll(
+            undefined,
+            "1",
+            "20",
+            authReq("u", "resident", null) as any,
+        );
+        expect(result).toEqual([]);
+        expect(mockDb.select).not.toHaveBeenCalled();
+    });
+
+    it("GET /incidents lets staff query across all neighborhoods", async () => {
+        await controller.findAll(
+            undefined,
+            "1",
+            "20",
+            authReq("admin1", "moderator", null) as any,
+        );
         expect(mockDb.select).toHaveBeenCalled();
     });
 
