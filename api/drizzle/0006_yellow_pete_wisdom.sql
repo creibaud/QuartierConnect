@@ -1,0 +1,1 @@
+ALTER TABLE "incidents" ADD COLUMN "category" varchar(50) DEFAULT 'neighborhood' NOT NULL;

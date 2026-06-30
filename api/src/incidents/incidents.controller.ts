@@ -166,6 +166,7 @@ export class IncidentsController {
                 lng: dto.lng,
                 createdBy: req.user.sub,
                 status: "open",
+                category: dto.category ?? "neighborhood",
             })
             .returning();
     }

@@ -108,6 +108,26 @@ describe("IncidentsController", () => {
         );
     });
 
+    it("POST /incidents persists the category", async () => {
+        await controller.create(
+            { title: "T", description: "D", category: "neighborhood" } as any,
+            authReq() as any,
+        );
+        expect(mockDb.values).toHaveBeenCalledWith(
+            expect.objectContaining({ category: "neighborhood" }),
+        );
+    });
+
+    it("POST /incidents defaults category to neighborhood", async () => {
+        await controller.create(
+            { title: "T", description: "D" } as any,
+            authReq() as any,
+        );
+        expect(mockDb.values).toHaveBeenCalledWith(
+            expect.objectContaining({ category: "neighborhood" }),
+        );
+    });
+
     it("PATCH /incidents/:id/status transitions open → in_progress", async () => {
         const result = await controller.updateStatus("inc-uuid-1", {
             status: "in_progress",
