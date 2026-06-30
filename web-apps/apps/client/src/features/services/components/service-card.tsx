@@ -66,7 +66,7 @@ export function ServiceCard({
     const responderText = formatResponderCount(service.responderCount ?? 0, t);
 
     return (
-        <Card>
+        <Card className="flex h-full flex-col">
             <CardHeader>
                 <div className="flex flex-wrap items-start justify-between gap-2">
                     <CardTitle className="text-base">{service.title}</CardTitle>
@@ -92,13 +92,13 @@ export function ServiceCard({
                     <CardDescription>{service.address}</CardDescription>
                 )}
             </CardHeader>
-            <CardContent className="flex flex-col gap-3">
+            <CardContent className="flex flex-1 flex-col gap-3">
                 {service.description && (
                     <p className="text-muted-foreground line-clamp-2 text-sm">
                         {service.description}
                     </p>
                 )}
-                <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
                     <ServiceVoteButtons serviceId={service._id} />
                     <div className="flex items-center gap-2">
                         <span className="text-muted-foreground text-xs">
