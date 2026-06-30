@@ -8,6 +8,7 @@ export interface Incident {
     title: string;
     description: string | null;
     status: "open" | "in_progress" | "resolved";
+    category: "neighborhood" | "reporting" | "bug";
     neighborhoodId: string | null;
     lat: number | null;
     lng: number | null;

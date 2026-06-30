@@ -330,6 +330,18 @@ export default {
                 upcomingEvents: "Événements à venir",
                 services: "Services",
             },
+            communityMap: {
+                title: "Carte du quartier",
+                description:
+                    "Services, événements et incidents autour de chez vous.",
+                legend: {
+                    serviceOffer: "Service — offre",
+                    serviceRequest: "Service — demande",
+                    event: "Événement",
+                    incident: "Incident de quartier",
+                    home: "Mon domicile",
+                },
+            },
         },
         points: {
             title: "Points",
