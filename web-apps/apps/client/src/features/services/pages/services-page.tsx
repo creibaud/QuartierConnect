@@ -305,6 +305,9 @@ function ServiceFormDialog({
 }) {
     const { t } = useTranslation();
     const [title, setTitle] = useState(initial?.title ?? "");
+    const [direction, setDirection] = useState<"offer" | "request">(
+        (initial?.direction as "offer" | "request") ?? "offer",
+    );
     const [category, setCategory] = useState(initial?.category ?? "");
     const [type, setType] = useState<"free" | "paid" | "exchange">(
         (initial?.type as "free" | "paid" | "exchange") ?? "free",
@@ -315,16 +318,18 @@ function ServiceFormDialog({
     const updateService = useUpdateService();
 
     const isPending = createService.isPending || updateService.isPending;
-    const isValid = title.trim() !== "" && category !== "";
+    const isValid =
+        title.trim() !== "" && category !== "" && description.trim() !== "";
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (!isValid) return;
         const payload = {
             title: title.trim(),
+            direction,
             category,
             type,
-            description: description.trim() || undefined,
+            description: description.trim(),
             address: address.trim() || undefined,
         };
         if (initial) {
@@ -372,6 +377,27 @@ function ServiceFormDialog({
                             maxLength={255}
                             required
                         />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>{t("pages.services.directionLabel")}</Label>
+                        <Select
+                            value={direction}
+                            onValueChange={(v) =>
+                                setDirection(v as "offer" | "request")
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="offer">
+                                    {t("pages.services.directionOffer")}
+                                </SelectItem>
+                                <SelectItem value="request">
+                                    {t("pages.services.directionRequest")}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -442,6 +468,7 @@ function ServiceFormDialog({
                                 "pages.services.descriptionPlaceholder",
                             )}
                             rows={3}
+                            required
                         />
                     </div>
                     <div className="flex justify-end gap-2">
