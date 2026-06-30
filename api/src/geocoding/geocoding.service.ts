@@ -41,7 +41,7 @@ export class GeocodingService {
         query: string,
     ): Promise<Array<{ label: string; lat: number; lng: number }>> {
         await this.throttle();
-        const url = `${ENDPOINT}?format=jsonv2&limit=5&q=${encodeURIComponent(query)}`;
+        const url = `${ENDPOINT}?format=jsonv2&limit=8&q=${encodeURIComponent(query)}`;
         try {
             const res = await fetch(url, {
                 headers: { "User-Agent": USER_AGENT },
