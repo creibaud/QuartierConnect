@@ -1,0 +1,42 @@
+FROM node:22-alpine AS build
+
+WORKDIR /app
+
+RUN apk add --no-cache python3 py3-pip \
+ && npm install -g pnpm@9
+
+COPY api/package.json api/pnpm-lock.yaml* ./
+RUN pnpm install --frozen-lockfile
+
+COPY api/ .
+COPY dsl/ ./dsl/
+
+RUN pip3 install --break-system-packages "ply>=3.11"
+RUN pnpm run build
+RUN pnpm prune --prod
+
+FROM node:22-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache python3 py3-pip wget curl \
+ && pip3 install --break-system-packages "ply>=3.11" \
+ && addgroup -S appgroup \
+ && adduser -S appuser -G appgroup
+
+COPY --from=build --chown=appuser:appgroup /app/dist        ./dist
+COPY --from=build --chown=appuser:appgroup /app/node_modules ./node_modules
+COPY --from=build --chown=appuser:appgroup /app/dsl         ./dsl
+COPY --from=build --chown=appuser:appgroup /app/package.json ./
+
+ENV NODE_ENV=production
+ENV PYTHONPATH=/app
+ENV PORT=5000
+
+USER appuser
+EXPOSE 5000
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1
+
+CMD ["node", "dist/main"]

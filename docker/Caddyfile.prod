@@ -1,0 +1,61 @@
+{
+    email {$ACME_EMAIL:admin@quartierconnect.fr}
+    admin off
+    log {
+        format json
+        level INFO
+        output file /var/log/caddy/access.log {
+            roll_size 100mb
+            roll_keep 10
+            roll_keep_for 720h
+        }
+    }
+}
+
+(security_headers) {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options    "nosniff"
+        Referrer-Policy           "strict-origin-when-cross-origin"
+        Permissions-Policy        "geolocation=(), camera=(), microphone=(), payment=()"
+        -Server
+    }
+}
+
+{$DOMAIN:quartierconnect.fr} {
+    import security_headers
+    encode gzip zstd
+
+    handle /api/* {
+        header Content-Security-Policy "default-src 'self'; connect-src 'self' wss://{$DOMAIN:quartierconnect.fr}; img-src 'self' data: https://*.tile.openstreetmap.org; frame-ancestors 'none'"
+        uri strip_prefix /api
+        reverse_proxy api:5000 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    handle /docs* {
+        header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https:; connect-src 'self' https://api.scalar.com; worker-src blob:; frame-ancestors 'none'"
+        reverse_proxy api:5000
+    }
+
+    handle /scalar* {
+        reverse_proxy api:5000
+    }
+
+    handle /admin* {
+        header Content-Security-Policy "default-src 'self'; connect-src 'self' wss://{$DOMAIN:quartierconnect.fr}; frame-ancestors 'none'"
+        reverse_proxy admin:3001
+    }
+
+    handle {
+        header Content-Security-Policy "default-src 'self'; connect-src 'self' wss://{$DOMAIN:quartierconnect.fr}; img-src 'self' data: https://*.tile.openstreetmap.org; frame-ancestors 'none'"
+        reverse_proxy client:3000
+    }
+}
+
+# Redirection www → apex
+www.{$DOMAIN:quartierconnect.fr} {
+    redir https://{$DOMAIN:quartierconnect.fr}{uri} permanent
+}
