@@ -42,7 +42,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 const VALID_STATUSES = ["open", "in_progress", "resolved"] as const;
 
 interface AuthRequest {
-    user: { sub: string; role: string };
+    user: { sub: string; role: string; neighborhoodId?: string | null };
 }
 
 @ApiTags("Incidents")
@@ -90,12 +90,29 @@ export class IncidentsController {
         @Query("status") status?: string,
         @Query("page") page = "1",
         @Query("limit") limit = "20",
+        // Default required by TS1016 (a required param can't follow optional
+        // @Query params); the neighborhood guard below rejects an empty role.
+        @Request() req: AuthRequest = { user: { sub: "", role: "" } },
     ) {
         const pageNum = Math.max(1, parseInt(page) || 1);
         const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
         const skip = (pageNum - 1) * limitNum;
 
+        // Admin/moderator moderate across all neighborhoods; residents see
+        // only their own quartier's incidents.
+        const isStaff =
+            req.user.role === "admin" || req.user.role === "moderator";
+        if (!isStaff && !req.user.neighborhoodId) return [];
+
         const conditions = [isNull(schema.incidents.deletedAt)];
+        if (!isStaff) {
+            conditions.push(
+                eq(
+                    schema.incidents.neighborhoodId,
+                    req.user.neighborhoodId as string,
+                ),
+            );
+        }
         if (status) {
             if (
                 !VALID_STATUSES.includes(
@@ -161,7 +178,8 @@ export class IncidentsController {
             .values({
                 title: dto.title,
                 description: dto.description,
-                neighborhoodId: dto.neighborhoodId,
+                neighborhoodId:
+                    dto.neighborhoodId ?? req.user.neighborhoodId ?? null,
                 lat: dto.lat,
                 lng: dto.lng,
                 createdBy: req.user.sub,

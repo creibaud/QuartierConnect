@@ -223,16 +223,75 @@ async function seedNeighborhoods(token: string): Promise<void> {
   console.log(`  ✓ ${created} quartier(s) Paris créé(s)`);
 }
 
-async function seedContent(token: string): Promise<void> {
+interface DemoNeighborhood {
+  id: string;
+  lng: number;
+  lat: number;
+}
+
+/** Centroid of a GeoJSON Polygon/MultiPolygon: mean of all its positions. */
+function centroidOf(geometry: { coordinates: unknown }): [number, number] {
+  const positions: number[][] = [];
+  const collect = (node: unknown): void => {
+    if (
+      Array.isArray(node) &&
+      typeof node[0] === "number" &&
+      typeof node[1] === "number"
+    ) {
+      positions.push(node as number[]);
+      return;
+    }
+    if (Array.isArray(node)) node.forEach(collect);
+  };
+  collect(geometry.coordinates);
+  const lng = positions.reduce((s, p) => s + p[0], 0) / positions.length;
+  const lat = positions.reduce((s, p) => s + p[1], 0) / positions.length;
+  return [lng, lat];
+}
+
+/** The demo neighborhood (first one) + its centroid, used to place all
+ *  located demo content inside a single coherent quartier. */
+async function getDemoNeighborhood(
+  token: string,
+): Promise<DemoNeighborhood | null> {
+  const res = await fetch(`${BASE_URL}/neighborhoods`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const nbhs = (res.ok ? await res.json() : []) as Array<{
+    _id: string;
+    geometry?: { coordinates: unknown };
+  }>;
+  const n = nbhs[0];
+  if (!n?.geometry) return null;
+  const [lng, lat] = centroidOf(n.geometry);
+  return { id: n._id, lng, lat };
+}
+
+// Deterministic offsets (~150-350 m around the centroid) so markers spread out.
+const SPREAD: Array<[number, number]> = [
+  [0.003, 0.002],
+  [-0.004, 0.001],
+  [0.002, -0.003],
+  [-0.002, -0.002],
+  [0.004, 0.003],
+  [-0.003, 0.004],
+  [0.001, 0.003],
+  [-0.001, -0.004],
+];
+
+async function seedContent(
+  token: string,
+  nbh: DemoNeighborhood,
+): Promise<void> {
   const headers = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
   };
-  const nbhRes = await fetch(`${BASE_URL}/neighborhoods`, {
-    headers: { Authorization: `Bearer ${token}` },
+  const neighborhoodId = nbh.id;
+  const at = (i: number): { type: "Point"; coordinates: [number, number] } => ({
+    type: "Point",
+    coordinates: [nbh.lng + SPREAD[i % SPREAD.length][0], nbh.lat + SPREAD[i % SPREAD.length][1]],
   });
-  const nbhs = (nbhRes.ok ? await nbhRes.json() : []) as Array<{ _id: string }>;
-  const neighborhoodId = nbhs[0]?._id;
 
   const evRes = await fetch(`${BASE_URL}/events`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -244,23 +303,35 @@ async function seedContent(token: string): Promise<void> {
     new Date(Date.now() + d * 86400000).toISOString();
 
   const events = [
-    { title: "Vide-grenier du quartier", description: "Grand vide-grenier annuel, de 9h à 18h sur la place du marché.", category: "community", date: inDays(6), neighborhoodId },
-    { title: "Concert en plein air", description: "Soirée musicale avec les artistes du quartier.", category: "culture", date: inDays(12), neighborhoodId },
-    { title: "Tournoi de pétanque", description: "Inscriptions sur place, ouvert à tous les habitants.", category: "sport", date: inDays(20), neighborhoodId },
+    { title: "Vide-grenier du quartier", description: "Grand vide-grenier annuel, de 9h à 18h sur la place du marché.", category: "community", date: inDays(6), neighborhoodId, location: at(0) },
+    { title: "Concert en plein air", description: "Soirée musicale avec les artistes du quartier.", category: "culture", date: inDays(12), neighborhoodId, location: at(1) },
+    { title: "Tournoi de pétanque", description: "Inscriptions sur place, ouvert à tous les habitants.", category: "sport", date: inDays(20), neighborhoodId, location: at(2) },
   ];
   for (const e of events) {
     await fetch(`${BASE_URL}/events`, { method: "POST", headers, body: JSON.stringify(e) });
   }
 
   const services = [
-    { title: "Aide au jardinage le week-end", description: "Je propose mon aide pour désherber et tailler les haies le samedi matin.", category: "gardening", type: "exchange", direction: "offer", neighborhoodId },
-    { title: "Cours de soutien scolaire", description: "Étudiant disponible pour aider collégiens et lycéens en maths.", category: "other", type: "paid", direction: "offer", neighborhoodId },
-    { title: "Garde d'animaux", description: "Je garde vos animaux de compagnie pendant vos absences.", category: "childcare", type: "free", direction: "offer", neighborhoodId },
-    { title: "Recherche covoiturage pour le marché", description: "Je cherche un trajet partagé vers le marché le dimanche matin.", category: "transport", type: "free", direction: "request", neighborhoodId },
-    { title: "Cherche aide pour petit déménagement", description: "Besoin d'un coup de main pour déplacer quelques meubles ce mois-ci.", category: "handyman", type: "paid", direction: "request", neighborhoodId },
+    { title: "Aide au jardinage le week-end", description: "Je propose mon aide pour désherber et tailler les haies le samedi matin.", category: "gardening", type: "exchange", direction: "offer", neighborhoodId, location: at(0) },
+    { title: "Cours de soutien scolaire", description: "Étudiant disponible pour aider collégiens et lycéens en maths.", category: "other", type: "paid", direction: "offer", neighborhoodId, location: at(1) },
+    { title: "Garde d'animaux", description: "Je garde vos animaux de compagnie pendant vos absences.", category: "childcare", type: "free", direction: "offer", neighborhoodId, location: at(2) },
+    { title: "Recherche covoiturage pour le marché", description: "Je cherche un trajet partagé vers le marché le dimanche matin.", category: "transport", type: "free", direction: "request", neighborhoodId, location: at(3) },
+    { title: "Cherche aide pour petit déménagement", description: "Besoin d'un coup de main pour déplacer quelques meubles ce mois-ci.", category: "handyman", type: "paid", direction: "request", neighborhoodId, location: at(4) },
   ];
   for (const s of services) {
     await fetch(`${BASE_URL}/services`, { method: "POST", headers, body: JSON.stringify(s) });
+  }
+
+  const incidents = [
+    { title: "Lampadaire cassé rue de la Paix", description: "Le lampadaire est tombé et bloque en partie le trottoir.", category: "neighborhood", neighborhoodId, lat: nbh.lat + SPREAD[0][1], lng: nbh.lng + SPREAD[0][0] },
+    { title: "Dépôt sauvage de déchets", description: "Encombrants abandonnés depuis plusieurs jours au coin de la rue.", category: "neighborhood", neighborhoodId, lat: nbh.lat + SPREAD[1][1], lng: nbh.lng + SPREAD[1][0] },
+    { title: "Nid-de-poule dangereux", description: "Trou important sur la chaussée, risque pour les cyclistes.", category: "neighborhood", neighborhoodId, lat: nbh.lat + SPREAD[2][1], lng: nbh.lng + SPREAD[2][0] },
+    { title: "Tag sur le mur de l'école", description: "Graffiti à nettoyer sur la façade de l'école primaire.", category: "neighborhood", neighborhoodId, lat: nbh.lat + SPREAD[3][1], lng: nbh.lng + SPREAD[3][0] },
+    { title: "Bug : la page Votes ne charge pas", description: "Signalement technique de l'application (interne modération).", category: "bug", neighborhoodId },
+    { title: "Signalement : contenu inapproprié", description: "Un message à modérer dans la messagerie.", category: "reporting", neighborhoodId },
+  ];
+  for (const i of incidents) {
+    await fetch(`${BASE_URL}/incidents`, { method: "POST", headers, body: JSON.stringify(i) });
   }
 
   await fetch(`${BASE_URL}/community-votes`, {
@@ -282,26 +353,19 @@ async function seedContent(token: string): Promise<void> {
 /** Assign an address + neighborhood to the non-admin demo residents so they
  *  pass the address gate (admins are gate-exempt). Without this, alice/bob are
  *  redirected to /onboarding/address and the client E2E suite can't reach the app. */
-async function assignNeighborhoodToResidents(token: string): Promise<void> {
-  const res = await fetch(`${BASE_URL}/neighborhoods`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const nbhs = (res.ok ? await res.json() : []) as Array<{ _id: string }>;
-  const neighborhoodId = nbhs[0]?._id;
-  if (!neighborhoodId) {
-    process.stdout.write(
-      "  ! no neighborhood available — residents not assigned\n",
-    );
-    return;
-  }
+async function assignNeighborhoodToResidents(
+  nbh: DemoNeighborhood,
+): Promise<void> {
+  // Home sits at the neighborhood centroid so the "home" marker is always
+  // inside the polygon and the maps centre coherently.
   for (const { email, role } of ACCOUNTS) {
     if (role === "admin") continue;
     try {
       pgQuery(
-        `UPDATE users SET address='1 rue de la Demo, 75001 Paris', address_lat=48.8566, address_lng=2.3522, neighborhood_id='${neighborhoodId}' WHERE email='${email}'`,
+        `UPDATE users SET address='Centre du quartier, Paris', address_lat=${nbh.lat}, address_lng=${nbh.lng}, neighborhood_id='${nbh.id}' WHERE email='${email}'`,
       );
       process.stdout.write(
-        `  → ${email} assigned to neighborhood ${neighborhoodId}\n`,
+        `  → ${email} assigned to neighborhood ${nbh.id}\n`,
       );
     } catch {
       process.stdout.write(`  ! could not assign neighborhood for ${email}\n`);
@@ -322,8 +386,13 @@ async function main(): Promise<void> {
   const adminToken = await loginAdmin();
   if (adminToken) {
     await seedNeighborhoods(adminToken);
-    await assignNeighborhoodToResidents(adminToken);
-    await seedContent(adminToken);
+    const nbh = await getDemoNeighborhood(adminToken);
+    if (nbh) {
+      await assignNeighborhoodToResidents(nbh);
+      await seedContent(adminToken, nbh);
+    } else {
+      process.stdout.write("  ! no neighborhood with geometry — content skipped\n");
+    }
   } else {
     console.warn("  ! admin login failed — skipping neighborhood seed");
   }
