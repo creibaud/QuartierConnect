@@ -36,6 +36,13 @@ import {
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@workspace/ui/components/select";
+import {
     Map,
     MapClickHandler,
     MapControls,
@@ -269,6 +276,7 @@ function CreateIncidentDialog({
     const { t } = useTranslation();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
+    const [category, setCategory] = useState("neighborhood");
     const [pickedLat, setPickedLat] = useState<number | null>(null);
     const [pickedLng, setPickedLng] = useState<number | null>(null);
     const createIncident = useCreateIncident();
@@ -283,6 +291,7 @@ function CreateIncidentDialog({
             {
                 title: title.trim(),
                 description: description.trim() || undefined,
+                category,
                 lat: pickedLat ?? undefined,
                 lng: pickedLng ?? undefined,
             },
@@ -291,6 +300,7 @@ function CreateIncidentDialog({
                     toast.success(t("pages.incidents.reportSuccess"));
                     setTitle("");
                     setDescription("");
+                    setCategory("neighborhood");
                     setPickedLat(null);
                     setPickedLng(null);
                     onSuccess();
@@ -334,6 +344,29 @@ function CreateIncidentDialog({
                             )}
                             rows={3}
                         />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>{t("pages.incidents.categoryLabel")}</Label>
+                        <Select value={category} onValueChange={setCategory}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {(
+                                    [
+                                        "neighborhood",
+                                        "reporting",
+                                        "bug",
+                                    ] as const
+                                ).map((c) => (
+                                    <SelectItem key={c} value={c}>
+                                        {t(
+                                            `pages.incidents.categories.${c}`,
+                                        )}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                     {firstNeighborhood?.geometry && (
                         <div className="space-y-2">
