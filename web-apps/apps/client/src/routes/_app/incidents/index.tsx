@@ -3,7 +3,8 @@ import { Alert01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { centroidOf } from "@workspace/shared/lib/geo";
+import { centroidOf, pointInPolygon } from "@workspace/shared/lib/geo";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
 import {
     useCreateIncident,
     useInfiniteIncidents,
@@ -281,6 +282,7 @@ function CreateIncidentDialog({
     >("neighborhood");
     const [pickedLat, setPickedLat] = useState<number | null>(null);
     const [pickedLng, setPickedLng] = useState<number | null>(null);
+    const [address, setAddress] = useState("");
     const createIncident = useCreateIncident();
     const { data: neighborhoods } = useNeighborhoods();
     const { data: myLocation } = useMyLocation();
@@ -305,6 +307,7 @@ function CreateIncidentDialog({
                     setCategory("neighborhood");
                     setPickedLat(null);
                     setPickedLng(null);
+                    setAddress("");
                     onSuccess();
                 },
                 onError: () =>
@@ -376,6 +379,21 @@ function CreateIncidentDialog({
                                 ))}
                             </SelectContent>
                         </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="incident-address">{t("address.searchPlaceholder")}</Label>
+                        <AddressAutocomplete
+                            id="incident-address"
+                            value={address}
+                            onChange={setAddress}
+                            onSelect={(s) => { setAddress(s.label); setPickedLat(s.lat); setPickedLng(s.lng); }}
+                        />
+                        {pickedLat != null && pickedLng != null && myLocation?.neighborhood?.geometry &&
+                            !pointInPolygon(pickedLat, pickedLng, myLocation.neighborhood.geometry) && (
+                                <p className="text-amber-600 dark:text-amber-500 text-xs">
+                                    {t("address.outsideQuartier")}
+                                </p>
+                            )}
                     </div>
                     {firstNeighborhood?.geometry && (
                         <div className="space-y-2">
