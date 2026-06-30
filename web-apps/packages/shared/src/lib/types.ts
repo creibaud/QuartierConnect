@@ -36,6 +36,13 @@ export interface Neighborhood {
     geometry?: GeoJsonPolygon;
 }
 
+export interface ServiceResponder {
+    userId: string;
+    firstName: string | null;
+    avatarUrl: string | null;
+    createdAt: string;
+}
+
 export interface Service {
     _id: string;
     title: string;
@@ -50,6 +57,7 @@ export interface Service {
     direction: "offer" | "request";
     responderCount?: number;
     hasResponded?: boolean;
+    responders?: ServiceResponder[];
 }
 
 export interface Event {

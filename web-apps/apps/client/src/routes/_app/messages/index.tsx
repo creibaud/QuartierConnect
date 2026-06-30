@@ -51,6 +51,12 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/messages/")({
     component: MessagesPage,
+    validateSearch: (search: Record<string, unknown>): { conversation?: string } => ({
+        conversation:
+            typeof search.conversation === "string"
+                ? search.conversation
+                : undefined,
+    }),
 });
 
 function conversationLabel(
@@ -496,9 +502,10 @@ function NewConversationDialog({
 function MessagesPage() {
     const { t } = useTranslation();
     const user = getCurrentUser();
+    const { conversation } = Route.useSearch();
     const [activeConversationId, setActiveConversationId] = useState<
         string | null
-    >(null);
+    >(conversation ?? null);
     const [sheetOpen, setSheetOpen] = useState(false);
     const [newConvOpen, setNewConvOpen] = useState(false);
 
