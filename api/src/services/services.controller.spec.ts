@@ -266,7 +266,21 @@ describe("ServicesController", () => {
         expect(calledFilter).not.toHaveProperty("neighborhoodId");
     });
 
-    it("GET /services moderator with no neighborhoodId sees all services (no scope)", async () => {
+    it("GET /services scopes a moderator to their own neighborhood", async () => {
+        const req = { user: { sub: "mod1", role: "moderator", neighborhoodId: "n9" } };
+        await controller.findAll(
+            undefined,
+            undefined,
+            undefined,
+            "1",
+            "20",
+            req as any,
+        );
+        const calledFilter = model.find.mock.calls[0][0];
+        expect(calledFilter).toMatchObject({ neighborhoodId: "n9" });
+    });
+
+    it("GET /services returns [] for a moderator with no neighborhood", async () => {
         const req = { user: { sub: "mod1", role: "moderator" } };
         const result = await controller.findAll(
             undefined,
@@ -276,9 +290,7 @@ describe("ServicesController", () => {
             "20",
             req as any,
         );
-        expect(result).not.toEqual([]);
-        const calledFilter = model.find.mock.calls[0][0];
-        expect(calledFilter).not.toHaveProperty("neighborhoodId");
+        expect(result).toEqual([]);
     });
 
     it("GET /services/:id throws 404 when not found", async () => {

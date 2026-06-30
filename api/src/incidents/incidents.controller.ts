@@ -98,14 +98,13 @@ export class IncidentsController {
         const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
         const skip = (pageNum - 1) * limitNum;
 
-        // Admin/moderator moderate across all neighborhoods; residents see
-        // only their own quartier's incidents.
-        const isStaff =
-            req.user.role === "admin" || req.user.role === "moderator";
-        if (!isStaff && !req.user.neighborhoodId) return [];
+        // Only admins moderate across all neighborhoods; residents AND
+        // moderators see only their own quartier's incidents.
+        const isAdmin = req.user.role === "admin";
+        if (!isAdmin && !req.user.neighborhoodId) return [];
 
         const conditions = [isNull(schema.incidents.deletedAt)];
-        if (!isStaff) {
+        if (!isAdmin) {
             conditions.push(
                 eq(
                     schema.incidents.neighborhoodId,
