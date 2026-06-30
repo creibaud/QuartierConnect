@@ -35,6 +35,9 @@ export class Service {
 
     @Prop({ required: true, enum: ["offer", "request"], default: "offer" })
     direction: string;
+
+    @Prop()
+    address?: string;
 }
 
 export const ServiceSchema = SchemaFactory.createForClass(Service);

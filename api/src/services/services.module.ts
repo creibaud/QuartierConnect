@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { AuthModule } from "../auth/auth.module";
+import { GeocodingModule } from "../geocoding/geocoding.module";
 import { SocialModule } from "../social/social.module";
 import {
     ServiceResponse,
@@ -16,6 +17,7 @@ import { ServicesController } from "./services.controller";
             { name: ServiceResponse.name, schema: ServiceResponseSchema },
         ]),
         AuthModule,
+        GeocodingModule,
         SocialModule,
     ],
     controllers: [ServicesController],
