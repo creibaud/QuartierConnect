@@ -78,6 +78,7 @@ export default {
         myPosition: "My location",
         home: "Home",
         myNeighborhood: "See my neighborhood",
+        toggle3D: "3D / 2D view",
         youAreHere: "You are here",
         attribution: "Credits",
         attributionTitle: "Map credits",
