@@ -61,7 +61,7 @@ export class CreateIncidentDto {
         enum: ["neighborhood", "reporting", "bug"],
         default: "neighborhood",
     })
-    @IsIn(["neighborhood", "reporting", "bug"])
     @IsOptional()
+    @IsIn(["neighborhood", "reporting", "bug"])
     category?: string;
 }

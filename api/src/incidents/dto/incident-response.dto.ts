@@ -20,7 +20,7 @@ export class IncidentDto {
     })
     status: string;
 
-    @ApiProperty()
+    @ApiProperty({ enum: ["neighborhood", "reporting", "bug"] })
     category: string;
 
     @ApiProperty({ example: "f1e2d3c4-b5a6-7890-1234-567890abcdef" })
