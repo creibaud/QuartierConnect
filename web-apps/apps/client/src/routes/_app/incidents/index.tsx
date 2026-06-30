@@ -276,7 +276,9 @@ function CreateIncidentDialog({
     const { t } = useTranslation();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [category, setCategory] = useState("neighborhood");
+    const [category, setCategory] = useState<
+        "neighborhood" | "reporting" | "bug"
+    >("neighborhood");
     const [pickedLat, setPickedLat] = useState<number | null>(null);
     const [pickedLng, setPickedLng] = useState<number | null>(null);
     const createIncident = useCreateIncident();
@@ -347,7 +349,14 @@ function CreateIncidentDialog({
                     </div>
                     <div className="space-y-2">
                         <Label>{t("pages.incidents.categoryLabel")}</Label>
-                        <Select value={category} onValueChange={setCategory}>
+                        <Select
+                            value={category}
+                            onValueChange={(v) =>
+                                setCategory(
+                                    v as "neighborhood" | "reporting" | "bug",
+                                )
+                            }
+                        >
                             <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
