@@ -14,7 +14,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { apiPost } from "@workspace/shared/lib/api";
-import { centroidOf, pointToLatLng } from "@workspace/shared/lib/geo";
+import { centroidOf, pointInPolygon, pointToLatLng } from "@workspace/shared/lib/geo";
 import {
     useCreateEvent,
     useEvents,
@@ -42,6 +42,7 @@ import {
 } from "@workspace/ui/components/empty";
 import {
     Map,
+    MapControls,
     Marker,
     MarkerCluster,
     NeighborhoodPolygon,
@@ -62,6 +63,8 @@ import {
     ToggleGroupItem,
 } from "@workspace/ui/components/toggle-group";
 import { toast } from "sonner";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
+import { useMyLocation } from "@/features/onboarding/hooks/address.hooks";
 
 export const Route = createFileRoute("/_app/events/")({
     component: EventsPage,
@@ -101,7 +104,7 @@ function EventsPage() {
 
     return (
         <div className="p-6 md:p-8">
-            <div className="mx-auto flex max-w-5xl flex-col gap-6">
+            <div className="mx-auto flex max-w-7xl flex-col gap-6">
                 <PageHeader
                     title={t("pages.events.title")}
                     description={t("pages.events.description")}
@@ -496,7 +499,9 @@ function CreateEventDialog({
     const [description, setDescription] = useState("");
     const [date, setDate] = useState("");
     const [address, setAddress] = useState("");
+    const [picked, setPicked] = useState<{ lat: number; lng: number } | null>(null);
     const [category, setCategory] = useState("other");
+    const { data: myLocation } = useMyLocation();
     const createEvent = useCreateEvent();
 
     function handleSubmit(e: React.FormEvent) {
@@ -509,6 +514,9 @@ function CreateEventDialog({
                 date,
                 category,
                 address: address.trim() || undefined,
+                location: picked
+                    ? { type: "Point" as const, coordinates: [picked.lng, picked.lat] as [number, number] }
+                    : undefined,
             },
             {
                 onSuccess: () => {
@@ -517,6 +525,7 @@ function CreateEventDialog({
                     setDescription("");
                     setDate("");
                     setAddress("");
+                    setPicked(null);
                     setCategory("other");
                     onSuccess();
                 },
@@ -562,14 +571,19 @@ function CreateEventDialog({
                             <Label htmlFor="evt-address">
                                 {t("pages.events.location")}
                             </Label>
-                            <Input
+                            <AddressAutocomplete
                                 id="evt-address"
                                 value={address}
-                                onChange={(e) => setAddress(e.target.value)}
-                                placeholder={t(
-                                    "pages.events.locationPlaceholder",
-                                )}
+                                onChange={(text) => { setAddress(text); setPicked(null); }}
+                                onSelect={(s) => { setAddress(s.label); setPicked({ lat: s.lat, lng: s.lng }); }}
+                                placeholder={t("pages.events.locationPlaceholder")}
                             />
+                            {picked && myLocation?.neighborhood?.geometry &&
+                                !pointInPolygon(picked.lat, picked.lng, myLocation.neighborhood.geometry) && (
+                                    <p className="text-amber-600 dark:text-amber-500 text-xs">
+                                        {t("address.outsideQuartier")}
+                                    </p>
+                                )}
                         </div>
                     </div>
                     <div className="space-y-2">
@@ -611,6 +625,7 @@ function CreateEventDialog({
 function MapView({ events }: { events: Event[] }) {
     const { t } = useTranslation();
     const { data: neighborhoods } = useNeighborhoods();
+    const { data: myLocation } = useMyLocation();
     const firstNeighborhood = neighborhoods?.find((n) => n.geometry);
     const eventsWithCoords = events.filter((e) => e.location);
 
@@ -635,42 +650,55 @@ function MapView({ events }: { events: Event[] }) {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <Map
-                    center={centroidOf(firstNeighborhood.geometry)}
-                    zoom={14}
-                    className="h-[480px] w-full"
-                >
-                    {neighborhoods?.map((n) =>
-                        n.geometry ? (
-                            <NeighborhoodPolygon
-                                key={n._id}
-                                geometry={n.geometry}
-                                label={n.name}
-                            />
-                        ) : null,
-                    )}
-                    <MarkerCluster>
-                        {eventsWithCoords.map((evt) => (
-                            <Marker
-                                key={evt._id}
-                                variant="event"
-                                position={pointToLatLng(evt.location!)}
-                                popup={
-                                    <div className="space-y-1">
-                                        <p className="font-medium">
-                                            {evt.title}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {new Date(
-                                                evt.date,
-                                            ).toLocaleString("fr-FR")}
-                                        </p>
-                                    </div>
-                                }
-                            />
-                        ))}
-                    </MarkerCluster>
-                </Map>
+                <div className="relative isolate">
+                    <Map
+                        center={centroidOf(firstNeighborhood.geometry)}
+                        zoom={14}
+                        className="h-[480px] w-full"
+                    >
+                        {neighborhoods?.map((n) =>
+                            n.geometry ? (
+                                <NeighborhoodPolygon
+                                    key={n._id}
+                                    geometry={n.geometry}
+                                    label={n.name}
+                                />
+                            ) : null,
+                        )}
+                        <MarkerCluster>
+                            {eventsWithCoords.map((evt) => (
+                                <Marker
+                                    key={evt._id}
+                                    variant="event"
+                                    position={pointToLatLng(evt.location!)}
+                                    popup={
+                                        <div className="space-y-1">
+                                            <p className="font-medium">
+                                                {evt.title}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {new Date(
+                                                    evt.date,
+                                                ).toLocaleString("fr-FR")}
+                                            </p>
+                                        </div>
+                                    }
+                                />
+                            ))}
+                        </MarkerCluster>
+                        <MapControls
+                            home={
+                                myLocation?.lat != null &&
+                                myLocation?.lng != null
+                                    ? [myLocation.lat, myLocation.lng]
+                                    : null
+                            }
+                            fitGeometry={
+                                myLocation?.neighborhood?.geometry ?? null
+                            }
+                        />
+                    </Map>
+                </div>
             </CardContent>
         </Card>
     );

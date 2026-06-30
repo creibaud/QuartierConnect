@@ -20,12 +20,27 @@ export default defineConfig([
                         "warn",
                         { allowConstantExport: true },
                     ],
+                    "@typescript-eslint/no-unused-vars": [
+                        "error",
+                        {
+                            argsIgnorePattern: "^_",
+                            varsIgnorePattern: "^_",
+                            caughtErrorsIgnorePattern: "^_",
+                        },
+                    ],
                 },
             },
         ],
         languageOptions: {
             ecmaVersion: 2020,
             globals: globals.browser,
+        },
+    },
+    {
+        // Test mocks legitimately pass refs to stand-in components.
+        files: ["**/*.test.{ts,tsx}"],
+        rules: {
+            "react-hooks/refs": "off",
         },
     },
 ]);

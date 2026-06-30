@@ -437,6 +437,9 @@ function ServiceDialog({
     const [type, setType] = useState<"free" | "paid" | "exchange">(
         (initial?.type as "free" | "paid" | "exchange") ?? "free",
     );
+    const [direction, setDirection] = useState<"offer" | "request">(
+        (initial?.direction as "offer" | "request") ?? "offer",
+    );
     const [description, setDescription] = useState(initial?.description ?? "");
     const [address, setAddress] = useState(initial?.address ?? "");
     const [neighborhoodId, setNeighborhoodId] = useState(
@@ -471,6 +474,7 @@ function ServiceDialog({
             title: name.trim(),
             category: category.trim(),
             type,
+            direction,
             description: description.trim() || undefined,
             address: address.trim() || undefined,
             neighborhoodId: neighborhoodId || undefined,
@@ -565,6 +569,33 @@ function ServiceDialog({
                                     <SelectItem value="exchange">
                                         {t(
                                             "adminPages.services.types.exchange",
+                                        )}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>
+                                {t("adminPages.services.directionLabel")}
+                            </Label>
+                            <Select
+                                value={direction}
+                                onValueChange={(v) =>
+                                    setDirection(v as "offer" | "request")
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="offer">
+                                        {t(
+                                            "adminPages.services.directionOffer",
+                                        )}
+                                    </SelectItem>
+                                    <SelectItem value="request">
+                                        {t(
+                                            "adminPages.services.directionRequest",
                                         )}
                                     </SelectItem>
                                 </SelectContent>

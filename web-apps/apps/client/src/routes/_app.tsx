@@ -61,9 +61,11 @@ export const Route = createFileRoute("/_app")({
 
 function useActiveSectionTitleKey(): string {
     const { pathname } = useLocation();
-    const active = clientNavItems.find(
-        (item) => pathname === item.to || pathname.startsWith(`${item.to}/`),
-    );
+    // Two-pass: exact match wins over prefix so /services/mine resolves
+    // to nav.myServices rather than nav.services.
+    const active =
+        clientNavItems.find((item) => pathname === item.to) ??
+        clientNavItems.find((item) => pathname.startsWith(`${item.to}/`));
     if (active) return active.title;
     if (pathname.startsWith("/settings")) return "pages.account.title";
     return "Accueil";

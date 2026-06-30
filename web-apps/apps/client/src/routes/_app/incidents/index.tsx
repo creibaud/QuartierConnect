@@ -3,7 +3,8 @@ import { Alert01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { centroidOf } from "@workspace/shared/lib/geo";
+import { centroidOf, pointInPolygon } from "@workspace/shared/lib/geo";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
 import {
     useCreateIncident,
     useInfiniteIncidents,
@@ -36,11 +37,20 @@ import {
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@workspace/ui/components/select";
+import {
     Map,
     MapClickHandler,
+    MapControls,
     Marker,
     NeighborhoodPolygon,
 } from "@workspace/ui/components/map";
+import { useMyLocation } from "@/features/onboarding/hooks/address.hooks";
 import { PageHeader } from "@workspace/ui/components/page-header";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Textarea } from "@workspace/ui/components/textarea";
@@ -68,6 +78,7 @@ function IncidentsPage() {
         useInfiniteIncidents();
     const incidents = data?.pages.flat() ?? [];
     const { data: neighborhoods } = useNeighborhoods();
+    const { data: myLocation } = useMyLocation();
     const firstNeighborhood = neighborhoods?.find((n) => n.geometry);
     const incidentsWithCoords = incidents.filter(
         (i) => i.lat !== null && i.lng !== null,
@@ -75,7 +86,7 @@ function IncidentsPage() {
 
     return (
         <div className="p-6 md:p-8">
-            <div className="mx-auto max-w-5xl space-y-6">
+            <div className="mx-auto flex max-w-7xl flex-col gap-6">
                 <PageHeader
                     title={t("incidents.title")}
                     description={t("pages.incidents.description")}
@@ -100,46 +111,60 @@ function IncidentsPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Map
-                                center={centroidOf(firstNeighborhood.geometry)}
-                                zoom={14}
-                                className="h-[400px] min-h-[400px] w-full"
-                            >
-                                {neighborhoods?.map((n) =>
-                                    n.geometry ? (
-                                        <NeighborhoodPolygon
-                                            key={n._id}
-                                            geometry={n.geometry}
-                                            label={n.name}
+                            <div className="relative isolate">
+                                <Map
+                                    center={centroidOf(firstNeighborhood.geometry)}
+                                    zoom={14}
+                                    className="h-[400px] min-h-[400px] w-full"
+                                >
+                                    {neighborhoods?.map((n) =>
+                                        n.geometry ? (
+                                            <NeighborhoodPolygon
+                                                key={n._id}
+                                                geometry={n.geometry}
+                                                label={n.name}
+                                            />
+                                        ) : null,
+                                    )}
+                                    {incidentsWithCoords.map((inc) => (
+                                        <Marker
+                                            key={inc.id}
+                                            variant="incident"
+                                            position={[inc.lat!, inc.lng!]}
+                                            popup={
+                                                <div className="space-y-1">
+                                                    <p className="font-medium">
+                                                        {inc.title}
+                                                    </p>
+                                                    <p className="text-xs">
+                                                        {t(
+                                                            "pages.incidents.statusLabel",
+                                                            {
+                                                                status:
+                                                                    statusLabels[
+                                                                        inc.status
+                                                                    ] ?? inc.status,
+                                                            },
+                                                        )}
+                                                    </p>
+                                                </div>
+                                            }
                                         />
-                                    ) : null,
-                                )}
-                                {incidentsWithCoords.map((inc) => (
-                                    <Marker
-                                        key={inc.id}
-                                        variant="incident"
-                                        position={[inc.lat!, inc.lng!]}
-                                        popup={
-                                            <div className="space-y-1">
-                                                <p className="font-medium">
-                                                    {inc.title}
-                                                </p>
-                                                <p className="text-xs">
-                                                    {t(
-                                                        "pages.incidents.statusLabel",
-                                                        {
-                                                            status:
-                                                                statusLabels[
-                                                                    inc.status
-                                                                ] ?? inc.status,
-                                                        },
-                                                    )}
-                                                </p>
-                                            </div>
+                                    ))}
+                                    <MapControls
+                                        home={
+                                            myLocation?.lat != null &&
+                                            myLocation?.lng != null
+                                                ? [myLocation.lat, myLocation.lng]
+                                                : null
+                                        }
+                                        fitGeometry={
+                                            myLocation?.neighborhood?.geometry ??
+                                            null
                                         }
                                     />
-                                ))}
-                            </Map>
+                                </Map>
+                            </div>
                         </CardContent>
                     </Card>
                 )}
@@ -252,10 +277,15 @@ function CreateIncidentDialog({
     const { t } = useTranslation();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
+    const [category, setCategory] = useState<
+        "neighborhood" | "reporting" | "bug"
+    >("neighborhood");
     const [pickedLat, setPickedLat] = useState<number | null>(null);
     const [pickedLng, setPickedLng] = useState<number | null>(null);
+    const [address, setAddress] = useState("");
     const createIncident = useCreateIncident();
     const { data: neighborhoods } = useNeighborhoods();
+    const { data: myLocation } = useMyLocation();
     const firstNeighborhood = neighborhoods?.find((n) => n.geometry);
 
     function handleSubmit(e: React.FormEvent) {
@@ -265,6 +295,7 @@ function CreateIncidentDialog({
             {
                 title: title.trim(),
                 description: description.trim() || undefined,
+                category,
                 lat: pickedLat ?? undefined,
                 lng: pickedLng ?? undefined,
             },
@@ -273,8 +304,10 @@ function CreateIncidentDialog({
                     toast.success(t("pages.incidents.reportSuccess"));
                     setTitle("");
                     setDescription("");
+                    setCategory("neighborhood");
                     setPickedLat(null);
                     setPickedLng(null);
+                    setAddress("");
                     onSuccess();
                 },
                 onError: () =>
@@ -317,6 +350,51 @@ function CreateIncidentDialog({
                             rows={3}
                         />
                     </div>
+                    <div className="space-y-2">
+                        <Label>{t("pages.incidents.categoryLabel")}</Label>
+                        <Select
+                            value={category}
+                            onValueChange={(v) =>
+                                setCategory(
+                                    v as "neighborhood" | "reporting" | "bug",
+                                )
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {(
+                                    [
+                                        "neighborhood",
+                                        "reporting",
+                                        "bug",
+                                    ] as const
+                                ).map((c) => (
+                                    <SelectItem key={c} value={c}>
+                                        {t(
+                                            `pages.incidents.categories.${c}`,
+                                        )}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="incident-address">{t("pages.incidents.addressLabel")}</Label>
+                        <AddressAutocomplete
+                            id="incident-address"
+                            value={address}
+                            onChange={setAddress}
+                            onSelect={(s) => { setAddress(s.label); setPickedLat(s.lat); setPickedLng(s.lng); }}
+                        />
+                        {pickedLat != null && pickedLng != null && myLocation?.neighborhood?.geometry &&
+                            !pointInPolygon(pickedLat, pickedLng, myLocation.neighborhood.geometry) && (
+                                <p className="text-amber-600 dark:text-amber-500 text-xs">
+                                    {t("address.outsideQuartier")}
+                                </p>
+                            )}
+                    </div>
                     {firstNeighborhood?.geometry && (
                         <div className="space-y-2">
                             <Label>
@@ -325,27 +403,41 @@ function CreateIncidentDialog({
                                     ? ` (${pickedLat.toFixed(4)}, ${pickedLng.toFixed(4)})`
                                     : ` (${t("common.optional")})`}
                             </Label>
-                            <Map
-                                center={centroidOf(firstNeighborhood.geometry)}
-                                zoom={15}
-                                className="h-64 min-h-64"
-                            >
-                                <NeighborhoodPolygon
-                                    geometry={firstNeighborhood.geometry}
-                                />
-                                <MapClickHandler
-                                    onClick={(lat, lng) => {
-                                        setPickedLat(lat);
-                                        setPickedLng(lng);
-                                    }}
-                                />
-                                {pickedLat !== null && pickedLng !== null && (
-                                    <Marker
-                                        variant="incident"
-                                        position={[pickedLat, pickedLng]}
+                            <div className="relative isolate">
+                                <Map
+                                    center={centroidOf(firstNeighborhood.geometry)}
+                                    zoom={15}
+                                    className="h-64 min-h-64"
+                                >
+                                    <NeighborhoodPolygon
+                                        geometry={firstNeighborhood.geometry}
                                     />
-                                )}
-                            </Map>
+                                    <MapClickHandler
+                                        onClick={(lat, lng) => {
+                                            setPickedLat(lat);
+                                            setPickedLng(lng);
+                                        }}
+                                    />
+                                    {pickedLat !== null && pickedLng !== null && (
+                                        <Marker
+                                            variant="incident"
+                                            position={[pickedLat, pickedLng]}
+                                        />
+                                    )}
+                                    <MapControls
+                                        home={
+                                            myLocation?.lat != null &&
+                                            myLocation?.lng != null
+                                                ? [myLocation.lat, myLocation.lng]
+                                                : null
+                                        }
+                                        fitGeometry={
+                                            myLocation?.neighborhood?.geometry ??
+                                            null
+                                        }
+                                    />
+                                </Map>
+                            </div>
                         </div>
                     )}
                     <div className="flex justify-end gap-2">

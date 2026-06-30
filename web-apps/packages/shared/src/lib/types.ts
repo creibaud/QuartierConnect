@@ -8,6 +8,7 @@ export interface Incident {
     title: string;
     description: string | null;
     status: "open" | "in_progress" | "resolved";
+    category: "neighborhood" | "reporting" | "bug";
     neighborhoodId: string | null;
     lat: number | null;
     lng: number | null;
@@ -36,6 +37,13 @@ export interface Neighborhood {
     geometry?: GeoJsonPolygon;
 }
 
+export interface ServiceResponder {
+    userId: string;
+    firstName: string | null;
+    avatarUrl: string | null;
+    createdAt: string;
+}
+
 export interface Service {
     _id: string;
     title: string;
@@ -47,6 +55,10 @@ export interface Service {
     pointsMultiplier?: number;
     createdBy?: string;
     location?: GeoJsonPoint;
+    direction: "offer" | "request";
+    responderCount?: number;
+    hasResponded?: boolean;
+    responders?: ServiceResponder[];
 }
 
 export interface Event {

@@ -17,33 +17,59 @@ export interface NavItem {
     roles?: string[];
 }
 
-function isItemActive(pathname: string, to: string): boolean {
-    return pathname === to || pathname.startsWith(`${to}/`);
+export interface NavGroup {
+    label: string;
+    items: NavItem[];
 }
 
-export function NavMain({ items }: { items: NavItem[] }) {
+function findActiveNavItem(
+    items: NavItem[],
+    pathname: string,
+): NavItem | undefined {
+    return (
+        items.find((item) => pathname === item.to) ??
+        items.find((item) => pathname.startsWith(`${item.to}/`))
+    );
+}
+
+export function NavMain({ groups, role }: { groups: NavGroup[]; role: string }) {
     const { pathname } = useLocation();
     const { t } = useTranslation();
+    const activeItem = findActiveNavItem(
+        groups.flatMap((group) => group.items),
+        pathname,
+    );
 
     return (
-        <SidebarGroup>
-            <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-            <SidebarMenu>
-                {items.map((item) => (
-                    <SidebarMenuItem key={item.to}>
-                        <SidebarMenuButton
-                            asChild
-                            isActive={isItemActive(pathname, item.to)}
-                            tooltip={t(item.title)}
-                        >
-                            <Link to={item.to}>
-                                <HugeiconsIcon icon={item.icon} />
-                                <span>{t(item.title)}</span>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                ))}
-            </SidebarMenu>
-        </SidebarGroup>
+        <>
+            {groups.map((group) => {
+                const visibleItems = group.items.filter(
+                    (item) => !item.roles || item.roles.includes(role),
+                );
+                if (visibleItems.length === 0) return null;
+
+                return (
+                    <SidebarGroup key={group.label}>
+                        <SidebarGroupLabel>{t(group.label)}</SidebarGroupLabel>
+                        <SidebarMenu>
+                            {visibleItems.map((item) => (
+                                <SidebarMenuItem key={item.to}>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={item === activeItem}
+                                        tooltip={t(item.title)}
+                                    >
+                                        <Link to={item.to}>
+                                            <HugeiconsIcon icon={item.icon} />
+                                            <span>{t(item.title)}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            ))}
+                        </SidebarMenu>
+                    </SidebarGroup>
+                );
+            })}
+        </>
     );
 }

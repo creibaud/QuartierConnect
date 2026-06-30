@@ -5,13 +5,15 @@ export function fetchServices(params?: {
     neighborhoodId?: string;
     page?: number;
     limit?: number;
+    direction?: "offer" | "request";
 }): Promise<Service[]> {
-    const { neighborhoodId, page = 1, limit = 20 } = params ?? {};
+    const { neighborhoodId, page = 1, limit = 20, direction } = params ?? {};
     const qs = new URLSearchParams({
         page: String(page),
         limit: String(limit),
     });
     if (neighborhoodId) qs.set("neighborhoodId", neighborhoodId);
+    if (direction) qs.set("direction", direction);
     return apiGet<Service[]>(`/services?${qs}`);
 }
 
