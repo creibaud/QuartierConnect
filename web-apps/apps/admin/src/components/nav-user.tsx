@@ -1,16 +1,27 @@
-import { Logout01Icon, UnfoldMoreIcon } from "@hugeicons/core-free-icons";
+import {
+    Globe02Icon,
+    Logout01Icon,
+    MonitorDotIcon,
+    Moon01Icon,
+    Sun01Icon,
+    UnfoldMoreIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useNavigate } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
 import { clearTokens, getCurrentUser } from "@workspace/shared/lib/auth";
-import { setLocale } from "@workspace/shared/lib/i18n/index";
+import { useLocale } from "@workspace/shared/lib/hooks/useLocale";
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
     DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
 import {
@@ -19,15 +30,23 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from "@workspace/ui/components/sidebar";
+import { useTheme } from "@/components/theme-provider";
 
 function initialsFromEmail(email: string): string {
     return email.slice(0, 2).toUpperCase();
 }
 
+const THEME_ICON = {
+    light: Sun01Icon,
+    dark: Moon01Icon,
+    system: MonitorDotIcon,
+} as const;
+
 export function NavUser() {
-    const { t } = useTranslation();
+    const { t, locale, setLocale } = useLocale();
     const { isMobile } = useSidebar();
     const navigate = useNavigate();
+    const { theme, setTheme } = useTheme();
     const user = getCurrentUser();
 
     if (!user) {
@@ -100,12 +119,60 @@ export function NavUser() {
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => setLocale("fr")}>
-                            Français
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setLocale("en")}>
-                            English
-                        </DropdownMenuItem>
+                        <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                                <HugeiconsIcon
+                                    icon={THEME_ICON[theme] ?? MonitorDotIcon}
+                                />
+                                Thème
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                                <DropdownMenuRadioGroup
+                                    value={theme}
+                                    onValueChange={(v) =>
+                                        setTheme(
+                                            v as "light" | "dark" | "system",
+                                        )
+                                    }
+                                >
+                                    <DropdownMenuRadioItem value="light">
+                                        <HugeiconsIcon icon={Sun01Icon} />
+                                        Clair
+                                    </DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="dark">
+                                        <HugeiconsIcon icon={Moon01Icon} />
+                                        Sombre
+                                    </DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="system">
+                                        <HugeiconsIcon
+                                            icon={MonitorDotIcon}
+                                        />
+                                        Système
+                                    </DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                        <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                                <HugeiconsIcon icon={Globe02Icon} />
+                                {locale === "fr" ? "Français" : "English"}
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                                <DropdownMenuRadioGroup
+                                    value={locale}
+                                    onValueChange={(v) =>
+                                        setLocale(v as "fr" | "en")
+                                    }
+                                >
+                                    <DropdownMenuRadioItem value="fr">
+                                        Français
+                                    </DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="en">
+                                        English
+                                    </DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuSubContent>
+                        </DropdownMenuSub>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout}>
                             <HugeiconsIcon icon={Logout01Icon} />

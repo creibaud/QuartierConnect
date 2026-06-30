@@ -74,6 +74,9 @@ export default {
         home: "Home",
         myNeighborhood: "See my neighborhood",
         youAreHere: "You are here",
+        attribution: "Credits",
+        attributionTitle: "Map credits",
+        attributionBody: "Data and tiles provided by:",
     },
     roles: {
         resident: "Resident",
