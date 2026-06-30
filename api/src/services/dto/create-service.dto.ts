@@ -91,4 +91,11 @@ export class CreateServiceDto {
     })
     @IsIn(["offer", "request"])
     direction: string;
+
+    @ApiPropertyOptional({
+        description: "Free-text address (geocoded to location)",
+    })
+    @IsString()
+    @IsOptional()
+    address?: string;
 }

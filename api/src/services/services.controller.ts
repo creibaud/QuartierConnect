@@ -28,6 +28,7 @@ import { Model, Types } from "mongoose";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
+import { GeocodingService } from "../geocoding/geocoding.service";
 import { SocialService } from "../social/social.service";
 import { CreateServiceDto } from "./dto/create-service.dto";
 import { ServiceDto } from "./dto/service-response.dto";
@@ -53,7 +54,20 @@ export class ServicesController {
         private readonly socialService: SocialService,
         @Inject(DRIZZLE_TOKEN)
         private readonly db: PostgresJsDatabase<typeof schema>,
+        private readonly geocoding: GeocodingService,
     ) {}
+
+    private async resolveLocation(
+        address?: string,
+        location?: { type: "Point"; coordinates: [number, number] },
+    ): Promise<{ type: "Point"; coordinates: [number, number] } | undefined> {
+        if (location) return location;
+        if (!address) return undefined;
+        const geo = await this.geocoding.geocode(address);
+        return geo
+            ? { type: "Point", coordinates: [geo.lng, geo.lat] }
+            : undefined;
+    }
 
     @Get()
     @UseGuards(JwtAuthGuard)
@@ -110,15 +124,25 @@ export class ServicesController {
         const pageNum = Math.max(1, parseInt(page) || 1);
         const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
         const skip = (pageNum - 1) * limitNum;
-        const services = await this.serviceModel.find(filter).skip(skip).limit(limitNum).lean();
+        const services = await this.serviceModel
+            .find(filter)
+            .skip(skip)
+            .limit(limitNum)
+            .lean();
         const ids = services.map((s) => s._id);
-        const responses = await this.responseModel.find({ serviceId: { $in: ids } }).lean();
+        const responses = await this.responseModel
+            .find({ serviceId: { $in: ids } })
+            .lean();
         return services.map((s) => {
-            const forService = responses.filter((r) => String(r.serviceId) === String(s._id));
+            const forService = responses.filter(
+                (r) => String(r.serviceId) === String(s._id),
+            );
             return {
                 ...s,
                 responderCount: forService.length,
-                hasResponded: forService.some((r) => r.responderId === req.user.sub),
+                hasResponded: forService.some(
+                    (r) => r.responderId === req.user.sub,
+                ),
             };
         });
     }
@@ -127,18 +151,31 @@ export class ServicesController {
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     @ApiOperation({ summary: "My service listings with responders" })
-    @ApiResponse({ status: 200, description: "Own services enriched with responders" })
+    @ApiResponse({
+        status: 200,
+        description: "Own services enriched with responders",
+    })
     async findMine(@Request() req: AuthRequest) {
-        const services = await this.serviceModel.find({ createdBy: req.user.sub }).lean();
+        const services = await this.serviceModel
+            .find({ createdBy: req.user.sub })
+            .lean();
         const ids = services.map((s) => s._id);
-        type LeanResponse = { serviceId: unknown; responderId: string; createdAt: Date };
+        type LeanResponse = {
+            serviceId: unknown;
+            responderId: string;
+            createdAt: Date;
+        };
         const responses = (await this.responseModel
             .find({ serviceId: { $in: ids } })
             .lean()) as LeanResponse[];
         const responderIds = [...new Set(responses.map((r) => r.responderId))];
         const users = responderIds.length
             ? await this.db
-                  .select({ id: schema.users.id, firstName: schema.users.firstName, avatarUrl: schema.users.avatarUrl })
+                  .select({
+                      id: schema.users.id,
+                      firstName: schema.users.firstName,
+                      avatarUrl: schema.users.avatarUrl,
+                  })
                   .from(schema.users)
                   .where(inArray(schema.users.id, responderIds))
             : [];
@@ -162,7 +199,9 @@ export class ServicesController {
     @ApiOperation({ summary: "Services the current user has responded to" })
     @ApiResponse({ status: 200, type: [ServiceDto] })
     async findResponded(@Request() req: AuthRequest) {
-        const responses = await this.responseModel.find({ responderId: req.user.sub }).lean();
+        const responses = await this.responseModel
+            .find({ responderId: req.user.sub })
+            .lean();
         const ids = responses.map((r) => r.serviceId);
         if (!ids.length) return [];
         return this.serviceModel.find({ _id: { $in: ids } }).lean();
@@ -198,9 +237,12 @@ export class ServicesController {
     })
     @ApiResponse({ status: 401, description: "Not authenticated" })
     async create(@Body() dto: CreateServiceDto, @Request() req: AuthRequest) {
+        const location = await this.resolveLocation(dto.address, dto.location);
         const created = await this.serviceModel.create({
             ...dto,
-            neighborhoodId: dto.neighborhoodId ?? req.user.neighborhoodId ?? undefined,
+            location,
+            neighborhoodId:
+                dto.neighborhoodId ?? req.user.neighborhoodId ?? undefined,
             createdBy: req.user.sub,
         });
         void this.socialService.syncService(
@@ -260,6 +302,14 @@ export class ServicesController {
                 type: dto.location.type,
                 coordinates: dto.location.coordinates,
             };
+        if (dto.address !== undefined) {
+            changes.address = dto.address;
+            const location = await this.resolveLocation(
+                dto.address,
+                dto.location,
+            );
+            if (location) changes.location = location;
+        }
 
         const updated = await this.serviceModel
             .findByIdAndUpdate(serviceId, { $set: changes }, { new: true })
@@ -284,7 +334,8 @@ export class ServicesController {
     @ApiResponse({ status: 404, description: "Service not found" })
     async respond(@Param("id") id: string, @Request() req: AuthRequest) {
         const service = await this.serviceModel.findById(id);
-        if (!service) throw new NotFoundException({ code: "SERVICE_NOT_FOUND" });
+        if (!service)
+            throw new NotFoundException({ code: "SERVICE_NOT_FOUND" });
         if (service.createdBy === req.user.sub)
             throw new ForbiddenException({ code: "OWN_SERVICE" });
         const serviceId = new Types.ObjectId(id);
