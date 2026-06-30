@@ -53,6 +53,7 @@ export default {
         incidents: "Incidents",
         messages: "Messages",
         services: "Services",
+        myServices: "My services",
         votes: "Votes",
         recommendations: "Recommendations",
         points: "Points",
@@ -61,6 +62,12 @@ export default {
         communityVotes: "Community votes",
         dsl: "DSL Editor",
         coverage: "Pending addresses",
+        groups: {
+            home: "Home",
+            neighborhood: "Neighborhood",
+            mySpace: "My space",
+            moderation: "Moderation",
+        },
     },
     roles: {
         resident: "Resident",
