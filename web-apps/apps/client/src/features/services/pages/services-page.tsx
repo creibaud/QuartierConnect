@@ -37,6 +37,7 @@ import { Label } from "@workspace/ui/components/label";
 import {
     Map,
     MapControls,
+    MapLegend,
     Marker,
     MarkerCluster,
     NeighborhoodPolygon,
@@ -193,7 +194,11 @@ export function ServicesPage() {
                                         {servicesWithCoords.map((s) => (
                                             <Marker
                                                 key={s._id}
-                                                variant="service"
+                                                variant={
+                                                    s.direction === "request"
+                                                        ? "serviceRequest"
+                                                        : "serviceOffer"
+                                                }
                                                 position={pointToLatLng(
                                                     s.location!,
                                                 )}
@@ -210,6 +215,28 @@ export function ServicesPage() {
                                             />
                                         ))}
                                     </MarkerCluster>
+                                    <MapLegend
+                                        entries={[
+                                            {
+                                                variant: "serviceOffer",
+                                                label: t(
+                                                    "pages.services.directionOffer",
+                                                ),
+                                            },
+                                            {
+                                                variant: "serviceRequest",
+                                                label: t(
+                                                    "pages.services.directionRequest",
+                                                ),
+                                            },
+                                            {
+                                                variant: "home",
+                                                label: t(
+                                                    "pages.account.homeMarker",
+                                                ),
+                                            },
+                                        ]}
+                                    />
                                 </Map>
                             </div>
                         </CardContent>
