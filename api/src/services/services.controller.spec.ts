@@ -241,9 +241,41 @@ describe("ServicesController", () => {
         expect(result).toEqual(mockService);
     });
 
-    it("DELETE /services/:id removes the service", async () => {
-        const result = await controller.remove("svc-id-1");
+    it("DELETE /services/:id allows the owner to remove it", async () => {
+        const result = await controller.remove("svc-id-1", authReq() as any);
         expect(result).toEqual({ success: true });
+        expect(model.findByIdAndDelete).toHaveBeenCalledWith("svc-id-1");
+    });
+
+    it("DELETE /services/:id allows an admin to remove any service", async () => {
+        const result = await controller.remove(
+            "svc-id-1",
+            authReq("admin", "other-user") as any,
+        );
+        expect(result).toEqual({ success: true });
+    });
+
+    it("DELETE /services/:id throws 403 if not owner and not admin", async () => {
+        await expect(
+            controller.remove(
+                "svc-id-1",
+                authReq("resident", "other-user") as any,
+            ),
+        ).rejects.toThrow(ForbiddenException);
+        expect(model.findByIdAndDelete).not.toHaveBeenCalled();
+    });
+
+    it("PATCH /services/:id persists a direction change", async () => {
+        await controller.update(
+            "svc-id-1",
+            { direction: "request" },
+            authReq() as any,
+        );
+        expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+            "svc-id-1",
+            { $set: { direction: "request" } },
+            { new: true },
+        );
     });
 
     it("respond is idempotent and forbids own service", async () => {
