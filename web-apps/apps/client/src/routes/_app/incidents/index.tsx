@@ -38,9 +38,11 @@ import { Label } from "@workspace/ui/components/label";
 import {
     Map,
     MapClickHandler,
+    MapControls,
     Marker,
     NeighborhoodPolygon,
 } from "@workspace/ui/components/map";
+import { useMyLocation } from "@/features/onboarding/hooks/address.hooks";
 import { PageHeader } from "@workspace/ui/components/page-header";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Textarea } from "@workspace/ui/components/textarea";
@@ -68,6 +70,7 @@ function IncidentsPage() {
         useInfiniteIncidents();
     const incidents = data?.pages.flat() ?? [];
     const { data: neighborhoods } = useNeighborhoods();
+    const { data: myLocation } = useMyLocation();
     const firstNeighborhood = neighborhoods?.find((n) => n.geometry);
     const incidentsWithCoords = incidents.filter(
         (i) => i.lat !== null && i.lng !== null,
@@ -100,46 +103,60 @@ function IncidentsPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Map
-                                center={centroidOf(firstNeighborhood.geometry)}
-                                zoom={14}
-                                className="h-[400px] min-h-[400px] w-full"
-                            >
-                                {neighborhoods?.map((n) =>
-                                    n.geometry ? (
-                                        <NeighborhoodPolygon
-                                            key={n._id}
-                                            geometry={n.geometry}
-                                            label={n.name}
+                            <div className="relative isolate">
+                                <Map
+                                    center={centroidOf(firstNeighborhood.geometry)}
+                                    zoom={14}
+                                    className="h-[400px] min-h-[400px] w-full"
+                                >
+                                    {neighborhoods?.map((n) =>
+                                        n.geometry ? (
+                                            <NeighborhoodPolygon
+                                                key={n._id}
+                                                geometry={n.geometry}
+                                                label={n.name}
+                                            />
+                                        ) : null,
+                                    )}
+                                    {incidentsWithCoords.map((inc) => (
+                                        <Marker
+                                            key={inc.id}
+                                            variant="incident"
+                                            position={[inc.lat!, inc.lng!]}
+                                            popup={
+                                                <div className="space-y-1">
+                                                    <p className="font-medium">
+                                                        {inc.title}
+                                                    </p>
+                                                    <p className="text-xs">
+                                                        {t(
+                                                            "pages.incidents.statusLabel",
+                                                            {
+                                                                status:
+                                                                    statusLabels[
+                                                                        inc.status
+                                                                    ] ?? inc.status,
+                                                            },
+                                                        )}
+                                                    </p>
+                                                </div>
+                                            }
                                         />
-                                    ) : null,
-                                )}
-                                {incidentsWithCoords.map((inc) => (
-                                    <Marker
-                                        key={inc.id}
-                                        variant="incident"
-                                        position={[inc.lat!, inc.lng!]}
-                                        popup={
-                                            <div className="space-y-1">
-                                                <p className="font-medium">
-                                                    {inc.title}
-                                                </p>
-                                                <p className="text-xs">
-                                                    {t(
-                                                        "pages.incidents.statusLabel",
-                                                        {
-                                                            status:
-                                                                statusLabels[
-                                                                    inc.status
-                                                                ] ?? inc.status,
-                                                        },
-                                                    )}
-                                                </p>
-                                            </div>
+                                    ))}
+                                    <MapControls
+                                        home={
+                                            myLocation?.lat != null &&
+                                            myLocation?.lng != null
+                                                ? [myLocation.lat, myLocation.lng]
+                                                : null
+                                        }
+                                        fitGeometry={
+                                            myLocation?.neighborhood?.geometry ??
+                                            null
                                         }
                                     />
-                                ))}
-                            </Map>
+                                </Map>
+                            </div>
                         </CardContent>
                     </Card>
                 )}
@@ -256,6 +273,7 @@ function CreateIncidentDialog({
     const [pickedLng, setPickedLng] = useState<number | null>(null);
     const createIncident = useCreateIncident();
     const { data: neighborhoods } = useNeighborhoods();
+    const { data: myLocation } = useMyLocation();
     const firstNeighborhood = neighborhoods?.find((n) => n.geometry);
 
     function handleSubmit(e: React.FormEvent) {
@@ -325,27 +343,41 @@ function CreateIncidentDialog({
                                     ? ` (${pickedLat.toFixed(4)}, ${pickedLng.toFixed(4)})`
                                     : ` (${t("common.optional")})`}
                             </Label>
-                            <Map
-                                center={centroidOf(firstNeighborhood.geometry)}
-                                zoom={15}
-                                className="h-64 min-h-64"
-                            >
-                                <NeighborhoodPolygon
-                                    geometry={firstNeighborhood.geometry}
-                                />
-                                <MapClickHandler
-                                    onClick={(lat, lng) => {
-                                        setPickedLat(lat);
-                                        setPickedLng(lng);
-                                    }}
-                                />
-                                {pickedLat !== null && pickedLng !== null && (
-                                    <Marker
-                                        variant="incident"
-                                        position={[pickedLat, pickedLng]}
+                            <div className="relative isolate">
+                                <Map
+                                    center={centroidOf(firstNeighborhood.geometry)}
+                                    zoom={15}
+                                    className="h-64 min-h-64"
+                                >
+                                    <NeighborhoodPolygon
+                                        geometry={firstNeighborhood.geometry}
                                     />
-                                )}
-                            </Map>
+                                    <MapClickHandler
+                                        onClick={(lat, lng) => {
+                                            setPickedLat(lat);
+                                            setPickedLng(lng);
+                                        }}
+                                    />
+                                    {pickedLat !== null && pickedLng !== null && (
+                                        <Marker
+                                            variant="incident"
+                                            position={[pickedLat, pickedLng]}
+                                        />
+                                    )}
+                                    <MapControls
+                                        home={
+                                            myLocation?.lat != null &&
+                                            myLocation?.lng != null
+                                                ? [myLocation.lat, myLocation.lng]
+                                                : null
+                                        }
+                                        fitGeometry={
+                                            myLocation?.neighborhood?.geometry ??
+                                            null
+                                        }
+                                    />
+                                </Map>
+                            </div>
                         </div>
                     )}
                     <div className="flex justify-end gap-2">

@@ -36,10 +36,10 @@ import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import {
     Map,
+    MapControls,
     Marker,
     MarkerCluster,
     NeighborhoodPolygon,
-    UserLocation,
 } from "@workspace/ui/components/map";
 import { PageHeader } from "@workspace/ui/components/page-header";
 import {
@@ -174,10 +174,20 @@ export function ServicesPage() {
                                                 )}
                                             />
                                         )}
-                                    <UserLocation
-                                        fallbackCenter={centroidOf(
-                                            focusedNeighborhood.geometry,
-                                        )}
+                                    <MapControls
+                                        home={
+                                            myLocation?.lat != null &&
+                                            myLocation?.lng != null
+                                                ? [
+                                                      myLocation.lat,
+                                                      myLocation.lng,
+                                                  ]
+                                                : null
+                                        }
+                                        fitGeometry={
+                                            focusedNeighborhood?.geometry ??
+                                            null
+                                        }
                                     />
                                     <MarkerCluster>
                                         {servicesWithCoords.map((s) => (

@@ -42,6 +42,7 @@ import {
 } from "@workspace/ui/components/empty";
 import {
     Map,
+    MapControls,
     Marker,
     MarkerCluster,
     NeighborhoodPolygon,
@@ -62,6 +63,7 @@ import {
     ToggleGroupItem,
 } from "@workspace/ui/components/toggle-group";
 import { toast } from "sonner";
+import { useMyLocation } from "@/features/onboarding/hooks/address.hooks";
 
 export const Route = createFileRoute("/_app/events/")({
     component: EventsPage,
@@ -611,6 +613,7 @@ function CreateEventDialog({
 function MapView({ events }: { events: Event[] }) {
     const { t } = useTranslation();
     const { data: neighborhoods } = useNeighborhoods();
+    const { data: myLocation } = useMyLocation();
     const firstNeighborhood = neighborhoods?.find((n) => n.geometry);
     const eventsWithCoords = events.filter((e) => e.location);
 
@@ -635,42 +638,55 @@ function MapView({ events }: { events: Event[] }) {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <Map
-                    center={centroidOf(firstNeighborhood.geometry)}
-                    zoom={14}
-                    className="h-[480px] w-full"
-                >
-                    {neighborhoods?.map((n) =>
-                        n.geometry ? (
-                            <NeighborhoodPolygon
-                                key={n._id}
-                                geometry={n.geometry}
-                                label={n.name}
-                            />
-                        ) : null,
-                    )}
-                    <MarkerCluster>
-                        {eventsWithCoords.map((evt) => (
-                            <Marker
-                                key={evt._id}
-                                variant="event"
-                                position={pointToLatLng(evt.location!)}
-                                popup={
-                                    <div className="space-y-1">
-                                        <p className="font-medium">
-                                            {evt.title}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {new Date(
-                                                evt.date,
-                                            ).toLocaleString("fr-FR")}
-                                        </p>
-                                    </div>
-                                }
-                            />
-                        ))}
-                    </MarkerCluster>
-                </Map>
+                <div className="relative isolate">
+                    <Map
+                        center={centroidOf(firstNeighborhood.geometry)}
+                        zoom={14}
+                        className="h-[480px] w-full"
+                    >
+                        {neighborhoods?.map((n) =>
+                            n.geometry ? (
+                                <NeighborhoodPolygon
+                                    key={n._id}
+                                    geometry={n.geometry}
+                                    label={n.name}
+                                />
+                            ) : null,
+                        )}
+                        <MarkerCluster>
+                            {eventsWithCoords.map((evt) => (
+                                <Marker
+                                    key={evt._id}
+                                    variant="event"
+                                    position={pointToLatLng(evt.location!)}
+                                    popup={
+                                        <div className="space-y-1">
+                                            <p className="font-medium">
+                                                {evt.title}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {new Date(
+                                                    evt.date,
+                                                ).toLocaleString("fr-FR")}
+                                            </p>
+                                        </div>
+                                    }
+                                />
+                            ))}
+                        </MarkerCluster>
+                        <MapControls
+                            home={
+                                myLocation?.lat != null &&
+                                myLocation?.lng != null
+                                    ? [myLocation.lat, myLocation.lng]
+                                    : null
+                            }
+                            fitGeometry={
+                                myLocation?.neighborhood?.geometry ?? null
+                            }
+                        />
+                    </Map>
+                </div>
             </CardContent>
         </Card>
     );
