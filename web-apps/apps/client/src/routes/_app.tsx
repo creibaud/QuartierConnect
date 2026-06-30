@@ -19,6 +19,7 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from "@workspace/ui/components/breadcrumb";
+import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import { Separator } from "@workspace/ui/components/separator";
 import {
     SidebarInset,
@@ -102,8 +103,8 @@ function AppLayout() {
         <TooltipProvider>
             <SidebarProvider>
                 <AppSidebar />
-                <SidebarInset>
-                    <header className="bg-background/75 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 border-b px-4 backdrop-blur">
+                <SidebarInset className="h-svh overflow-hidden">
+                    <header className="bg-background/75 supports-[backdrop-filter]:bg-background/60 z-20 flex h-16 shrink-0 items-center gap-2 border-b px-4 backdrop-blur">
                         <SidebarTrigger className="-ml-1" />
                         <Separator
                             orientation="vertical"
@@ -129,9 +130,11 @@ function AppLayout() {
                             {/* Notification bell goes here once the notifications feature ships */}
                         </div>
                     </header>
-                    <div className="flex flex-1 flex-col">
-                        <Outlet />
-                    </div>
+                    <ScrollArea className="min-h-0 flex-1">
+                        <div className="flex flex-1 flex-col">
+                            <Outlet />
+                        </div>
+                    </ScrollArea>
                 </SidebarInset>
             </SidebarProvider>
         </TooltipProvider>
