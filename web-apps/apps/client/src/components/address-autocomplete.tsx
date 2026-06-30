@@ -26,12 +26,11 @@ export function AddressAutocomplete({ id, value, onChange, onSelect, placeholder
             return;
         }
         const q = value.trim();
+        // Plain early-return (no setState in the effect body, so the
+        // set-state-in-effect rule never fires); the render gate below hides
+        // any stale suggestions the instant the input drops under 3 chars.
+        if (q.length < 3) return;
         const handle = setTimeout(() => {
-            if (q.length < 3) {
-                setSuggestions([]);
-                setOpen(false);
-                return;
-            }
             void apiGet<AddressSuggestion[]>(
                 `/geocoding/search?q=${encodeURIComponent(q)}`,
             )
@@ -39,7 +38,10 @@ export function AddressAutocomplete({ id, value, onChange, onSelect, placeholder
                     setSuggestions(res);
                     setOpen(true);
                 })
-                .catch(() => setSuggestions([]));
+                .catch(() => {
+                    setSuggestions([]);
+                    setOpen(false);
+                });
         }, 350);
         return () => clearTimeout(handle);
     }, [value]);
@@ -54,7 +56,7 @@ export function AddressAutocomplete({ id, value, onChange, onSelect, placeholder
                 onChange={(e) => onChange(e.target.value)}
                 autoComplete="off"
             />
-            {open && suggestions.length > 0 && (
+            {open && value.trim().length >= 3 && suggestions.length > 0 && (
                 <ul className="bg-popover absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md border p-1 text-sm shadow-md">
                     {suggestions.map((s) => (
                         <li key={`${s.lat},${s.lng},${s.label}`}>

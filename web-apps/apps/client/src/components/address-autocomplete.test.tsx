@@ -17,5 +17,15 @@ describe("AddressAutocomplete", () => {
         const opt = await screen.findByText("1 Rue X, Paris");
         fireEvent.click(opt);
         expect(onSelect).toHaveBeenCalledWith({ label: "1 Rue X, Paris", lat: 48.85, lng: 2.35 });
+        expect(onChange).toHaveBeenCalledWith("1 Rue X, Paris");
+    });
+
+    it("hides the dropdown when the value drops under 3 chars", async () => {
+        const { rerender } = render(
+            <AddressAutocomplete value="1 Rue" onChange={vi.fn()} onSelect={vi.fn()} />,
+        );
+        await screen.findByText("1 Rue X, Paris");
+        rerender(<AddressAutocomplete value="1" onChange={vi.fn()} onSelect={vi.fn()} />);
+        expect(screen.queryByText("1 Rue X, Paris")).toBeNull();
     });
 });
