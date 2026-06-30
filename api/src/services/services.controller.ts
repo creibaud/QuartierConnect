@@ -108,15 +108,15 @@ export class ServicesController {
         // @Query params); harmless because the neighborhood guard below rejects it.
         @Request() req: AuthRequest = { user: { sub: "", role: "" } },
     ) {
-        // Admin/moderator moderate across all neighborhoods (the admin app lists
-        // through this same endpoint); residents are scoped to their own. A non-staff
-        // caller without a neighborhood gets nothing — otherwise Mongoose would strip
-        // `neighborhoodId: undefined` and leak every neighborhood's services.
-        const isStaff =
-            req.user.role === "admin" || req.user.role === "moderator";
-        if (!isStaff && !req.user.neighborhoodId) return [];
+        // Only admins list across all neighborhoods (the admin app lists through
+        // this same endpoint); residents AND moderators are scoped to their own.
+        // A scoped caller without a neighborhood gets nothing — otherwise Mongoose
+        // would strip `neighborhoodId: undefined` and leak every neighborhood's
+        // services.
+        const isAdmin = req.user.role === "admin";
+        if (!isAdmin && !req.user.neighborhoodId) return [];
         const filter: Record<string, unknown> = {};
-        if (!isStaff) filter.neighborhoodId = req.user.neighborhoodId;
+        if (!isAdmin) filter.neighborhoodId = req.user.neighborhoodId;
         if (category) filter.category = category;
         if (type) filter.type = type;
         if (direction) filter.direction = direction;

@@ -34,7 +34,7 @@ export function AccountPage() {
                 variants={stagger}
                 initial="hidden"
                 animate="visible"
-                className="mx-auto flex max-w-5xl flex-col gap-6"
+                className="mx-auto flex max-w-7xl flex-col gap-6"
             >
                 <motion.div variants={fadeUp}>
                     <PageHeader

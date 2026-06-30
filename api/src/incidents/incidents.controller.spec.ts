@@ -93,14 +93,25 @@ describe("IncidentsController", () => {
         expect(mockDb.select).not.toHaveBeenCalled();
     });
 
-    it("GET /incidents lets staff query across all neighborhoods", async () => {
+    it("GET /incidents lets an admin query across all neighborhoods", async () => {
         await controller.findAll(
             undefined,
             "1",
             "20",
-            authReq("admin1", "moderator", null) as any,
+            authReq("admin1", "admin", null) as any,
         );
         expect(mockDb.select).toHaveBeenCalled();
+    });
+
+    it("GET /incidents scopes a moderator to their own neighborhood", async () => {
+        const result = await controller.findAll(
+            undefined,
+            "1",
+            "20",
+            authReq("mod1", "moderator", null) as any,
+        );
+        expect(result).toEqual([]);
+        expect(mockDb.select).not.toHaveBeenCalled();
     });
 
     it("GET /incidents/:id returns one", async () => {

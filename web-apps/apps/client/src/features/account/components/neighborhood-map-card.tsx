@@ -110,6 +110,7 @@ export function NeighborhoodMapCard() {
                         <MapControls
                             home={homePosition}
                             fitGeometry={geometry as unknown as GeoJSON.Polygon}
+                            autoLocate
                         />
                     </Map>
                 </div>

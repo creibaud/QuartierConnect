@@ -103,7 +103,7 @@ function EventsPage() {
 
     return (
         <div className="p-6 md:p-8">
-            <div className="mx-auto flex max-w-5xl flex-col gap-6">
+            <div className="mx-auto flex max-w-7xl flex-col gap-6">
                 <PageHeader
                     title={t("pages.events.title")}
                     description={t("pages.events.description")}
