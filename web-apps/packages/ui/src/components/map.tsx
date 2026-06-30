@@ -1,6 +1,5 @@
 "use client";
 
-import type { MapMouseEvent } from "maplibre-gl";
 import {
     forwardRef,
     useCallback,
@@ -18,15 +17,6 @@ import {
     Maximize01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-    Map as MapLibreMap,
-    MapGeoJSON,
-    MapMarker,
-    MarkerContent,
-    MarkerPopup,
-    useMap,
-    type MapRef,
-} from "@workspace/ui/components/ui/map";
 import { Button } from "@workspace/ui/components/button";
 import {
     Tooltip,
@@ -34,7 +24,18 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@workspace/ui/components/tooltip";
+import {
+    MapControls as MapcnControls,
+    MapGeoJSON,
+    Map as MapLibreMap,
+    MapMarker,
+    MarkerContent,
+    MarkerPopup,
+    useMap,
+    type MapRef,
+} from "@workspace/ui/components/ui/map";
 import { cn } from "@workspace/ui/lib/utils";
+import type { MapMouseEvent } from "maplibre-gl";
 
 // ─── Public types ──────────────────────────────────────────────────────────
 
@@ -77,7 +78,7 @@ interface MapProps {
  * The swap to MapLibre's `[lng, lat]` happens here so consumers are unchanged.
  */
 export const Map = forwardRef<MapRef, MapProps>(function Map(
-    { center, zoom = 13, className, children, scrollWheelZoom = false },
+    { center, zoom = 13, className, children, scrollWheelZoom = true },
     ref,
 ) {
     return (
@@ -86,9 +87,11 @@ export const Map = forwardRef<MapRef, MapProps>(function Map(
             zoom={zoom}
             className={cn("rounded-md border", className)}
             scrollZoom={scrollWheelZoom}
+            projection={{ type: "globe" }}
             ref={ref}
         >
             {children}
+            <MapcnControls showZoom position="top-left" />
         </MapLibreMap>
     );
 });

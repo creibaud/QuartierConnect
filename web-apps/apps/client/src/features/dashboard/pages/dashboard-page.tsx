@@ -45,7 +45,7 @@ export function DashboardPage() {
     };
 
     return (
-        <div className="mx-auto w-full max-w-5xl space-y-6 p-6 md:p-8">
+        <div className="mx-auto flex max-w-5xl flex-col gap-6 p-6 md:p-8">
             <DashboardHeader
                 firstName={firstName}
                 email={user.email}

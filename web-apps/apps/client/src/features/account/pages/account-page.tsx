@@ -29,12 +29,12 @@ export function AccountPage() {
     };
 
     return (
-        <div className="mx-auto w-full max-w-5xl p-6 md:p-8">
+        <div className="p-6 md:p-8">
             <motion.div
                 variants={stagger}
                 initial="hidden"
                 animate="visible"
-                className="space-y-6"
+                className="mx-auto flex max-w-5xl flex-col gap-6"
             >
                 <motion.div variants={fadeUp}>
                     <PageHeader
