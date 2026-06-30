@@ -69,7 +69,7 @@ function IncidentDetailPage() {
 
     return (
         <div className="p-6 md:p-8">
-            <div className="mx-auto max-w-5xl space-y-6">
+            <div className="mx-auto flex max-w-5xl flex-col gap-6">
                 <PageHeader
                     title={incident?.title ?? t("pages.incidentDetail.title")}
                     description={

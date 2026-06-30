@@ -136,6 +136,12 @@
         font-feature-settings: "ss01", "ss02";
         letter-spacing: -0.015em;
     }
+  .maplibregl-popup-content {
+    @apply bg-transparent! shadow-none! p-0! rounded-none!;
+    }
+  .maplibregl-popup-tip {
+    @apply hidden!;
+    }
 }
 
 /* ── Leaflet zoom control — restyled to match shadcn outline icon-buttons ── */
