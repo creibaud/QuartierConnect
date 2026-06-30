@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Add01Icon, CustomerServiceIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
-import { centroidOf, pointToLatLng } from "@workspace/shared/lib/geo";
+import { centroidOf, pointInPolygon, pointToLatLng } from "@workspace/shared/lib/geo";
 import {
     useCreateService,
     useInfiniteServices,
@@ -53,6 +53,7 @@ import {
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { toast } from "sonner";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { useMyLocation } from "@/features/onboarding/hooks/address.hooks";
 import { ServiceCard } from "../components/service-card";
 
@@ -343,6 +344,12 @@ function ServiceFormDialog({
     );
     const [description, setDescription] = useState(initial?.description ?? "");
     const [address, setAddress] = useState(initial?.address ?? "");
+    const [picked, setPicked] = useState<{ lat: number; lng: number } | null>(
+        initial?.location
+            ? { lat: initial.location.coordinates[1], lng: initial.location.coordinates[0] }
+            : null,
+    );
+    const { data: myLocation } = useMyLocation();
     const createService = useCreateService();
     const updateService = useUpdateService();
 
@@ -360,6 +367,9 @@ function ServiceFormDialog({
             type,
             description: description.trim(),
             address: address.trim() || undefined,
+            location: picked
+                ? { type: "Point" as const, coordinates: [picked.lng, picked.lat] as [number, number] }
+                : undefined,
         };
         if (initial) {
             updateService.mutate(
@@ -478,12 +488,19 @@ function ServiceFormDialog({
                         <Label htmlFor="svc-address">
                             {t("pages.services.addressLabel")}
                         </Label>
-                        <Input
+                        <AddressAutocomplete
                             id="svc-address"
                             value={address}
-                            onChange={(e) => setAddress(e.target.value)}
+                            onChange={(text) => { setAddress(text); setPicked(null); }}
+                            onSelect={(s) => { setAddress(s.label); setPicked({ lat: s.lat, lng: s.lng }); }}
                             placeholder={t("pages.services.addressPlaceholder")}
                         />
+                        {picked && myLocation?.neighborhood?.geometry &&
+                            !pointInPolygon(picked.lat, picked.lng, myLocation.neighborhood.geometry) && (
+                                <p className="text-amber-600 dark:text-amber-500 text-xs">
+                                    {t("address.outsideQuartier")}
+                                </p>
+                            )}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="svc-desc">
