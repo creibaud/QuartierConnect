@@ -20,6 +20,9 @@ export class IncidentDto {
     })
     status: string;
 
+    @ApiProperty()
+    category: string;
+
     @ApiProperty({ example: "f1e2d3c4-b5a6-7890-1234-567890abcdef" })
     createdBy: string;
 

@@ -43,6 +43,9 @@ export const incidents = pgTable(
         title: varchar("title", { length: 255 }).notNull(),
         description: text("description").notNull(),
         status: varchar("status", { length: 50 }).notNull().default("open"),
+        category: varchar("category", { length: 50 })
+            .notNull()
+            .default("neighborhood"),
         createdBy: uuid("created_by")
             .notNull()
             .references(() => users.id),
