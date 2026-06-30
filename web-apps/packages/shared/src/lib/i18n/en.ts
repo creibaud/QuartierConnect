@@ -265,6 +265,7 @@ export default {
             welcome: "Hello",
             yourPoints: "Your points",
             participationPoints: "Participation points",
+            viewPointsHistory: "View history",
             mappedNeighborhoods: "Mapped neighborhoods",
             aroundYou: "Around you",
             myNeighborhood: "My neighborhood — {{name}}",
