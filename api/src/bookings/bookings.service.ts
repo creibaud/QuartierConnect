@@ -79,31 +79,37 @@ export class BookingsService {
         if (service.createdBy !== userId) {
             throw new ForbiddenException("Only the service owner can accept");
         }
-        if (booking.status !== BookingStatus.PENDING) {
-            throw new BadRequestException("Booking is not pending");
-        }
 
-        const content = this.renderContent(service, booking);
+        // Atomically claim the booking so exactly one concurrent accept wins
+        // the PENDING→ACCEPTED transition. The loser gets null and never mints
+        // a second contract or duplicate pending payment for the same booking.
+        const claimed = await this.bookingModel.findOneAndUpdate(
+            { _id: bookingId, status: BookingStatus.PENDING },
+            { $set: { status: BookingStatus.ACCEPTED } },
+            { new: true },
+        );
+        if (!claimed) throw new BadRequestException("Booking is not pending");
+
+        const content = this.renderContent(service, claimed);
         const contract = await this.contractsService.createServiceContract({
             title: `Service contract — ${service.title}`,
             content,
             serviceId: String(service._id),
-            bookingId: String(booking._id),
-            signatories: [booking.payerId, booking.payeeId],
-            pointsAmount: booking.pointsAmount,
+            bookingId: String(claimed._id),
+            signatories: [claimed.payerId, claimed.payeeId],
+            pointsAmount: claimed.pointsAmount,
             createdBy: userId,
         });
         await this.pointsService.reserveServicePayment({
             contractId: String(contract._id),
-            payerId: booking.payerId,
-            payeeId: booking.payeeId,
-            amount: booking.pointsAmount,
+            payerId: claimed.payerId,
+            payeeId: claimed.payeeId,
+            amount: claimed.pointsAmount,
             note: `Service payment: ${service.title}`,
         });
-        booking.status = BookingStatus.ACCEPTED;
-        booking.contractId = String(contract._id);
-        await booking.save();
-        return booking;
+        claimed.contractId = String(contract._id);
+        await claimed.save();
+        return claimed;
     }
 
     async decline(bookingId: string, userId: string) {

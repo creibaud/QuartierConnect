@@ -78,17 +78,22 @@ describe("BookingsService.request", () => {
 
 describe("BookingsService.accept", () => {
     it("generates a contract, reserves payment, moves to accepted", async () => {
-        const booking: any = {
+        const claimed: any = {
             _id: "b1",
             serviceId: "svc1",
-            status: BookingStatus.PENDING,
+            status: BookingStatus.ACCEPTED,
             payerId: "initiator",
             payeeId: "owner",
             pointsAmount: 3,
             save: jest.fn().mockResolvedValue(undefined),
         };
         const bookingModel: any = {
-            findById: jest.fn().mockResolvedValue(booking),
+            findById: jest.fn().mockResolvedValue({
+                _id: "b1",
+                serviceId: "svc1",
+                status: BookingStatus.PENDING,
+            }),
+            findOneAndUpdate: jest.fn().mockResolvedValue(claimed),
         };
         const contracts: any = {
             createServiceContract: jest.fn().mockResolvedValue({ _id: "c1" }),
@@ -114,17 +119,18 @@ describe("BookingsService.accept", () => {
         expect(points.reserveServicePayment).toHaveBeenCalledWith(
             expect.objectContaining({ contractId: "c1", amount: 3 }),
         );
-        expect(booking.status).toBe(BookingStatus.ACCEPTED);
-        expect(booking.contractId).toBe("c1");
+        expect(claimed.status).toBe(BookingStatus.ACCEPTED);
+        expect(claimed.contractId).toBe("c1");
     });
 
-    it("rejects accept by a non-owner", async () => {
+    it("rejects accept by a non-owner without claiming the booking", async () => {
         const booking: any = {
             serviceId: "svc1",
             status: BookingStatus.PENDING,
         };
         const bookingModel: any = {
             findById: jest.fn().mockResolvedValue(booking),
+            findOneAndUpdate: jest.fn(),
         };
         const svc = new BookingsService(
             bookingModel,
@@ -135,6 +141,35 @@ describe("BookingsService.accept", () => {
         await expect(svc.accept("b1", "stranger")).rejects.toBeInstanceOf(
             ForbiddenException,
         );
+        expect(bookingModel.findOneAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it("rejects and mints nothing when it loses the claim race", async () => {
+        const bookingModel: any = {
+            findById: jest.fn().mockResolvedValue({
+                _id: "b1",
+                serviceId: "svc1",
+                status: BookingStatus.PENDING,
+            }),
+            findOneAndUpdate: jest.fn().mockResolvedValue(null),
+        };
+        const contracts: any = {
+            createServiceContract: jest.fn(),
+        };
+        const points: any = {
+            reserveServicePayment: jest.fn(),
+        };
+        const svc = new BookingsService(
+            bookingModel,
+            makeService(paidService()) as any,
+            contracts,
+            points,
+        );
+        await expect(svc.accept("b1", "owner")).rejects.toBeInstanceOf(
+            BadRequestException,
+        );
+        expect(contracts.createServiceContract).not.toHaveBeenCalled();
+        expect(points.reserveServicePayment).not.toHaveBeenCalled();
     });
 });
 
