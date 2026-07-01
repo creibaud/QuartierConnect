@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "@tanstack/react-router";
 import { Add01Icon, CustomerServiceIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import { centroidOf, pointInPolygon, pointToLatLng } from "@workspace/shared/lib/geo";
+import { useCreateBooking } from "@workspace/shared/lib/hooks/useBookings";
 import {
     useCreateService,
     useInfiniteServices,
@@ -73,7 +75,9 @@ type DirectionFilter = "all" | "offer" | "request";
 
 export function ServicesPage() {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const currentUser = getCurrentUser();
+    const createBooking = useCreateBooking();
     const [selectedDirection, setSelectedDirection] =
         useState<DirectionFilter>("all");
     const [createOpen, setCreateOpen] = useState(false);
@@ -98,6 +102,19 @@ export function ServicesPage() {
         if (!currentUser) return false;
         if (currentUser.role === "admin") return true;
         return service.createdBy === currentUser.sub;
+    }
+
+    function reserveService(service: Service) {
+        createBooking.mutate(
+            { serviceId: service._id },
+            {
+                onSuccess: () => {
+                    toast.success(t("pages.services.bookingRequested"));
+                    void navigate({ to: "/bookings" });
+                },
+                onError: () => toast.error(t("pages.services.bookingError")),
+            },
+        );
     }
 
     return (
@@ -279,13 +296,25 @@ export function ServicesPage() {
                 >
                     <div className="grid gap-4 sm:grid-cols-2">
                         {services.map((service) => (
-                            <ServiceCard
-                                key={service._id}
-                                service={service}
-                                currentUserId={currentUser?.sub ?? ""}
-                                canManage={canManage(service)}
-                                onEdit={() => setEditTarget(service)}
-                            />
+                            <div key={service._id} className="flex flex-col gap-2">
+                                <ServiceCard
+                                    service={service}
+                                    currentUserId={currentUser?.sub ?? ""}
+                                    canManage={canManage(service)}
+                                    onEdit={() => setEditTarget(service)}
+                                />
+                                {service.type === "paid" &&
+                                    service.createdBy !== currentUser?.sub && (
+                                        <Button
+                                            size="sm"
+                                            className="self-end"
+                                            disabled={createBooking.isPending}
+                                            onClick={() => reserveService(service)}
+                                        >
+                                            {t("pages.services.reserve")}
+                                        </Button>
+                                    )}
+                            </div>
                         ))}
                     </div>
 
