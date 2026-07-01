@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "../api";
-import type { Contract } from "../types";
+import type { Contract, ContractAuditEntry } from "../types";
 
 export function useContracts() {
     return useQuery<Contract[]>({
@@ -13,6 +13,14 @@ export function useContract(id: string) {
     return useQuery<Contract>({
         queryKey: ["contracts", id],
         queryFn: () => apiGet<Contract>(`/contracts/${id}`),
+        enabled: !!id,
+    });
+}
+
+export function useContractAudit(id: string) {
+    return useQuery<ContractAuditEntry[]>({
+        queryKey: ["contracts", id, "audit"],
+        queryFn: () => apiGet<ContractAuditEntry[]>(`/contracts/${id}/audit`),
         enabled: !!id,
     });
 }
@@ -34,8 +42,19 @@ export function useCreateContract() {
 export function useSignContract() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ id, totpCode }: { id: string; totpCode: string }) =>
-            apiPost<Contract>(`/contracts/${id}/sign`, { totpCode }),
+        mutationFn: ({
+            id,
+            totpCode,
+            signatureImage,
+        }: {
+            id: string;
+            totpCode: string;
+            signatureImage?: string;
+        }) =>
+            apiPost<Contract>(`/contracts/${id}/sign`, {
+                totpCode,
+                signatureImage,
+            }),
         onSuccess: (_, { id }) => {
             queryClient.invalidateQueries({ queryKey: ["contracts"] });
             queryClient.invalidateQueries({ queryKey: ["contracts", id] });
