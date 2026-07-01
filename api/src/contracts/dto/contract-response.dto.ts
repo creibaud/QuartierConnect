@@ -39,7 +39,7 @@ export class ContractDto {
 
     @ApiProperty({
         enum: ContractStatus,
-        example: ContractStatus.PENDING_SIGNATURE,
+        example: ContractStatus.PARTIAL,
     })
     status: ContractStatus;
 
@@ -57,6 +57,27 @@ export class ContractDto {
 
     @ApiProperty({ type: [SignatureDto] })
     signatures: SignatureDto[];
+
+    @ApiPropertyOptional({
+        example: "664f1a2b3c4d5e6f7a8b9c21",
+        nullable: true,
+        description: "Service this contract settles (service contracts only)",
+    })
+    serviceId?: string | null;
+
+    @ApiPropertyOptional({
+        example: "664f1a2b3c4d5e6f7a8b9c22",
+        nullable: true,
+        description: "Booking this contract settles (service contracts only)",
+    })
+    bookingId?: string | null;
+
+    @ApiPropertyOptional({
+        example: 20,
+        nullable: true,
+        description: "Points settled when the contract is fully signed",
+    })
+    pointsAmount?: number | null;
 
     @ApiProperty({ example: "2026-04-05T10:00:00.000Z" })
     createdAt: string;

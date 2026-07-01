@@ -6,6 +6,7 @@ import {
     Injectable,
     NotFoundException,
 } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { InjectModel } from "@nestjs/mongoose";
 import { eq } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -13,6 +14,7 @@ import { Model } from "mongoose";
 import { TotpService } from "../auth/totp.service";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
+import { PointsService } from "../points/points.service";
 import { CreateContractDto } from "./dto/create-contract.dto";
 import {
     Contract,
@@ -28,6 +30,8 @@ export class ContractsService {
         @Inject(DRIZZLE_TOKEN)
         private readonly db: PostgresJsDatabase<typeof schema>,
         private readonly totpService: TotpService,
+        private readonly pointsService: PointsService,
+        private readonly eventEmitter: EventEmitter2,
     ) {}
 
     findAll(userId: string) {
@@ -68,14 +72,54 @@ export class ContractsService {
         return contract.save();
     }
 
+    async createServiceContract(p: {
+        title: string;
+        content: string;
+        serviceId: string;
+        bookingId: string;
+        signatories: string[];
+        pointsAmount: number;
+        createdBy: string;
+    }): Promise<ContractDocument> {
+        const hash = crypto
+            .createHash("sha256")
+            .update(p.content)
+            .digest("hex");
+        const contract = new this.contractModel({
+            title: p.title,
+            content: p.content,
+            createdBy: p.createdBy,
+            signatories: p.signatories,
+            status: ContractStatus.DRAFT,
+            contentHash: hash,
+            serviceId: p.serviceId,
+            bookingId: p.bookingId,
+            pointsAmount: p.pointsAmount,
+        });
+        return contract.save();
+    }
+
+    async cancelContract(id: string): Promise<void> {
+        const contract = await this.contractModel.findById(id).exec();
+        if (!contract) return;
+        if (contract.status === ContractStatus.FULLY_SIGNED) {
+            throw new BadRequestException(
+                "A fully-signed contract cannot be cancelled",
+            );
+        }
+        contract.status = ContractStatus.CANCELLED;
+        await contract.save();
+    }
+
     async sign(id: string, userId: string, totpCode: string) {
         const contract = await this.contractModel.findById(id).exec();
         if (!contract) throw new NotFoundException("Contract not found");
-
+        if (contract.status === ContractStatus.CANCELLED) {
+            throw new BadRequestException("Contract is cancelled");
+        }
         if (!contract.signatories.includes(userId)) {
             throw new ForbiddenException("Not a signatory of this contract");
         }
-
         if (contract.signatures.some((s) => s.userId === userId)) {
             throw new BadRequestException("Already signed");
         }
@@ -86,28 +130,42 @@ export class ContractsService {
             .where(eq(schema.users.id, userId))
             .limit(1);
         if (!user) throw new NotFoundException("User not found");
+        if (!this.totpService.verify(user.totpSecret, totpCode)) {
+            throw new BadRequestException("Invalid TOTP code");
+        }
 
-        const isValid = this.totpService.verify(user.totpSecret, totpCode);
-        if (!isValid) throw new BadRequestException("Invalid TOTP code");
+        const signerIds = new Set(contract.signatures.map((s) => s.userId));
+        signerIds.add(userId);
+        const willBeFullySigned = contract.signatories.every((s) =>
+            signerIds.has(s),
+        );
+        const contractId = String(contract._id);
+
+        // Money-critical: settle BEFORE persisting the final signature so a
+        // `fully_signed` service contract can never exist without payment.
+        if (willBeFullySigned && contract.bookingId) {
+            await this.pointsService.completeServicePayment(contractId);
+        }
 
         const hash = crypto
             .createHash("sha256")
             .update(contract.content + userId + new Date().toISOString())
             .digest("hex");
-
         contract.signatures.push({ userId, signedAt: new Date(), hash });
-
-        const allSigned = contract.signatories.every((s) =>
-            contract.signatures.some((sig) => sig.userId === s),
-        );
-
-        if (allSigned) {
-            contract.status = ContractStatus.SIGNED;
+        if (willBeFullySigned) {
+            contract.status = ContractStatus.FULLY_SIGNED;
             contract.signedAt = new Date();
         } else {
-            contract.status = ContractStatus.PENDING_SIGNATURE;
+            contract.status = ContractStatus.PARTIAL;
         }
+        const saved = await contract.save();
 
-        return contract.save();
+        if (willBeFullySigned && contract.bookingId) {
+            this.eventEmitter.emit("contract.fully_signed", {
+                contractId,
+                bookingId: contract.bookingId,
+            });
+        }
+        return saved;
     }
 }

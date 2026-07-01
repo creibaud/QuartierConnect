@@ -69,14 +69,14 @@ describe("ContractsController", () => {
     });
 
     it("sign returns updated contract", async () => {
-        const signed = { ...mockContract, status: "signed" };
+        const signed = { ...mockContract, status: "fully_signed" };
         mockService.sign.mockResolvedValue(signed);
         const result = await controller.sign(
             "contract-1",
             { totpCode: "123456" },
             authReq as any,
         );
-        expect(result.status).toBe("signed");
+        expect(result.status).toBe("fully_signed");
     });
 
     it("sign throws on invalid TOTP", async () => {
