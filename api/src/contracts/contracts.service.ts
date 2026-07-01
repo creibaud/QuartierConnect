@@ -52,6 +52,22 @@ export class ContractsService {
             contract.signatories.includes(userId);
         if (!hasAccess) throw new ForbiddenException("Access denied");
 
+        if (
+            contract.bookingId &&
+            contract.status !== ContractStatus.FULLY_SIGNED &&
+            (await this.pointsService.isServicePaymentCompleted(
+                String(contract._id),
+            ))
+        ) {
+            contract.status = ContractStatus.FULLY_SIGNED;
+            if (!contract.signedAt) contract.signedAt = new Date();
+            try {
+                await contract.save();
+            } catch {
+                // best-effort reconciliation: persistence is retried on the
+                // next read
+            }
+        }
         return contract;
     }
 
