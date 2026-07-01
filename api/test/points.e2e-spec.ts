@@ -17,7 +17,7 @@ function currentTotp(secret: string, timeOffsetSeconds = 0): string {
 async function registerAndLogin(
     app: INestApplication,
     email: string,
-): Promise<{ accessToken: string; userId: string }> {
+): Promise<{ accessToken: string; totpSecret: string; userId: string }> {
     const regRes = await request(app.getHttpServer())
         .post("/auth/register")
         .send({ email, password: DEMO_PASSWORD })
@@ -46,6 +46,7 @@ async function registerAndLogin(
 
     return {
         accessToken: loginRes.body.accessToken as string,
+        totpSecret,
         userId: payload.sub,
     };
 }
@@ -55,6 +56,10 @@ describe("Points (e2e)", () => {
     let senderToken: string;
     let recipientToken: string;
     let recipientId: string;
+    let ownerToken: string;
+    let buyerToken: string;
+    let ownerTotp: string;
+    let buyerTotp: string;
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -74,10 +79,22 @@ describe("Points (e2e)", () => {
             app,
             `e2e-points-recipient-${ts}@test.fr`,
         );
+        const owner = await registerAndLogin(
+            app,
+            `e2e-points-owner-${ts}@test.fr`,
+        );
+        const buyer = await registerAndLogin(
+            app,
+            `e2e-points-buyer-${ts}@test.fr`,
+        );
 
         senderToken = sender.accessToken;
         recipientToken = recipient.accessToken;
         recipientId = recipient.userId;
+        ownerToken = owner.accessToken;
+        buyerToken = buyer.accessToken;
+        ownerTotp = owner.totpSecret;
+        buyerTotp = buyer.totpSecret;
     }, 30000);
 
     afterAll(async () => {
@@ -197,6 +214,55 @@ describe("Points (e2e)", () => {
                 .expect(200);
 
             expect(res.body.length).toBeGreaterThan(0);
+        });
+    });
+
+    describe("Settlement respects the -10 floor", () => {
+        it("second signature is rejected when the payer cannot afford it (-10 floor)", async () => {
+            // owner offers an expensive paid service (20 points)
+            const svc = await request(app.getHttpServer())
+                .post("/services")
+                .set("Authorization", `Bearer ${ownerToken}`)
+                .send({
+                    title: "Expensive help",
+                    description: "Costly",
+                    category: "other",
+                    type: "paid",
+                    direction: "offer",
+                    duration: 60,
+                    pointsMultiplier: 10,
+                })
+                .expect(201);
+
+            const booking = await request(app.getHttpServer())
+                .post("/bookings")
+                .set("Authorization", `Bearer ${buyerToken}`)
+                .send({ serviceId: svc.body._id })
+                .expect(201);
+            const accepted = await request(app.getHttpServer())
+                .post(`/bookings/${booking.body._id}/accept`)
+                .set("Authorization", `Bearer ${ownerToken}`)
+                .expect(201);
+            const contractId = accepted.body.contractId as string;
+
+            // payer signs first (partial), then payee's completing signature must 400
+            await request(app.getHttpServer())
+                .post(`/contracts/${contractId}/sign`)
+                .set("Authorization", `Bearer ${buyerToken}`)
+                .send({ totpCode: currentTotp(buyerTotp) })
+                .expect(201);
+            await request(app.getHttpServer())
+                .post(`/contracts/${contractId}/sign`)
+                .set("Authorization", `Bearer ${ownerToken}`)
+                .send({ totpCode: currentTotp(ownerTotp, 30) })
+                .expect(400);
+
+            // balance unchanged
+            const bal = await request(app.getHttpServer())
+                .get("/points/balance")
+                .set("Authorization", `Bearer ${buyerToken}`)
+                .expect(200);
+            expect(bal.body.balance).toBe(0);
         });
     });
 });
