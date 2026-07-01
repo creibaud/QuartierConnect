@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "@tanstack/react-router";
 import {
     Delete01Icon,
     Edit01Icon,
@@ -9,6 +10,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
     useDeleteService,
 } from "@workspace/shared/lib/hooks/services.hooks";
+import { useCreateBooking } from "@workspace/shared/lib/hooks/useBookings";
 import {
     useCastVote,
     useVoteScore,
@@ -111,6 +113,9 @@ export function ServiceCard({
                                 ctaLabel={ctaLabel}
                             />
                         )}
+                        {!isOwn && service.type === "paid" && (
+                            <ReserveButton serviceId={service._id} />
+                        )}
                         {canManage && (
                             <ServiceManageButtons
                                 service={service}
@@ -158,6 +163,35 @@ function RespondButton({
             onClick={handleClick}
         >
             {ctaLabel}
+        </Button>
+    );
+}
+
+function ReserveButton({ serviceId }: { serviceId: string }) {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+    const createBooking = useCreateBooking();
+
+    return (
+        <Button
+            type="button"
+            size="sm"
+            disabled={createBooking.isPending}
+            onClick={() =>
+                createBooking.mutate(
+                    { serviceId },
+                    {
+                        onSuccess: () => {
+                            toast.success(t("pages.services.bookingRequested"));
+                            void navigate({ to: "/bookings" });
+                        },
+                        onError: () =>
+                            toast.error(t("pages.services.bookingError")),
+                    },
+                )
+            }
+        >
+            {t("pages.services.reserve")}
         </Button>
     );
 }
