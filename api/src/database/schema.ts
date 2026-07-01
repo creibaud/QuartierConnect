@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+    check,
     index,
     integer,
     pgTable,
@@ -62,15 +64,19 @@ export const incidents = pgTable(
     ],
 );
 
-export const pointsBalances = pgTable("points_balances", {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-        .notNull()
-        .unique()
-        .references(() => users.id),
-    balance: integer("balance").notNull().default(0),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+export const pointsBalances = pgTable(
+    "points_balances",
+    {
+        id: uuid("id").defaultRandom().primaryKey(),
+        userId: uuid("user_id")
+            .notNull()
+            .unique()
+            .references(() => users.id),
+        balance: integer("balance").notNull().default(0),
+        updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    },
+    (t) => [check("points_balances_min_balance", sql`${t.balance} >= -10`)],
+);
 
 export const pointsTransactions = pgTable(
     "points_transactions",
@@ -84,9 +90,24 @@ export const pointsTransactions = pgTable(
             .references(() => users.id),
         amount: integer("amount").notNull(),
         note: text("note"),
+        contractId: text("contract_id"),
+        type: text("type").notNull().default("bonus"),
+        status: text("status").notNull().default("completed"),
+        completedAt: timestamp("completed_at"),
         createdAt: timestamp("created_at").notNull().defaultNow(),
     },
-    (t) => [index("points_tx_sender_idx").on(t.senderId)],
+    (t) => [
+        index("points_tx_sender_idx").on(t.senderId),
+        index("points_tx_contract_idx").on(t.contractId),
+        check(
+            "points_tx_type_check",
+            sql`${t.type} in ('service_payment','bonus','correction')`,
+        ),
+        check(
+            "points_tx_status_check",
+            sql`${t.status} in ('pending','completed','cancelled')`,
+        ),
+    ],
 );
 
 export type User = typeof users.$inferSelect;
