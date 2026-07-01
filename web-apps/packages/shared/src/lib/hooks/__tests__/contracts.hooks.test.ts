@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { apiGet, apiPost } from "../../api";
 import {
+    useContractAudit,
     useContracts,
     useCreateContract,
     useSignContract,
@@ -89,10 +90,30 @@ describe("useSignContract", () => {
         const { result } = renderHook(() => useSignContract(), {
             wrapper: createWrapper(),
         });
-        result.current.mutate({ id: "ctr-1", totpCode: "123456" });
+        result.current.mutate({
+            id: "ctr-1",
+            totpCode: "123456",
+            signatureImage: "data:image/png;base64,AAAA",
+        });
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
         expect(apiPost).toHaveBeenCalledWith("/contracts/ctr-1/sign", {
             totpCode: "123456",
+            signatureImage: "data:image/png;base64,AAAA",
         });
+    });
+});
+
+describe("useContractAudit", () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it("fetches the audit log", async () => {
+        vi.mocked(apiGet).mockResolvedValue([
+            { action: "generated", userId: "user-1", at: "2026-01-01T00:00:00Z" },
+        ]);
+        const { result } = renderHook(() => useContractAudit("ctr-1"), {
+            wrapper: createWrapper(),
+        });
+        await waitFor(() => expect(result.current.isSuccess).toBe(true));
+        expect(apiGet).toHaveBeenCalledWith("/contracts/ctr-1/audit");
     });
 });
