@@ -8,6 +8,7 @@ import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AcceptLanguageResolver, I18nModule, QueryResolver } from "nestjs-i18n";
 import { AppController } from "./app.controller";
 import { AuthModule } from "./auth/auth.module";
+import { BookingsModule } from "./bookings/bookings.module";
 import { CommunityVotesModule } from "./community-votes/community-votes.module";
 import { ContractsModule } from "./contracts/contracts.module";
 import { DrizzleModule } from "./database/drizzle.module";
@@ -61,6 +62,7 @@ import { VotesModule } from "./votes/votes.module";
         UsersModule,
         SocialModule,
         ContractsModule,
+        BookingsModule,
         MessagingModule,
         VotesModule,
         DocumentsModule,
