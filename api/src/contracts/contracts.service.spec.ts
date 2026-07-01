@@ -576,6 +576,38 @@ describe("ContractsService", () => {
             expect(res.status).toBe(ContractStatus.FULLY_SIGNED);
             expect(res.signatures).toHaveLength(1);
         });
+
+        it("passes the drawn signatureImage into stampSignature", async () => {
+            const contract = {
+                ...mockContractDoc,
+                bookingId: "bk-1",
+                signatories: ["user-1", "user-2"],
+                signatures: [],
+                save: jest.fn().mockResolvedValue({}),
+            };
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(contract),
+            });
+            mockTotpService.verify.mockReturnValue(true);
+            mockDocs.getCurrentPdf.mockResolvedValue(Buffer.from("%PDF-"));
+            mockPdf.stampSignature.mockResolvedValue(Buffer.from("%PDF-x"));
+            mockDocs.storePdf.mockResolvedValue({ fileId: "f1", sha256: "h" });
+
+            await service.sign(
+                "ct-1",
+                "user-1",
+                "123456",
+                "data:image/png;base64,AAAA",
+            );
+
+            expect(mockPdf.stampSignature).toHaveBeenCalledWith(
+                expect.any(Buffer),
+                0,
+                expect.objectContaining({
+                    image: "data:image/png;base64,AAAA",
+                }),
+            );
+        });
     });
 
     describe("createServiceContract", () => {
