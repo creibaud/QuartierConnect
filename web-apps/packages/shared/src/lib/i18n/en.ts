@@ -462,6 +462,9 @@ export default {
             directionRequest: "Request",
             allDirections: "All directions",
             respondError: "Unable to respond to this service",
+            reserve: "Book",
+            bookingRequested: "Booking request sent",
+            bookingError: "Booking failed",
             mine: {
                 title: "My services",
                 description: "Manage your ads and responses.",
