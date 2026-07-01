@@ -185,6 +185,28 @@ export class ContractsService {
         await contract.save();
     }
 
+    async getContractPdf(
+        id: string,
+        userId: string,
+    ): Promise<{ stream: NodeJS.ReadableStream; fileName: string }> {
+        const contract = await this.findOne(id, userId); // enforces party access
+        let res = await this.contractDocs.getPdfStream(id, userId);
+        if (!res) {
+            // lazy (re)generation when the PDF is missing
+            const data = await this.buildPdfData(contract);
+            const buf = await this.pdfService.generateBaseContractPdf(data);
+            await this.contractDocs.storePdf(id, buf, "generated", userId);
+            res = await this.contractDocs.getPdfStream(id, userId);
+        }
+        if (!res) throw new NotFoundException("PDF unavailable");
+        return res;
+    }
+
+    async getContractAudit(id: string, userId: string) {
+        await this.findOne(id, userId); // party access
+        return this.contractDocs.getAudit(id);
+    }
+
     async sign(id: string, userId: string, totpCode: string) {
         const contract = await this.contractModel.findById(id).exec();
         if (!contract) throw new NotFoundException("Contract not found");
