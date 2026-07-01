@@ -79,7 +79,7 @@ function makeDb(pending: Txn | null, senderBalance: number) {
                 }),
             }),
         }),
-        execute: async () => {
+        execute: () => {
             spies.balanceLockExecute();
             return [{ balance: state.balances.get(state.txn!.senderId) ?? 0 }];
         },

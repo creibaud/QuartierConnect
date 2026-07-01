@@ -106,7 +106,7 @@ export class CreateServiceDto {
         example: 60,
         minimum: 1,
     })
-    @ValidateIf((o) => o.type === "paid")
+    @ValidateIf((o: CreateServiceDto) => o.type === "paid")
     @IsInt()
     @Min(1)
     duration?: number;
