@@ -30,19 +30,15 @@ export function SignaturePad({
     return (
         <div className="space-y-2">
             <div className="bg-background rounded-md border">
-                {value ? (
-                    <img src={value} alt="" className="w-full" />
-                ) : (
-                    <SignatureCanvas
-                        ref={ref}
-                        onEnd={handleEnd}
-                        canvasProps={{
-                            width: 300,
-                            height: 150,
-                            className: "w-full touch-none",
-                        }}
-                    />
-                )}
+                <SignatureCanvas
+                    ref={ref}
+                    onEnd={handleEnd}
+                    canvasProps={{
+                        width: 300,
+                        height: 150,
+                        className: "w-full touch-none",
+                    }}
+                />
             </div>
             <div className="flex justify-end">
                 <Button
@@ -50,6 +46,7 @@ export function SignaturePad({
                     variant="outline"
                     size="sm"
                     onClick={handleClear}
+                    disabled={!value}
                 >
                     {clearLabel}
                 </Button>
