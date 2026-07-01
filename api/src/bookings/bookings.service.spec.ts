@@ -57,10 +57,12 @@ describe("BookingsService.request", () => {
         const created: any = {};
         const bookingModel: any = {
             findOne: jest.fn().mockResolvedValue(null),
-            create: jest.fn().mockImplementation((doc: any) => {
-                Object.assign(created, doc);
-                return { ...doc, _id: "b1" };
-            }),
+            create: jest
+                .fn()
+                .mockImplementation((doc: Record<string, unknown>) => {
+                    Object.assign(created, doc);
+                    return { ...doc, _id: "b1" };
+                }),
         };
         const svc = new BookingsService(
             bookingModel,
