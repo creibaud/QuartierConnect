@@ -164,4 +164,69 @@ describe("Paid service settlement (e2e)", () => {
         expect(buyerBalance1.body.balance).toBe(-2); // debited (within -10 floor)
         expect(ownerBalance1.body.balance).toBe(2); // credited
     });
+
+    it("signing with a drawn image still settles and stays fully_signed", async () => {
+        const PNG =
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC";
+
+        // Fresh signatories (rather than the outer owner/buyer) so their TOTP
+        // secrets have never been used: the TotpService replay guard is keyed
+        // by secret+token for the lifetime of the shared app, and the outer
+        // owner/buyer already consumed the offset-0/offset-30 codes in the
+        // previous test.
+        const ts = Date.now();
+        const imgOwner = await registerAndLogin(app, `img-owner-${ts}@test.fr`);
+        const imgBuyer = await registerAndLogin(app, `img-buyer-${ts}@test.fr`);
+
+        const svc = await request(app.getHttpServer())
+            .post("/services")
+            .set("Authorization", `Bearer ${imgOwner.accessToken}`)
+            .send({
+                title: "Paid tutoring",
+                description: "One hour",
+                category: "tutoring",
+                type: "paid",
+                direction: "offer",
+                duration: 60,
+            })
+            .expect(201);
+
+        const booking = await request(app.getHttpServer())
+            .post("/bookings")
+            .set("Authorization", `Bearer ${imgBuyer.accessToken}`)
+            .send({ serviceId: svc.body._id })
+            .expect(201);
+
+        const accepted = await request(app.getHttpServer())
+            .post(`/bookings/${booking.body._id}/accept`)
+            .set("Authorization", `Bearer ${imgOwner.accessToken}`)
+            .expect(201);
+        const contractId = accepted.body.contractId as string;
+
+        await request(app.getHttpServer())
+            .post(`/contracts/${contractId}/sign`)
+            .set("Authorization", `Bearer ${imgBuyer.accessToken}`)
+            .send({
+                totpCode: currentTotp(imgBuyer.totpSecret),
+                signatureImage: PNG,
+            })
+            .expect(201);
+
+        const full = await request(app.getHttpServer())
+            .post(`/contracts/${contractId}/sign`)
+            .set("Authorization", `Bearer ${imgOwner.accessToken}`)
+            .send({
+                totpCode: currentTotp(imgOwner.totpSecret, 30),
+                signatureImage: PNG,
+            })
+            .expect(201);
+        expect(full.body.status).toBe("fully_signed");
+
+        // The signed PDF is still downloadable by a party.
+        const pdf = await request(app.getHttpServer())
+            .get(`/contracts/${contractId}/pdf`)
+            .set("Authorization", `Bearer ${imgBuyer.accessToken}`)
+            .expect(200);
+        expect((pdf.body as Buffer).subarray(0, 5).toString()).toBe("%PDF-");
+    });
 });
