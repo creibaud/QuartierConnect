@@ -9,9 +9,24 @@ const PG_USER = process.env.POSTGRES_USER ?? "qc";
 const PG_DB = process.env.POSTGRES_DB ?? "quartierconnect";
 
 const ACCOUNTS = [
-  { email: "alice@demo.fr", role: "resident", firstName: "Alice", lastName: "Martin" },
-  { email: "bob@demo.fr", role: "moderator", firstName: "Bob", lastName: "Dupont" },
-  { email: "admin@demo.fr", role: "admin", firstName: "Admin", lastName: "QuartierConnect" },
+  {
+    email: "alice@demo.fr",
+    role: "resident",
+    firstName: "Alice",
+    lastName: "Martin",
+  },
+  {
+    email: "bob@demo.fr",
+    role: "moderator",
+    firstName: "Bob",
+    lastName: "Dupont",
+  },
+  {
+    email: "admin@demo.fr",
+    role: "admin",
+    firstName: "Admin",
+    lastName: "QuartierConnect",
+  },
 ];
 
 async function post(path: string, body: unknown): Promise<Response> {
@@ -290,7 +305,10 @@ async function seedContent(
   const neighborhoodId = nbh.id;
   const at = (i: number): { type: "Point"; coordinates: [number, number] } => ({
     type: "Point",
-    coordinates: [nbh.lng + SPREAD[i % SPREAD.length][0], nbh.lat + SPREAD[i % SPREAD.length][1]],
+    coordinates: [
+      nbh.lng + SPREAD[i % SPREAD.length][0],
+      nbh.lat + SPREAD[i % SPREAD.length][1],
+    ],
   });
 
   const evRes = await fetch(`${BASE_URL}/events`, {
@@ -303,35 +321,163 @@ async function seedContent(
     new Date(Date.now() + d * 86400000).toISOString();
 
   const events = [
-    { title: "Vide-grenier du quartier", description: "Grand vide-grenier annuel, de 9h à 18h sur la place du marché.", category: "community", date: inDays(6), neighborhoodId, location: at(0) },
-    { title: "Concert en plein air", description: "Soirée musicale avec les artistes du quartier.", category: "culture", date: inDays(12), neighborhoodId, location: at(1) },
-    { title: "Tournoi de pétanque", description: "Inscriptions sur place, ouvert à tous les habitants.", category: "sport", date: inDays(20), neighborhoodId, location: at(2) },
+    {
+      title: "Vide-grenier du quartier",
+      description:
+        "Grand vide-grenier annuel, de 9h à 18h sur la place du marché.",
+      category: "community",
+      date: inDays(6),
+      neighborhoodId,
+      location: at(0),
+    },
+    {
+      title: "Concert en plein air",
+      description: "Soirée musicale avec les artistes du quartier.",
+      category: "culture",
+      date: inDays(12),
+      neighborhoodId,
+      location: at(1),
+    },
+    {
+      title: "Tournoi de pétanque",
+      description: "Inscriptions sur place, ouvert à tous les habitants.",
+      category: "sport",
+      date: inDays(20),
+      neighborhoodId,
+      location: at(2),
+    },
   ];
   for (const e of events) {
-    await fetch(`${BASE_URL}/events`, { method: "POST", headers, body: JSON.stringify(e) });
+    await fetch(`${BASE_URL}/events`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(e),
+    });
   }
 
   const services = [
-    { title: "Aide au jardinage le week-end", description: "Je propose mon aide pour désherber et tailler les haies le samedi matin.", category: "gardening", type: "exchange", direction: "offer", neighborhoodId, location: at(0) },
-    { title: "Cours de soutien scolaire", description: "Étudiant disponible pour aider collégiens et lycéens en maths.", category: "other", type: "paid", direction: "offer", neighborhoodId, location: at(1) },
-    { title: "Garde d'animaux", description: "Je garde vos animaux de compagnie pendant vos absences.", category: "childcare", type: "free", direction: "offer", neighborhoodId, location: at(2) },
-    { title: "Recherche covoiturage pour le marché", description: "Je cherche un trajet partagé vers le marché le dimanche matin.", category: "transport", type: "free", direction: "request", neighborhoodId, location: at(3) },
-    { title: "Cherche aide pour petit déménagement", description: "Besoin d'un coup de main pour déplacer quelques meubles ce mois-ci.", category: "handyman", type: "paid", direction: "request", neighborhoodId, location: at(4) },
+    {
+      title: "Aide au jardinage le week-end",
+      description:
+        "Je propose mon aide pour désherber et tailler les haies le samedi matin.",
+      category: "gardening",
+      type: "exchange",
+      direction: "offer",
+      neighborhoodId,
+      location: at(0),
+    },
+    {
+      title: "Cours de soutien scolaire",
+      description:
+        "Étudiant disponible pour aider collégiens et lycéens en maths.",
+      category: "other",
+      type: "paid",
+      direction: "offer",
+      neighborhoodId,
+      location: at(1),
+    },
+    {
+      title: "Garde d'animaux",
+      description: "Je garde vos animaux de compagnie pendant vos absences.",
+      category: "childcare",
+      type: "free",
+      direction: "offer",
+      neighborhoodId,
+      location: at(2),
+    },
+    {
+      title: "Recherche covoiturage pour le marché",
+      description:
+        "Je cherche un trajet partagé vers le marché le dimanche matin.",
+      category: "transport",
+      type: "free",
+      direction: "request",
+      neighborhoodId,
+      location: at(3),
+    },
+    {
+      title: "Cherche aide pour petit déménagement",
+      description:
+        "Besoin d'un coup de main pour déplacer quelques meubles ce mois-ci.",
+      category: "handyman",
+      type: "paid",
+      direction: "request",
+      neighborhoodId,
+      location: at(4),
+    },
+    {
+      title: "Massage thérapeutique",
+      description: "Massage relaxant pour détente et bien-être du quartier.",
+      category: "other",
+      type: "paid",
+      duration: 60,
+      direction: "offer",
+      neighborhoodId,
+      location: at(5),
+    },
   ];
   for (const s of services) {
-    await fetch(`${BASE_URL}/services`, { method: "POST", headers, body: JSON.stringify(s) });
+    await fetch(`${BASE_URL}/services`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(s),
+    });
   }
 
   const incidents = [
-    { title: "Lampadaire cassé rue de la Paix", description: "Le lampadaire est tombé et bloque en partie le trottoir.", category: "neighborhood", neighborhoodId, lat: nbh.lat + SPREAD[0][1], lng: nbh.lng + SPREAD[0][0] },
-    { title: "Dépôt sauvage de déchets", description: "Encombrants abandonnés depuis plusieurs jours au coin de la rue.", category: "neighborhood", neighborhoodId, lat: nbh.lat + SPREAD[1][1], lng: nbh.lng + SPREAD[1][0] },
-    { title: "Nid-de-poule dangereux", description: "Trou important sur la chaussée, risque pour les cyclistes.", category: "neighborhood", neighborhoodId, lat: nbh.lat + SPREAD[2][1], lng: nbh.lng + SPREAD[2][0] },
-    { title: "Tag sur le mur de l'école", description: "Graffiti à nettoyer sur la façade de l'école primaire.", category: "neighborhood", neighborhoodId, lat: nbh.lat + SPREAD[3][1], lng: nbh.lng + SPREAD[3][0] },
-    { title: "Bug : la page Votes ne charge pas", description: "Signalement technique de l'application (interne modération).", category: "bug", neighborhoodId },
-    { title: "Signalement : contenu inapproprié", description: "Un message à modérer dans la messagerie.", category: "reporting", neighborhoodId },
+    {
+      title: "Lampadaire cassé rue de la Paix",
+      description: "Le lampadaire est tombé et bloque en partie le trottoir.",
+      category: "neighborhood",
+      neighborhoodId,
+      lat: nbh.lat + SPREAD[0][1],
+      lng: nbh.lng + SPREAD[0][0],
+    },
+    {
+      title: "Dépôt sauvage de déchets",
+      description:
+        "Encombrants abandonnés depuis plusieurs jours au coin de la rue.",
+      category: "neighborhood",
+      neighborhoodId,
+      lat: nbh.lat + SPREAD[1][1],
+      lng: nbh.lng + SPREAD[1][0],
+    },
+    {
+      title: "Nid-de-poule dangereux",
+      description: "Trou important sur la chaussée, risque pour les cyclistes.",
+      category: "neighborhood",
+      neighborhoodId,
+      lat: nbh.lat + SPREAD[2][1],
+      lng: nbh.lng + SPREAD[2][0],
+    },
+    {
+      title: "Tag sur le mur de l'école",
+      description: "Graffiti à nettoyer sur la façade de l'école primaire.",
+      category: "neighborhood",
+      neighborhoodId,
+      lat: nbh.lat + SPREAD[3][1],
+      lng: nbh.lng + SPREAD[3][0],
+    },
+    {
+      title: "Bug : la page Votes ne charge pas",
+      description:
+        "Signalement technique de l'application (interne modération).",
+      category: "bug",
+      neighborhoodId,
+    },
+    {
+      title: "Signalement : contenu inapproprié",
+      description: "Un message à modérer dans la messagerie.",
+      category: "reporting",
+      neighborhoodId,
+    },
   ];
   for (const i of incidents) {
-    await fetch(`${BASE_URL}/incidents`, { method: "POST", headers, body: JSON.stringify(i) });
+    await fetch(`${BASE_URL}/incidents`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(i),
+    });
   }
 
   await fetch(`${BASE_URL}/community-votes`, {
@@ -364,9 +510,7 @@ async function assignNeighborhoodToResidents(
       pgQuery(
         `UPDATE users SET address='Centre du quartier, Paris', address_lat=${nbh.lat}, address_lng=${nbh.lng}, neighborhood_id='${nbh.id}' WHERE email='${email}'`,
       );
-      process.stdout.write(
-        `  → ${email} assigned to neighborhood ${nbh.id}\n`,
-      );
+      process.stdout.write(`  → ${email} assigned to neighborhood ${nbh.id}\n`);
     } catch {
       process.stdout.write(`  ! could not assign neighborhood for ${email}\n`);
     }
@@ -391,7 +535,9 @@ async function main(): Promise<void> {
       await assignNeighborhoodToResidents(nbh);
       await seedContent(adminToken, nbh);
     } else {
-      process.stdout.write("  ! no neighborhood with geometry — content skipped\n");
+      process.stdout.write(
+        "  ! no neighborhood with geometry — content skipped\n",
+      );
     }
   } else {
     console.warn("  ! admin login failed — skipping neighborhood seed");
