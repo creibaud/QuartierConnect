@@ -29,10 +29,6 @@ import {
     ContractDto,
     SignatureDto,
 } from "./contracts/dto/contract-response.dto";
-import {
-    DocumentAuditEntryDto,
-    DocumentMetaDto,
-} from "./documents/dto/document-responses.dto";
 import { DslQueryResultDto } from "./dsl/dto/dsl-response.dto";
 import {
     EventDto,
@@ -170,8 +166,6 @@ Endpoints that return lists accept \`?page=1&limit=20\` (max 100).
                 VoteOptionResponseDto,
                 ContractDto,
                 SignatureDto,
-                DocumentAuditEntryDto,
-                DocumentMetaDto,
                 DslQueryResultDto,
                 EventDto,
                 EventInterestResponseDto,
