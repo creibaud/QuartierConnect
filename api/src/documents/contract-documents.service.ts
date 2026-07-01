@@ -1,8 +1,8 @@
-import * as crypto from "crypto";
 import { Injectable } from "@nestjs/common";
 import { InjectConnection, InjectModel } from "@nestjs/mongoose";
 import { GridFSBucket, ObjectId } from "mongodb";
 import { Connection, Model } from "mongoose";
+import { PdfService } from "./pdf.service";
 import {
     ContractAuditEntry,
     ContractPdfDocument,
@@ -17,6 +17,7 @@ export class ContractDocumentsService {
         @InjectModel(ContractPdfDocument.name)
         private readonly docModel: Model<ContractPdfDocumentDoc>,
         @InjectConnection() private readonly connection: Connection,
+        private readonly pdfService: PdfService,
     ) {}
 
     private get bucket(): GridFSBucket {
@@ -57,7 +58,7 @@ export class ContractDocumentsService {
         userId: string,
     ): Promise<{ fileId: string; sha256: string }> {
         const fileId = await this.writeToGridFs(contractId, buffer);
-        const sha256 = crypto.createHash("sha256").update(buffer).digest("hex");
+        const sha256 = this.pdfService.sha256(buffer);
         const entry: ContractAuditEntry = {
             action,
             userId,

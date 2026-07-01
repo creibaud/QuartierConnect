@@ -1,12 +1,15 @@
 import { ContractDocumentsService } from "./contract-documents.service";
+import { PdfService } from "./pdf.service";
 
 function makeService() {
     const updateOne = jest.fn().mockResolvedValue(undefined);
     const findOne = jest.fn();
     const docModel = { updateOne, findOne } as any;
-    const svc = new ContractDocumentsService(docModel, {
-        db: {},
-    } as any);
+    const svc = new ContractDocumentsService(
+        docModel,
+        { db: {} } as any,
+        new PdfService(),
+    );
     // stub the GridFS write so storePdf exercises only the audit path
     (svc as unknown as { writeToGridFs: unknown }).writeToGridFs = jest
         .fn()
@@ -93,7 +96,11 @@ describe("ContractDocumentsService.getPdfStream", () => {
 describe("ContractDocumentsService GridFS helpers", () => {
     function bareService() {
         const docModel = { updateOne: jest.fn(), findOne: jest.fn() } as any;
-        return new ContractDocumentsService(docModel, { db: {} } as any);
+        return new ContractDocumentsService(
+            docModel,
+            { db: {} } as any,
+            new PdfService(),
+        );
     }
 
     it("writeToGridFs streams the buffer and resolves the new file id", async () => {
