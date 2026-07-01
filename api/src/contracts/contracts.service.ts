@@ -147,7 +147,7 @@ export class ContractsService {
         return {
             title: contract.title,
             payerName: names[payerId] ?? payerId,
-            payeeName: names[payeeId] ?? payeeId,
+            payeeName: names[payeeId] ?? payeeId ?? "",
             pointsAmount: contract.pointsAmount ?? 0,
             date: new Date().toISOString().slice(0, 10),
             body: contract.content,
@@ -155,6 +155,9 @@ export class ContractsService {
     }
 
     private async resolveNames(ids: string[]): Promise<Record<string, string>> {
+        const cleanIds = ids.filter((id): id is string => Boolean(id));
+        if (cleanIds.length === 0) return {};
+
         const rows = await this.db
             .select({
                 id: schema.users.id,
@@ -163,7 +166,7 @@ export class ContractsService {
                 email: schema.users.email,
             })
             .from(schema.users)
-            .where(inArray(schema.users.id, ids));
+            .where(inArray(schema.users.id, cleanIds));
         const out: Record<string, string> = {};
         for (const r of rows) {
             out[r.id] =
@@ -193,10 +196,17 @@ export class ContractsService {
         let res = await this.contractDocs.getPdfStream(id, userId);
         if (!res) {
             // lazy (re)generation when the PDF is missing
-            const data = await this.buildPdfData(contract);
-            const buf = await this.pdfService.generateBaseContractPdf(data);
-            await this.contractDocs.storePdf(id, buf, "generated", userId);
-            res = await this.contractDocs.getPdfStream(id, userId);
+            try {
+                const data = await this.buildPdfData(contract);
+                const buf = await this.pdfService.generateBaseContractPdf(data);
+                await this.contractDocs.storePdf(id, buf, "generated", userId);
+                res = await this.contractDocs.getPdfStream(id, userId);
+            } catch (err) {
+                this.logger.warn(
+                    `Lazy PDF regeneration failed for contract ${id}: ${String(err)}`,
+                );
+                throw new NotFoundException("PDF unavailable");
+            }
         }
         if (!res) throw new NotFoundException("PDF unavailable");
         return res;
