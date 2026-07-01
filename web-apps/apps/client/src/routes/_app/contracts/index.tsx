@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Add01Icon, Agreement01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import {
     useContracts,
@@ -135,7 +135,13 @@ function ContractsPage() {
                                 <CardHeader>
                                     <div className="flex items-start justify-between gap-3">
                                         <CardTitle className="text-base">
-                                            {contract.title}
+                                            <Link
+                                                to="/contracts/$id"
+                                                params={{ id: contract._id }}
+                                                className="hover:underline"
+                                            >
+                                                {contract.title}
+                                            </Link>
                                         </CardTitle>
                                         <Badge
                                             variant={

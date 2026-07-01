@@ -119,6 +119,21 @@ export default {
             title: "Sign the contract",
             description: "Enter your TOTP code to confirm the signature.",
             totpPlaceholder: "6-digit code",
+            step: {
+                read: "Read the contract before signing",
+                draw: "Draw your signature",
+                totp: "Confirm with your TOTP code",
+            },
+            readBody:
+                "This contract settles {{points}} points on double signature.",
+            clear: "Clear",
+        },
+        audit: {
+            action: {
+                generated: "Contract generated",
+                signed: "Signed",
+                viewed: "Viewed",
+            },
         },
     },
     messaging: {
@@ -521,6 +536,12 @@ export default {
             signing: "Signing…",
             signSuccess: "Contract signed",
             signError: "Invalid TOTP code or already signed",
+        },
+        contractDetail: {
+            description: "Service contract",
+            auditTitle: "Traceability",
+            auditEmpty: "No audit entry.",
+            pdfError: "Unable to load the PDF.",
         },
         messages: {
             title: "Messages",
