@@ -467,6 +467,9 @@ export default {
             directionRequest: "Demande",
             allDirections: "Toutes les directions",
             respondError: "Impossible de répondre à ce service",
+            reserve: "Réserver",
+            bookingRequested: "Demande de réservation envoyée",
+            bookingError: "Réservation impossible",
             mine: {
                 title: "Mes services",
                 description: "Gérez vos annonces et vos réponses.",
