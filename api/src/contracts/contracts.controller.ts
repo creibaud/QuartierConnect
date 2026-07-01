@@ -120,6 +120,11 @@ export class ContractsController {
         @Body() dto: SignContractDto,
         @Request() req: AuthRequest,
     ) {
-        return this.contractsService.sign(id, req.user.sub, dto.totpCode);
+        return this.contractsService.sign(
+            id,
+            req.user.sub,
+            dto.totpCode,
+            dto.signatureImage,
+        );
     }
 }

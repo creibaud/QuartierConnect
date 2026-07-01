@@ -217,7 +217,12 @@ export class ContractsService {
         return this.contractDocs.getAudit(id);
     }
 
-    async sign(id: string, userId: string, totpCode: string) {
+    async sign(
+        id: string,
+        userId: string,
+        totpCode: string,
+        signatureImage?: string,
+    ) {
         const contract = await this.contractModel.findById(id).exec();
         if (!contract) throw new NotFoundException("Contract not found");
         if (contract.status === ContractStatus.CANCELLED) {
@@ -280,6 +285,7 @@ export class ContractsService {
                             name: names[userId] ?? userId,
                             date: new Date().toISOString().slice(0, 10),
                             hash: hash.slice(0, 8),
+                            image: signatureImage,
                         },
                     );
                     const { fileId } = await this.contractDocs.storePdf(
