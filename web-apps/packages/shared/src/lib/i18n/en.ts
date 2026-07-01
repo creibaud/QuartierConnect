@@ -62,6 +62,7 @@ export default {
         communityVotes: "Community votes",
         dsl: "DSL Editor",
         coverage: "Pending addresses",
+        bookings: "Bookings",
         groups: {
             home: "Home",
             neighborhood: "Neighborhood",
@@ -135,6 +136,28 @@ export default {
                 viewed: "Viewed",
             },
         },
+    },
+    bookings: {
+        title: "Bookings",
+        description: "Your paid service requests",
+        empty: "No bookings yet.",
+        tabs: {
+            received: "Received",
+            sent: "Sent",
+        },
+        pointsLabel: "{{points}} points",
+        status: {
+            pending: "Pending",
+            accepted: "Accepted",
+            declined: "Declined",
+            cancelled: "Cancelled",
+            completed: "Completed",
+        },
+        accept: "Accept",
+        decline: "Decline",
+        cancel: "Cancel",
+        viewContract: "View contract",
+        actionError: "Action failed",
     },
     messaging: {
         title: "Messaging",

@@ -25,6 +25,7 @@ import { Route as AppIncidentsIndexRouteImport } from './routes/_app/incidents/i
 import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
 import { Route as AppDashboardIndexRouteImport } from './routes/_app/dashboard/index'
 import { Route as AppContractsIndexRouteImport } from './routes/_app/contracts/index'
+import { Route as AppBookingsIndexRouteImport } from './routes/_app/bookings/index'
 import { Route as AppServicesMineRouteImport } from './routes/_app/services/mine'
 import { Route as AppIncidentsIdRouteImport } from './routes/_app/incidents/$id'
 import { Route as AppContractsIdRouteImport } from './routes/_app/contracts/$id'
@@ -108,6 +109,11 @@ const AppContractsIndexRoute = AppContractsIndexRouteImport.update({
   path: '/contracts/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBookingsIndexRoute = AppBookingsIndexRouteImport.update({
+  id: '/bookings/',
+  path: '/bookings/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppServicesMineRoute = AppServicesMineRouteImport.update({
   id: '/services/mine',
   path: '/services/mine',
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/contracts/$id': typeof AppContractsIdRoute
   '/incidents/$id': typeof AppIncidentsIdRoute
   '/services/mine': typeof AppServicesMineRoute
+  '/bookings/': typeof AppBookingsIndexRoute
   '/contracts/': typeof AppContractsIndexRoute
   '/dashboard/': typeof AppDashboardIndexRoute
   '/events/': typeof AppEventsIndexRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/contracts/$id': typeof AppContractsIdRoute
   '/incidents/$id': typeof AppIncidentsIdRoute
   '/services/mine': typeof AppServicesMineRoute
+  '/bookings': typeof AppBookingsIndexRoute
   '/contracts': typeof AppContractsIndexRoute
   '/dashboard': typeof AppDashboardIndexRoute
   '/events': typeof AppEventsIndexRoute
@@ -175,6 +183,7 @@ export interface FileRoutesById {
   '/_app/contracts/$id': typeof AppContractsIdRoute
   '/_app/incidents/$id': typeof AppIncidentsIdRoute
   '/_app/services/mine': typeof AppServicesMineRoute
+  '/_app/bookings/': typeof AppBookingsIndexRoute
   '/_app/contracts/': typeof AppContractsIndexRoute
   '/_app/dashboard/': typeof AppDashboardIndexRoute
   '/_app/events/': typeof AppEventsIndexRoute
@@ -197,6 +206,7 @@ export interface FileRouteTypes {
     | '/contracts/$id'
     | '/incidents/$id'
     | '/services/mine'
+    | '/bookings/'
     | '/contracts/'
     | '/dashboard/'
     | '/events/'
@@ -217,6 +227,7 @@ export interface FileRouteTypes {
     | '/contracts/$id'
     | '/incidents/$id'
     | '/services/mine'
+    | '/bookings'
     | '/contracts'
     | '/dashboard'
     | '/events'
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/_app/contracts/$id'
     | '/_app/incidents/$id'
     | '/_app/services/mine'
+    | '/_app/bookings/'
     | '/_app/contracts/'
     | '/_app/dashboard/'
     | '/_app/events/'
@@ -373,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppContractsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/bookings/': {
+      id: '/_app/bookings/'
+      path: '/bookings'
+      fullPath: '/bookings/'
+      preLoaderRoute: typeof AppBookingsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/services/mine': {
       id: '/_app/services/mine'
       path: '/services/mine'
@@ -401,6 +420,7 @@ interface AppRouteChildren {
   AppContractsIdRoute: typeof AppContractsIdRoute
   AppIncidentsIdRoute: typeof AppIncidentsIdRoute
   AppServicesMineRoute: typeof AppServicesMineRoute
+  AppBookingsIndexRoute: typeof AppBookingsIndexRoute
   AppContractsIndexRoute: typeof AppContractsIndexRoute
   AppDashboardIndexRoute: typeof AppDashboardIndexRoute
   AppEventsIndexRoute: typeof AppEventsIndexRoute
@@ -417,6 +437,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppContractsIdRoute: AppContractsIdRoute,
   AppIncidentsIdRoute: AppIncidentsIdRoute,
   AppServicesMineRoute: AppServicesMineRoute,
+  AppBookingsIndexRoute: AppBookingsIndexRoute,
   AppContractsIndexRoute: AppContractsIndexRoute,
   AppDashboardIndexRoute: AppDashboardIndexRoute,
   AppEventsIndexRoute: AppEventsIndexRoute,
