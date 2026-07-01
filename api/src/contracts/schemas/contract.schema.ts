@@ -5,9 +5,9 @@ export type ContractDocument = Contract & Document;
 
 export enum ContractStatus {
     DRAFT = "draft",
-    PENDING_SIGNATURE = "pending_signature",
-    SIGNED = "signed",
-    REJECTED = "rejected",
+    PARTIAL = "partial",
+    FULLY_SIGNED = "fully_signed",
+    CANCELLED = "cancelled",
 }
 
 @Schema({ timestamps: true })
@@ -43,6 +43,15 @@ export class Contract {
         signedAt: Date;
         hash: string;
     }>;
+
+    @Prop({ type: String, default: null })
+    serviceId: string | null;
+
+    @Prop({ type: String, default: null })
+    bookingId: string | null;
+
+    @Prop({ type: Number, default: null })
+    pointsAmount: number | null;
 }
 
 export const ContractSchema = SchemaFactory.createForClass(Contract);

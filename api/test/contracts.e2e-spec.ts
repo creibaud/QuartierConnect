@@ -165,7 +165,7 @@ describe("Contracts (e2e)", () => {
                 .expect(400);
         });
 
-        it("user2 signs the contract — status becomes pending_signature", async () => {
+        it("user2 signs the contract — single signatory completes it", async () => {
             const res = await request(app.getHttpServer())
                 .post(`/contracts/${contractId}/sign`)
                 .set("Authorization", `Bearer ${user2Token}`)
@@ -173,7 +173,7 @@ describe("Contracts (e2e)", () => {
                 .expect(201);
 
             expect(res.body.signatures).toHaveLength(1);
-            expect(res.body.status).toBe("signed");
+            expect(res.body.status).toBe("fully_signed");
         });
 
         it("user2 cannot sign the same contract twice", async () => {
@@ -184,7 +184,7 @@ describe("Contracts (e2e)", () => {
                 .expect(400);
         });
 
-        it("both signatories sign — status becomes signed", async () => {
+        it("both signatories sign — status becomes fully_signed", async () => {
             await request(app.getHttpServer())
                 .post(`/contracts/${twoSignatoryContractId}/sign`)
                 .set("Authorization", `Bearer ${user1Token}`)
@@ -197,7 +197,7 @@ describe("Contracts (e2e)", () => {
                 .send({ totpCode: currentTotp(user2TotpSecret, 30) })
                 .expect(201);
 
-            expect(res.body.status).toBe("signed");
+            expect(res.body.status).toBe("fully_signed");
             expect(res.body.signatures).toHaveLength(2);
         });
     });

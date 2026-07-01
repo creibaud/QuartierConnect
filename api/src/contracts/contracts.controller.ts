@@ -59,7 +59,7 @@ export class ContractsController {
     @ApiOperation({
         summary: "Create a contract (SHA-256 hash auto-computed)",
         description:
-            "Creates a contract. The `contentHash` is computed automatically (SHA-256 of the `content` field). Initial status: PENDING_SIGNATURE.",
+            "Creates a contract. The `contentHash` is computed automatically (SHA-256 of the `content` field). Initial status: `draft`.",
     })
     @ApiResponse({ status: 201, type: ContractDto })
     create(@Body() dto: CreateContractDto, @Request() req: AuthRequest) {
@@ -70,7 +70,7 @@ export class ContractsController {
     @ApiOperation({
         summary: "Sign a contract with TOTP validation",
         description:
-            "Validates the user's TOTP code and adds their signature. Automatically switches to SIGNED status when all signatories have signed.",
+            "Validates the user's TOTP code and adds their signature. Automatically switches to `fully_signed` status when all signatories have signed.",
     })
     @ApiParam({ name: "id", description: "MongoDB ObjectId of the contract" })
     @ApiResponse({
