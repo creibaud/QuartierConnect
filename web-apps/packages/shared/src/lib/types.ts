@@ -124,6 +124,10 @@ export interface Contract {
     contentHash: string | null;
     signedAt: string | null;
     signatures: Array<{ userId: string; signedAt: string; hash: string }>;
+    serviceId?: string | null;
+    bookingId?: string | null;
+    pointsAmount?: number | null;
+    pdfFileId?: string | null;
     createdAt: string;
     updatedAt: string;
 }
@@ -182,4 +186,32 @@ export interface UserExport {
     incidents: Incident[];
     pointsBalance: PointBalance | null;
     transactions: unknown[];
+}
+
+export type BookingStatus =
+    | "pending"
+    | "accepted"
+    | "declined"
+    | "cancelled"
+    | "completed";
+
+export interface Booking {
+    _id: string;
+    serviceId: string;
+    initiatorId: string;
+    payerId: string;
+    payeeId: string;
+    pointsAmount: number;
+    status: BookingStatus;
+    contractId: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ContractAuditEntry {
+    action: "generated" | "signed" | "viewed";
+    userId: string;
+    at: string;
+    sha256?: string;
+    fileId?: string;
 }
