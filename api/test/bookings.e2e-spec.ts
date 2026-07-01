@@ -55,6 +55,7 @@ describe("Paid service settlement (e2e)", () => {
     let app: INestApplication;
     let owner: { accessToken: string; totpSecret: string; userId: string };
     let buyer: { accessToken: string; totpSecret: string; userId: string };
+    let stranger: { accessToken: string; totpSecret: string; userId: string };
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -66,6 +67,7 @@ describe("Paid service settlement (e2e)", () => {
         const ts = Date.now();
         owner = await registerAndLogin(app, `pay-owner-${ts}@test.fr`);
         buyer = await registerAndLogin(app, `pay-buyer-${ts}@test.fr`);
+        stranger = await registerAndLogin(app, `pay-stranger-${ts}@test.fr`);
     }, 60000);
 
     afterAll(async () => {
@@ -98,6 +100,24 @@ describe("Paid service settlement (e2e)", () => {
             .expect(201);
         const contractId = accepted.body.contractId as string;
 
+        // The contract PDF is generated on accept and downloadable by a party.
+        const pdf = await request(app.getHttpServer())
+            .get(`/contracts/${contractId}/pdf`)
+            .set("Authorization", `Bearer ${buyer.accessToken}`)
+            .expect(200);
+        expect(pdf.headers["content-type"]).toContain("application/pdf");
+        expect((pdf.body as Buffer).subarray(0, 5).toString()).toBe("%PDF-");
+
+        // A non-party cannot read the PDF or the audit log.
+        await request(app.getHttpServer())
+            .get(`/contracts/${contractId}/pdf`)
+            .set("Authorization", `Bearer ${stranger.accessToken}`)
+            .expect(403);
+        await request(app.getHttpServer())
+            .get(`/contracts/${contractId}/audit`)
+            .set("Authorization", `Bearer ${stranger.accessToken}`)
+            .expect(403);
+
         // No balance movement yet (payment is pending).
         const buyerBalance0 = await request(app.getHttpServer())
             .get("/points/balance")
@@ -120,6 +140,18 @@ describe("Paid service settlement (e2e)", () => {
             .send({ totpCode: currentTotp(owner.totpSecret, 30) })
             .expect(201);
         expect(full.body.status).toBe("fully_signed");
+
+        // The audit log is immutable and reflects the full lifecycle so far.
+        const audit = await request(app.getHttpServer())
+            .get(`/contracts/${contractId}/audit`)
+            .set("Authorization", `Bearer ${owner.accessToken}`)
+            .expect(200);
+        const actions = (audit.body as { action: string }[]).map(
+            (e) => e.action,
+        );
+        expect(actions).toContain("generated");
+        expect(actions.filter((a) => a === "signed").length).toBe(2);
+        expect(actions).toContain("viewed");
 
         const buyerBalance1 = await request(app.getHttpServer())
             .get("/points/balance")
