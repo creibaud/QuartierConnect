@@ -62,6 +62,7 @@ export default {
         communityVotes: "Votes communautaires",
         dsl: "Éditeur DSL",
         coverage: "Adresses en attente",
+        bookings: "Réservations",
         groups: {
             home: "Accueil",
             neighborhood: "Quartier",
@@ -135,6 +136,28 @@ export default {
                 viewed: "Consulté",
             },
         },
+    },
+    bookings: {
+        title: "Réservations",
+        description: "Vos demandes de services payants",
+        empty: "Aucune réservation pour le moment.",
+        tabs: {
+            received: "Reçues",
+            sent: "Envoyées",
+        },
+        pointsLabel: "{{points}} points",
+        status: {
+            pending: "En attente",
+            accepted: "Acceptée",
+            declined: "Refusée",
+            cancelled: "Annulée",
+            completed: "Terminée",
+        },
+        accept: "Accepter",
+        decline: "Refuser",
+        cancel: "Annuler",
+        viewContract: "Voir le contrat",
+        actionError: "Action impossible",
     },
     messaging: {
         title: "Messagerie",
