@@ -8,6 +8,8 @@ import { getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
 import { TotpService } from "../auth/totp.service";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
+import { ContractDocumentsService } from "../documents/contract-documents.service";
+import { PdfService } from "../documents/pdf.service";
 import { PointsService } from "../points/points.service";
 import { ContractsService } from "./contracts.service";
 import { Contract, ContractStatus } from "./schemas/contract.schema";
@@ -46,6 +48,24 @@ const mockEventEmitter = {
     emit: jest.fn(),
 };
 
+const mockPdf = {
+    generateBaseContractPdf: jest.fn(),
+    stampSignature: jest.fn(),
+    sha256: jest.fn(),
+};
+
+const mockDocs = {
+    storePdf: jest.fn().mockResolvedValue({ fileId: "f", sha256: "h" }),
+    getCurrentPdf: jest.fn().mockResolvedValue(null),
+    getPdfStream: jest.fn(),
+    getAudit: jest.fn(),
+};
+
+const NAME_RESOLUTION_ROWS = [
+    { id: "payer", firstName: "P", lastName: "One", email: "p@x" },
+    { id: "payee", firstName: "Q", lastName: "Two", email: "q@x" },
+];
+
 describe("ContractsService", () => {
     let service: ContractsService;
 
@@ -53,6 +73,20 @@ describe("ContractsService", () => {
         jest.clearAllMocks();
         mockContractDoc.signatures = [];
         mockContractDoc.status = ContractStatus.DRAFT;
+
+        // Default Drizzle chain: `.limit(...)` serves the TOTP lookup, while
+        // awaiting the chain directly (no `.limit`) serves name resolution.
+        mockDb.select.mockReturnValue({
+            from: jest.fn().mockReturnValue({
+                where: jest.fn().mockReturnValue({
+                    limit: jest
+                        .fn()
+                        .mockResolvedValue([{ totpSecret: "SECRET" }]),
+                    then: (resolve: (value: unknown) => void) =>
+                        resolve(NAME_RESOLUTION_ROWS),
+                }),
+            }),
+        });
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -65,6 +99,8 @@ describe("ContractsService", () => {
                 { provide: TotpService, useValue: mockTotpService },
                 { provide: PointsService, useValue: mockPointsService },
                 { provide: EventEmitter2, useValue: mockEventEmitter },
+                { provide: PdfService, useValue: mockPdf },
+                { provide: ContractDocumentsService, useValue: mockDocs },
             ],
         }).compile();
 
@@ -237,6 +273,8 @@ describe("ContractsService", () => {
                     { provide: TotpService, useValue: mockTotpService },
                     { provide: PointsService, useValue: mockPointsService },
                     { provide: EventEmitter2, useValue: mockEventEmitter },
+                    { provide: PdfService, useValue: mockPdf },
+                    { provide: ContractDocumentsService, useValue: mockDocs },
                 ],
             }).compile();
             const svc2 = module2.get<ContractsService>(ContractsService);
@@ -267,6 +305,8 @@ describe("ContractsService", () => {
                     { provide: TotpService, useValue: mockTotpService },
                     { provide: PointsService, useValue: mockPointsService },
                     { provide: EventEmitter2, useValue: mockEventEmitter },
+                    { provide: PdfService, useValue: mockPdf },
+                    { provide: ContractDocumentsService, useValue: mockDocs },
                 ],
             }).compile();
             const svc3 = module3.get<ContractsService>(ContractsService);
@@ -510,11 +550,38 @@ describe("ContractsService", () => {
             expect(contract.save).not.toHaveBeenCalled();
             expect(mockEventEmitter.emit).not.toHaveBeenCalled();
         });
+
+        it("does not throw when PDF stamping fails (invariant: signature/settlement still commit)", async () => {
+            const contract: Record<string, unknown> = {
+                ...mockContractDoc,
+                signatories: ["user-1"],
+                signatures: [],
+                bookingId: "booking-1",
+            };
+            contract.save = jest
+                .fn()
+                .mockImplementation(() => Promise.resolve(contract));
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(contract),
+            });
+            mockTotpService.verify.mockReturnValue(true);
+            mockPointsService.completeServicePayment.mockResolvedValue(
+                undefined,
+            );
+            mockDocs.getCurrentPdf.mockResolvedValue(Buffer.from("%PDF-"));
+            mockPdf.stampSignature.mockRejectedValue(new Error("stamp boom"));
+
+            const res = await service.sign("ct-1", "user-1", "123456");
+
+            expect(res.status).toBe(ContractStatus.FULLY_SIGNED);
+            expect(res.signatures).toHaveLength(1);
+        });
     });
 
     describe("createServiceContract", () => {
         it("creates a DRAFT contract with the service/booking fields and a content hash", async () => {
             const contractInstance = {
+                status: ContractStatus.DRAFT,
                 save: jest
                     .fn()
                     .mockResolvedValue({ status: ContractStatus.DRAFT }),
@@ -535,6 +602,8 @@ describe("ContractsService", () => {
                     { provide: TotpService, useValue: mockTotpService },
                     { provide: PointsService, useValue: mockPointsService },
                     { provide: EventEmitter2, useValue: mockEventEmitter },
+                    { provide: PdfService, useValue: mockPdf },
+                    { provide: ContractDocumentsService, useValue: mockDocs },
                 ],
             }).compile();
             const svc4 = module4.get<ContractsService>(ContractsService);
@@ -559,6 +628,103 @@ describe("ContractsService", () => {
             );
             expect(contractInstance.save).toHaveBeenCalled();
             expect(result.status).toBe(ContractStatus.DRAFT);
+        });
+
+        describe("PDF generation (best-effort)", () => {
+            let pdfContract: Record<string, unknown> & { save: jest.Mock };
+            let pdfService: ContractsService;
+
+            beforeEach(async () => {
+                const CtorModel = jest
+                    .fn()
+                    .mockImplementation((data: Record<string, unknown>) => {
+                        pdfContract = {
+                            ...data,
+                            _id: "ct-pdf-1",
+                            save: jest
+                                .fn()
+                                .mockImplementation(() =>
+                                    Promise.resolve(pdfContract),
+                                ),
+                        };
+                        return pdfContract;
+                    });
+                Object.assign(CtorModel, mockContractModel);
+
+                const module5: TestingModule = await Test.createTestingModule({
+                    providers: [
+                        ContractsService,
+                        {
+                            provide: getModelToken(Contract.name),
+                            useValue: CtorModel,
+                        },
+                        { provide: DRIZZLE_TOKEN, useValue: mockDb },
+                        { provide: TotpService, useValue: mockTotpService },
+                        {
+                            provide: PointsService,
+                            useValue: mockPointsService,
+                        },
+                        {
+                            provide: EventEmitter2,
+                            useValue: mockEventEmitter,
+                        },
+                        { provide: PdfService, useValue: mockPdf },
+                        {
+                            provide: ContractDocumentsService,
+                            useValue: mockDocs,
+                        },
+                    ],
+                }).compile();
+                pdfService = module5.get<ContractsService>(ContractsService);
+            });
+
+            it("generates + stores a PDF and sets pdfFileId", async () => {
+                mockPdf.generateBaseContractPdf.mockResolvedValue(
+                    Buffer.from("%PDF-"),
+                );
+                mockDocs.storePdf.mockResolvedValue({
+                    fileId: "f1",
+                    sha256: "abc",
+                });
+
+                const contract = await pdfService.createServiceContract({
+                    title: "t",
+                    content: "body",
+                    serviceId: "s1",
+                    bookingId: "b1",
+                    signatories: ["payer", "payee"],
+                    pointsAmount: 2,
+                    createdBy: "payer",
+                });
+
+                expect(mockPdf.generateBaseContractPdf).toHaveBeenCalled();
+                expect(mockDocs.storePdf).toHaveBeenCalledWith(
+                    expect.any(String),
+                    expect.any(Buffer),
+                    "generated",
+                    "payer",
+                );
+                expect(contract.pdfFileId).toBe("f1");
+            });
+
+            it("still returns the contract when PDF generation fails (best-effort)", async () => {
+                mockPdf.generateBaseContractPdf.mockRejectedValue(
+                    new Error("pdf boom"),
+                );
+
+                const contract = await pdfService.createServiceContract({
+                    title: "t",
+                    content: "body",
+                    serviceId: "s1",
+                    bookingId: "b1",
+                    signatories: ["payer", "payee"],
+                    pointsAmount: 2,
+                    createdBy: "payer",
+                });
+
+                expect(contract).toBeDefined();
+                expect(contract.status).toBe(ContractStatus.DRAFT);
+            });
         });
     });
 

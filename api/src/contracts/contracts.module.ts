@@ -3,6 +3,7 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { AuthModule } from "../auth/auth.module";
 import { TotpService } from "../auth/totp.service";
 import { DrizzleModule } from "../database/drizzle.module";
+import { DocumentsModule } from "../documents/documents.module";
 import { PointsModule } from "../points/points.module";
 import { ContractsController } from "./contracts.controller";
 import { ContractsService } from "./contracts.service";
@@ -16,6 +17,7 @@ import { Contract, ContractSchema } from "./schemas/contract.schema";
         DrizzleModule,
         AuthModule,
         PointsModule,
+        DocumentsModule,
     ],
     controllers: [ContractsController],
     providers: [ContractsService, TotpService],
