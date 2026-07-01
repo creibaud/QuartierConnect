@@ -287,9 +287,7 @@ describe("MessagingService", () => {
 
         it("creates and returns new conversation id when none exists", async () => {
             const newId = "new-conv-1";
-            const saveMock = jest
-                .fn()
-                .mockResolvedValue({ _id: newId });
+            const saveMock = jest.fn().mockResolvedValue({ _id: newId });
             const findOneMock = jest.fn().mockReturnValue({
                 exec: jest.fn().mockResolvedValue(null),
             });

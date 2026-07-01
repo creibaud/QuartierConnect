@@ -267,7 +267,9 @@ describe("ServicesController", () => {
     });
 
     it("GET /services scopes a moderator to their own neighborhood", async () => {
-        const req = { user: { sub: "mod1", role: "moderator", neighborhoodId: "n9" } };
+        const req = {
+            user: { sub: "mod1", role: "moderator", neighborhoodId: "n9" },
+        };
         await controller.findAll(
             undefined,
             undefined,
