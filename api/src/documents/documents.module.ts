@@ -1,21 +1,22 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
-import { AuthModule } from "../auth/auth.module";
-import { DocumentsController } from "./documents.controller";
-import { DocumentsService } from "./documents.service";
+import { ContractDocumentsService } from "./contract-documents.service";
+import { PdfService } from "./pdf.service";
 import {
-    DocumentAudit,
-    DocumentAuditSchema,
-} from "./schemas/document-audit.schema";
+    ContractPdfDocument,
+    ContractPdfDocumentSchema,
+} from "./schemas/document.schema";
 
 @Module({
     imports: [
         MongooseModule.forFeature([
-            { name: DocumentAudit.name, schema: DocumentAuditSchema },
+            {
+                name: ContractPdfDocument.name,
+                schema: ContractPdfDocumentSchema,
+            },
         ]),
-        AuthModule,
     ],
-    controllers: [DocumentsController],
-    providers: [DocumentsService],
+    providers: [PdfService, ContractDocumentsService],
+    exports: [PdfService, ContractDocumentsService],
 })
 export class DocumentsModule {}
