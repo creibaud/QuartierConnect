@@ -27,6 +27,7 @@ import { Route as AppDashboardIndexRouteImport } from './routes/_app/dashboard/i
 import { Route as AppContractsIndexRouteImport } from './routes/_app/contracts/index'
 import { Route as AppServicesMineRouteImport } from './routes/_app/services/mine'
 import { Route as AppIncidentsIdRouteImport } from './routes/_app/incidents/$id'
+import { Route as AppContractsIdRouteImport } from './routes/_app/contracts/$id'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -117,6 +118,11 @@ const AppIncidentsIdRoute = AppIncidentsIdRouteImport.update({
   path: '/incidents/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppContractsIdRoute = AppContractsIdRouteImport.update({
+  id: '/contracts/$id',
+  path: '/contracts/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/onboarding/address': typeof OnboardingAddressRoute
   '/onboarding/pending': typeof OnboardingPendingRoute
+  '/contracts/$id': typeof AppContractsIdRoute
   '/incidents/$id': typeof AppIncidentsIdRoute
   '/services/mine': typeof AppServicesMineRoute
   '/contracts/': typeof AppContractsIndexRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/onboarding/address': typeof OnboardingAddressRoute
   '/onboarding/pending': typeof OnboardingPendingRoute
+  '/contracts/$id': typeof AppContractsIdRoute
   '/incidents/$id': typeof AppIncidentsIdRoute
   '/services/mine': typeof AppServicesMineRoute
   '/contracts': typeof AppContractsIndexRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/onboarding/address': typeof OnboardingAddressRoute
   '/onboarding/pending': typeof OnboardingPendingRoute
+  '/_app/contracts/$id': typeof AppContractsIdRoute
   '/_app/incidents/$id': typeof AppIncidentsIdRoute
   '/_app/services/mine': typeof AppServicesMineRoute
   '/_app/contracts/': typeof AppContractsIndexRoute
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/onboarding/address'
     | '/onboarding/pending'
+    | '/contracts/$id'
     | '/incidents/$id'
     | '/services/mine'
     | '/contracts/'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/onboarding/address'
     | '/onboarding/pending'
+    | '/contracts/$id'
     | '/incidents/$id'
     | '/services/mine'
     | '/contracts'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/onboarding/address'
     | '/onboarding/pending'
+    | '/_app/contracts/$id'
     | '/_app/incidents/$id'
     | '/_app/services/mine'
     | '/_app/contracts/'
@@ -375,10 +387,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIncidentsIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/contracts/$id': {
+      id: '/_app/contracts/$id'
+      path: '/contracts/$id'
+      fullPath: '/contracts/$id'
+      preLoaderRoute: typeof AppContractsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppContractsIdRoute: typeof AppContractsIdRoute
   AppIncidentsIdRoute: typeof AppIncidentsIdRoute
   AppServicesMineRoute: typeof AppServicesMineRoute
   AppContractsIndexRoute: typeof AppContractsIndexRoute
@@ -394,6 +414,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppContractsIdRoute: AppContractsIdRoute,
   AppIncidentsIdRoute: AppIncidentsIdRoute,
   AppServicesMineRoute: AppServicesMineRoute,
   AppContractsIndexRoute: AppContractsIndexRoute,
