@@ -4,16 +4,19 @@ import {
     ForbiddenException,
     Inject,
     Injectable,
+    Logger,
     NotFoundException,
 } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { InjectModel } from "@nestjs/mongoose";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Model } from "mongoose";
 import { TotpService } from "../auth/totp.service";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
+import { ContractDocumentsService } from "../documents/contract-documents.service";
+import { ContractPdfData, PdfService } from "../documents/pdf.service";
 import { PointsService } from "../points/points.service";
 import { CreateContractDto } from "./dto/create-contract.dto";
 import {
@@ -24,6 +27,8 @@ import {
 
 @Injectable()
 export class ContractsService {
+    private readonly logger = new Logger(ContractsService.name);
+
     constructor(
         @InjectModel(Contract.name)
         private readonly contractModel: Model<ContractDocument>,
@@ -32,6 +37,8 @@ export class ContractsService {
         private readonly totpService: TotpService,
         private readonly pointsService: PointsService,
         private readonly eventEmitter: EventEmitter2,
+        private readonly pdfService: PdfService,
+        private readonly contractDocs: ContractDocumentsService,
     ) {}
 
     findAll(userId: string) {
@@ -112,7 +119,58 @@ export class ContractsService {
             bookingId: p.bookingId,
             pointsAmount: p.pointsAmount,
         });
-        return contract.save();
+        await contract.save();
+        try {
+            const data = await this.buildPdfData(contract);
+            const buf = await this.pdfService.generateBaseContractPdf(data);
+            const { fileId } = await this.contractDocs.storePdf(
+                String(contract._id),
+                buf,
+                "generated",
+                p.createdBy,
+            );
+            contract.pdfFileId = fileId;
+            await contract.save();
+        } catch (err) {
+            this.logger.warn(
+                `PDF generation failed for contract ${String(contract._id)}: ${String(err)}`,
+            );
+        }
+        return contract;
+    }
+
+    private async buildPdfData(
+        contract: ContractDocument,
+    ): Promise<ContractPdfData> {
+        const [payerId, payeeId] = contract.signatories;
+        const names = await this.resolveNames([payerId, payeeId]);
+        return {
+            title: contract.title,
+            payerName: names[payerId] ?? payerId,
+            payeeName: names[payeeId] ?? payeeId,
+            pointsAmount: contract.pointsAmount ?? 0,
+            date: new Date().toISOString().slice(0, 10),
+            body: contract.content,
+        };
+    }
+
+    private async resolveNames(ids: string[]): Promise<Record<string, string>> {
+        const rows = await this.db
+            .select({
+                id: schema.users.id,
+                firstName: schema.users.firstName,
+                lastName: schema.users.lastName,
+                email: schema.users.email,
+            })
+            .from(schema.users)
+            .where(inArray(schema.users.id, ids));
+        const out: Record<string, string> = {};
+        for (const r of rows) {
+            out[r.id] =
+                [r.firstName, r.lastName].filter(Boolean).join(" ").trim() ||
+                r.email;
+        }
+        return out;
     }
 
     async cancelContract(id: string): Promise<void> {
@@ -175,6 +233,38 @@ export class ContractsService {
             contract.status = ContractStatus.PARTIAL;
         }
         const saved = await contract.save();
+
+        // Best-effort PDF stamp — must never affect settlement/signature/status.
+        if (contract.bookingId) {
+            try {
+                const zoneIndex = contract.signatories.indexOf(userId);
+                const base = await this.contractDocs.getCurrentPdf(contractId);
+                if (zoneIndex >= 0 && base) {
+                    const names = await this.resolveNames([userId]);
+                    const stamped = await this.pdfService.stampSignature(
+                        base,
+                        zoneIndex,
+                        {
+                            name: names[userId] ?? userId,
+                            date: new Date().toISOString().slice(0, 10),
+                            hash: hash.slice(0, 8),
+                        },
+                    );
+                    const { fileId } = await this.contractDocs.storePdf(
+                        contractId,
+                        stamped,
+                        "signed",
+                        userId,
+                    );
+                    contract.pdfFileId = fileId;
+                    await contract.save();
+                }
+            } catch (err) {
+                this.logger.warn(
+                    `PDF stamp failed for contract ${contractId}: ${String(err)}`,
+                );
+            }
+        }
 
         if (willBeFullySigned && contract.bookingId) {
             this.eventEmitter.emit("contract.fully_signed", {

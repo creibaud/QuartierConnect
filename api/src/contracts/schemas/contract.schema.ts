@@ -52,6 +52,9 @@ export class Contract {
 
     @Prop({ type: Number, default: null })
     pointsAmount: number | null;
+
+    @Prop({ type: String, default: null })
+    pdfFileId: string | null;
 }
 
 export const ContractSchema = SchemaFactory.createForClass(Contract);
