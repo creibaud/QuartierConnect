@@ -15,7 +15,7 @@ export type ContractPdfDocumentDoc = HydratedDocument<ContractPdfDocument>;
 
 @Schema({ timestamps: true, collection: "documents" })
 export class ContractPdfDocument {
-    @Prop({ required: true, unique: true, index: true })
+    @Prop({ required: true, unique: true })
     contractId: string;
 
     @Prop({ type: String, default: null })
