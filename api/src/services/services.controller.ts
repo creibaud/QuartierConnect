@@ -310,6 +310,10 @@ export class ServicesController {
             );
             if (location) changes.location = location;
         }
+        if (dto.duration !== undefined) changes.duration = dto.duration;
+        if (dto.status !== undefined) changes.status = dto.status;
+        if (dto.pointsAmount !== undefined)
+            changes.pointsAmount = dto.pointsAmount;
 
         const updated = await this.serviceModel
             .findByIdAndUpdate(serviceId, { $set: changes }, { new: true })

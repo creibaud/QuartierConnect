@@ -1,5 +1,5 @@
 import { plainToInstance } from "class-transformer";
-import { validateSync } from "class-validator";
+import { validate, validateSync } from "class-validator";
 import { CreateServiceDto } from "./create-service.dto";
 
 const base = {
@@ -35,5 +35,35 @@ describe("CreateServiceDto.direction", () => {
                 validateSync(dto).filter((e) => e.property === "direction"),
             ).toHaveLength(0);
         }
+    });
+});
+
+const durationBase = {
+    title: "Gardening",
+    description: "Weeding and hedges",
+    category: "gardening",
+    direction: "offer",
+};
+
+async function errorsFor(obj: Record<string, unknown>) {
+    return validate(plainToInstance(CreateServiceDto, obj));
+}
+
+describe("CreateServiceDto duration rule", () => {
+    it("rejects a paid service without duration", async () => {
+        const errors = await errorsFor({ ...durationBase, type: "paid" });
+        expect(errors.some((e) => e.property === "duration")).toBe(true);
+    });
+    it("accepts a paid service with duration", async () => {
+        const errors = await errorsFor({
+            ...durationBase,
+            type: "paid",
+            duration: 60,
+        });
+        expect(errors).toHaveLength(0);
+    });
+    it("accepts a free service without duration", async () => {
+        const errors = await errorsFor({ ...durationBase, type: "free" });
+        expect(errors).toHaveLength(0);
     });
 });
