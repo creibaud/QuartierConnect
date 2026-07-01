@@ -84,7 +84,7 @@ describe("useSignContract", () => {
     it("calls POST /contracts/:id/sign with totpCode", async () => {
         vi.mocked(apiPost).mockResolvedValue({
             ...mockContract,
-            status: "signed",
+            status: "fully_signed",
         });
         const { result } = renderHook(() => useSignContract(), {
             wrapper: createWrapper(),

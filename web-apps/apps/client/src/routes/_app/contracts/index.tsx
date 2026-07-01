@@ -1,8 +1,8 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Add01Icon, Agreement01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import {
     useContracts,
@@ -47,9 +47,9 @@ const STATUS_VARIANTS: Record<
     "default" | "secondary" | "outline" | "destructive"
 > = {
     draft: "secondary",
-    pending_signature: "default",
-    signed: "outline",
-    rejected: "destructive",
+    partial: "default",
+    fully_signed: "outline",
+    cancelled: "destructive",
 };
 
 export const Route = createFileRoute("/_app/contracts/")({
@@ -63,9 +63,9 @@ function ContractsPage() {
     const [signTarget, setSignTarget] = useState<Contract | null>(null);
     const statusLabels: Record<string, string> = {
         draft: t("contracts.status.draft"),
-        pending_signature: t("contracts.status.pending_signature"),
-        signed: t("contracts.status.signed"),
-        rejected: t("contracts.status.rejected"),
+        partial: t("contracts.status.partial"),
+        fully_signed: t("contracts.status.fully_signed"),
+        cancelled: t("contracts.status.cancelled"),
     };
 
     const { data, isLoading, isError, refetch } = useContracts();
@@ -75,8 +75,8 @@ function ContractsPage() {
         user &&
         contract.signatories.includes(user.sub) &&
         !contract.signatures.some((s) => s.userId === user.sub) &&
-        contract.status !== "signed" &&
-        contract.status !== "rejected";
+        contract.status !== "fully_signed" &&
+        contract.status !== "cancelled";
 
     return (
         <div className="p-6 md:p-8">
@@ -246,8 +246,7 @@ function CreateContractDialog({
                     setSignatoriesRaw("");
                     onSuccess();
                 },
-                onError: () =>
-                    toast.error(t("pages.contracts.createError")),
+                onError: () => toast.error(t("pages.contracts.createError")),
             },
         );
     }

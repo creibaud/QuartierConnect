@@ -72,7 +72,8 @@ export default {
     address: {
         searchPlaceholder: "Saisissez une adresse…",
         noSuggestions: "Aucune adresse trouvée",
-        outsideQuartier: "Cette adresse est hors de votre quartier — l'annonce restera visible par votre quartier.",
+        outsideQuartier:
+            "Cette adresse est hors de votre quartier — l'annonce restera visible par votre quartier.",
     },
     map: {
         myPosition: "Ma position",
@@ -110,9 +111,9 @@ export default {
         sign: "Signer",
         status: {
             draft: "Brouillon",
-            pending_signature: "En attente de signature",
-            signed: "Signé",
-            rejected: "Rejeté",
+            partial: "Partiellement signé",
+            fully_signed: "Signé",
+            cancelled: "Annulé",
         },
         signDialog: {
             title: "Signer le contrat",
