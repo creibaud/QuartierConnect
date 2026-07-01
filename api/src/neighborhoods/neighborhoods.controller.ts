@@ -155,7 +155,9 @@ export class NeighborhoodsController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles("admin")
     @ApiBearerAuth()
-    @ApiOperation({ summary: "Pending residents not covered by any neighborhood" })
+    @ApiOperation({
+        summary: "Pending residents not covered by any neighborhood",
+    })
     async uncoveredAddresses() {
         const rows = await this.db
             .select({

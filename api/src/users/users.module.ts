@@ -18,6 +18,11 @@ import { UsersController } from "./users.controller";
         GeocodingModule,
         NeighborhoodsModule,
     ],
-    controllers: [UsersController, MeController, UsersAvatarController, AddressController],
+    controllers: [
+        UsersController,
+        MeController,
+        UsersAvatarController,
+        AddressController,
+    ],
 })
 export class UsersModule {}

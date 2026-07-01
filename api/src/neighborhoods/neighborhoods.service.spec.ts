@@ -96,8 +96,9 @@ describe("NeighborhoodsService", () => {
         const findOne = jest.fn().mockReturnValue({
             exec: jest.fn().mockResolvedValue({ name: "Paris 12e" }),
         });
-        (service as unknown as { neighborhoodModel: { findOne: jest.Mock } })
-            .neighborhoodModel.findOne = findOne;
+        (
+            service as unknown as { neighborhoodModel: { findOne: jest.Mock } }
+        ).neighborhoodModel.findOne = findOne;
 
         const result = await service.findContainingPoint(2.387, 48.8399);
 
