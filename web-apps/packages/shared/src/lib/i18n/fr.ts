@@ -119,6 +119,21 @@ export default {
             title: "Signer le contrat",
             description: "Entrez votre code TOTP pour confirmer la signature.",
             totpPlaceholder: "Code à 6 chiffres",
+            step: {
+                read: "Lisez le contrat avant de signer",
+                draw: "Dessinez votre signature",
+                totp: "Confirmez avec votre code TOTP",
+            },
+            readBody:
+                "Ce contrat règle {{points}} points à la double signature.",
+            clear: "Effacer",
+        },
+        audit: {
+            action: {
+                generated: "Contrat généré",
+                signed: "Signé",
+                viewed: "Consulté",
+            },
         },
     },
     messaging: {
@@ -526,6 +541,12 @@ export default {
             signing: "Signature…",
             signSuccess: "Contrat signé",
             signError: "Code TOTP invalide ou déjà signé",
+        },
+        contractDetail: {
+            description: "Contrat de prestation de service",
+            auditTitle: "Traçabilité",
+            auditEmpty: "Aucune entrée d'audit.",
+            pdfError: "Impossible de charger le PDF.",
         },
         messages: {
             title: "Messages",
