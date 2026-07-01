@@ -229,6 +229,20 @@ export class PointsService {
         });
     }
 
+    async isServicePaymentCompleted(contractId: string): Promise<boolean> {
+        const [txn] = await this.db
+            .select({ status: schema.pointsTransactions.status })
+            .from(schema.pointsTransactions)
+            .where(
+                and(
+                    eq(schema.pointsTransactions.contractId, contractId),
+                    eq(schema.pointsTransactions.type, "service_payment"),
+                ),
+            )
+            .limit(1);
+        return txn?.status === "completed";
+    }
+
     async cancelServicePayment(contractId: string): Promise<void> {
         // Idempotent no-op when no pending row matches: cancelling an absent
         // or already-settled payment is safe (unlike completeServicePayment,

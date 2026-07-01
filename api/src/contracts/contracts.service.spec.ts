@@ -39,6 +39,7 @@ const mockTotpService = {
 
 const mockPointsService = {
     completeServicePayment: jest.fn(),
+    isServicePaymentCompleted: jest.fn().mockResolvedValue(false),
 };
 
 const mockEventEmitter = {
@@ -120,6 +121,97 @@ describe("ContractsService", () => {
             await expect(service.findOne("ct-1", "user-99")).rejects.toThrow(
                 ForbiddenException,
             );
+        });
+
+        it("heals a service contract to fully_signed when the payment already completed but status lags (crash-window recovery)", async () => {
+            const contract = {
+                ...mockContractDoc,
+                status: ContractStatus.PARTIAL,
+                bookingId: "booking-1",
+                signedAt: null as Date | null,
+                save: jest.fn().mockResolvedValue({}),
+            };
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(contract),
+            });
+            mockPointsService.isServicePaymentCompleted.mockResolvedValueOnce(
+                true,
+            );
+
+            const result = await service.findOne("ct-1", "user-1");
+
+            expect(result.status).toBe(ContractStatus.FULLY_SIGNED);
+            expect(result.signedAt).toBeInstanceOf(Date);
+            expect(contract.save).toHaveBeenCalled();
+        });
+
+        it("does not query PointsService for a manual contract without a bookingId", async () => {
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockContractDoc),
+            });
+
+            await service.findOne("ct-1", "user-1");
+
+            expect(
+                mockPointsService.isServicePaymentCompleted,
+            ).not.toHaveBeenCalled();
+        });
+
+        it("does not heal a service contract while the payment is still pending", async () => {
+            const contract = {
+                ...mockContractDoc,
+                status: ContractStatus.PARTIAL,
+                bookingId: "booking-1",
+                save: jest.fn().mockResolvedValue({}),
+            };
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(contract),
+            });
+            mockPointsService.isServicePaymentCompleted.mockResolvedValueOnce(
+                false,
+            );
+
+            const result = await service.findOne("ct-1", "user-1");
+
+            expect(result.status).toBe(ContractStatus.PARTIAL);
+            expect(contract.save).not.toHaveBeenCalled();
+        });
+
+        it("enforces access control before any heal — a non-party never triggers the payment query", async () => {
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({
+                    ...mockContractDoc,
+                    status: ContractStatus.PARTIAL,
+                    bookingId: "booking-1",
+                }),
+            });
+
+            await expect(service.findOne("ct-1", "user-99")).rejects.toThrow(
+                ForbiddenException,
+            );
+            expect(
+                mockPointsService.isServicePaymentCompleted,
+            ).not.toHaveBeenCalled();
+        });
+
+        it("returns the healed status even when persisting the reconciliation fails (best-effort)", async () => {
+            const contract = {
+                ...mockContractDoc,
+                status: ContractStatus.PARTIAL,
+                bookingId: "booking-1",
+                save: jest.fn().mockRejectedValue(new Error("Mongo down")),
+            };
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(contract),
+            });
+            mockPointsService.isServicePaymentCompleted.mockResolvedValueOnce(
+                true,
+            );
+
+            const result = await service.findOne("ct-1", "user-1");
+
+            expect(result.status).toBe(ContractStatus.FULLY_SIGNED);
+            expect(contract.save).toHaveBeenCalled();
         });
     });
 
