@@ -1,6 +1,6 @@
 import * as React from "react";
-import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { Link } from "@tanstack/react-router";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import {
     Sidebar,
@@ -12,7 +12,6 @@ import {
     SidebarMenuItem,
     SidebarRail,
 } from "@workspace/ui/components/sidebar";
-
 import { BrandLogo } from "@/components/brand-logo";
 import { clientNavGroups } from "@/components/nav-items";
 import { NavMain } from "@/components/nav-main";
@@ -33,7 +32,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link to="/dashboard">
-                                <div className="bg-primary text-primary-foreground flex size-9 shrink-0 items-center justify-center rounded-lg">
+                                <div className="bg-primary text-primary-foreground flex aspect-square h-full shrink-0 items-center justify-center rounded-lg">
                                     <BrandLogo className="size-6" />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
