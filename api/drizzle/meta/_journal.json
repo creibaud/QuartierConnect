@@ -50,6 +50,13 @@
       "when": 1782850509311,
       "tag": "0006_yellow_pete_wisdom",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782892469509,
+      "tag": "0007_rainy_plazm",
+      "breakpoints": true
     }
   ]
 }
