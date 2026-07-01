@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
     IsIn,
+    IsInt,
     IsNotEmpty,
     IsNumber,
     IsObject,
@@ -8,6 +9,7 @@ import {
     IsString,
     Max,
     Min,
+    ValidateIf,
 } from "class-validator";
 
 export class CreateServiceDto {
@@ -98,4 +100,33 @@ export class CreateServiceDto {
     @IsString()
     @IsOptional()
     address?: string;
+
+    @ApiPropertyOptional({
+        description: "Duration in minutes (required for paid services)",
+        example: 60,
+        minimum: 1,
+    })
+    @ValidateIf((o) => o.type === "paid")
+    @IsInt()
+    @Min(1)
+    duration?: number;
+
+    @ApiPropertyOptional({
+        description: "Listing status",
+        enum: ["active", "closed"],
+        example: "active",
+    })
+    @IsOptional()
+    @IsIn(["active", "closed"])
+    status?: string;
+
+    @ApiPropertyOptional({
+        description: "Explicit points price (overrides the derived amount)",
+        example: 8,
+        minimum: 0,
+    })
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    pointsAmount?: number;
 }

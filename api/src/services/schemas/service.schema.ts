@@ -38,6 +38,15 @@ export class Service {
 
     @Prop()
     address?: string;
+
+    @Prop({ min: 1 })
+    duration?: number;
+
+    @Prop({ required: true, enum: ["active", "closed"], default: "active" })
+    status: string;
+
+    @Prop({ min: 0 })
+    pointsAmount?: number;
 }
 
 export const ServiceSchema = SchemaFactory.createForClass(Service);
