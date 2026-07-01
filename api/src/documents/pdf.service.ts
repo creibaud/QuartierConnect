@@ -15,6 +15,7 @@ export interface SignatureStamp {
     name: string;
     date: string;
     hash: string;
+    image?: string;
 }
 
 // A4 = 595.28 x 841.89 pt. Zones are the baseline of each signatory block.
@@ -98,6 +99,24 @@ export class PdfService {
         const doc = await PDFDocument.load(pdf);
         const page: PDFPage = doc.getPages()[0];
         const font = await doc.embedFont(StandardFonts.Helvetica);
+
+        if (stamp.image) {
+            try {
+                const base64 = stamp.image.replace(
+                    /^data:image\/png;base64,/,
+                    "",
+                );
+                const png = await doc.embedPng(Buffer.from(base64, "base64"));
+                page.drawImage(png, {
+                    x: zone.x,
+                    y: zone.y + 34,
+                    width: 120,
+                    height: 48,
+                });
+            } catch {
+                // best-effort: fall back to the text caption below
+            }
+        }
 
         page.drawText(stamp.name, {
             x: zone.x,
