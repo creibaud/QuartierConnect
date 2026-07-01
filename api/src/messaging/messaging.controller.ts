@@ -91,7 +91,10 @@ export class MessagingController {
         description:
             "Returns the existing direct conversation with the target user, or creates one if none exists. Idempotent.",
     })
-    @ApiParam({ name: "userId", description: "Postgres UUID of the other user" })
+    @ApiParam({
+        name: "userId",
+        description: "Postgres UUID of the other user",
+    })
     @ApiResponse({ status: 201, schema: { example: { id: "64b..." } } })
     findOrCreateWith(
         @Param("userId") userId: string,

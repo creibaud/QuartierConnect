@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Inject, Post, Request, UseGuards } from "@nestjs/common";
+import {
+    Body,
+    Controller,
+    Get,
+    Inject,
+    Post,
+    Request,
+    UseGuards,
+} from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { eq } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -37,7 +45,10 @@ export class AddressController {
         const geo = await this.geocoding.geocode(body.address);
         if (!geo) return { status: "not_found" as const };
 
-        const match = await this.neighborhoods.findContainingPoint(geo.lng, geo.lat);
+        const match = await this.neighborhoods.findContainingPoint(
+            geo.lng,
+            geo.lat,
+        );
         const neighborhoodId = match ? match._id.toString() : null;
 
         await this.db
@@ -55,7 +66,9 @@ export class AddressController {
             await syncLivesIn(this.neo4jDriver, req.user.sub, neighborhoodId);
 
         return {
-            status: neighborhoodId ? ("assigned" as const) : ("pending" as const),
+            status: neighborhoodId
+                ? ("assigned" as const)
+                : ("pending" as const),
             neighborhoodId,
             displayName: geo.displayName,
         };
@@ -75,10 +88,19 @@ export class AddressController {
             .where(eq(schema.users.id, req.user.sub));
 
         if (row?.addressLat == null || row?.addressLng == null) {
-            return { address: row?.address ?? null, lat: null, lng: null, neighborhood: null };
+            return {
+                address: row?.address ?? null,
+                lat: null,
+                lng: null,
+                neighborhood: null,
+            };
         }
 
-        let neighborhood: { id: string; name: string; geometry: GeoJsonPolygon | null } | null = null;
+        let neighborhood: {
+            id: string;
+            name: string;
+            geometry: GeoJsonPolygon | null;
+        } | null = null;
         if (row.neighborhoodId) {
             const doc = await this.neighborhoods.findById(row.neighborhoodId);
             if (doc) {
@@ -90,7 +112,12 @@ export class AddressController {
             }
         }
 
-        return { address: row.address ?? null, lat: row.addressLat, lng: row.addressLng, neighborhood };
+        return {
+            address: row.address ?? null,
+            lat: row.addressLat,
+            lng: row.addressLng,
+            neighborhood,
+        };
     }
 
     @Get("neighborhood-status")
@@ -108,5 +135,4 @@ export class AddressController {
             neighborhoodId: row?.neighborhoodId ?? null,
         };
     }
-
 }
