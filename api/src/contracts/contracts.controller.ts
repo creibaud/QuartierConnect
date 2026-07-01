@@ -5,6 +5,7 @@ import {
     Param,
     Post,
     Request,
+    Res,
     UseGuards,
 } from "@nestjs/common";
 import {
@@ -14,6 +15,7 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
+import { Response } from "express";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { ContractsService } from "./contracts.service";
 import { ContractDto } from "./dto/contract-response.dto";
@@ -53,6 +55,32 @@ export class ContractsController {
     @ApiResponse({ status: 404, description: "Contract not found" })
     findOne(@Param("id") id: string, @Request() req: AuthRequest) {
         return this.contractsService.findOne(id, req.user.sub);
+    }
+
+    @Get(":id/pdf")
+    @ApiOperation({ summary: "Download the contract PDF (audited as viewed)" })
+    @ApiParam({ name: "id", description: "MongoDB ObjectId of the contract" })
+    async getPdf(
+        @Param("id") id: string,
+        @Request() req: AuthRequest,
+        @Res() res: Response,
+    ) {
+        const { stream, fileName } = await this.contractsService.getContractPdf(
+            id,
+            req.user.sub,
+        );
+        res.set({
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `attachment; filename="${fileName}"`,
+        });
+        stream.pipe(res);
+    }
+
+    @Get(":id/audit")
+    @ApiOperation({ summary: "Immutable audit log of the contract document" })
+    @ApiParam({ name: "id", description: "MongoDB ObjectId of the contract" })
+    getAudit(@Param("id") id: string, @Request() req: AuthRequest) {
+        return this.contractsService.getContractAudit(id, req.user.sub);
     }
 
     @Post()
