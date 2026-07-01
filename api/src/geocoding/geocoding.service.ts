@@ -4,6 +4,14 @@ const ENDPOINT = "https://nominatim.openstreetmap.org/search";
 const USER_AGENT = "QuartierConnect/1.0 (contact: admin@quartierconnect.local)";
 const MIN_INTERVAL_MS = 1100; // respecter la politique ~1 req/s
 
+export interface SearchOptions {
+    /** Preferred label language (i18n locale, e.g. "fr" | "en"). */
+    lang?: string;
+    /** Soft geographic bias `minLon,minLat,maxLon,maxLat` (NOT bounded — results
+        outside still appear, just ranked lower). */
+    viewbox?: string;
+}
+
 @Injectable()
 export class GeocodingService {
     private readonly logger = new Logger(GeocodingService.name);
@@ -13,7 +21,7 @@ export class GeocodingService {
         address: string,
     ): Promise<{ lat: number; lng: number; displayName: string } | null> {
         await this.throttle();
-        const url = `${ENDPOINT}?format=jsonv2&limit=1&q=${encodeURIComponent(address)}`;
+        const url = `${ENDPOINT}?format=jsonv2&limit=1&accept-language=fr&q=${encodeURIComponent(address)}`;
         try {
             const res = await fetch(url, {
                 headers: { "User-Agent": USER_AGENT },
@@ -39,9 +47,19 @@ export class GeocodingService {
 
     async search(
         query: string,
+        opts: SearchOptions = {},
     ): Promise<Array<{ label: string; lat: number; lng: number }>> {
         await this.throttle();
-        const url = `${ENDPOINT}?format=jsonv2&limit=8&q=${encodeURIComponent(query)}`;
+        const params = new URLSearchParams({
+            format: "jsonv2",
+            limit: "8",
+            "accept-language": opts.lang || "fr",
+            q: query,
+        });
+        // Soft bias only — no `bounded`/`countrycodes`, so the user can still
+        // find addresses outside their area.
+        if (opts.viewbox) params.set("viewbox", opts.viewbox);
+        const url = `${ENDPOINT}?${params.toString()}`;
         try {
             const res = await fetch(url, {
                 headers: { "User-Agent": USER_AGENT },
