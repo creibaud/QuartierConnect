@@ -120,7 +120,7 @@ export interface Contract {
     content: string;
     createdBy: string;
     signatories: string[];
-    status: "draft" | "pending_signature" | "signed" | "rejected";
+    status: "draft" | "partial" | "fully_signed" | "cancelled";
     contentHash: string | null;
     signedAt: string | null;
     signatures: Array<{ userId: string; signedAt: string; hash: string }>;
