@@ -163,15 +163,6 @@ export interface VoteScore {
 export type VoteTargetType = "incident" | "service" | "event" | "comment";
 export type VoteType = "like" | "dislike" | "up" | "down";
 
-export interface DocumentMeta {
-    fileId: string;
-    fileName: string;
-    contentType: string;
-    size: number;
-    uploadedBy: string;
-    uploadedAt: string;
-}
-
 export interface MyProfile {
     id: string;
     email: string;
