@@ -298,49 +298,65 @@ export class IncidentsController {
     @ApiOperation({
         summary: "Sync incidents from the Java Desktop client",
         description:
-            "Bulk upsert of incidents. Only incidents whose `createdBy` matches the JWT's UUID are processed; the others are silently ignored. The status is always forced to `open` on initial insertion (LWW: status transitions go through `PATCH /:id/status`).",
+            "Bulk upsert of incidents. Residents can only upsert incidents whose `createdBy` matches the JWT's UUID; moderators and admins can upsert incidents owned by anyone (the original owner is preserved on update). Items not upserted are reported in `skippedIds` so the client keeps them pending.",
     })
     @ApiResponse({ status: 201, type: SyncResultDto })
     @ApiResponse({ status: 401, description: "Not authenticated" })
     async sync(@Body() dto: SyncIncidentsDto, @Request() req: AuthRequest) {
-        const ownItems = dto.incidents.filter(
-            (item) => item.createdBy === req.user.sub,
+        const canModerate = ["moderator", "admin"].includes(req.user.role);
+        const allowedItems = canModerate
+            ? dto.incidents
+            : dto.incidents.filter((item) => item.createdBy === req.user.sub);
+
+        if (allowedItems.length === 0)
+            return {
+                upserted: 0,
+                skipped: dto.incidents.length,
+                skippedIds: dto.incidents.map((item) => item.id),
+            };
+
+        const upsert = this.db.insert(schema.incidents).values(
+            allowedItems.map((item) => ({
+                id: item.id,
+                title: item.title,
+                description: item.description,
+                status: item.status ?? "open",
+                createdBy: canModerate ? item.createdBy : req.user.sub,
+                neighborhoodId: item.neighborhoodId,
+                lat: item.lat,
+                lng: item.lng,
+            })),
         );
 
-        if (ownItems.length === 0)
-            return { upserted: 0, skipped: dto.incidents.length };
+        const conflictUpdateSet = {
+            title: sql`excluded.title`,
+            description: sql`excluded.description`,
+            status: sql`excluded.status`,
+            lat: sql`excluded.lat`,
+            lng: sql`excluded.lng`,
+            updatedAt: new Date(),
+        };
 
-        await this.db
-            .insert(schema.incidents)
-            .values(
-                ownItems.map((item) => ({
-                    id: item.id,
-                    title: item.title,
-                    description: item.description,
-                    status: item.status ?? "open",
-                    createdBy: req.user.sub,
-                    neighborhoodId: item.neighborhoodId,
-                    lat: item.lat,
-                    lng: item.lng,
-                })),
-            )
-            .onConflictDoUpdate({
-                target: schema.incidents.id,
-                set: {
-                    title: sql`excluded.title`,
-                    description: sql`excluded.description`,
-                    status: sql`excluded.status`,
-                    lat: sql`excluded.lat`,
-                    lng: sql`excluded.lng`,
-                    updatedAt: new Date(),
-                },
-                where: eq(schema.incidents.createdBy, req.user.sub),
-            })
-            .returning();
+        const upsertedRows: { id: string }[] = await (
+            canModerate
+                ? upsert.onConflictDoUpdate({
+                      target: schema.incidents.id,
+                      set: conflictUpdateSet,
+                  })
+                : upsert.onConflictDoUpdate({
+                      target: schema.incidents.id,
+                      set: conflictUpdateSet,
+                      where: eq(schema.incidents.createdBy, req.user.sub),
+                  })
+        ).returning({ id: schema.incidents.id });
 
+        const upsertedIds = new Set(upsertedRows.map((row) => row.id));
         return {
-            upserted: ownItems.length,
-            skipped: dto.incidents.length - ownItems.length,
+            upserted: upsertedRows.length,
+            skipped: dto.incidents.length - upsertedRows.length,
+            skippedIds: dto.incidents
+                .map((item) => item.id)
+                .filter((id) => !upsertedIds.has(id)),
         };
     }
 }

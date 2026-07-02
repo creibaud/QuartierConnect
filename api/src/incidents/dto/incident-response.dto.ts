@@ -57,7 +57,16 @@ export class SyncResultDto {
 
     @ApiProperty({
         example: 1,
-        description: "Incidents skipped (createdBy does not match the JWT)",
+        description:
+            "Incidents skipped (ownership restriction for residents, or upsert rejected)",
     })
     skipped: number;
+
+    @ApiProperty({
+        example: ["00000000-0000-4000-b000-000000000001"],
+        description:
+            "IDs of the skipped incidents; the client must keep them marked as pending sync",
+        type: [String],
+    })
+    skippedIds: string[];
 }
