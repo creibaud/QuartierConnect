@@ -129,7 +129,7 @@ describe("Paid service settlement (e2e)", () => {
         const partial = await request(app.getHttpServer())
             .post(`/contracts/${contractId}/sign`)
             .set("Authorization", `Bearer ${buyer.accessToken}`)
-            .send({ totpCode: currentTotp(buyer.totpSecret) })
+            .send({ totpCode: currentTotp(buyer.totpSecret, 30) })
             .expect(201);
         expect(partial.body.status).toBe("partial");
 
@@ -207,7 +207,7 @@ describe("Paid service settlement (e2e)", () => {
             .post(`/contracts/${contractId}/sign`)
             .set("Authorization", `Bearer ${imgBuyer.accessToken}`)
             .send({
-                totpCode: currentTotp(imgBuyer.totpSecret),
+                totpCode: currentTotp(imgBuyer.totpSecret, 30),
                 signatureImage: PNG,
             })
             .expect(201);
