@@ -85,6 +85,11 @@ export default {
         attribution: "Credits",
         attributionTitle: "Map credits",
         attributionBody: "Data and tiles provided by:",
+        draw: {
+            drawPolygon: "Draw the boundary",
+            editPolygon: "Edit the shape (drag vertices)",
+            deletePolygon: "Delete the shape",
+        },
     },
     roles: {
         resident: "Resident",
@@ -878,8 +883,9 @@ export default {
             descriptionPlaceholder: "Optional description",
             polygonOnMap: "Polygon on the map",
             polygonHint:
-                "Existing neighborhoods in gray. Use the polygon tool at the top right, click for vertices, double-click to close.",
+                "Existing neighborhoods are shown in grey. Pick the pen tool and click the map to place vertices; close the shape with Enter, a double-click, or by clicking the first point. Use the cursor tool to move vertices.",
             polygonPoints: "Polygon defined ({{count}} points)",
+            overlapError: "The shape overlaps an existing neighborhood",
         },
         services: {
             title: "Services",
