@@ -4,8 +4,13 @@ import {
     Injectable,
     NotFoundException,
 } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import {
+    POINTS_SETTLED_EVENT,
+    PointsSettledEvent,
+} from "../common/notification-events";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { TransferPointsDto } from "./dto/transfer-points.dto";
@@ -28,6 +33,7 @@ export class PointsService {
     constructor(
         @Inject(DRIZZLE_TOKEN)
         private readonly db: PostgresJsDatabase<typeof schema>,
+        private readonly eventEmitter: EventEmitter2,
     ) {}
 
     async getBalance(userId: string): Promise<{ balance: number }> {
@@ -183,7 +189,7 @@ export class PointsService {
     }
 
     async completeServicePayment(contractId: string): Promise<void> {
-        await this.db.transaction(async (tx) => {
+        const settled = await this.db.transaction(async (tx) => {
             const [txn] = await tx
                 .select()
                 .from(schema.pointsTransactions)
@@ -200,7 +206,7 @@ export class PointsService {
                     "No service payment found for this contract",
                 );
             }
-            if (txn.status === "completed") return; // idempotent
+            if (txn.status === "completed") return null; // idempotent
             if (txn.status === "cancelled") {
                 throw new BadRequestException("Service payment was cancelled");
             }
@@ -226,7 +232,24 @@ export class PointsService {
                 .update(schema.pointsTransactions)
                 .set({ status: "completed", completedAt: new Date() })
                 .where(eq(schema.pointsTransactions.id, txn.id));
+            return {
+                payerId: txn.senderId,
+                payeeId: txn.recipientId,
+                amount: txn.amount,
+            };
         });
+        if (!settled) return;
+        this.emitPointsSettled({ contractId, ...settled });
+    }
+
+    // Best-effort: the settlement is already committed, a notification
+    // failure must never surface to the caller.
+    private emitPointsSettled(event: PointsSettledEvent): void {
+        try {
+            this.eventEmitter.emit(POINTS_SETTLED_EVENT, event);
+        } catch {
+            return;
+        }
     }
 
     async isServicePaymentCompleted(contractId: string): Promise<boolean> {

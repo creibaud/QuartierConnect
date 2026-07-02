@@ -1,7 +1,14 @@
 import { BadRequestException } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { PgDialect } from "drizzle-orm/pg-core";
 import * as schema from "../database/schema";
 import { PointsService } from "./points.service";
+
+function makeEmitter() {
+    return { emit: jest.fn() } as unknown as EventEmitter2 & {
+        emit: jest.Mock;
+    };
+}
 
 // Hand-rolled fake `db` built from jest spies so the tests assert real
 // behaviour (money movement, idempotency, the -10 floor, the cancel guard)
@@ -106,7 +113,8 @@ describe("PointsService settlement", () => {
     it("reserveServicePayment inserts a pending service_payment and moves no balance", async () => {
         const db = makeDb(null, 0);
         const spies = (db as unknown as { __spies: SettlementSpies }).__spies;
-        const svc = new PointsService(db);
+        const emitter = makeEmitter();
+        const svc = new PointsService(db, emitter);
 
         await svc.reserveServicePayment({
             contractId: "c1",
@@ -127,6 +135,7 @@ describe("PointsService settlement", () => {
             }),
         );
         expect(spies.balanceInsertValues).not.toHaveBeenCalled();
+        expect(emitter.emit).not.toHaveBeenCalled();
     });
 
     it("completeServicePayment is idempotent when already completed and moves no money", async () => {
@@ -141,13 +150,15 @@ describe("PointsService settlement", () => {
             0,
         );
         const spies = (db as unknown as { __spies: SettlementSpies }).__spies;
-        const svc = new PointsService(db);
+        const emitter = makeEmitter();
+        const svc = new PointsService(db, emitter);
 
         await expect(svc.completeServicePayment("c1")).resolves.toBeUndefined();
 
         expect(spies.balanceLockExecute).not.toHaveBeenCalled();
         expect(spies.balanceInsertValues).not.toHaveBeenCalled();
         expect(spies.updateSet).not.toHaveBeenCalled();
+        expect(emitter.emit).not.toHaveBeenCalled();
     });
 
     it("completeServicePayment debits payer, credits payee, and marks completed", async () => {
@@ -162,7 +173,8 @@ describe("PointsService settlement", () => {
             100,
         );
         const spies = (db as unknown as { __spies: SettlementSpies }).__spies;
-        const svc = new PointsService(db);
+        const emitter = makeEmitter();
+        const svc = new PointsService(db, emitter);
 
         await expect(svc.completeServicePayment("c1")).resolves.toBeUndefined();
 
@@ -177,6 +189,33 @@ describe("PointsService settlement", () => {
         expect(spies.updateSet).toHaveBeenCalledWith(
             expect.objectContaining({ status: "completed" }),
         );
+        expect(emitter.emit).toHaveBeenCalledTimes(1);
+        expect(emitter.emit).toHaveBeenCalledWith("points.settled", {
+            contractId: "c1",
+            payerId: "payer",
+            payeeId: "payee",
+            amount: 30,
+        });
+    });
+
+    it("completeServicePayment still resolves when the settled notification blows up (best-effort)", async () => {
+        const db = makeDb(
+            {
+                id: "t1",
+                senderId: "payer",
+                recipientId: "payee",
+                amount: 30,
+                status: "pending",
+            },
+            100,
+        );
+        const emitter = makeEmitter();
+        emitter.emit.mockImplementation(() => {
+            throw new Error("listener boom");
+        });
+        const svc = new PointsService(db, emitter);
+
+        await expect(svc.completeServicePayment("c1")).resolves.toBeUndefined();
     });
 
     it("completeServicePayment rejects below the -10 floor without moving money", async () => {
@@ -192,7 +231,8 @@ describe("PointsService settlement", () => {
         );
         const spies = (db as unknown as { __spies: SettlementSpies }).__spies;
         const state = (db as unknown as { __state: { txn: Txn } }).__state;
-        const svc = new PointsService(db);
+        const emitter = makeEmitter();
+        const svc = new PointsService(db, emitter);
 
         const error = await svc
             .completeServicePayment("c1")
@@ -203,6 +243,7 @@ describe("PointsService settlement", () => {
         expect(spies.balanceInsertValues).not.toHaveBeenCalled();
         expect(spies.updateSet).not.toHaveBeenCalled();
         expect(state.txn.status).toBe("pending");
+        expect(emitter.emit).not.toHaveBeenCalled();
     });
 
     it("cancelServicePayment updates the transaction with a pending-guarded WHERE", async () => {
@@ -217,7 +258,8 @@ describe("PointsService settlement", () => {
             0,
         );
         const spies = (db as unknown as { __spies: SettlementSpies }).__spies;
-        const svc = new PointsService(db);
+        const emitter = makeEmitter();
+        const svc = new PointsService(db, emitter);
 
         await expect(svc.cancelServicePayment("c1")).resolves.toBeUndefined();
 
