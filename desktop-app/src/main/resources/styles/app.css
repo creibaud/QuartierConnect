@@ -1,6 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════
    QuartierConnect — Shell
-   Base theme : AtlantaFX PrimerDark
+   Base theme : « Voisinage » (PrimerLight + styles/voisinage.css) ;
+   second thème : AtlantaFX PrimerDark. Couleurs via tokens AtlantaFX
+   uniquement, pour rester lisible sur les deux bases.
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Root ──────────────────────────────────────────────────────── */
@@ -145,12 +147,12 @@
 
 .topbar-connect-online {
     -fx-font-size: 11px;
-    -fx-text-fill: #4ade80;
+    -fx-text-fill: -color-success-fg;
 }
 
 .topbar-connect-offline {
     -fx-font-size: 11px;
-    -fx-text-fill: #94a3b8;
+    -fx-text-fill: -color-fg-muted;
 }
 
 .topbar-avatar {
@@ -180,6 +182,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .page-title {
+    -fx-font-family: "Fraunces SemiBold";
     -fx-font-size: 20px;
     -fx-font-weight: bold;
     -fx-text-fill: -color-fg-default;
@@ -206,7 +209,8 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .content-title {
-    -fx-font-size: 20px;
+    -fx-font-family: "Fraunces SemiBold";
+    -fx-font-size: 21px;
     -fx-font-weight: bold;
     -fx-text-fill: -color-fg-default;
 }
@@ -248,43 +252,43 @@
 }
 
 .badge-open {
-    -fx-background-color: rgba(180, 83, 9, 0.18);
-    -fx-text-fill: #d97706;
+    -fx-background-color: -color-warning-subtle;
+    -fx-text-fill: -color-warning-fg;
 }
 .badge-open .ikonli-font-icon {
-    -fx-icon-color: #d97706;
+    -fx-icon-color: -color-warning-fg;
 }
 
 .badge-in-progress {
-    -fx-background-color: rgba(37, 99, 235, 0.18);
-    -fx-text-fill: #60a5fa;
+    -fx-background-color: -color-accent-subtle;
+    -fx-text-fill: -color-accent-fg;
 }
 .badge-in-progress .ikonli-font-icon {
-    -fx-icon-color: #60a5fa;
+    -fx-icon-color: -color-accent-fg;
 }
 
 .badge-resolved {
-    -fx-background-color: rgba(21, 128, 61, 0.18);
-    -fx-text-fill: #4ade80;
+    -fx-background-color: -color-success-subtle;
+    -fx-text-fill: -color-success-fg;
 }
 .badge-resolved .ikonli-font-icon {
-    -fx-icon-color: #4ade80;
+    -fx-icon-color: -color-success-fg;
 }
 
 .badge-dirty {
-    -fx-background-color: rgba(100, 116, 139, 0.18);
-    -fx-text-fill: #94a3b8;
+    -fx-background-color: -color-neutral-subtle;
+    -fx-text-fill: -color-fg-muted;
 }
 .badge-dirty .ikonli-font-icon {
-    -fx-icon-color: #94a3b8;
+    -fx-icon-color: -color-fg-muted;
 }
 
 .badge-conflict {
-    -fx-background-color: rgba(220, 38, 38, 0.18);
-    -fx-text-fill: #f87171;
+    -fx-background-color: -color-danger-subtle;
+    -fx-text-fill: -color-danger-fg;
 }
 .badge-conflict .ikonli-font-icon {
-    -fx-icon-color: #f87171;
+    -fx-icon-color: -color-danger-fg;
 }
 
 .badge-neutral {
@@ -316,6 +320,7 @@
 }
 
 .card-value {
+    -fx-font-family: "Fraunces SemiBold";
     -fx-font-size: 26px;
     -fx-font-weight: bold;
     -fx-text-fill: -color-fg-default;
@@ -363,22 +368,22 @@
 
 .status-online {
     -fx-font-size: 12px;
-    -fx-text-fill: #4ade80;
+    -fx-text-fill: -color-success-fg;
 }
 
 .status-offline {
     -fx-font-size: 12px;
-    -fx-text-fill: #94a3b8;
+    -fx-text-fill: -color-fg-muted;
 }
 
 .status-token-warn {
     -fx-font-size: 12px;
-    -fx-text-fill: #fbbf24;
+    -fx-text-fill: -color-warning-fg;
 }
 
 .status-token-critical {
     -fx-font-size: 12px;
-    -fx-text-fill: #f87171;
+    -fx-text-fill: -color-danger-fg;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -457,17 +462,17 @@
 }
 
 .token-fill-ok {
-    -fx-background-color: #4ade80;
+    -fx-background-color: -color-success-emphasis;
     -fx-background-radius: 4;
 }
 
 .token-fill-warn {
-    -fx-background-color: #fbbf24;
+    -fx-background-color: -color-warning-emphasis;
     -fx-background-radius: 4;
 }
 
 .token-fill-crit {
-    -fx-background-color: #f87171;
+    -fx-background-color: -color-danger-emphasis;
     -fx-background-radius: 4;
 }
 
@@ -480,7 +485,7 @@
 .big-number-red {
     -fx-font-size: 20px;
     -fx-font-weight: bold;
-    -fx-text-fill: #f87171;
+    -fx-text-fill: -color-danger-fg;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -599,27 +604,27 @@
 }
 
 .toast-success {
-    -fx-background-color: rgba(21, 128, 61, 0.92);
-    -fx-border-color: rgba(74, 222, 128, 0.4);
+    -fx-background-color: -color-success-emphasis;
+    -fx-border-color: -color-success-muted;
 }
 .toast-success .label {
-    -fx-text-fill: #dcfce7;
+    -fx-text-fill: -color-fg-emphasis;
 }
 
 .toast-error {
-    -fx-background-color: rgba(153, 27, 27, 0.92);
-    -fx-border-color: rgba(248, 113, 113, 0.4);
+    -fx-background-color: -color-danger-emphasis;
+    -fx-border-color: -color-danger-muted;
 }
 .toast-error .label {
-    -fx-text-fill: #fee2e2;
+    -fx-text-fill: -color-fg-emphasis;
 }
 
 .toast-info {
-    -fx-background-color: rgba(30, 58, 138, 0.92);
-    -fx-border-color: rgba(96, 165, 250, 0.4);
+    -fx-background-color: -color-accent-emphasis;
+    -fx-border-color: -color-accent-muted;
 }
 .toast-info .label {
-    -fx-text-fill: #dbeafe;
+    -fx-text-fill: -color-fg-emphasis;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -640,7 +645,8 @@
 }
 
 .login-app-name {
-    -fx-font-size: 18px;
+    -fx-font-family: "Fraunces SemiBold";
+    -fx-font-size: 19px;
     -fx-font-weight: bold;
     -fx-text-fill: -color-fg-default;
 }
@@ -760,17 +766,17 @@
 
 /* Row highlight states */
 .row-conflict {
-    -fx-background-color: rgba(220, 38, 38, 0.07) !important;
-    -fx-border-color: transparent transparent rgba(220, 38, 38, 0.25) transparent !important;
+    -fx-background-color: -color-danger-subtle !important;
+    -fx-border-color: transparent transparent -color-danger-muted transparent !important;
     -fx-border-width: 0 0 1 0 !important;
 }
 
 .row-conflict:hover {
-    -fx-background-color: rgba(220, 38, 38, 0.12) !important;
+    -fx-background-color: derive(-color-danger-subtle, -6%) !important;
 }
 
 .row-dirty {
-    -fx-background-color: rgba(96, 165, 250, 0.05) !important;
+    -fx-background-color: derive(-color-accent-subtle, 45%) !important;
 }
 
 /* Footer bar */
@@ -900,8 +906,8 @@
 /* ── Conflict banner (top of table) ──────────────────────────── */
 
 .conflict-banner {
-    -fx-background-color: rgba(220, 38, 38, 0.08);
-    -fx-border-color: rgba(248, 113, 113, 0.35);
+    -fx-background-color: -color-danger-subtle;
+    -fx-border-color: -color-danger-muted;
     -fx-border-radius: 8;
     -fx-background-radius: 8;
     -fx-border-width: 1;
@@ -909,12 +915,12 @@
 }
 
 .conflict-banner-icon {
-    -fx-icon-color: #f87171;
+    -fx-icon-color: -color-danger-fg;
 }
 
 .conflict-banner-text {
     -fx-font-size: 12.5px;
-    -fx-text-fill: #fca5a5;
+    -fx-text-fill: -color-danger-fg;
 }
 
 .conflict-banner-btn {
@@ -922,33 +928,33 @@
 }
 
 .filter-btn-conflict {
-    -fx-text-fill: #f87171;
+    -fx-text-fill: -color-danger-fg;
 }
 
 .filter-btn-conflict.filter-btn-active {
-    -fx-background-color: rgba(220, 38, 38, 0.15);
-    -fx-text-fill: #f87171;
+    -fx-background-color: -color-danger-subtle;
+    -fx-text-fill: -color-danger-fg;
 }
 
 /* ── Conflict modal ─────────────────────────────────────────── */
 
 .conflict-warning-header {
-    -fx-background-color: rgba(251, 191, 36, 0.08);
+    -fx-background-color: -color-warning-subtle;
     -fx-background-radius: 8;
-    -fx-border-color: rgba(251, 191, 36, 0.25);
+    -fx-border-color: -color-warning-muted;
     -fx-border-radius: 8;
     -fx-border-width: 1;
     -fx-padding: 12 14;
 }
 
 .conflict-modal-warn-icon {
-    -fx-icon-color: #fbbf24;
+    -fx-icon-color: -color-warning-fg;
 }
 
 .conflict-modal-warn-title {
     -fx-font-size: 13px;
     -fx-font-weight: bold;
-    -fx-text-fill: #fbbf24;
+    -fx-text-fill: -color-warning-fg;
 }
 
 .conflict-modal-warn-desc {
@@ -983,13 +989,13 @@
 }
 
 .merge-grid-header-local {
-    -fx-text-fill: #60a5fa;
+    -fx-text-fill: -color-accent-fg;
     -fx-border-color: transparent transparent -color-border-muted rgba(125, 133, 144, 0.15);
     -fx-border-width: 0 0 1 1;
 }
 
 .merge-grid-header-remote {
-    -fx-text-fill: #4ade80;
+    -fx-text-fill: -color-success-fg;
     -fx-border-color: transparent transparent -color-border-muted rgba(125, 133, 144, 0.15);
     -fx-border-width: 0 0 1 1;
 }
@@ -999,11 +1005,11 @@
 }
 
 .merge-header-icon-local {
-    -fx-icon-color: #60a5fa;
+    -fx-icon-color: -color-accent-fg;
 }
 
 .merge-header-icon-remote {
-    -fx-icon-color: #4ade80;
+    -fx-icon-color: -color-success-fg;
 }
 
 /* Field name column */
@@ -1033,32 +1039,32 @@
 
 /* Changed cells highlight */
 .merge-cell-changed-local {
-    -fx-background-color: rgba(96, 165, 250, 0.10);
+    -fx-background-color: -color-accent-subtle;
 }
 
 .merge-cell-changed-local.label {
-    -fx-text-fill: #93c5fd;
+    -fx-text-fill: -color-accent-fg;
     -fx-font-weight: bold;
 }
 
 .merge-cell-changed-remote {
-    -fx-background-color: rgba(74, 222, 128, 0.10);
+    -fx-background-color: -color-success-subtle;
 }
 
 .merge-cell-changed-remote.label {
-    -fx-text-fill: #86efac;
+    -fx-text-fill: -color-success-fg;
     -fx-font-weight: bold;
 }
 
 /* Action buttons */
 .merge-btn-local {
-    -fx-border-color: rgba(96, 165, 250, 0.4);
+    -fx-border-color: -color-accent-muted;
 }
 
 .merge-btn-remote {
-    -fx-background-color: rgba(21, 128, 61, 0.85);
+    -fx-background-color: -color-success-emphasis;
 }
 
 .merge-btn-remote:hover {
-    -fx-background-color: rgba(21, 128, 61, 1);
+    -fx-background-color: derive(-color-success-emphasis, -10%);
 }

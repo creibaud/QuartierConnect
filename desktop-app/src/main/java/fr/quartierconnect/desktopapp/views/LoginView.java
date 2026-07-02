@@ -1,16 +1,19 @@
 package fr.quartierconnect.desktopapp.views;
 
 import fr.quartierconnect.desktopapp.i18n.I18n;
+import fr.quartierconnect.desktopapp.plugin.ThemePlugin;
 import fr.quartierconnect.desktopapp.services.ApiService;
 import fr.quartierconnect.desktopapp.services.AuthService;
 import fr.quartierconnect.desktopapp.services.SsoCallbackServer;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.effect.ColorAdjust;
+import javafx.scene.effect.Effect;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
@@ -64,9 +67,7 @@ public class LoginView {
         logoImg.setFitHeight(52);
         logoImg.setPreserveRatio(true);
         logoImg.setSmooth(true);
-        ColorAdjust whiten = new ColorAdjust();
-        whiten.setBrightness(1.0);
-        logoImg.setEffect(whiten);
+        bindLogoTintToTheme(logoImg);
 
         // App name
         Label appName = new Label(I18n.get("app.name"));
@@ -119,6 +120,16 @@ public class LoginView {
         StackPane bg = new StackPane(card);
         bg.getStyleClass().add("login-bg");
         return bg;
+    }
+
+    /** The logo is black on transparent — whiten it only while a dark theme is active. */
+    private static void bindLogoTintToTheme(ImageView logo) {
+        ColorAdjust whiten = new ColorAdjust();
+        whiten.setBrightness(1.0);
+        logo.effectProperty().bind(
+            Bindings.when(ThemePlugin.darkThemeActiveProperty())
+                    .then((Effect) whiten)
+                    .otherwise((Effect) null));
     }
 
     // ── Business logic (unchanged) ───────────────────────────────────────────
@@ -194,7 +205,7 @@ public class LoginView {
 
             int    port         = server.getPort();
             String callbackUrl  = "http://localhost:" + port + "/cb";
-            String authorizeUrl = "http://localhost:3001/sso/authorize"
+            String authorizeUrl = webBaseUrl() + "/sso/authorize"
                     + "?state="    + URLEncoder.encode(state,       StandardCharsets.UTF_8)
                     + "&redirect=" + URLEncoder.encode(callbackUrl, StandardCharsets.UTF_8);
 
@@ -212,6 +223,10 @@ public class LoginView {
                 });
             }
         }, "sso-pkce-flow").start();
+    }
+
+    private static String webBaseUrl() {
+        return System.getProperty("web.url", "http://localhost:3001");
     }
 
     private void continueOffline() {
