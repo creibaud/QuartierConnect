@@ -1,5 +1,7 @@
 package fr.quartierconnect.desktopapp.services;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,6 +56,24 @@ class StatisticsServiceTest {
         assertNull(stats.remoteIncidents());
         assertNull(stats.remoteNeighborhoods());
         assertNull(stats.remoteActiveIncidents());
+    }
+
+    @Test
+    void readCounter_numberValue_returnsIt() throws Exception {
+        JsonNode root = new ObjectMapper().readTree("{\"users\": 42}");
+        assertEquals(42, StatisticsService.readCounter(root, "users"));
+    }
+
+    @Test
+    void readCounter_nullValue_returnsNull() throws Exception {
+        JsonNode root = new ObjectMapper().readTree("{\"users\": null}");
+        assertNull(StatisticsService.readCounter(root, "users"), "explicit null must not become 0");
+    }
+
+    @Test
+    void readCounter_missingField_returnsNull() throws Exception {
+        JsonNode root = new ObjectMapper().readTree("{}");
+        assertNull(StatisticsService.readCounter(root, "users"));
     }
 
     @Test
