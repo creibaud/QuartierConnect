@@ -1,7 +1,6 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { AuthModule } from "../auth/auth.module";
-import { TotpService } from "../auth/totp.service";
 import { DrizzleModule } from "../database/drizzle.module";
 import { DocumentsModule } from "../documents/documents.module";
 import { PointsModule } from "../points/points.module";
@@ -20,7 +19,7 @@ import { Contract, ContractSchema } from "./schemas/contract.schema";
         DocumentsModule,
     ],
     controllers: [ContractsController],
-    providers: [ContractsService, TotpService],
+    providers: [ContractsService],
     exports: [ContractsService],
 })
 export class ContractsModule {}
