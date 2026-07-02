@@ -1,8 +1,7 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { DashboardSquare01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
+import { BrandLogo } from "@workspace/ui/components/brand-logo";
 import {
     Sidebar,
     SidebarContent,
@@ -27,11 +26,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link to="/dashboard">
-                                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                                    <HugeiconsIcon
-                                        icon={DashboardSquare01Icon}
-                                        className="size-4"
-                                    />
+                                <div className="bg-primary text-primary-foreground flex aspect-square h-full shrink-0 items-center justify-center rounded-lg">
+                                    <BrandLogo className="size-6" />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-semibold">

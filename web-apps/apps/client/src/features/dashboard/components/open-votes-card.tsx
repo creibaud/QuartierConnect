@@ -4,9 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { apiGet } from "@workspace/shared/lib/api";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
-import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Item, ItemGroup, ItemContent, ItemTitle, ItemDescription, ItemActions } from "@workspace/ui/components/item";
+import { StatusBadge } from "@workspace/ui/components/status-badge";
 import type { CommunityVote } from "../lib/community-vote";
 import { formatDeadline } from "../lib/format";
 import { selectOpenVotes } from "../lib/kpis";
@@ -47,9 +47,9 @@ export function OpenVotesCard() {
                                 </ItemContent>
                                 <ItemActions>
                                     {voted ? (
-                                        <Badge variant="secondary" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                                        <StatusBadge tone="success">
                                             {t("pages.dashboard.voted")}
-                                        </Badge>
+                                        </StatusBadge>
                                     ) : (
                                         <Button asChild size="sm" variant="outline">
                                             <Link to="/votes">{t("pages.dashboard.respond")}</Link>

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
-import { BrandLogo } from "./brand-logo";
+import { BrandLogo } from "@workspace/ui/components/brand-logo";
 
 /** Shared shell for the auth screens (login, register): warm ambience,
  *  brand lockup, and a centered card slot, with a staggered entrance. */

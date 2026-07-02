@@ -10,7 +10,6 @@ import {
     useInfiniteIncidents,
 } from "@workspace/shared/lib/hooks/incidents.hooks";
 import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
-import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
     Card,
@@ -60,20 +59,12 @@ import {
 import { useMyLocation } from "@/features/onboarding/hooks/address.hooks";
 import { PageHeader } from "@workspace/ui/components/page-header";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import {
+    StatusBadge,
+    statusTone,
+} from "@workspace/ui/components/status-badge";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { toast } from "sonner";
-
-const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {
-    open: "default",
-    in_progress: "secondary",
-    resolved: "outline",
-};
-
-const STATUS_DOT: Record<string, string> = {
-    open: "bg-amber-500",
-    in_progress: "bg-blue-500",
-    resolved: "bg-emerald-500",
-};
 
 export const Route = createFileRoute("/_app/incidents/")({
     component: IncidentsPage,
@@ -236,27 +227,21 @@ function IncidentsPage() {
                                         to="/incidents/$id"
                                         params={{ id: incident.id }}
                                     >
-                                        <span
-                                            className={`mt-1.5 size-2.5 shrink-0 self-start rounded-full ${STATUS_DOT[incident.status] ?? "bg-muted-foreground"}`}
-                                            aria-hidden
-                                        />
                                         <ItemContent>
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <ItemTitle>
                                                     {incident.title}
                                                 </ItemTitle>
-                                                <Badge
-                                                    variant={
-                                                        STATUS_VARIANTS[
-                                                            incident.status
-                                                        ] ?? "outline"
-                                                    }
+                                                <StatusBadge
+                                                    tone={statusTone(
+                                                        incident.status,
+                                                    )}
                                                     className="shrink-0"
                                                 >
                                                     {statusLabels[
                                                         incident.status
                                                     ] ?? incident.status}
-                                                </Badge>
+                                                </StatusBadge>
                                             </div>
                                             {incident.description && (
                                                 <ItemDescription className="line-clamp-2">

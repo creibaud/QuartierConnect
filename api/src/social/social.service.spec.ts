@@ -45,22 +45,21 @@ describe("SocialService", () => {
         );
     });
 
+    const recommendationRecord = (map: Record<string, unknown>) => ({
+        get: (key: string) => map[key],
+    });
+
     describe("getRecommendations", () => {
         it("returns recommendations from Neo4j records", async () => {
             mockSession.run.mockResolvedValue({
                 records: [
-                    {
-                        get: (key: string) => {
-                            const map: Record<string, unknown> = {
-                                type: "service",
-                                id: "svc-1",
-                                name: "Bakery",
-                                score: 3,
-                                reason: "Service in your neighborhood",
-                            };
-                            return map[key];
-                        },
-                    },
+                    recommendationRecord({
+                        type: "service",
+                        id: "svc-1",
+                        name: "Bakery",
+                        score: 3,
+                        reason: "serviceInNeighborhood",
+                    }),
                 ],
             });
 
@@ -69,28 +68,84 @@ describe("SocialService", () => {
             expect(result[0].type).toBe("service");
             expect(result[0].name).toBe("Bakery");
             expect(result[0].score).toBe(3);
+            expect(result[0].reason).toBe("serviceInNeighborhood");
         });
 
         it("handles Neo4j integer score (toNumber)", async () => {
             mockSession.run.mockResolvedValue({
                 records: [
-                    {
-                        get: (key: string) => {
-                            const map: Record<string, unknown> = {
-                                type: "event",
-                                id: "evt-1",
-                                name: "Market",
-                                score: { toNumber: () => 2 },
-                                reason: "Upcoming event near you",
-                            };
-                            return map[key];
-                        },
-                    },
+                    recommendationRecord({
+                        type: "event",
+                        id: "evt-1",
+                        name: "Market",
+                        score: { toNumber: () => 2 },
+                        reason: "upcomingEventNearby",
+                    }),
                 ],
             });
 
             const result = await service.getRecommendations("user-1");
             expect(result[0].score).toBe(2);
+        });
+
+        it("deduplicates entries sharing the same type and name", async () => {
+            mockSession.run.mockResolvedValue({
+                records: [
+                    recommendationRecord({
+                        type: "service",
+                        id: "svc-1",
+                        name: "Garde d'animaux",
+                        score: 3,
+                        reason: "serviceInNeighborhood",
+                    }),
+                    recommendationRecord({
+                        type: "service",
+                        id: "svc-2",
+                        name: "garde d'animaux ",
+                        score: 3,
+                        reason: "serviceInNeighborhood",
+                    }),
+                    recommendationRecord({
+                        type: "event",
+                        id: "evt-1",
+                        name: "Garde d'animaux",
+                        score: 2,
+                        reason: "upcomingEventNearby",
+                    }),
+                ],
+            });
+
+            const result = await service.getRecommendations("user-1");
+            expect(result).toHaveLength(2);
+            expect(result.map((r) => r.id)).toEqual(["svc-1", "evt-1"]);
+        });
+
+        it("sorts by score descending and caps the list at 10", async () => {
+            const records = Array.from({ length: 8 }, (_, i) =>
+                recommendationRecord({
+                    type: "event",
+                    id: `evt-${i}`,
+                    name: `Event ${i}`,
+                    score: 2,
+                    reason: "upcomingEventNearby",
+                }),
+            ).concat(
+                Array.from({ length: 4 }, (_, i) =>
+                    recommendationRecord({
+                        type: "service",
+                        id: `svc-${i}`,
+                        name: `Service ${i}`,
+                        score: 3,
+                        reason: "serviceInNeighborhood",
+                    }),
+                ),
+            );
+            mockSession.run.mockResolvedValue({ records });
+
+            const result = await service.getRecommendations("user-1");
+            expect(result).toHaveLength(10);
+            expect(result[0].score).toBe(3);
+            expect(result.slice(0, 4).every((r) => r.score === 3)).toBe(true);
         });
 
         it("returns empty array when Neo4j query fails", async () => {

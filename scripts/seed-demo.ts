@@ -97,6 +97,44 @@ function promoteRole(email: string, role: string): void {
   }
 }
 
+const WELCOME_CREDIT_POINTS = 20;
+const WELCOME_CREDIT_NOTE = "Crédit de bienvenue";
+
+/** Grant a one-time welcome credit so demo balances start positive
+ *  (points_balances enforces CHECK balance >= -10, and a negative balance on
+ *  the demo account makes the whole points economy look broken). Idempotent:
+ *  skipped when a credit with the same note already exists for the account. */
+function grantWelcomeCredit(email: string): void {
+  const sql = `
+    WITH credited AS (
+      INSERT INTO points_transactions
+        (sender_id, recipient_id, amount, note, type, status, created_at, completed_at)
+      SELECT admin.id, u.id, ${WELCOME_CREDIT_POINTS}, '${WELCOME_CREDIT_NOTE}',
+             'bonus', 'completed', u.created_at, u.created_at
+      FROM users u, users admin
+      WHERE u.email = '${email}' AND admin.email = 'admin@demo.fr'
+        AND NOT EXISTS (
+          SELECT 1 FROM points_transactions t
+          WHERE t.recipient_id = u.id AND t.note = '${WELCOME_CREDIT_NOTE}'
+        )
+      RETURNING recipient_id, amount
+    )
+    INSERT INTO points_balances (user_id, balance)
+    SELECT recipient_id, amount FROM credited
+    ON CONFLICT (user_id) DO UPDATE
+    SET balance = points_balances.balance + excluded.balance, updated_at = now()`;
+  try {
+    pgQuery(sql);
+    console.log(
+      `  → crédit de bienvenue (+${WELCOME_CREDIT_POINTS} pts) assuré`,
+    );
+  } catch {
+    console.warn(
+      `  ! Could not grant welcome credit for ${email} — is Docker running?`,
+    );
+  }
+}
+
 async function seedAccount(
   email: string,
   role: string,
@@ -300,6 +338,25 @@ async function warnIfFailed(label: string, res: Response): Promise<void> {
   console.warn(`  ! ${label} failed (${res.status}): ${detail}`);
 }
 
+/** Titles already present on a list endpoint — the re-run guard that keeps
+ *  content seeding idempotent per item (a re-run only creates what is
+ *  missing, and never duplicates an existing title). */
+async function fetchExistingTitles(
+  token: string,
+  path: string,
+): Promise<Set<string>> {
+  const res = await fetch(`${BASE_URL}${path}?limit=100`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return new Set();
+  const items = (await res.json()) as Array<{ title?: string }>;
+  return new Set(
+    items
+      .map((item) => item.title)
+      .filter((title): title is string => Boolean(title)),
+  );
+}
+
 async function seedContent(
   token: string,
   nbh: DemoNeighborhood,
@@ -317,11 +374,10 @@ async function seedContent(
     ],
   });
 
-  const evRes = await fetch(`${BASE_URL}/events`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const existing = (evRes.ok ? await evRes.json() : []) as unknown[];
-  if (existing.length > 0) return;
+  const existingEvents = await fetchExistingTitles(token, "/events");
+  const existingServices = await fetchExistingTitles(token, "/services");
+  const existingIncidents = await fetchExistingTitles(token, "/incidents");
+  const existingVotes = await fetchExistingTitles(token, "/community-votes");
 
   const inDays = (d: number) =>
     new Date(Date.now() + d * 86400000).toISOString();
@@ -354,6 +410,7 @@ async function seedContent(
     },
   ];
   for (const e of events) {
+    if (existingEvents.has(e.title)) continue;
     const res = await fetch(`${BASE_URL}/events`, {
       method: "POST",
       headers,
@@ -426,6 +483,7 @@ async function seedContent(
     },
   ];
   for (const s of services) {
+    if (existingServices.has(s.title)) continue;
     const res = await fetch(`${BASE_URL}/services`, {
       method: "POST",
       headers,
@@ -483,6 +541,7 @@ async function seedContent(
     },
   ];
   for (const i of incidents) {
+    if (existingIncidents.has(i.title)) continue;
     const res = await fetch(`${BASE_URL}/incidents`, {
       method: "POST",
       headers,
@@ -491,21 +550,25 @@ async function seedContent(
     await warnIfFailed(`incident "${i.title}"`, res);
   }
 
-  const voteRes = await fetch(`${BASE_URL}/community-votes`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      title: "Faut-il installer des bancs supplémentaires dans le parc ?",
-      description: "Vote consultatif pour les résidents du quartier.",
-      voteType: "binary",
-      options: [
-        { id: "oui", label: "Oui" },
-        { id: "non", label: "Non" },
-      ],
-      endsAt: inDays(14),
-    }),
-  });
-  await warnIfFailed("community vote", voteRes);
+  const voteTitle =
+    "Faut-il installer des bancs supplémentaires dans le parc ?";
+  if (!existingVotes.has(voteTitle)) {
+    const voteRes = await fetch(`${BASE_URL}/community-votes`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        title: voteTitle,
+        description: "Vote consultatif pour les résidents du quartier.",
+        voteType: "binary",
+        options: [
+          { id: "oui", label: "Oui" },
+          { id: "non", label: "Non" },
+        ],
+        endsAt: inDays(14),
+      }),
+    });
+    await warnIfFailed("community vote", voteRes);
+  }
 }
 
 /** Assign an address + neighborhood to the non-admin demo residents so they
@@ -536,6 +599,11 @@ async function main(): Promise<void> {
 
   for (const { email, role, firstName, lastName } of ACCOUNTS) {
     await seedAccount(email, role, firstName, lastName);
+  }
+
+  console.log("\nGranting welcome credits…");
+  for (const { email } of ACCOUNTS) {
+    grantWelcomeCredit(email);
   }
 
   console.log("\nSeeding Paris neighborhoods…");

@@ -51,8 +51,13 @@ describe("PdfService", () => {
     });
 });
 
-// 1x1 transparent PNG.
+// 64x32 transparent PNG with a black signature-like stroke.
 const PNG_DATA_URL =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAgCAYAAACinX6EAAAAoUlEQVR42u2YQQ7AIAgE/f+n6b2HpioZFt1JempKlxWjMIYxxhiMeD3XJq5iQlQnX2lCVBgw865KE+5yhQkyyePlSCcfYsLwfa8mUK70SYHo6qsJ/YwZgi63NCC6xspctbbVtPszfN9mx8gwoP2JctrZvfTdKbe3ZV0zV1iyiUH7ij+JqXZwabrUe3hEl/IUB9OlOsdDdalOcq+dMBtj8ngAlf+/QZqk6iAAAAAASUVORK5CYII=";
+
+// 1x1 opaque black pixel: stretched to a box it renders as a solid black
+// rectangle, so stampSignature must reject it as a signature image.
+const DEGENERATE_PNG_DATA_URL =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC";
 
 const DATA: ContractPdfData = {
@@ -101,6 +106,28 @@ describe("PdfService.stampSignature", () => {
             date: "2026-07-01",
             hash: "abcd1234",
             image: "data:image/png;base64,not-a-real-png",
+        });
+        expect(stamped.subarray(0, 5).toString()).toBe("%PDF-");
+    });
+
+    it("falls back to a typed signature for a degenerate 1x1 image", async () => {
+        const base = await service.generateBaseContractPdf(DATA);
+        const stamped = await service.stampSignature(base, 0, {
+            name: "Alice",
+            date: "2026-07-01",
+            hash: "abcd1234",
+            image: DEGENERATE_PNG_DATA_URL,
+        });
+        expect(stamped.subarray(0, 5).toString()).toBe("%PDF-");
+        await expect(PDFDocument.load(stamped)).resolves.toBeDefined();
+    });
+
+    it("shrinks a long typed signature to fit the signing zone", async () => {
+        const base = await service.generateBaseContractPdf(DATA);
+        const stamped = await service.stampSignature(base, 1, {
+            name: "Anne-Charlotte de la Rochefoucauld-Montbazon",
+            date: "2026-07-01",
+            hash: "abcd1234",
         });
         expect(stamped.subarray(0, 5).toString()).toBe("%PDF-");
     });

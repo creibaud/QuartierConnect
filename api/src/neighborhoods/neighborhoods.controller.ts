@@ -67,6 +67,40 @@ export class NeighborhoodsController {
         return this.neighborhoodModel.find().skip(skip).limit(limitNum).exec();
     }
 
+    // WARNING: static routes must stay declared before @Get(":id") —
+    // NestJS matches routes in declaration order.
+    @Get("uncovered-addresses")
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles("admin")
+    @ApiBearerAuth()
+    @ApiOperation({
+        summary: "Pending residents not covered by any neighborhood",
+    })
+    async uncoveredAddresses() {
+        const rows = await this.db
+            .select({
+                id: schema.users.id,
+                firstName: schema.users.firstName,
+                lat: schema.users.addressLat,
+                lng: schema.users.addressLng,
+                address: schema.users.address,
+            })
+            .from(schema.users)
+            .where(
+                and(
+                    isNull(schema.users.neighborhoodId),
+                    isNotNull(schema.users.addressLat),
+                ),
+            );
+        return rows.map((r) => ({
+            userId: r.id,
+            firstName: r.firstName,
+            lat: r.lat,
+            lng: r.lng,
+            address: r.address,
+        }));
+    }
+
     @Get(":id")
     @ApiOperation({ summary: "Neighborhood details" })
     @ApiParam({ name: "id", description: "MongoDB ID of the neighborhood" })
@@ -149,38 +183,6 @@ export class NeighborhoodsController {
                 // best-effort: skip this resident, continue reassigning the rest
             }
         }
-    }
-
-    @Get("uncovered-addresses")
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles("admin")
-    @ApiBearerAuth()
-    @ApiOperation({
-        summary: "Pending residents not covered by any neighborhood",
-    })
-    async uncoveredAddresses() {
-        const rows = await this.db
-            .select({
-                id: schema.users.id,
-                firstName: schema.users.firstName,
-                lat: schema.users.addressLat,
-                lng: schema.users.addressLng,
-                address: schema.users.address,
-            })
-            .from(schema.users)
-            .where(
-                and(
-                    isNull(schema.users.neighborhoodId),
-                    isNotNull(schema.users.addressLat),
-                ),
-            );
-        return rows.map((r) => ({
-            userId: r.id,
-            firstName: r.firstName,
-            lat: r.lat,
-            lng: r.lng,
-            address: r.address,
-        }));
     }
 
     @Patch(":id")

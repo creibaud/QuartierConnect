@@ -197,7 +197,10 @@ export default {
         loadError: "Unable to load recommendations",
         emptyDescription:
             "Take part in neighborhood life to receive tailored suggestions.",
-        scoreLabel: "Relevance: {{score}}",
+        reasons: {
+            serviceInNeighborhood: "Service offered in your neighborhood",
+            upcomingEventNearby: "Upcoming event near you",
+        },
         types: {
             service: "Service",
             event: "Event",
@@ -414,6 +417,8 @@ export default {
             emptyDescription: "Your point transfers will appear here.",
             received: "Received from {{user}}",
             sent: "Sent to {{user}}",
+            servicePayment: "Service payment",
+            servicePaymentFor: 'Payment for the service "{{service}}"',
             loadError: "Unable to load history",
         },
         services: {
@@ -422,7 +427,8 @@ export default {
                 "The directory of services and businesses in your neighborhood.",
             allNeighborhoods: "All neighborhoods",
             nearby: "Nearby services",
-            locatedCount: "{{count}} service(s) located",
+            locatedCount_one: "{{count}} service located",
+            locatedCount_other: "{{count}} services located",
             emptyTitle: "No service available",
             emptyDescription:
                 "No service is listed for this neighborhood at the moment.",
@@ -464,7 +470,8 @@ export default {
             proposeCta: "Offer help",
             interestedCta: "I'm interested",
             respondedCta: "Responded",
-            responderCount: "{{count}} responder(s)",
+            responderCount_one: "{{count}} responder",
+            responderCount_other: "{{count}} responders",
             directionOffer: "Offer",
             directionRequest: "Request",
             allDirections: "All directions",
@@ -500,7 +507,8 @@ export default {
             recording: "Recording…",
             vote: "Vote",
             voteRecorded: "Vote recorded",
-            participantCount: "{{count}} participant(s)",
+            participantCount_one: "{{count}} participant",
+            participantCount_other: "{{count}} participants",
             votedNote: "You have already voted.",
             sortDeadline: "Ending soon",
             sortRecent: "Most recent",
@@ -517,7 +525,8 @@ export default {
         incidents: {
             description: "Reports from your neighborhood",
             mapTitle: "Incident map",
-            locatedCount: "{{count}} incident(s) located",
+            locatedCount_one: "{{count}} incident located",
+            locatedCount_other: "{{count}} incidents located",
             statusLabel: "Status: {{status}}",
             emptyTitle: "No incident for now",
             emptyDescription:
@@ -653,7 +662,8 @@ export default {
             descriptionLabel: "Description",
             noNeighborhoodMapped: "No neighborhood mapped at the moment.",
             nearby: "Nearby events",
-            locatedCount: "{{count}} event(s) located",
+            locatedCount_one: "{{count}} event located",
+            locatedCount_other: "{{count}} events located",
         },
     },
     adminPages: {
@@ -719,23 +729,11 @@ export default {
             stats: {
                 users: "Users",
                 activeIncidents: "Open incidents",
-                incidents: "Total incidents",
+                activeIncidentsHint: "of {{total}} reported",
                 neighborhoods: "Neighborhoods",
             },
-            quickLinks: {
-                users: { label: "Users", desc: "Roles and bans" },
-                incidents: {
-                    label: "Incidents",
-                    desc: "Moderation and statuses",
-                },
-                neighborhoods: {
-                    label: "Neighborhoods",
-                    desc: "Create, edit, delete",
-                },
-                services: { label: "Services", desc: "Neighborhood directory" },
-                events: { label: "Events", desc: "Community calendar" },
-                dsl: { label: "DSL Editor", desc: "Natural language queries" },
-            },
+            recentIncidents: "Latest incidents",
+            seeAll: "See all",
         },
         users: {
             title: "Users",
@@ -902,7 +900,8 @@ export default {
             endDateLabel: "End date *",
             viewResults: "View results",
             resultsTitle: "Vote results",
-            totalVotes: "{{count}} vote(s) total",
+            totalVotes_one: "{{count}} vote total",
+            totalVotes_other: "{{count}} votes total",
             quorumReached: "Quorum reached",
             quorumNotReached: "Quorum not reached",
             resultsLoadError: "Unable to load results",
