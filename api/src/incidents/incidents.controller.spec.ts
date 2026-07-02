@@ -296,4 +296,181 @@ describe("IncidentsController", () => {
         const insertedValues = valuesSpy.mock.calls[0][0];
         expect(insertedValues[0].status).toBe("in_progress");
     });
+
+    interface SyncMockDb {
+        db: any;
+        valuesSpy: jest.Mock;
+        onConflictSpy: jest.Mock;
+    }
+
+    function buildSyncMockDb(upsertedIds: string[]): SyncMockDb {
+        const returningSpy = jest
+            .fn()
+            .mockResolvedValue(upsertedIds.map((id) => ({ id })));
+        const onConflictSpy = jest
+            .fn()
+            .mockReturnValue({ returning: returningSpy });
+        const valuesSpy = jest
+            .fn()
+            .mockReturnValue({ onConflictDoUpdate: onConflictSpy });
+        return {
+            db: { insert: jest.fn().mockReturnValue({ values: valuesSpy }) },
+            valuesSpy,
+            onConflictSpy,
+        };
+    }
+
+    async function compileWithDb(db: any): Promise<IncidentsController> {
+        const module = await Test.createTestingModule({
+            controllers: [IncidentsController],
+            providers: [{ provide: DRIZZLE_TOKEN, useValue: db }],
+        }).compile();
+        return module.get<IncidentsController>(IncidentsController);
+    }
+
+    it("POST /incidents/sync lets a moderator upsert a foreign incident", async () => {
+        const sync = buildSyncMockDb(["inc-foreign-1"]);
+        controller = await compileWithDb(sync.db);
+
+        const result = await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-foreign-1",
+                        title: "Foreign",
+                        description: "Owned by a resident",
+                        createdBy: "other-user",
+                    },
+                ],
+            },
+            authReq("mod-uuid-1", "moderator") as any,
+        );
+
+        expect(result).toEqual({
+            upserted: 1,
+            skipped: 0,
+            skippedIds: [],
+        });
+    });
+
+    it("POST /incidents/sync preserves the original owner for moderator upserts", async () => {
+        const sync = buildSyncMockDb(["inc-foreign-1"]);
+        controller = await compileWithDb(sync.db);
+
+        await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-foreign-1",
+                        title: "Foreign",
+                        description: "D",
+                        createdBy: "other-user",
+                    },
+                ],
+            },
+            authReq("mod-uuid-1", "moderator") as any,
+        );
+
+        const insertedValues = sync.valuesSpy.mock.calls[0][0];
+        expect(insertedValues[0].createdBy).toBe("other-user");
+    });
+
+    it("POST /incidents/sync drops the ownership guard for admins", async () => {
+        const sync = buildSyncMockDb(["inc-foreign-1"]);
+        controller = await compileWithDb(sync.db);
+
+        await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-foreign-1",
+                        title: "Foreign",
+                        description: "D",
+                        createdBy: "other-user",
+                    },
+                ],
+            },
+            authReq("admin-uuid-1", "admin") as any,
+        );
+
+        const conflictConfig = sync.onConflictSpy.mock.calls[0][0];
+        expect(conflictConfig.where).toBeUndefined();
+    });
+
+    it("POST /incidents/sync keeps the ownership guard for residents", async () => {
+        const sync = buildSyncMockDb(["inc-1"]);
+        controller = await compileWithDb(sync.db);
+
+        await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-1",
+                        title: "Mine",
+                        description: "D",
+                        createdBy: "user-uuid-1",
+                    },
+                ],
+            },
+            authReq() as any,
+        );
+
+        const conflictConfig = sync.onConflictSpy.mock.calls[0][0];
+        expect(conflictConfig.where).toBeDefined();
+    });
+
+    it("POST /incidents/sync reports skippedIds for items the DB did not upsert", async () => {
+        const sync = buildSyncMockDb(["inc-1"]);
+        controller = await compileWithDb(sync.db);
+
+        const result = await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-1",
+                        title: "Mine",
+                        description: "D",
+                        createdBy: "user-uuid-1",
+                    },
+                    {
+                        id: "inc-hijack",
+                        title: "Someone else's id",
+                        description: "D",
+                        createdBy: "user-uuid-1",
+                    },
+                ],
+            },
+            authReq() as any,
+        );
+
+        expect(result.upserted).toBe(1);
+        expect(result.skipped).toBe(1);
+        expect(result.skippedIds).toEqual(["inc-hijack"]);
+    });
+
+    it("POST /incidents/sync returns all ids as skipped for an all-foreign resident payload", async () => {
+        const sync = buildSyncMockDb([]);
+        controller = await compileWithDb(sync.db);
+
+        const result = await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-2",
+                        title: "T2",
+                        description: "D2",
+                        createdBy: "other-user",
+                    },
+                ],
+            },
+            authReq() as any,
+        );
+
+        expect(result).toEqual({
+            upserted: 0,
+            skipped: 1,
+            skippedIds: ["inc-2"],
+        });
+        expect(sync.db.insert).not.toHaveBeenCalled();
+    });
 });

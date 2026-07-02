@@ -17,6 +17,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 public class SyncService {
 
@@ -37,7 +38,7 @@ public class SyncService {
 
     private ScheduledFuture<?> task;
     private Consumer<Boolean> onStatusChange;
-    private Runnable onIncidentsChanged;
+    private IntConsumer onIncidentsChanged;
     private volatile PluginEventBus eventBus;
 
     public void setEventBus(PluginEventBus eventBus) {
@@ -48,7 +49,12 @@ public class SyncService {
         this.onStatusChange = listener;
     }
 
-    public void setOnIncidentsChanged(Runnable listener) {
+    /**
+     * Registers a listener invoked (on the status dispatcher thread) after a
+     * sync that changed local data; receives the number of incidents pulled
+     * from the server since the previous sync.
+     */
+    public void setOnIncidentsChanged(IntConsumer listener) {
         this.onIncidentsChanged = listener;
     }
 
@@ -109,12 +115,14 @@ public class SyncService {
             publishEvent(PluginEventBus.Event.SYNC_STARTED);
 
             Set<String> justPushed = pushDirtyIncidents(token);
-            pullIncidents(token, justPushed);
+            int receivedCount = pullIncidents(token, justPushed);
 
             lastSyncEpoch = System.currentTimeMillis();
             SQLiteDatabase.logSync(true);
             notifyStatus(true);
-            notifyIncidentsChanged();
+            if (receivedCount > 0 || !justPushed.isEmpty()) {
+                notifyIncidentsChanged(receivedCount);
+            }
             publishEvent(PluginEventBus.Event.INCIDENTS_CHANGED);
             publishEvent(PluginEventBus.Event.SYNC_COMPLETED);
         } catch (Exception e) {
@@ -128,8 +136,9 @@ public class SyncService {
 
     /**
      * Pushes all dirty incidents to the server and returns the set of remote IDs
-     * that were just pushed, so the subsequent pull can skip them (avoids the pull
-     * overwriting values the server may not have stored correctly yet).
+     * the server actually upserted, so the subsequent pull can skip them (avoids
+     * the pull overwriting values the server may not have stored correctly yet).
+     * Incidents the server reports as skipped stay dirty and are retried later.
      */
     private Set<String> pushDirtyIncidents(String token) throws Exception {
         List<IncidentRepository.Incident> dirty = incidentRepo.listDirty();
@@ -161,19 +170,43 @@ public class SyncService {
         }
 
         String body = JSON.writeValueAsString(java.util.Map.of("incidents", payload));
-        ApiService.post("/incidents/sync", body, token);
+        String response = ApiService.post("/incidents/sync", body, token);
+        Set<String> skippedIds = parseSkippedIds(response);
 
         Set<String> pushed = new HashSet<>();
         for (int i = 0; i < dirty.size(); i++) {
             IncidentRepository.Incident inc = dirty.get(i);
+            String syncId = syncIds.get(i);
+            if (skippedIds.contains(syncId)) continue;
             if (inc.remoteId() == null || inc.remoteId().isBlank()) {
-                incidentRepo.assignRemoteId(inc.localId(), syncIds.get(i));
+                incidentRepo.assignRemoteId(inc.localId(), syncId);
             }
             incidentRepo.markSynced(inc.localId());
             updateBaseAfterPush(inc);
-            pushed.add(syncIds.get(i));
+            pushed.add(syncId);
         }
         return pushed;
+    }
+
+    /**
+     * Extracts the {@code skippedIds} array from the {@code POST /incidents/sync}
+     * response ({@code {upserted, skipped, skippedIds}}). Returns an empty set on
+     * missing field or unparsable body (older servers), preserving the previous
+     * mark-everything-synced behaviour.
+     */
+    static Set<String> parseSkippedIds(String syncResponseBody) {
+        if (syncResponseBody == null || syncResponseBody.isBlank()) return Set.of();
+        try {
+            JsonNode skipped = JSON.readTree(syncResponseBody).path("skippedIds");
+            if (!skipped.isArray()) return Set.of();
+            Set<String> ids = new HashSet<>();
+            for (JsonNode idNode : skipped) {
+                if (idNode.isTextual()) ids.add(idNode.asText());
+            }
+            return ids;
+        } catch (Exception e) {
+            return Set.of();
+        }
     }
 
     private void updateBaseAfterPush(IncidentRepository.Incident inc) {
@@ -185,8 +218,14 @@ public class SyncService {
         }
     }
 
-    private void pullIncidents(String token, Set<String> justPushed) throws Exception {
+    /**
+     * Pulls incidents from the server and returns how many of them are new to
+     * this client (updated since the previous pull and not pushed by us),
+     * so the UI can announce "N incidents received".
+     */
+    private int pullIncidents(String token, Set<String> justPushed) throws Exception {
         boolean isFullPull = lastPullTimestamp == null;
+        String previousPullTs = lastPullTimestamp;
         String path = isFullPull
                 ? "/incidents?limit=100"
                 : "/incidents?limit=100&since=" + lastPullTimestamp;
@@ -194,10 +233,11 @@ public class SyncService {
         String response = ApiService.get(path, token);
         JsonNode incidents = JSON.readTree(response);
 
-        if (!incidents.isArray()) return;
+        if (!incidents.isArray()) return 0;
 
         String newestTs = lastPullTimestamp;
         Set<String> seenRemoteIds = isFullPull ? new HashSet<>() : null;
+        int receivedCount = 0;
 
         for (JsonNode node : incidents) {
             String remoteId = node.path("id").asText(null);
@@ -211,6 +251,9 @@ public class SyncService {
 
             if (!justPushed.contains(remoteId)) {
                 incidentRepo.upsertFromServer(remoteId, title, description, status, updatedAt);
+                if (previousPullTs == null || updatedAt.compareTo(previousPullTs) > 0) {
+                    receivedCount++;
+                }
             }
 
             if (seenRemoteIds != null) seenRemoteIds.add(remoteId);
@@ -226,6 +269,7 @@ public class SyncService {
         if (newestTs != null) {
             lastPullTimestamp = newestTs;
         }
+        return receivedCount;
     }
 
     private void notifyStatus(boolean online) {
@@ -234,9 +278,9 @@ public class SyncService {
         }
     }
 
-    private void notifyIncidentsChanged() {
+    private void notifyIncidentsChanged(int receivedCount) {
         if (onIncidentsChanged != null) {
-            statusDispatcher.accept(onIncidentsChanged);
+            statusDispatcher.accept(() -> onIncidentsChanged.accept(receivedCount));
         }
     }
 

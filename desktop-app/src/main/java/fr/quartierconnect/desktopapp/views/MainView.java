@@ -48,6 +48,9 @@ public class MainView {
     private AppSidebar.NavItem profileBtn;
     private AppSidebar.NavItem pluginsBtn;
 
+    private DashboardView visibleDashboard;
+    private IncidentsView visibleIncidents;
+
     public MainView(Stage stage, Consumer<String> openBrowser) {
         this.stage       = stage;
         this.openBrowser = openBrowser;
@@ -63,6 +66,7 @@ public class MainView {
 
         PluginEventBus eventBus = new PluginEventBus();
         syncService.setEventBus(eventBus);
+        topBar.attachEventBus(eventBus);
 
         AppContext appContext = new AppContext(
                 null,
@@ -89,6 +93,7 @@ public class MainView {
         syncService.setOnStatusChange(online -> {
             if (online) eventBus.publish(PluginEventBus.Event.ONLINE_STATUS_CHANGED, true);
         });
+        syncService.setOnIncidentsChanged(this::handleIncidentsSynced);
         syncService.start();
         tryBackgroundReconnect();
 
@@ -139,15 +144,19 @@ public class MainView {
 
     private void navigate(AppSidebar.NavItem item, String route) {
         sidebar.setActive(item);
+        visibleDashboard = null;
+        visibleIncidents = null;
 
         switch (route) {
             case "dashboard" -> {
                 topBar.setBreadcrumb(I18n.get("nav.dashboard"));
-                layout.setContent(new DashboardView(this::handleRoute, syncService, toast).getRoot());
+                visibleDashboard = new DashboardView(this::handleRoute, syncService, toast);
+                layout.setContent(visibleDashboard.getRoot());
             }
             case "incidents" -> {
                 topBar.setBreadcrumb(I18n.get("nav.incidents"));
-                layout.setContent(new IncidentsView(appModal, toast, syncService).getRoot());
+                visibleIncidents = new IncidentsView(appModal, toast, syncService);
+                layout.setContent(visibleIncidents.getRoot());
             }
             case "profile" -> {
                 topBar.setBreadcrumb(I18n.get("nav.profile"));
@@ -157,6 +166,16 @@ public class MainView {
                 topBar.setBreadcrumb(I18n.get("nav.plugins"));
                 layout.setContent(new PluginsView(appModal).getRoot());
             }
+        }
+    }
+
+    private void handleIncidentsSynced(int receivedCount) {
+        if (visibleIncidents != null) visibleIncidents.refresh();
+        if (visibleDashboard != null) visibleDashboard.refresh();
+        if (receivedCount > 0) {
+            toast.showInfo(receivedCount == 1
+                    ? I18n.get("sync.incidentsReceivedOne")
+                    : I18n.get("sync.incidentsReceivedMany", receivedCount));
         }
     }
 

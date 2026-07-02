@@ -54,6 +54,7 @@ public class OfflineModePlugin implements QuartierConnectPlugin, PluginRegistry.
             String color = newVal ? "-color-warning-fg" : "-color-fg-subtle";
             lbl.setStyle("-fx-font-size: 10.5px; -fx-text-fill: " + color + "; -fx-padding: 0 0 0 4;");
             planeIcon.setStyle("-fx-icon-color: " + color + ";");
+            publishOnlineStatus(!newVal);
         });
 
         PluginRegistry.getInstance().getTopBarSlot().add(injectedToggle);
@@ -66,6 +67,25 @@ public class OfflineModePlugin implements QuartierConnectPlugin, PluginRegistry.
             PluginRegistry.getInstance().getTopBarSlot().remove(injectedToggle);
             injectedToggle = null;
         }
+    }
+
+    /**
+     * Notifies the top bar badge instantly instead of waiting for its poll.
+     * Going offline is authoritative; going back online is verified against
+     * the API off the FX thread before being announced.
+     */
+    private void publishOnlineStatus(boolean claimsOnline) {
+        if (context == null || context.getEventBus() == null) return;
+        PluginEventBus eventBus = context.getEventBus();
+        if (!claimsOnline) {
+            eventBus.publish(PluginEventBus.Event.ONLINE_STATUS_CHANGED, false);
+            return;
+        }
+        Thread reachabilityCheck = new Thread(
+                () -> eventBus.publish(PluginEventBus.Event.ONLINE_STATUS_CHANGED, ApiService.isReachable()),
+                "offline-toggle-reachability");
+        reachabilityCheck.setDaemon(true);
+        reachabilityCheck.start();
     }
 
     @Override

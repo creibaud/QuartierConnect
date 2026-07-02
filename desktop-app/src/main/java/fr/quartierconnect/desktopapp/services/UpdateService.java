@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -34,6 +35,8 @@ public class UpdateService {
     private static final String REPOSITORY = "creibaud/QuartierConnect";
     private static final String LATEST_RELEASE_API =
             "https://api.github.com/repos/" + REPOSITORY + "/releases/latest";
+
+    private static final AtomicReference<String> KNOWN_AVAILABLE_UPDATE = new AtomicReference<>();
 
     @FunctionalInterface
     interface ProcessRunner {
@@ -66,6 +69,11 @@ public class UpdateService {
         return CURRENT_VERSION;
     }
 
+    /** Latest newer version discovered by any check so far, if one exists. */
+    public static Optional<String> knownAvailableUpdate() {
+        return Optional.ofNullable(KNOWN_AVAILABLE_UPDATE.get());
+    }
+
     public void setOnUpdateAvailable(Consumer<String> callback) {
         this.onUpdateAvailable = callback;
     }
@@ -81,18 +89,42 @@ public class UpdateService {
 
     private void performCheck() {
         try {
-            String response = ApiService.get("/health", null);
-            if (response == null) return;
-            String latestVersion = parseVersion(response);
-            if (latestVersion != null && isNewer(latestVersion, CURRENT_VERSION)) {
-                LOG.info("Update available: " + latestVersion);
+            findAvailableUpdate().ifPresent(latestVersion -> {
                 if (onUpdateAvailable != null) {
                     onUpdateAvailable.accept(latestVersion);
                 }
-            }
+            });
         } catch (Exception e) {
             LOG.fine("Update check failed (offline?): " + e.getMessage());
         }
+    }
+
+    /**
+     * Compares the latest published version against the running one.
+     *
+     * @return the newer version when an update exists, empty when up to date
+     * @throws IOException when the version information cannot be retrieved
+     */
+    public Optional<String> findAvailableUpdate() throws IOException {
+        String response;
+        try {
+            response = ApiService.get("/health", null);
+        } catch (Exception e) {
+            throw new IOException("API injoignable", e);
+        }
+        if (response == null) {
+            throw new IOException("API injoignable");
+        }
+        String latestVersion = parseVersion(response);
+        if (latestVersion == null) {
+            throw new IOException("Version du serveur illisible");
+        }
+        if (!isNewer(latestVersion, CURRENT_VERSION)) {
+            return Optional.empty();
+        }
+        KNOWN_AVAILABLE_UPDATE.set(latestVersion);
+        LOG.info("Update available: " + latestVersion);
+        return Optional.of(latestVersion);
     }
 
     /**

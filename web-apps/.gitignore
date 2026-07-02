@@ -29,4 +29,5 @@ npm-debug.log*
 .DS_Store
 *.pem
 
-test-results/.tanstack/
+test-results/
+.tanstack/

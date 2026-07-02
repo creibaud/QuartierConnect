@@ -1,8 +1,10 @@
 package fr.quartierconnect.desktopapp.ui.layout;
 
+import fr.quartierconnect.desktopapp.plugin.ThemePlugin;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
+import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -10,6 +12,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
 import javafx.scene.effect.ColorAdjust;
+import javafx.scene.effect.Effect;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -60,10 +63,7 @@ public class AppSidebar extends VBox {
         logoImg.setFitHeight(24);
         logoImg.setPreserveRatio(true);
         logoImg.setSmooth(true);
-        // Logo is black on transparent — invert to white for dark theme
-        ColorAdjust whiten = new ColorAdjust();
-        whiten.setBrightness(1.0);
-        logoImg.setEffect(whiten);
+        bindLogoTintToTheme(logoImg);
 
         Label appName = new Label("QuartierConnect");
         appName.getStyleClass().add("sidebar-app-name");
@@ -92,6 +92,16 @@ public class AppSidebar extends VBox {
         VBox.setVgrow(navList, Priority.ALWAYS);
 
         getChildren().addAll(header, navList);
+    }
+
+    /** The logo is black on transparent — whiten it only while a dark theme is active. */
+    private static void bindLogoTintToTheme(ImageView logo) {
+        ColorAdjust whiten = new ColorAdjust();
+        whiten.setBrightness(1.0);
+        logo.effectProperty().bind(
+            Bindings.when(ThemePlugin.darkThemeActiveProperty())
+                    .then((Effect) whiten)
+                    .otherwise((Effect) null));
     }
 
     // ── Public API ──────────────────────────────────────────────────────────

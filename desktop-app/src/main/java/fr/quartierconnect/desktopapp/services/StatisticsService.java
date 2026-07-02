@@ -57,10 +57,10 @@ public class StatisticsService {
             try {
                 String response = ApiService.get("/stats", token);
                 JsonNode root = JSON.readTree(response);
-                remoteUsers = root.path("users").asInt();
-                remoteIncidents = root.path("incidents").asInt();
-                remoteNeighborhoods = root.path("neighborhoods").asInt();
-                remoteActiveIncidents = root.path("activeIncidents").asInt();
+                remoteUsers = readCounter(root, "users");
+                remoteIncidents = readCounter(root, "incidents");
+                remoteNeighborhoods = readCounter(root, "neighborhoods");
+                remoteActiveIncidents = readCounter(root, "activeIncidents");
             } catch (Exception ignored) {
                 // API unreachable or non-admin token — remote stats unavailable
             }
@@ -71,5 +71,11 @@ public class StatisticsService {
                 localOpen, localInProgress, localResolved,
                 remoteUsers, remoteIncidents, remoteNeighborhoods, remoteActiveIncidents
         );
+    }
+
+    /** The API returns {@code null} for a counter whose database is down — keep it null, not 0. */
+    static Integer readCounter(JsonNode root, String field) {
+        JsonNode node = root.get(field);
+        return node != null && node.isNumber() ? node.intValue() : null;
     }
 }
