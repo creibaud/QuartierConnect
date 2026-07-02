@@ -35,6 +35,13 @@ import {
     EmptyTitle,
 } from "@workspace/ui/components/empty";
 import { Input } from "@workspace/ui/components/input";
+import {
+    Item,
+    ItemContent,
+    ItemDescription,
+    ItemGroup,
+    ItemTitle,
+} from "@workspace/ui/components/item";
 import { Label } from "@workspace/ui/components/label";
 import {
     Select,
@@ -62,13 +69,24 @@ const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {
     resolved: "outline",
 };
 
+const STATUS_DOT: Record<string, string> = {
+    open: "bg-amber-500",
+    in_progress: "bg-blue-500",
+    resolved: "bg-emerald-500",
+};
+
 export const Route = createFileRoute("/_app/incidents/")({
     component: IncidentsPage,
 });
 
 function IncidentsPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [createOpen, setCreateOpen] = useState(false);
+    const fmtDate = (d: string) =>
+        new Date(d).toLocaleDateString(i18n.language, {
+            day: "numeric",
+            month: "short",
+        });
     const statusLabels: Record<string, string> = {
         open: t("incidents.status.open"),
         in_progress: t("incidents.status.in_progress"),
@@ -207,41 +225,55 @@ function IncidentsPage() {
                     }
                 >
                     <div className="space-y-3">
-                        {incidents.map((incident) => (
-                            <Link
-                                key={incident.id}
-                                to="/incidents/$id"
-                                params={{ id: incident.id }}
-                            >
-                                <Card className="hover:bg-muted/50 cursor-pointer transition-colors">
-                                    <CardHeader className="pb-2">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <CardTitle className="text-sm font-medium">
-                                                {incident.title}
-                                            </CardTitle>
-                                            <Badge
-                                                variant={
-                                                    STATUS_VARIANTS[
+                        <ItemGroup className="gap-2">
+                            {incidents.map((incident) => (
+                                <Item
+                                    key={incident.id}
+                                    variant="outline"
+                                    asChild
+                                >
+                                    <Link
+                                        to="/incidents/$id"
+                                        params={{ id: incident.id }}
+                                    >
+                                        <span
+                                            className={`mt-1.5 size-2.5 shrink-0 self-start rounded-full ${STATUS_DOT[incident.status] ?? "bg-muted-foreground"}`}
+                                            aria-hidden
+                                        />
+                                        <ItemContent>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <ItemTitle>
+                                                    {incident.title}
+                                                </ItemTitle>
+                                                <Badge
+                                                    variant={
+                                                        STATUS_VARIANTS[
+                                                            incident.status
+                                                        ] ?? "outline"
+                                                    }
+                                                    className="shrink-0"
+                                                >
+                                                    {statusLabels[
                                                         incident.status
-                                                    ] ?? "outline"
-                                                }
-                                            >
-                                                {statusLabels[
-                                                    incident.status
-                                                ] ?? incident.status}
-                                            </Badge>
-                                        </div>
-                                    </CardHeader>
-                                    {incident.description && (
-                                        <CardContent className="pt-0">
-                                            <p className="text-muted-foreground line-clamp-2 text-sm">
-                                                {incident.description}
+                                                    ] ?? incident.status}
+                                                </Badge>
+                                            </div>
+                                            {incident.description && (
+                                                <ItemDescription className="line-clamp-2">
+                                                    {incident.description}
+                                                </ItemDescription>
+                                            )}
+                                            <p className="text-muted-foreground text-xs">
+                                                {t(
+                                                    `pages.incidents.categories.${incident.category}`,
+                                                )}{" "}
+                                                · {fmtDate(incident.createdAt)}
                                             </p>
-                                        </CardContent>
-                                    )}
-                                </Card>
-                            </Link>
-                        ))}
+                                        </ItemContent>
+                                    </Link>
+                                </Item>
+                            ))}
+                        </ItemGroup>
 
                         {hasNextPage && (
                             <Button
@@ -320,7 +352,9 @@ function CreateIncidentDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{t("incidents.new")}</DialogTitle>
+                    <DialogTitle className="text-xl">
+                        {t("incidents.new")}
+                    </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
@@ -360,7 +394,7 @@ function CreateIncidentDialog({
                                 )
                             }
                         >
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
