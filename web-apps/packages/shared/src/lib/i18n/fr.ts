@@ -85,6 +85,11 @@ export default {
         attribution: "Crédits",
         attributionTitle: "Crédits de la carte",
         attributionBody: "Données et tuiles fournies par :",
+        draw: {
+            drawPolygon: "Dessiner le périmètre",
+            editPolygon: "Modifier le tracé (déplacer les sommets)",
+            deletePolygon: "Supprimer le tracé",
+        },
     },
     roles: {
         resident: "Résident",
@@ -887,8 +892,9 @@ export default {
             descriptionPlaceholder: "Description optionnelle",
             polygonOnMap: "Polygone sur la carte",
             polygonHint:
-                "Quartiers existants en gris. Utilisez l'outil polygone en haut à droite, cliquez pour les sommets, double-cliquez pour fermer.",
+                "Quartiers existants en gris. Choisissez l'outil stylo puis cliquez sur la carte pour poser les sommets ; fermez le tracé avec Entrée, un double-clic ou un clic sur le premier point. L'outil curseur permet de déplacer les sommets.",
             polygonPoints: "Polygone défini ({{count}} points)",
+            overlapError: "Le tracé chevauche un quartier existant",
         },
         services: {
             title: "Services",
