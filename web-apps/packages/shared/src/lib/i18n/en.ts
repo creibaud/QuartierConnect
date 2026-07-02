@@ -63,11 +63,11 @@ export default {
         dsl: "DSL Editor",
         coverage: "Pending addresses",
         bookings: "Bookings",
+        administration: "Administration",
         groups: {
             home: "Home",
             neighborhood: "Neighborhood",
             mySpace: "My space",
-            moderation: "Moderation",
         },
     },
     address: {
@@ -524,6 +524,7 @@ export default {
                 "Your neighborhood is calm. Report a problem to bring it to the community's attention.",
             titleRequired: "Title *",
             titlePlaceholder: "E.g. Broken streetlight on Rue de la Paix",
+            descriptionRequired: "Description *",
             descriptionPlaceholder: "Describe the incident in detail…",
             locationPick: "Location — click on the map",
             addressLabel: "Address",

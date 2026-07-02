@@ -440,6 +440,9 @@ function ServiceDialog({
     const [direction, setDirection] = useState<"offer" | "request">(
         (initial?.direction as "offer" | "request") ?? "offer",
     );
+    const [duration, setDuration] = useState<number | "">(
+        initial?.duration ?? "",
+    );
     const [description, setDescription] = useState(initial?.description ?? "");
     const [address, setAddress] = useState(initial?.address ?? "");
     const [neighborhoodId, setNeighborhoodId] = useState(
@@ -462,10 +465,12 @@ function ServiceDialog({
     const firstNeighborhood = neighborhoods.find((n) => n.geometry);
 
     const isPending = createService.isPending || updateService.isPending;
+    const isDurationValid =
+        type !== "paid" || (typeof duration === "number" && duration >= 1);
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        if (!name.trim() || !category.trim()) return;
+        if (!name.trim() || !category.trim() || !isDurationValid) return;
         const location =
             pickedLat !== null && pickedLng !== null
                 ? latLngToPoint(pickedLat, pickedLng)
@@ -475,6 +480,10 @@ function ServiceDialog({
             category: category.trim(),
             type,
             direction,
+            duration:
+                type === "paid" && typeof duration === "number"
+                    ? duration
+                    : undefined,
             description: description.trim() || undefined,
             address: address.trim() || undefined,
             neighborhoodId: neighborhoodId || undefined,
@@ -602,6 +611,30 @@ function ServiceDialog({
                             </Select>
                         </div>
                     </div>
+                    {type === "paid" && (
+                        <div className="space-y-2">
+                            <Label htmlFor="svc-duration">
+                                {t("pages.services.durationLabel")}
+                            </Label>
+                            <Input
+                                id="svc-duration"
+                                type="number"
+                                min={1}
+                                value={duration}
+                                onChange={(e) =>
+                                    setDuration(
+                                        e.target.value === ""
+                                            ? ""
+                                            : Number(e.target.value),
+                                    )
+                                }
+                                placeholder={t(
+                                    "pages.services.durationPlaceholder",
+                                )}
+                                required
+                            />
+                        </div>
+                    )}
                     <div className="space-y-2">
                         <Label htmlFor="svc-address">
                             {t("adminPages.services.addressLabel")}
@@ -716,7 +749,10 @@ function ServiceDialog({
                         <Button
                             type="submit"
                             disabled={
-                                isPending || !name.trim() || !category.trim()
+                                isPending ||
+                                !name.trim() ||
+                                !category.trim() ||
+                                !isDurationValid
                             }
                         >
                             {isPending

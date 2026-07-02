@@ -25,7 +25,7 @@ export function NavMain({ items }: { items: NavItem[] }) {
 
     return (
         <SidebarGroup>
-            <SidebarGroupLabel>Administration</SidebarGroupLabel>
+            <SidebarGroupLabel>{t("nav.administration")}</SidebarGroupLabel>
             <SidebarMenu>
                 {items.map((item) => (
                     <SidebarMenuItem key={item.to}>

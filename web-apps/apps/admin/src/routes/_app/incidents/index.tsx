@@ -94,7 +94,7 @@ export const Route = createFileRoute("/_app/incidents/")({
 });
 
 function AdminIncidentsPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [statusFilter, setStatusFilter] = useState<string>("all");
     const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage } =
         useInfiniteIncidents(20, statusFilter);
@@ -241,7 +241,7 @@ function AdminIncidentsPage() {
                                                     {new Date(
                                                         incident.createdAt,
                                                     ).toLocaleDateString(
-                                                        "fr-FR",
+                                                        i18n.language,
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="text-right">

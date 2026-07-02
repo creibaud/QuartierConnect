@@ -63,11 +63,11 @@ export default {
         dsl: "Éditeur DSL",
         coverage: "Adresses en attente",
         bookings: "Réservations",
+        administration: "Administration",
         groups: {
             home: "Accueil",
             neighborhood: "Quartier",
             mySpace: "Mon espace",
-            moderation: "Modération",
         },
     },
     address: {
@@ -529,6 +529,7 @@ export default {
                 "Votre quartier est calme. Signalez un problème pour le porter à l'attention de la communauté.",
             titleRequired: "Titre *",
             titlePlaceholder: "Ex : Lampadaire cassé rue de la Paix",
+            descriptionRequired: "Description *",
             descriptionPlaceholder: "Décrivez l'incident en détail…",
             locationPick: "Lieu — cliquez sur la carte",
             addressLabel: "Adresse",

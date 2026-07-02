@@ -54,7 +54,7 @@ export const Route = createFileRoute("/_app/events/")({
 });
 
 function AdminEventsPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [createOpen, setCreateOpen] = useState(false);
     const [editTarget, setEditTarget] = useState<Event | null>(null);
 
@@ -157,7 +157,7 @@ function AdminEventsPage() {
                                         <TableCell className="text-muted-foreground text-sm whitespace-nowrap tabular-nums">
                                             {new Date(
                                                 evt.date,
-                                            ).toLocaleDateString("fr-FR", {
+                                            ).toLocaleDateString(i18n.language, {
                                                 day: "numeric",
                                                 month: "short",
                                                 year: "numeric",

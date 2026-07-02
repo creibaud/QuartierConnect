@@ -149,7 +149,7 @@ function TransactionRow({
     transaction: PointTransaction;
     currentUserId: string;
 }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const isIncoming = transaction.recipientId === currentUserId;
     const otherParty = isIncoming
         ? (transaction.senderName ??
@@ -158,7 +158,9 @@ function TransactionRow({
         : (transaction.recipientName ??
           transaction.recipientEmail ??
           transaction.recipientId);
-    const date = new Date(transaction.createdAt).toLocaleDateString("fr-FR");
+    const date = new Date(transaction.createdAt).toLocaleDateString(
+        i18n.language,
+    );
 
     return (
         <li className="bg-card flex items-center justify-between gap-3 rounded-lg border p-3">

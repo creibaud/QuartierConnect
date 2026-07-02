@@ -342,7 +342,9 @@ function ServiceFormDialog({
     const [type, setType] = useState<"free" | "paid" | "exchange">(
         (initial?.type as "free" | "paid" | "exchange") ?? "free",
     );
-    const [duration, setDuration] = useState<number | "">("");
+    const [duration, setDuration] = useState<number | "">(
+        initial?.duration ?? "",
+    );
     const [description, setDescription] = useState(initial?.description ?? "");
     const [address, setAddress] = useState(initial?.address ?? "");
     const [picked, setPicked] = useState<{ lat: number; lng: number } | null>(

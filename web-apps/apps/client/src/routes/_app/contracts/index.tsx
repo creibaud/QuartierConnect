@@ -58,7 +58,7 @@ export const Route = createFileRoute("/_app/contracts/")({
 });
 
 function ContractsPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const user = getCurrentUser();
     const [createOpen, setCreateOpen] = useState(false);
     const [signTarget, setSignTarget] = useState<Contract | null>(null);
@@ -166,7 +166,9 @@ function ContractsPage() {
                                             ` · ${t("pages.contracts.signedOn", {
                                                 date: new Date(
                                                     contract.signedAt,
-                                                ).toLocaleDateString("fr-FR"),
+                                                ).toLocaleDateString(
+                                                    i18n.language,
+                                                ),
                                             })}`}
                                     </ItemDescription>
                                     <p className="text-muted-foreground line-clamp-2 text-sm">

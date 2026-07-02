@@ -194,7 +194,7 @@ function VotesPage() {
 }
 
 function VoteCard({ vote }: { vote: CommunityVote }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const queryClient = useQueryClient();
     const user = getCurrentUser();
     const voteTypeLabels: Record<string, string> = {
@@ -286,7 +286,7 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
                 )}
                 <p className="text-muted-foreground text-xs">
                     {t("pages.votes.endsOn", {
-                        date: new Date(vote.endsAt).toLocaleDateString("fr-FR", {
+                        date: new Date(vote.endsAt).toLocaleDateString(i18n.language, {
                             day: "numeric",
                             month: "long",
                             year: "numeric",
