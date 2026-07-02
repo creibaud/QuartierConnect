@@ -21,7 +21,9 @@ function EmptyTab({ message }: { message: string }) {
     );
 }
 
-export function BookingsPage() {
+export type BookingsTab = "received" | "sent";
+
+export function BookingsPage({ initialTab }: { initialTab?: BookingsTab }) {
     const { t } = useTranslation();
     const { data, isLoading, isError, refetch } = useMyBookings();
     const { data: services } = useServices();
@@ -32,6 +34,9 @@ export function BookingsPage() {
 
     const received = bookings.filter((b) => b.payeeId === currentUser?.sub);
     const sent = bookings.filter((b) => b.initiatorId === currentUser?.sub);
+    const defaultTab: BookingsTab =
+        initialTab ??
+        (received.length === 0 && sent.length > 0 ? "sent" : "received");
 
     return (
         <div className="p-6 md:p-8">
@@ -54,7 +59,7 @@ export function BookingsPage() {
                     }
                     empty={<EmptyTab message={t("bookings.empty")} />}
                 >
-                    <Tabs defaultValue="received">
+                    <Tabs defaultValue={defaultTab}>
                         <TabsList>
                             <TabsTrigger value="received">
                                 {t("bookings.tabs.received")} ({received.length})

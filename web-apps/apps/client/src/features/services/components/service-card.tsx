@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "@tanstack/react-router";
 import {
+    Coins01Icon,
     Delete01Icon,
     Edit01Icon,
     ThumbsDownIcon,
@@ -11,6 +12,7 @@ import {
     useDeleteService,
 } from "@workspace/shared/lib/hooks/services.hooks";
 import { useCreateBooking } from "@workspace/shared/lib/hooks/useBookings";
+import { computeServicePoints } from "@workspace/shared/lib/pricing";
 import {
     useCastVote,
     useVoteScore,
@@ -56,6 +58,8 @@ export function ServiceCard({
     const { t } = useTranslation();
 
     const isOwn = service.createdBy === currentUserId;
+    const isPaid = service.type === "paid";
+    const pointsPrice = computeServicePoints(service);
     const directionLabel =
         service.direction === "offer"
             ? t("pages.services.directionOffer")
@@ -88,6 +92,15 @@ export function ServiceCard({
                         <Badge variant="outline">
                             {t(`pages.services.types.${service.type}`)}
                         </Badge>
+                        {isPaid && (
+                            <Badge variant="outline" className="tabular-nums">
+                                <HugeiconsIcon icon={Coins01Icon} />
+                                {pointsPrice}{" "}
+                                {pointsPrice === 1
+                                    ? t("bookings.pointUnit")
+                                    : t("bookings.pointsUnit")}
+                            </Badge>
+                        )}
                     </div>
                 </div>
                 {service.address && (
@@ -109,15 +122,20 @@ export function ServiceCard({
                     </div>
                     {(!isOwn || canManage) && (
                         <div className="flex flex-wrap items-center gap-2">
+                            {!isOwn && isPaid && (
+                                <ReserveButton serviceId={service._id} />
+                            )}
                             {!isOwn && (
                                 <RespondButton
                                     serviceId={service._id}
                                     hasResponded={service.hasResponded ?? false}
                                     ctaLabel={ctaLabel}
+                                    variant={
+                                        isPaid || service.hasResponded
+                                            ? "outline"
+                                            : "default"
+                                    }
                                 />
-                            )}
-                            {!isOwn && service.type === "paid" && (
-                                <ReserveButton serviceId={service._id} />
                             )}
                             {canManage && (
                                 <ServiceManageButtons
@@ -137,10 +155,12 @@ function RespondButton({
     serviceId,
     hasResponded,
     ctaLabel,
+    variant,
 }: {
     serviceId: string;
     hasResponded: boolean;
     ctaLabel: string;
+    variant: "default" | "outline";
 }) {
     const { t } = useTranslation();
     const respond = useRespond();
@@ -161,7 +181,7 @@ function RespondButton({
     return (
         <Button
             type="button"
-            variant={hasResponded ? "outline" : "default"}
+            variant={variant}
             size="sm"
             disabled={respond.isPending || unrespond.isPending}
             onClick={handleClick}
@@ -187,7 +207,10 @@ function ReserveButton({ serviceId }: { serviceId: string }) {
                     {
                         onSuccess: () => {
                             toast.success(t("pages.services.bookingRequested"));
-                            void navigate({ to: "/bookings" });
+                            void navigate({
+                                to: "/bookings",
+                                search: { tab: "sent" },
+                            });
                         },
                         onError: () =>
                             toast.error(t("pages.services.bookingError")),
