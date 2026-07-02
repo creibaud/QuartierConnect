@@ -145,6 +145,30 @@ describe("Neighborhoods CRUD (e2e)", () => {
         });
     });
 
+    describe("GET /neighborhoods/uncovered-addresses", () => {
+        it("returns 401 without authentication, not a :id cast error", async () => {
+            await request(app.getHttpServer())
+                .get("/neighborhoods/uncovered-addresses")
+                .expect(401);
+        });
+
+        it("returns 403 for a non-admin user", async () => {
+            await request(app.getHttpServer())
+                .get("/neighborhoods/uncovered-addresses")
+                .set("Authorization", `Bearer ${userToken}`)
+                .expect(403);
+        });
+
+        it("returns the uncovered residents list for an admin", async () => {
+            const res = await request(app.getHttpServer())
+                .get("/neighborhoods/uncovered-addresses")
+                .set("Authorization", `Bearer ${adminToken}`)
+                .expect(200);
+
+            expect(Array.isArray(res.body)).toBe(true);
+        });
+    });
+
     describe("GET /neighborhoods/:id", () => {
         it("returns the created neighborhood", async () => {
             const res = await request(app.getHttpServer())
