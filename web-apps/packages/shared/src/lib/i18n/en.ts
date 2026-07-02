@@ -141,11 +141,15 @@ export default {
         title: "Bookings",
         description: "Your paid service requests",
         empty: "No bookings yet.",
+        emptyReceived: "No requests received yet.",
+        emptySent: "You haven't requested any service yet.",
         tabs: {
             received: "Received",
             sent: "Sent",
         },
         pointsLabel: "{{points}} points",
+        pointsUnit: "points",
+        serviceFallback: "Paid service",
         status: {
             pending: "Pending",
             accepted: "Accepted",
