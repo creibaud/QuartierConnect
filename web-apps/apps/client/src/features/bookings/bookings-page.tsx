@@ -1,8 +1,12 @@
 import { useTranslation } from "react-i18next";
+import { Calendar02Icon } from "@hugeicons/core-free-icons";
+import { Link } from "@tanstack/react-router";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import { useMyBookings } from "@workspace/shared/lib/hooks/useBookings";
 import { useServices } from "@workspace/shared/lib/hooks/services.hooks";
+import { Button } from "@workspace/ui/components/button";
 import { DataState } from "@workspace/ui/components/data-state";
+import { EmptyState } from "@workspace/ui/components/empty-state";
 import { PageHeader } from "@workspace/ui/components/page-header";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import {
@@ -13,11 +17,21 @@ import {
 } from "@workspace/ui/components/tabs";
 import { BookingCard } from "./booking-card";
 
-function EmptyTab({ message }: { message: string }) {
+function BookingsEmptyState({ message }: { message: string }) {
+    const { t } = useTranslation();
     return (
-        <div className="border-border/70 bg-muted/30 rounded-xl border border-dashed px-4 py-10 text-center">
-            <p className="text-muted-foreground text-sm">{message}</p>
-        </div>
+        <EmptyState
+            icon={Calendar02Icon}
+            title={t("bookings.emptyState.title")}
+            description={message}
+            action={
+                <Button asChild>
+                    <Link to="/services">
+                        {t("bookings.emptyState.browseServices")}
+                    </Link>
+                </Button>
+            }
+        />
     );
 }
 
@@ -57,7 +71,7 @@ export function BookingsPage({ initialTab }: { initialTab?: BookingsTab }) {
                             ))}
                         </div>
                     }
-                    empty={<EmptyTab message={t("bookings.empty")} />}
+                    empty={<BookingsEmptyState message={t("bookings.empty")} />}
                 >
                     <Tabs defaultValue={defaultTab}>
                         <TabsList>
@@ -70,7 +84,7 @@ export function BookingsPage({ initialTab }: { initialTab?: BookingsTab }) {
                         </TabsList>
                         <TabsContent value="received" className="space-y-4">
                             {received.length === 0 ? (
-                                <EmptyTab message={t("bookings.emptyReceived")} />
+                                <BookingsEmptyState message={t("bookings.emptyReceived")} />
                             ) : (
                                 received.map((b) => (
                                     <BookingCard
@@ -84,7 +98,7 @@ export function BookingsPage({ initialTab }: { initialTab?: BookingsTab }) {
                         </TabsContent>
                         <TabsContent value="sent" className="space-y-4">
                             {sent.length === 0 ? (
-                                <EmptyTab message={t("bookings.emptySent")} />
+                                <BookingsEmptyState message={t("bookings.emptySent")} />
                             ) : (
                                 sent.map((b) => (
                                     <BookingCard

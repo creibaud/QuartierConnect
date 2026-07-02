@@ -57,7 +57,7 @@ export function CommunityMapCard() {
                     <Map
                         center={centroidOf(neighborhood.geometry)}
                         zoom={14}
-                        className="h-[420px] w-full"
+                        className="h-[40dvh] min-h-64 w-full md:h-[420px]"
                     >
                         <NeighborhoodPolygon
                             geometry={neighborhood.geometry}
