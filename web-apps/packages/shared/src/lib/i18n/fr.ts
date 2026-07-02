@@ -178,6 +178,13 @@ export default {
         download: "Télécharger",
         uploadError: "Impossible d'envoyer le fichier",
         imageAlt: "Pièce jointe",
+        recordVoice: "Enregistrer un message vocal",
+        recording: "Enregistrement en cours",
+        voiceMessage: "Message vocal",
+        micPermissionDenied:
+            "Accès au micro refusé. Autorisez le microphone dans votre navigateur pour enregistrer un message vocal.",
+        recordingUnsupported:
+            "L'enregistrement audio n'est pas pris en charge par ce navigateur.",
     },
     realtime: {
         typing: "écrit…",
@@ -667,6 +674,7 @@ export default {
             conversations: "Conversations",
             previewImage: "Photo",
             previewFile: "Pièce jointe",
+            previewAudio: "Message vocal",
             previewFromYou: "Vous : {{preview}}",
             unread: "Messages non lus",
             new: "Nouvelle",
