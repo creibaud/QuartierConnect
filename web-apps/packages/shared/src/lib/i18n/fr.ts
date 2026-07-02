@@ -503,6 +503,10 @@ export default {
             vote: "Voter",
             voteRecorded: "Vote enregistré",
             participantCount: "{{count}} participant(s)",
+            votedNote: "Vous avez déjà voté.",
+            sortDeadline: "Fin proche",
+            sortRecent: "Plus récents",
+            noHistory: "Aucun vote terminé pour l'instant.",
             types: {
                 binary: "Binaire",
                 singleChoice: "Choix unique",
