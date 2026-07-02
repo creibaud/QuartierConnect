@@ -22,10 +22,12 @@ const PG_USER = process.env.POSTGRES_USER ?? "qc";
 const PG_DB = process.env.POSTGRES_DB ?? "quartierconnect";
 
 const INTERESTED_EVENTS_PER_RESIDENT = 3;
+const HELPED_RELATIONS_TO_SEED = 3;
 
 interface Resident {
   id: string;
   neighborhoodId: string;
+  displayName: string;
 }
 
 function pgQuery(sql: string): string {
@@ -39,7 +41,7 @@ function fetchResidents(): Resident[] {
   let output: string;
   try {
     output = pgQuery(
-      "SELECT id, neighborhood_id FROM users WHERE neighborhood_id IS NOT NULL",
+      "SELECT id, neighborhood_id, first_name, last_name FROM users WHERE neighborhood_id IS NOT NULL",
     );
   } catch {
     console.warn(
@@ -49,9 +51,27 @@ function fetchResidents(): Resident[] {
   }
   if (!output) return [];
   return output.split("\n").map((line) => {
-    const [id, neighborhoodId] = line.split("|").map((v) => v.trim());
-    return { id, neighborhoodId };
+    const [id, neighborhoodId, firstName, lastName] = line
+      .split("|")
+      .map((v) => v.trim());
+    const displayName = [firstName, lastName].filter(Boolean).join(" ");
+    return { id, neighborhoodId, displayName };
   });
+}
+
+function pickPayer(
+  residents: Resident[],
+  payeeId: string,
+  offset: number,
+): Resident | undefined {
+  const payee = residents.find((r) => r.id === payeeId);
+  const candidates = residents.filter((r) => r.id !== payeeId);
+  if (candidates.length === 0) return undefined;
+  const neighbors = payee
+    ? candidates.filter((r) => r.neighborhoodId === payee.neighborhoodId)
+    : [];
+  const pool = neighbors.length > 0 ? neighbors : candidates;
+  return pool[offset % pool.length];
 }
 
 async function main() {
@@ -158,9 +178,9 @@ async function main() {
     for (const resident of residents) {
       await session.run(
         `MERGE (u:User {id: $userId})
-         ON CREATE SET u.createdAt = datetime()
-         ON MATCH SET u.updatedAt = datetime()`,
-        { userId: resident.id },
+         ON CREATE SET u.name = $name, u.createdAt = datetime()
+         ON MATCH SET u.name = coalesce($name, u.name), u.updatedAt = datetime()`,
+        { userId: resident.id, name: resident.displayName || null },
       );
 
       await session.run(
@@ -190,6 +210,34 @@ async function main() {
       }
     }
     console.log(`Seeded ${interestCount} INTERESTED_IN relations`);
+
+    // Seed HELPED (payer -> payee, aligned with the seeded services)
+    const servicesWithOwner = services.filter(
+      (svc) => svc.createdBy && residents.some((r) => r.id === svc.createdBy),
+    );
+    let helpedCount = 0;
+
+    for (const svc of servicesWithOwner) {
+      if (helpedCount >= HELPED_RELATIONS_TO_SEED) break;
+      const payeeId = String(svc.createdBy);
+      const payer = pickPayer(residents, payeeId, helpedCount);
+      if (!payer) continue;
+
+      await session.run(
+        `MATCH (payer:User {id: $payerId})
+         MATCH (payee:User {id: $payeeId})
+         MERGE (payer)-[h:HELPED {serviceId: $serviceId}]->(payee)
+         ON CREATE SET h.points = $points, h.timestamp = datetime()`,
+        {
+          payerId: payer.id,
+          payeeId,
+          serviceId: svc._id.toString(),
+          points: Number(svc.pointsAmount ?? 15),
+        },
+      );
+      helpedCount++;
+    }
+    console.log(`Seeded ${helpedCount} HELPED relations`);
 
     console.log("Neo4j seed completed successfully");
   } finally {
