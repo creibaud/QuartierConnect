@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
     Add01Icon,
+    Alert01Icon,
     Building01Icon,
     CheckmarkCircle01Icon,
 } from "@hugeicons/core-free-icons";
@@ -14,6 +15,11 @@ import {
     useUpdateNeighborhood,
 } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
 import type { Neighborhood } from "@workspace/shared/lib/types";
+import {
+    Alert,
+    AlertDescription,
+    AlertTitle,
+} from "@workspace/ui/components/alert";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { DataState } from "@workspace/ui/components/data-state";
@@ -236,12 +242,10 @@ function NeighborhoodsPage() {
 function PolygonEditor({
     initialGeometry,
     others,
-    currentGeometry,
     onChange,
 }: {
     initialGeometry?: GeoJSON.Polygon;
     others: Neighborhood[];
-    currentGeometry: GeoJSON.Polygon | null;
     onChange: (geometry: GeoJSON.Polygon | null) => void;
 }) {
     const { t } = useTranslation();
@@ -266,19 +270,9 @@ function PolygonEditor({
                         />
                     ) : null,
                 )}
-                {currentGeometry ? (
-                    <NeighborhoodPolygon
-                        geometry={currentGeometry}
-                        color="#16a34a"
-                    />
-                ) : initialGeometry ? (
-                    <NeighborhoodPolygon
-                        geometry={initialGeometry}
-                        color="#16a34a"
-                    />
-                ) : null}
                 <DrawControl
                     mode="polygon"
+                    initialGeometry={initialGeometry}
                     onCreate={onChange}
                     onEdit={onChange}
                     onDelete={() => onChange(null)}
@@ -286,6 +280,10 @@ function PolygonEditor({
             </Map>
         </div>
     );
+}
+
+function isOverlapError(error: Error): boolean {
+    return (error as { status?: number }).status === 409;
 }
 
 function NeighborhoodDialog({
@@ -313,6 +311,19 @@ function NeighborhoodDialog({
     const updateNeighborhood = useUpdateNeighborhood();
     const isPending =
         createNeighborhood.isPending || updateNeighborhood.isPending;
+    const submitError = initial
+        ? updateNeighborhood.error
+        : createNeighborhood.error;
+
+    function resetSubmitError() {
+        createNeighborhood.reset();
+        updateNeighborhood.reset();
+    }
+
+    function handleGeometryChange(next: GeoJSON.Polygon | null) {
+        resetSubmitError();
+        setGeometry(next);
+    }
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -333,11 +344,6 @@ function NeighborhoodDialog({
                         toast.success(t("adminPages.neighborhoods.updated"));
                         onSuccess();
                     },
-                    onError: (err: Error) =>
-                        toast.error(
-                            err.message ??
-                                t("adminPages.neighborhoods.updateError"),
-                        ),
                 },
             );
         } else {
@@ -346,11 +352,6 @@ function NeighborhoodDialog({
                     toast.success(t("adminPages.neighborhoods.created"));
                     onSuccess();
                 },
-                onError: (err: Error) =>
-                    toast.error(
-                        err.message ??
-                            t("adminPages.neighborhoods.createError"),
-                    ),
             });
         }
     }
@@ -423,8 +424,7 @@ function NeighborhoodDialog({
                                     | undefined) ?? undefined
                             }
                             others={others}
-                            currentGeometry={geometry}
-                            onChange={setGeometry}
+                            onChange={handleGeometryChange}
                         />
                     )}
 
@@ -438,6 +438,31 @@ function NeighborhoodDialog({
                                 count: geometry.coordinates[0].length - 1,
                             })}
                         </p>
+                    )}
+
+                    {submitError && (
+                        <Alert variant="destructive">
+                            <HugeiconsIcon
+                                icon={Alert01Icon}
+                                className="size-4"
+                            />
+                            <AlertTitle>
+                                {isOverlapError(submitError)
+                                    ? t(
+                                          "adminPages.neighborhoods.overlapError",
+                                      )
+                                    : initial
+                                      ? t(
+                                            "adminPages.neighborhoods.updateError",
+                                        )
+                                      : t(
+                                            "adminPages.neighborhoods.createError",
+                                        )}
+                            </AlertTitle>
+                            <AlertDescription>
+                                {submitError.message}
+                            </AlertDescription>
+                        </Alert>
                     )}
 
                     <div className="flex justify-end gap-2">
