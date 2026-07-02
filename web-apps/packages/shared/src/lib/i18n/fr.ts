@@ -256,12 +256,17 @@ export default {
         reasons: {
             serviceInNeighborhood: "Service proposé dans votre quartier",
             upcomingEventNearby: "Événement à venir près de chez vous",
+            sharedInterests:
+                "Apprécié par des voisins qui partagent vos centres d'intérêt",
+            reliableNeighbor: "Voisin fiable, reconnu pour son entraide",
         },
         types: {
             service: "Service",
             event: "Événement",
             neighbor: "Voisin",
         },
+        contact: "Contacter",
+        contactError: "Impossible d'ouvrir la conversation",
     },
     rgpd: {
         exportData: "Exporter mes données",
@@ -753,6 +758,13 @@ export default {
             nearby: "Événements à proximité",
             locatedCount_one: "{{count}} événement localisé",
             locatedCount_other: "{{count}} événements localisés",
+            participate: "Je participe",
+            registered: "Inscrit",
+            participants_one: "{{count}} participant",
+            participants_other: "{{count}} participants",
+            participateError:
+                "Impossible d'enregistrer votre participation",
+            viewDetails: "Voir le détail de l'événement",
         },
     },
     adminPages: {

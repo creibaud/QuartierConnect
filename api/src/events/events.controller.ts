@@ -15,6 +15,7 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import {
     ApiBearerAuth,
+    ApiBody,
     ApiOperation,
     ApiParam,
     ApiQuery,
@@ -26,6 +27,7 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { GeocodingService } from "../geocoding/geocoding.service";
 import { SocialService } from "../social/social.service";
 import { CreateEventDto } from "./dto/create-event.dto";
+import { EventInterestDto } from "./dto/event-interest.dto";
 import { EventDto, EventInterestResponseDto } from "./dto/event-response.dto";
 import { UpdateEventDto } from "./dto/update-event.dto";
 import { Event, EventDocument } from "./schemas/event.schema";
@@ -144,23 +146,33 @@ export class EventsController {
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     @ApiOperation({
-        summary: "Mark interest in an event",
+        summary: "Mark interest or participation in an event",
         description:
-            "Adds the current user to `interestedUserIds` (idempotent via `$addToSet`).",
+            "Adds the current user to `interestedUserIds` (idempotent via `$addToSet`; `interested: false` removes them) and records the matching Neo4j relationship (INTERESTED_IN for `source: swipe`, ATTENDING for `source: participate`, NOT_INTERESTED_IN when not interested). The Neo4j write is best-effort and never blocks the response.",
     })
     @ApiParam({ name: "id", description: "MongoDB ID of the event" })
+    @ApiBody({ type: EventInterestDto, required: false })
     @ApiResponse({ status: 201, type: EventInterestResponseDto })
     @ApiResponse({ status: 404, description: "Event not found" })
-    async markInterest(@Param("id") id: string, @Request() req: AuthRequest) {
+    async markInterest(
+        @Param("id") id: string,
+        @Request() req: AuthRequest,
+        @Body() body?: EventInterestDto,
+    ) {
+        const interested = body?.interested ?? true;
+        const source = body?.source ?? "swipe";
+        const membershipUpdate = interested
+            ? { $addToSet: { interestedUserIds: req.user.sub } }
+            : { $pull: { interestedUserIds: req.user.sub } };
         const event = await this.eventModel
-            .findByIdAndUpdate(
-                id,
-                { $addToSet: { interestedUserIds: req.user.sub } },
-                { new: true },
-            )
+            .findByIdAndUpdate(id, membershipUpdate, { new: true })
             .exec();
 
         if (!event) throw new NotFoundException("Event not found");
+        void this.socialService.recordEventInterest(req.user.sub, id, {
+            interested,
+            source,
+        });
         return { interested: event.interestedUserIds.length };
     }
 

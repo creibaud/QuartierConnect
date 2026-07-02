@@ -113,7 +113,9 @@ export interface PaginatedResponse<T> {
 
 export type RecommendationReason =
     | "serviceInNeighborhood"
-    | "upcomingEventNearby";
+    | "upcomingEventNearby"
+    | "sharedInterests"
+    | "reliableNeighbor";
 
 export interface Recommendation {
     type: "service" | "event" | "neighbor";
