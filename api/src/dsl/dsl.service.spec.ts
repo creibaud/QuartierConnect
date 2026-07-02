@@ -125,6 +125,137 @@ describe("DslService", () => {
         expect(Array.isArray(result)).toBe(true);
     });
 
+    it("executes COUNT on PostgreSQL incidents without filter", async () => {
+        mockExecute.mockResolvedValue(
+            JSON.stringify({
+                type: "count",
+                collection: "incidents",
+                filter: {},
+                limit: null,
+            }),
+        );
+        mockDb.select.mockReturnValue({
+            from: jest.fn().mockReturnValue({
+                where: jest.fn().mockResolvedValue([{ id: "1" }, { id: "2" }]),
+            }),
+        });
+
+        const result = await service.execute("COUNT incidents");
+        expect(result).toEqual({ count: 2 });
+    });
+
+    it("rejects incidents filter using a Mongo operator value", async () => {
+        mockExecute.mockResolvedValue(
+            JSON.stringify({
+                type: "find",
+                collection: "incidents",
+                filter: { status: { $ne: "open" } },
+                limit: null,
+            }),
+        );
+
+        await expect(
+            service.execute('FIND incidents WHERE status != "open"'),
+        ).rejects.toThrow(
+            'Only simple equality filters on "status" are supported for incidents (PostgreSQL-backed collection)',
+        );
+    });
+
+    it("rejects incidents filter on an unsupported field", async () => {
+        mockExecute.mockResolvedValue(
+            JSON.stringify({
+                type: "find",
+                collection: "incidents",
+                filter: { category: "roads" },
+                limit: null,
+            }),
+        );
+
+        await expect(
+            service.execute('FIND incidents WHERE category = "roads"'),
+        ).rejects.toThrow(BadRequestException);
+    });
+
+    it("rejects incidents filter combining several fields", async () => {
+        mockExecute.mockResolvedValue(
+            JSON.stringify({
+                type: "count",
+                collection: "incidents",
+                filter: { status: "open", category: "roads" },
+                limit: null,
+            }),
+        );
+
+        await expect(
+            service.execute(
+                'COUNT incidents WHERE status = "open" AND category = "roads"',
+            ),
+        ).rejects.toThrow(
+            'Only simple equality filters on "status" are supported for incidents (PostgreSQL-backed collection)',
+        );
+    });
+
+    it("executes FIND on PostgreSQL users filtered by role", async () => {
+        mockExecute.mockResolvedValue(
+            JSON.stringify({
+                type: "find",
+                collection: "users",
+                filter: { role: "admin" },
+                limit: null,
+            }),
+        );
+        mockDb.select.mockReturnValue({
+            from: jest.fn().mockReturnValue({
+                where: jest.fn().mockReturnValue({
+                    limit: jest
+                        .fn()
+                        .mockResolvedValue([{ id: "u1", role: "admin" }]),
+                }),
+            }),
+        });
+
+        const result = await service.execute(
+            'FIND users WHERE role = "admin"',
+        );
+        expect(result).toEqual([{ id: "u1", role: "admin" }]);
+    });
+
+    it("executes COUNT on PostgreSQL users without filter", async () => {
+        mockExecute.mockResolvedValue(
+            JSON.stringify({
+                type: "count",
+                collection: "users",
+                filter: {},
+                limit: null,
+            }),
+        );
+        mockDb.select.mockReturnValue({
+            from: jest.fn().mockReturnValue({
+                where: jest.fn().mockResolvedValue([{ id: "u1" }]),
+            }),
+        });
+
+        const result = await service.execute("COUNT users");
+        expect(result).toEqual({ count: 1 });
+    });
+
+    it("rejects users filter on an unsupported field", async () => {
+        mockExecute.mockResolvedValue(
+            JSON.stringify({
+                type: "find",
+                collection: "users",
+                filter: { email: "alice@demo.fr" },
+                limit: null,
+            }),
+        );
+
+        await expect(
+            service.execute('FIND users WHERE email = "alice@demo.fr"'),
+        ).rejects.toThrow(
+            'Only simple equality filters on "role" are supported for users (PostgreSQL-backed collection)',
+        );
+    });
+
     it("throws BadRequestException on SyntaxError from Python", async () => {
         mockExecute.mockRejectedValue(
             new Error("SyntaxError: unexpected token"),
