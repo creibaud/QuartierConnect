@@ -1,10 +1,13 @@
 import "./env-loader";
 import { join } from "path";
-import { ValidationPipe } from "@nestjs/common";
+import { Logger, ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import cookieParser from "cookie-parser";
+import { sql } from "drizzle-orm";
+import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
 import helmet from "helmet";
 import { HealthResponseDto, StatsResponseDto } from "./app.dto";
 import { AppModule } from "./app.module";
@@ -29,6 +32,8 @@ import {
     ContractDto,
     SignatureDto,
 } from "./contracts/dto/contract-response.dto";
+import { DRIZZLE_TOKEN } from "./database/drizzle.module";
+import * as schema from "./database/schema";
 import { DslQueryResultDto } from "./dsl/dto/dsl-response.dto";
 import {
     EventDto,
@@ -78,8 +83,39 @@ const DEV_ORIGINS = [
     "http://localhost:5000",
 ];
 
+async function countAppliedMigrations(
+    db: PostgresJsDatabase<typeof schema>,
+): Promise<number> {
+    try {
+        const rows = await db.execute<{ count: number }>(
+            sql`select count(*)::int as count from drizzle.__drizzle_migrations`,
+        );
+        return rows[0]?.count ?? 0;
+    } catch {
+        return 0;
+    }
+}
+
+async function applyDatabaseMigrations(
+    app: NestExpressApplication,
+): Promise<void> {
+    const logger = new Logger("DatabaseMigrations");
+    const db = app.get<PostgresJsDatabase<typeof schema>>(DRIZZLE_TOKEN);
+    const alreadyApplied = await countAppliedMigrations(db);
+    await migrate(db, { migrationsFolder: join(process.cwd(), "drizzle") });
+    const newlyApplied = (await countAppliedMigrations(db)) - alreadyApplied;
+    if (newlyApplied > 0) {
+        logger.log(`${newlyApplied} migrations applied`);
+    } else {
+        logger.log("Database schema up to date");
+    }
+}
+
 async function bootstrap() {
     const app = await NestFactory.create<NestExpressApplication>(AppModule);
+    app.set("trust proxy", 1);
+
+    await applyDatabaseMigrations(app);
 
     // Serve Scalar standalone bundle at /scalar/standalone.js (self-hosted, no CDN)
     app.useStaticAssets(

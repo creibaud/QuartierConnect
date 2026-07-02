@@ -7,7 +7,7 @@
         lint lint-api lint-web lint-desktop lint-dsl \
         typecheck \
         docker-up docker-up-build docker-down docker-logs docker-logs-api docker-reset \
-        seed seed-demo seed-neo4j totp \
+        db-migrate seed seed-demo seed-neo4j totp \
         install install-api install-web install-dsl \
         validate validate-fast \
         hooks \
@@ -54,7 +54,7 @@ help: ## Afficher cette aide
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "    $(BLUE)%-24s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "  $(BOLD)UTILS$(RESET)"
-	@grep -E '^(seed|totp|install|validate|status|clean|info)[a-zA-Z_-]*:.*?## .*$$' $(MAKEFILE_LIST) \
+	@grep -E '^(db-migrate|seed|totp|install|validate|status|clean|info)[a-zA-Z_-]*:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "    %-24s %s\n", $$1, $$2}'
 	@echo ""
 
@@ -329,7 +329,13 @@ docker-reset: ## Reset complet : arrêt + suppression volumes + rebuild (⚠️ 
 	@echo "$(OK) Reset complet terminé"
 
 # ─── Seed & données démo ───────────────────────────────────────────────────────
-seed: seed-demo seed-neo4j ## Seed complet : comptes démo + graphe Neo4j
+db-migrate: ## Appliquer les migrations Drizzle sur PostgreSQL
+	@echo "$(RUN) Migrations Drizzle (PostgreSQL)..."
+	@cd api && DATABASE_URL=$$(grep ^POSTGRES_URL ../.env | cut -d= -f2-) \
+	           pnpm exec drizzle-kit migrate
+	@echo "$(OK) Migrations PostgreSQL appliquées"
+
+seed: db-migrate seed-demo seed-neo4j ## Seed complet : migrations + comptes démo + graphe Neo4j
 
 seed-demo: ## Créer les 3 comptes démo (alice/bob/admin) dans PostgreSQL + MongoDB
 	@echo "$(RUN) Seed démo (alice / bob / admin)..."
