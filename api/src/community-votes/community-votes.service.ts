@@ -7,7 +7,7 @@ import {
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { CastVoteDto } from "./dto/cast-vote.dto";
+import { CastCommunityVoteDto } from "./dto/cast-community-vote.dto";
 import { CreateCommunityVoteDto } from "./dto/create-community-vote.dto";
 import {
     CommunityVote,
@@ -53,7 +53,7 @@ export class CommunityVotesService {
 
     async cast(
         id: string,
-        dto: CastVoteDto,
+        dto: CastCommunityVoteDto,
         userId: string,
     ): Promise<CommunityVoteDocument> {
         const vote = await this.findOne(id);
@@ -145,7 +145,7 @@ export class CommunityVotesService {
 
     private validateChoices(
         voteType: CommunityVoteType,
-        dto: CastVoteDto,
+        dto: CastCommunityVoteDto,
     ): void {
         if (
             (voteType === CommunityVoteType.BINARY ||
