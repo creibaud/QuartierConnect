@@ -80,7 +80,7 @@ export class MessageDto {
 
     @ApiPropertyOptional({
         example: "664f1a2b3c4d5e6f7a8b9c99",
-        description: "GridFS FileId (only for type FILE or IMAGE)",
+        description: "GridFS FileId (only for type FILE, IMAGE or AUDIO)",
     })
     fileId?: string;
 
@@ -98,7 +98,7 @@ export class FileUploadBodyDto {
     @ApiProperty({
         type: "string",
         format: "binary",
-        description: "File to send (max 10 MB)",
+        description: "File to send (max 10 MB; audio max 5 MB)",
     })
     file: string;
 }
