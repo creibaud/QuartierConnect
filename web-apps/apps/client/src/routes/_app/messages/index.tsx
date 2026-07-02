@@ -8,6 +8,7 @@ import {
     SentIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { skipToken, useQueries } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { apiBlob, apiBlobUrl } from "@workspace/shared/lib/api";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
@@ -38,6 +39,7 @@ import {
     InputGroupInput,
 } from "@workspace/ui/components/input-group";
 import { Label } from "@workspace/ui/components/label";
+import { PageHeader } from "@workspace/ui/components/page-header";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import {
     Sheet,
@@ -74,6 +76,131 @@ function conversationLabel(
     if (others.length === 0) return t("pages.messages.conversation");
     if (others.length <= 2) return others.join(", ");
     return `${others[0]} +${others.length - 1}`;
+}
+
+function conversationInitials(label: string): string {
+    const parts = label.split(/\s+/).filter(Boolean);
+    return (
+        parts.length > 1 ? parts[0][0] + parts[1][0] : label.slice(0, 2)
+    ).toUpperCase();
+}
+
+function formatConversationTimestamp(isoDate: string, locale: string): string {
+    const date = new Date(isoDate);
+    const isToday = date.toDateString() === new Date().toDateString();
+    if (isToday) {
+        return date.toLocaleTimeString(locale, {
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    }
+    return date.toLocaleDateString(locale, { day: "numeric", month: "short" });
+}
+
+function messagePreview(
+    message: Message,
+    currentUserId: string,
+    t: TFunction,
+): string {
+    const body =
+        message.type === "image"
+            ? t("pages.messages.previewImage")
+            : message.type === "file"
+              ? (message.fileName ?? t("pages.messages.previewFile"))
+              : (message.content ?? "");
+    return message.senderId === currentUserId
+        ? t("pages.messages.previewFromYou", { preview: body })
+        : body;
+}
+
+function isConversationUnread({
+    conversation,
+    newestMessage,
+    readAt,
+    currentUserId,
+    isActive,
+}: {
+    conversation: Conversation;
+    newestMessage: Message | undefined;
+    readAt: string | undefined;
+    currentUserId: string;
+    isActive: boolean;
+}): boolean {
+    if (isActive) return false;
+    const newestMessageAt = newestMessage
+        ? Date.parse(newestMessage.createdAt)
+        : 0;
+    const listActivityAt = conversation.lastMessageAt
+        ? Date.parse(conversation.lastMessageAt)
+        : 0;
+    const latestActivityAt = Math.max(newestMessageAt, listActivityAt);
+    if (latestActivityAt === 0) return false;
+    const latestIsOwnMessage =
+        newestMessage !== undefined &&
+        newestMessageAt >= listActivityAt &&
+        newestMessage.senderId === currentUserId;
+    if (latestIsOwnMessage) return false;
+    return !readAt || latestActivityAt > Date.parse(readAt);
+}
+
+const READ_MARKERS_STORAGE_KEY = "quartierconnect.messages.readMarkers";
+
+function loadReadMarkers(): Record<string, string> {
+    try {
+        const raw = localStorage.getItem(READ_MARKERS_STORAGE_KEY);
+        return raw ? (JSON.parse(raw) as Record<string, string>) : {};
+    } catch {
+        return {};
+    }
+}
+
+function useConversationReadMarkers() {
+    const [readMarkers, setReadMarkers] =
+        useState<Record<string, string>>(loadReadMarkers);
+
+    const markConversationRead = useCallback(
+        (conversationId: string, readAt: string) => {
+            setReadMarkers((previous) => {
+                const existing = previous[conversationId];
+                if (existing && Date.parse(existing) >= Date.parse(readAt)) {
+                    return previous;
+                }
+                const next = { ...previous, [conversationId]: readAt };
+                try {
+                    localStorage.setItem(
+                        READ_MARKERS_STORAGE_KEY,
+                        JSON.stringify(next),
+                    );
+                } catch {
+                    // localStorage unavailable — markers last for the session
+                }
+                return next;
+            });
+        },
+        [],
+    );
+
+    return { readMarkers, markConversationRead };
+}
+
+function useNewestCachedMessages(
+    conversationIds: string[],
+): Map<string, Message | undefined> {
+    const results = useQueries({
+        queries: conversationIds.map((id) => ({
+            queryKey: ["messages", id, 1],
+            queryFn: skipToken,
+        })),
+    });
+
+    return useMemo(() => {
+        const newestById = new Map<string, Message | undefined>();
+        conversationIds.forEach((id, index) => {
+            const messages = results[index]?.data as Message[] | undefined;
+            newestById.set(id, messages?.[0]);
+        });
+        return newestById;
+    }, [conversationIds, results]);
 }
 
 function AuthedImage({ fileId, alt }: { fileId: string; alt: string }) {
@@ -211,9 +338,11 @@ function MessageBubble({
 function ConversationThread({
     conversationId,
     currentUserId,
+    onRead,
 }: {
     conversationId: string;
     currentUserId: string;
+    onRead: (conversationId: string, readAt: string) => void;
 }) {
     const { t } = useTranslation();
     const [inputValue, setInputValue] = useState("");
@@ -242,6 +371,12 @@ function ConversationThread({
         return [...reversed, ...extra];
     }, [fetchedMessages, localMessages]);
 
+    const newestMessageAt = allMessages[allMessages.length - 1]?.createdAt;
+
+    useEffect(() => {
+        onRead(conversationId, newestMessageAt ?? new Date().toISOString());
+    }, [conversationId, newestMessageAt, onRead]);
+
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [allMessages.length]);
@@ -264,8 +399,8 @@ function ConversationThread({
     }
 
     return (
-        <div className="flex h-full flex-col">
-            <ScrollArea className="flex-1 p-4">
+        <div className="flex min-h-0 flex-1 flex-col">
+            <ScrollArea className="min-h-0 flex-1 p-4">
                 {isLoading ? (
                     <div className="text-muted-foreground py-8 text-center text-sm">
                         {t("common.loading")}
@@ -339,10 +474,12 @@ function ConversationList({
     activeId,
     onSelect,
     currentUserId,
+    readMarkers,
 }: {
     activeId: string | null;
     onSelect: (id: string) => void;
     currentUserId: string;
+    readMarkers: Record<string, string>;
 }) {
     const { t, i18n } = useTranslation();
     const { data: conversations, isLoading, isError } = useConversations();
@@ -356,6 +493,12 @@ function ConversationList({
             }),
         [conversations],
     );
+
+    const conversationIds = useMemo(
+        () => sorted.map((conv) => conv._id),
+        [sorted],
+    );
+    const newestCachedById = useNewestCachedMessages(conversationIds);
 
     if (isLoading) {
         return (
@@ -389,41 +532,70 @@ function ConversationList({
         <div className="flex flex-col gap-1 p-2">
             {sorted.map((conv) => {
                 const label = conversationLabel(conv, currentUserId, t);
-                const parts = label.split(/\s+/).filter(Boolean);
-                const initials = (
-                    parts.length > 1
-                        ? parts[0][0] + parts[1][0]
-                        : label.slice(0, 2)
-                ).toUpperCase();
                 const isActive = activeId === conv._id;
+                const newestMessage = newestCachedById.get(conv._id);
+                const preview = newestMessage
+                    ? messagePreview(newestMessage, currentUserId, t)
+                    : null;
+                const unread = isConversationUnread({
+                    conversation: conv,
+                    newestMessage,
+                    readAt: readMarkers[conv._id],
+                    currentUserId,
+                    isActive,
+                });
                 return (
                     <button
                         key={conv._id}
                         onClick={() => onSelect(conv._id)}
                         className={cn(
-                            "hover:bg-muted flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                            "hover:bg-muted flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
                             isActive && "bg-primary/10",
                         )}
                     >
                         <Avatar size="sm">
-                            <AvatarFallback>{initials}</AvatarFallback>
+                            <AvatarFallback>
+                                {conversationInitials(label)}
+                            </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 flex-1">
-                            <p
-                                className={cn(
-                                    "truncate text-sm font-medium",
-                                    isActive && "text-primary",
-                                )}
-                            >
-                                {label}
-                            </p>
-                            {conv.lastMessageAt && (
-                                <p className="text-muted-foreground text-xs tabular-nums">
-                                    {new Date(
-                                        conv.lastMessageAt,
-                                    ).toLocaleDateString(i18n.language)}
+                            <div className="flex items-baseline justify-between gap-2">
+                                <p
+                                    className={cn(
+                                        "truncate text-sm font-medium",
+                                        isActive && "text-primary",
+                                        unread && "font-semibold",
+                                    )}
+                                >
+                                    {label}
                                 </p>
-                            )}
+                                {conv.lastMessageAt && (
+                                    <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                                        {formatConversationTimestamp(
+                                            conv.lastMessageAt,
+                                            i18n.language,
+                                        )}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <p
+                                    className={cn(
+                                        "text-muted-foreground min-w-0 flex-1 truncate text-xs",
+                                        unread &&
+                                            "text-foreground font-medium",
+                                    )}
+                                >
+                                    {preview ?? "\u00A0"}
+                                </p>
+                                {unread && (
+                                    <span className="bg-primary size-2 shrink-0 rounded-full">
+                                        <span className="sr-only">
+                                            {t("pages.messages.unread")}
+                                        </span>
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </button>
                 );
@@ -523,8 +695,17 @@ function MessagesPage() {
     >(conversation ?? null);
     const [sheetOpen, setSheetOpen] = useState(false);
     const [newConvOpen, setNewConvOpen] = useState(false);
+    const { data: conversations } = useConversations();
+    const { readMarkers, markConversationRead } = useConversationReadMarkers();
 
     if (!user) return null;
+
+    const activeConversation = (conversations ?? []).find(
+        (conv) => conv._id === activeConversationId,
+    );
+    const activeLabel = activeConversation
+        ? conversationLabel(activeConversation, user.sub, t)
+        : t("pages.messages.conversation");
 
     function handleSelectConversation(id: string) {
         setActiveConversationId(id);
@@ -536,105 +717,124 @@ function MessagesPage() {
     }
 
     return (
-        <div className="bg-background flex min-h-0 flex-1 flex-col">
-            <header className="border-border flex items-center justify-between border-b px-4 py-3">
-                <div className="flex items-center gap-3">
-                    <div className="md:hidden">
-                        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-                            <SheetTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                    {t("pages.messages.conversations")}
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent side="left" className="w-72 p-0">
-                                <SheetHeader className="border-border border-b px-4 py-3">
-                                    <div className="flex items-center justify-between">
-                                        <SheetTitle>
+        <div className="flex h-[calc(100svh-4rem)] flex-col p-6 md:p-8">
+            <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-6">
+                <PageHeader
+                    title={t("pages.messages.title")}
+                    description={t("pages.messages.description")}
+                    actions={
+                        <>
+                            <div className="md:hidden">
+                                <Sheet
+                                    open={sheetOpen}
+                                    onOpenChange={setSheetOpen}
+                                >
+                                    <SheetTrigger asChild>
+                                        <Button variant="outline" size="sm">
                                             {t("pages.messages.conversations")}
-                                        </SheetTitle>
+                                        </Button>
+                                    </SheetTrigger>
+                                    <SheetContent
+                                        side="left"
+                                        className="flex w-72 flex-col p-0"
+                                    >
+                                        <SheetHeader className="border-border border-b px-4 py-3">
+                                            <SheetTitle>
+                                                {t(
+                                                    "pages.messages.conversations",
+                                                )}
+                                            </SheetTitle>
+                                        </SheetHeader>
+                                        <ScrollArea className="min-h-0 flex-1">
+                                            <ConversationList
+                                                activeId={activeConversationId}
+                                                onSelect={
+                                                    handleSelectConversation
+                                                }
+                                                currentUserId={user.sub}
+                                                readMarkers={readMarkers}
+                                            />
+                                        </ScrollArea>
+                                    </SheetContent>
+                                </Sheet>
+                            </div>
+                            <Button
+                                size="sm"
+                                onClick={() => setNewConvOpen(true)}
+                            >
+                                <HugeiconsIcon icon={Add01Icon} size={14} />
+                                {t("messaging.newConversation")}
+                            </Button>
+                        </>
+                    }
+                />
+
+                <div className="border-border bg-card flex min-h-0 flex-1 overflow-hidden rounded-xl border">
+                    <aside className="border-border hidden w-80 shrink-0 flex-col border-r md:flex">
+                        <div className="border-border border-b px-4 py-3">
+                            <h2 className="text-sm font-semibold">
+                                {t("pages.messages.conversations")}
+                            </h2>
+                        </div>
+                        <ScrollArea className="min-h-0 flex-1">
+                            <ConversationList
+                                activeId={activeConversationId}
+                                onSelect={setActiveConversationId}
+                                currentUserId={user.sub}
+                                readMarkers={readMarkers}
+                            />
+                        </ScrollArea>
+                    </aside>
+
+                    <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+                        {activeConversationId ? (
+                            <>
+                                <div className="border-border flex items-center gap-3 border-b px-4 py-3">
+                                    <Avatar size="sm">
+                                        <AvatarFallback>
+                                            {conversationInitials(activeLabel)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <p className="truncate text-sm font-semibold">
+                                        {activeLabel}
+                                    </p>
+                                </div>
+                                <ConversationThread
+                                    key={activeConversationId}
+                                    conversationId={activeConversationId}
+                                    currentUserId={user.sub}
+                                    onRead={markConversationRead}
+                                />
+                            </>
+                        ) : (
+                            <div className="flex flex-1 items-center justify-center p-6">
+                                <EmptyState
+                                    icon={Message01Icon}
+                                    title={t(
+                                        "pages.messages.noneSelectedTitle",
+                                    )}
+                                    description={t(
+                                        "pages.messages.noneSelectedDescription",
+                                    )}
+                                    action={
                                         <Button
                                             size="sm"
-                                            variant="outline"
-                                            onClick={() => {
-                                                setSheetOpen(false);
-                                                setNewConvOpen(true);
-                                            }}
+                                            onClick={() =>
+                                                setNewConvOpen(true)
+                                            }
                                         >
                                             <HugeiconsIcon
                                                 icon={Add01Icon}
                                                 size={14}
                                             />
+                                            {t("messaging.newConversation")}
                                         </Button>
-                                    </div>
-                                </SheetHeader>
-                                <ConversationList
-                                    activeId={activeConversationId}
-                                    onSelect={handleSelectConversation}
-                                    currentUserId={user.sub}
+                                    }
                                 />
-                            </SheetContent>
-                        </Sheet>
-                    </div>
-                    <h1 className="font-heading text-xl font-semibold">
-                        {t("pages.messages.title")}
-                    </h1>
+                            </div>
+                        )}
+                    </main>
                 </div>
-            </header>
-
-            <div className="flex flex-1 overflow-hidden">
-                <aside className="border-border hidden w-80 flex-col border-r md:flex">
-                    <div className="border-border flex items-center justify-between border-b px-4 py-3">
-                        <h2 className="text-sm font-semibold">
-                            {t("pages.messages.conversations")}
-                        </h2>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setNewConvOpen(true)}
-                        >
-                            <HugeiconsIcon icon={Add01Icon} size={14} />
-                            {t("pages.messages.new")}
-                        </Button>
-                    </div>
-                    <ScrollArea className="flex-1">
-                        <ConversationList
-                            activeId={activeConversationId}
-                            onSelect={setActiveConversationId}
-                            currentUserId={user.sub}
-                        />
-                    </ScrollArea>
-                </aside>
-
-                <main className="flex flex-1 flex-col overflow-hidden">
-                    {activeConversationId ? (
-                        <ConversationThread
-                            conversationId={activeConversationId}
-                            currentUserId={user.sub}
-                        />
-                    ) : (
-                        <div className="flex flex-1 items-center justify-center">
-                            <EmptyState
-                                icon={Message01Icon}
-                                title={t("pages.messages.noneSelectedTitle")}
-                                description={t(
-                                    "pages.messages.noneSelectedDescription",
-                                )}
-                                action={
-                                    <Button
-                                        size="sm"
-                                        onClick={() => setNewConvOpen(true)}
-                                    >
-                                        <HugeiconsIcon
-                                            icon={Add01Icon}
-                                            size={14}
-                                        />
-                                        {t("messaging.newConversation")}
-                                    </Button>
-                                }
-                            />
-                        </div>
-                    )}
-                </main>
             </div>
 
             <NewConversationDialog
