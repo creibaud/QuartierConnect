@@ -11,7 +11,6 @@ public class PageLayout extends HBox {
     private final AppSidebar sidebar;
     private final AppTopBar  topBar;
     private final StackPane  contentArea = new StackPane();
-    private final StatusBar  statusBar   = new StatusBar();
 
     public PageLayout(AppSidebar sidebar, AppTopBar topBar) {
         this.sidebar = sidebar;
@@ -34,5 +33,4 @@ public class PageLayout extends HBox {
 
     public AppSidebar getSidebar()  { return sidebar; }
     public AppTopBar  getTopBar()   { return topBar; }
-    public StatusBar  getStatusBar(){ return statusBar; }
 }
