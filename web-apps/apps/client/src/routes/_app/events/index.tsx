@@ -24,6 +24,7 @@ import type { Event } from "@workspace/shared/lib/types";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Calendar } from "@workspace/ui/components/calendar";
+import { calendarLocaleFor } from "@workspace/ui/lib/calendar-locales";
 import {
     Card,
     CardContent,
@@ -190,6 +191,9 @@ function EventsPage() {
                                 <CardContent className="flex justify-center p-2 sm:p-3">
                                     <Calendar
                                         mode="single"
+                                        locale={calendarLocaleFor(
+                                            i18n.language,
+                                        )}
                                         selected={selectedDate}
                                         onSelect={setSelectedDate}
                                         modifiers={{ hasEvent: eventDates }}
