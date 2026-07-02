@@ -131,8 +131,11 @@ jobs:
       - name: API E2E (Supertest)
         if: always()
         working-directory: api
+        env:
+          POSTGRES_URL: postgresql://qc:testpass@localhost:5432/quartierconnect
+          MONGO_URI: mongodb://root:testpass@localhost:27017/quartierconnect?authSource=admin
+          NEO4J_URI: bolt://localhost:7687
         run: pnpm run test:e2e
-        continue-on-error: true
 
       - name: Upload Playwright report
         if: always()
