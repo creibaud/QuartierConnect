@@ -22,6 +22,9 @@ function makeSocket(overrides?: object) {
         disconnect: jest.fn(),
         join: jest.fn(),
         leave: jest.fn(),
+        emit: jest.fn(),
+        to: jest.fn().mockReturnValue({ emit: jest.fn() }),
+        rooms: new Set<string>(),
         handshake: {
             auth: {},
             headers: {},
@@ -32,6 +35,29 @@ function makeSocket(overrides?: object) {
 
 describe("MessagingGateway", () => {
     let gateway: MessagingGateway;
+    let serverEmit: jest.Mock;
+    let serverTo: jest.Mock;
+
+    async function connectUser(
+        userId: string,
+        conversations: unknown[],
+        socketId = `socket-${userId}`,
+    ) {
+        const socket = makeSocket({
+            id: socketId,
+            handshake: { auth: { token: "tok" }, headers: {} },
+        });
+        mockJwtService.verify.mockReturnValueOnce({ sub: userId });
+        mockMessagingService.findConversations.mockResolvedValueOnce(
+            conversations,
+        );
+        await gateway.handleConnection(socket as any);
+        return socket;
+    }
+
+    function conversationWith(participants: string[]) {
+        return [{ _id: "conv-1", participants }];
+    }
 
     beforeEach(async () => {
         jest.clearAllMocks();
@@ -44,9 +70,9 @@ describe("MessagingGateway", () => {
         }).compile();
 
         gateway = module.get<MessagingGateway>(MessagingGateway);
-        (gateway as any).server = {
-            to: jest.fn().mockReturnValue({ emit: jest.fn() }),
-        };
+        serverEmit = jest.fn();
+        serverTo = jest.fn().mockReturnValue({ emit: serverEmit });
+        (gateway as any).server = { to: serverTo };
     });
 
     describe("handleConnection", () => {
@@ -56,13 +82,14 @@ describe("MessagingGateway", () => {
             });
             mockJwtService.verify.mockReturnValue({ sub: "user-1" });
             mockMessagingService.findConversations.mockResolvedValue([
-                { _id: { toString: () => "conv-1" } },
-                { _id: { toString: () => "conv-2" } },
+                { _id: { toString: () => "conv-1" }, participants: [] },
+                { _id: { toString: () => "conv-2" }, participants: [] },
             ]);
 
             await gateway.handleConnection(socket as any);
 
             expect((socket as any).userId).toBe("user-1");
+            expect(socket.join).toHaveBeenCalledWith("user:user-1");
             expect(socket.join).toHaveBeenCalledWith("conversation:conv-1");
             expect(socket.join).toHaveBeenCalledWith("conversation:conv-2");
         });
@@ -123,8 +150,89 @@ describe("MessagingGateway", () => {
             await gateway.handleConnection(socket as any);
 
             expect((socket as any).userId).toBe("user-new");
-            expect(socket.join).not.toHaveBeenCalled();
+            expect(socket.join).toHaveBeenCalledTimes(1);
+            expect(socket.join).toHaveBeenCalledWith("user:user-new");
             expect(socket.disconnect).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("presence", () => {
+        it("sends a presence snapshot listing the online conversation peers", async () => {
+            await connectUser("user-a", conversationWith(["user-a", "user-b"]));
+            const socketB = await connectUser(
+                "user-b",
+                conversationWith(["user-a", "user-b"]),
+            );
+
+            expect(socketB.emit).toHaveBeenCalledWith("presence:snapshot", {
+                onlineUserIds: ["user-a"],
+            });
+        });
+
+        it("sends an empty snapshot when no peer is online", async () => {
+            const socket = await connectUser(
+                "user-a",
+                conversationWith(["user-a", "user-b"]),
+            );
+
+            expect(socket.emit).toHaveBeenCalledWith("presence:snapshot", {
+                onlineUserIds: [],
+            });
+        });
+
+        it("broadcasts presence:update online to peers on the first socket only", async () => {
+            await connectUser(
+                "user-a",
+                conversationWith(["user-a", "user-b"]),
+                "sock-1",
+            );
+
+            expect(serverTo).toHaveBeenCalledWith(["user:user-b"]);
+            expect(serverEmit).toHaveBeenCalledWith("presence:update", {
+                userId: "user-a",
+                online: true,
+            });
+
+            serverEmit.mockClear();
+            await connectUser(
+                "user-a",
+                conversationWith(["user-a", "user-b"]),
+                "sock-2",
+            );
+
+            expect(serverEmit).not.toHaveBeenCalled();
+        });
+
+        it("broadcasts presence:update offline only when the last socket leaves", async () => {
+            const first = await connectUser(
+                "user-a",
+                conversationWith(["user-a", "user-b"]),
+                "sock-1",
+            );
+            const second = await connectUser(
+                "user-a",
+                conversationWith(["user-a", "user-b"]),
+                "sock-2",
+            );
+            serverEmit.mockClear();
+
+            gateway.handleDisconnect(first as any);
+            expect(serverEmit).not.toHaveBeenCalled();
+
+            gateway.handleDisconnect(second as any);
+            expect(serverEmit).toHaveBeenCalledWith("presence:update", {
+                userId: "user-a",
+                online: false,
+            });
+        });
+
+        it("emits no presence:update when the user has no conversation peer", async () => {
+            const socket = await connectUser("user-solo", []);
+
+            expect(serverEmit).not.toHaveBeenCalled();
+
+            gateway.handleDisconnect(socket as any);
+            expect(serverEmit).not.toHaveBeenCalled();
         });
     });
 
@@ -223,13 +331,135 @@ describe("MessagingGateway", () => {
         });
     });
 
+    describe("typing", () => {
+        it("relays typing:start to the other participants of a joined room", async () => {
+            const roomEmit = jest.fn();
+            const socket = makeSocket({
+                userId: "user-1",
+                rooms: new Set(["conversation:conv-1"]),
+                to: jest.fn().mockReturnValue({ emit: roomEmit }),
+            });
+
+            await gateway.handleTypingStart(socket as any, {
+                conversationId: "conv-1",
+            });
+
+            expect(socket.to).toHaveBeenCalledWith("conversation:conv-1");
+            expect(roomEmit).toHaveBeenCalledWith("typing:update", {
+                conversationId: "conv-1",
+                userId: "user-1",
+                typing: true,
+            });
+            expect(mockMessagingService.isParticipant).not.toHaveBeenCalled();
+        });
+
+        it("relays typing:stop with typing=false", async () => {
+            const roomEmit = jest.fn();
+            const socket = makeSocket({
+                userId: "user-1",
+                rooms: new Set(["conversation:conv-1"]),
+                to: jest.fn().mockReturnValue({ emit: roomEmit }),
+            });
+
+            await gateway.handleTypingStop(socket as any, {
+                conversationId: "conv-1",
+            });
+
+            expect(roomEmit).toHaveBeenCalledWith("typing:update", {
+                conversationId: "conv-1",
+                userId: "user-1",
+                typing: false,
+            });
+        });
+
+        it("verifies participation when the socket has not joined the room", async () => {
+            const roomEmit = jest.fn();
+            const socket = makeSocket({
+                userId: "user-1",
+                to: jest.fn().mockReturnValue({ emit: roomEmit }),
+            });
+            mockMessagingService.isParticipant.mockResolvedValue(true);
+
+            await gateway.handleTypingStart(socket as any, {
+                conversationId: "conv-9",
+            });
+
+            expect(mockMessagingService.isParticipant).toHaveBeenCalledWith(
+                "conv-9",
+                "user-1",
+            );
+            expect(roomEmit).toHaveBeenCalledWith(
+                "typing:update",
+                expect.objectContaining({ typing: true }),
+            );
+        });
+
+        it("rejects typing from a non-participant", async () => {
+            const socket = makeSocket({ userId: "user-1" });
+            mockMessagingService.isParticipant.mockResolvedValue(false);
+
+            await expect(
+                gateway.handleTypingStart(socket as any, {
+                    conversationId: "conv-9",
+                }),
+            ).rejects.toThrow(WsException);
+        });
+
+        it("rejects typing from an unauthenticated socket", async () => {
+            const socket = makeSocket();
+
+            await expect(
+                gateway.handleTypingStop(socket as any, {
+                    conversationId: "conv-1",
+                }),
+            ).rejects.toThrow(WsException);
+        });
+
+        it("rejects typing without a conversationId", async () => {
+            const socket = makeSocket({ userId: "user-1" });
+
+            await expect(
+                gateway.handleTypingStart(socket as any, {} as any),
+            ).rejects.toThrow(WsException);
+        });
+    });
+
+    describe("sendNotification", () => {
+        it("emits a notification to the user room of every recipient", () => {
+            gateway.sendNotification(["u1", "u2"], "booking.created", {
+                bookingId: "b1",
+            });
+
+            expect(serverTo).toHaveBeenCalledWith(["user:u1", "user:u2"]);
+            expect(serverEmit).toHaveBeenCalledWith("notification", {
+                type: "booking.created",
+                payload: { bookingId: "b1" },
+            });
+        });
+
+        it("deduplicates recipients and drops empty ids", () => {
+            gateway.sendNotification(["u1", "u1", ""], "points.settled", {
+                amount: 3,
+            });
+
+            expect(serverTo).toHaveBeenCalledWith(["user:u1"]);
+        });
+
+        it("does nothing without recipients", () => {
+            gateway.sendNotification([], "points.settled", {});
+
+            expect(serverTo).not.toHaveBeenCalled();
+        });
+    });
+
     describe("emitToConversation", () => {
         it("emits an event to the conversation room", () => {
-            const emitFn = jest.fn();
-            (gateway as any).server.to.mockReturnValue({ emit: emitFn });
-
             gateway.emitToConversation("conv-1", "new_message", { text: "hi" });
-            expect(emitFn).toHaveBeenCalledWith("new_message", { text: "hi" });
+
+            expect(serverTo).toHaveBeenCalledWith("conversation:conv-1");
+            expect(serverEmit).toHaveBeenCalledWith("new_message", {
+                text: "hi",
+            });
         });
     });
 });
