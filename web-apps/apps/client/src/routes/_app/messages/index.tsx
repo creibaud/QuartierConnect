@@ -51,10 +51,18 @@ import {
 import { cn } from "@workspace/ui/lib/utils";
 import type { TFunction } from "i18next";
 import { toast } from "sonner";
+import { PresenceBadge } from "@/features/realtime/presence-badge";
+import {
+    useRealtime,
+    useTypingUserIds,
+} from "@/features/realtime/realtime-context";
+import { useTypingEmitter } from "@/features/realtime/use-typing-emitter";
 
 export const Route = createFileRoute("/_app/messages/")({
     component: MessagesPage,
-    validateSearch: (search: Record<string, unknown>): { conversation?: string } => ({
+    validateSearch: (
+        search: Record<string, unknown>,
+    ): { conversation?: string } => ({
         conversation:
             typeof search.conversation === "string"
                 ? search.conversation
@@ -76,6 +84,17 @@ function conversationLabel(
     if (others.length === 0) return t("pages.messages.conversation");
     if (others.length <= 2) return others.join(", ");
     return `${others[0]} +${others.length - 1}`;
+}
+
+function otherParticipantIds(
+    conv: Conversation,
+    currentUserId: string,
+): string[] {
+    const ids =
+        conv.participantsInfo?.map((participant) => participant.id) ??
+        conv.participants ??
+        [];
+    return ids.filter((id) => id !== currentUserId);
 }
 
 function conversationInitials(label: string): string {
@@ -361,6 +380,7 @@ function ConversationThread({
     }, []);
 
     const { sendMessage } = useSocketMessages(conversationId, handleNewMessage);
+    const { notifyTyping, stopTyping } = useTypingEmitter(conversationId);
 
     const allMessages = useMemo<Message[]>(() => {
         const base = fetchedMessages ?? [];
@@ -386,6 +406,7 @@ function ConversationThread({
         const text = inputValue.trim();
         if (!text) return;
         sendMessage(text);
+        stopTyping();
         setInputValue("");
     }
 
@@ -427,7 +448,10 @@ function ConversationThread({
                 <InputGroup>
                     <InputGroupInput
                         value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
+                        onChange={(e) => {
+                            setInputValue(e.target.value);
+                            notifyTyping();
+                        }}
                         placeholder={t("messaging.typePlaceholder")}
                         autoComplete="off"
                     />
@@ -483,6 +507,7 @@ function ConversationList({
 }) {
     const { t, i18n } = useTranslation();
     const { data: conversations, isLoading, isError } = useConversations();
+    const { onlineUserIds, typingUserIdsByConversation } = useRealtime();
 
     const sorted = useMemo(
         () =>
@@ -544,6 +569,13 @@ function ConversationList({
                     currentUserId,
                     isActive,
                 });
+                const isOtherOnline = otherParticipantIds(
+                    conv,
+                    currentUserId,
+                ).some((id) => onlineUserIds.has(id));
+                const isOtherTyping = (
+                    typingUserIdsByConversation[conv._id] ?? []
+                ).some((id) => id !== currentUserId);
                 return (
                     <button
                         key={conv._id}
@@ -557,6 +589,7 @@ function ConversationList({
                             <AvatarFallback>
                                 {conversationInitials(label)}
                             </AvatarFallback>
+                            <PresenceBadge online={isOtherOnline} />
                         </Avatar>
                         <div className="min-w-0 flex-1">
                             <div className="flex items-baseline justify-between gap-2">
@@ -582,11 +615,14 @@ function ConversationList({
                                 <p
                                     className={cn(
                                         "text-muted-foreground min-w-0 flex-1 truncate text-xs",
-                                        unread &&
-                                            "text-foreground font-medium",
+                                        unread && "text-foreground font-medium",
+                                        isOtherTyping &&
+                                            "text-primary font-medium",
                                     )}
                                 >
-                                    {preview ?? "\u00A0"}
+                                    {isOtherTyping
+                                        ? t("realtime.typing")
+                                        : (preview ?? "\u00A0")}
                                 </p>
                                 {unread && (
                                     <span className="bg-primary size-2 shrink-0 rounded-full">
@@ -697,6 +733,8 @@ function MessagesPage() {
     const [newConvOpen, setNewConvOpen] = useState(false);
     const { data: conversations } = useConversations();
     const { readMarkers, markConversationRead } = useConversationReadMarkers();
+    const { onlineUserIds } = useRealtime();
+    const activeTypingUserIds = useTypingUserIds(activeConversationId);
 
     if (!user) return null;
 
@@ -706,6 +744,14 @@ function MessagesPage() {
     const activeLabel = activeConversation
         ? conversationLabel(activeConversation, user.sub, t)
         : t("pages.messages.conversation");
+    const isActiveOtherOnline = activeConversation
+        ? otherParticipantIds(activeConversation, user.sub).some((id) =>
+              onlineUserIds.has(id),
+          )
+        : false;
+    const isActiveOtherTyping = activeTypingUserIds.some(
+        (id) => id !== user.sub,
+    );
 
     function handleSelectConversation(id: string) {
         setActiveConversationId(id);
@@ -794,10 +840,23 @@ function MessagesPage() {
                                         <AvatarFallback>
                                             {conversationInitials(activeLabel)}
                                         </AvatarFallback>
+                                        <PresenceBadge
+                                            online={isActiveOtherOnline}
+                                        />
                                     </Avatar>
-                                    <p className="truncate text-sm font-semibold">
-                                        {activeLabel}
-                                    </p>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-semibold">
+                                            {activeLabel}
+                                        </p>
+                                        <p
+                                            aria-live="polite"
+                                            className="text-primary truncate text-xs empty:hidden"
+                                        >
+                                            {isActiveOtherTyping
+                                                ? t("realtime.typing")
+                                                : null}
+                                        </p>
+                                    </div>
                                 </div>
                                 <ConversationThread
                                     key={activeConversationId}
@@ -819,9 +878,7 @@ function MessagesPage() {
                                     action={
                                         <Button
                                             size="sm"
-                                            onClick={() =>
-                                                setNewConvOpen(true)
-                                            }
+                                            onClick={() => setNewConvOpen(true)}
                                         >
                                             <HugeiconsIcon
                                                 icon={Add01Icon}
