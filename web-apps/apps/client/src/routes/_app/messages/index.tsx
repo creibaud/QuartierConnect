@@ -5,10 +5,11 @@ import {
     Attachment01Icon,
     Download01Icon,
     Message01Icon,
+    Mic01Icon,
     SentIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { skipToken, useQueries } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { apiBlob, apiBlobUrl } from "@workspace/shared/lib/api";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
@@ -48,9 +49,14 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@workspace/ui/components/sheet";
+import { Spinner } from "@workspace/ui/components/spinner";
 import { cn } from "@workspace/ui/lib/utils";
 import type { TFunction } from "i18next";
 import { toast } from "sonner";
+import {
+    formatRecordingDuration,
+    useVoiceRecorder,
+} from "@/features/messages/use-voice-recorder";
 import { PresenceBadge } from "@/features/realtime/presence-badge";
 import {
     useRealtime,
@@ -124,9 +130,11 @@ function messagePreview(
     const body =
         message.type === "image"
             ? t("pages.messages.previewImage")
-            : message.type === "file"
-              ? (message.fileName ?? t("pages.messages.previewFile"))
-              : (message.content ?? "");
+            : message.type === "audio"
+              ? t("pages.messages.previewAudio")
+              : message.type === "file"
+                ? (message.fileName ?? t("pages.messages.previewFile"))
+                : (message.content ?? "");
     return message.senderId === currentUserId
         ? t("pages.messages.previewFromYou", { preview: body })
         : body;
@@ -205,25 +213,44 @@ function useConversationReadMarkers() {
 function useNewestCachedMessages(
     conversationIds: string[],
 ): Map<string, Message | undefined> {
-    const results = useQueries({
-        queries: conversationIds.map((id) => ({
-            queryKey: ["messages", id, 1],
-            queryFn: skipToken,
-        })),
-    });
+    const queryClient = useQueryClient();
+    const [cacheVersion, setCacheVersion] = useState(0);
+
+    useEffect(() => {
+        let disposed = false;
+        let refreshScheduled = false;
+        const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+            if (event.type !== "updated") return;
+            if (event.query.queryKey[0] !== "messages") return;
+            if (refreshScheduled) return;
+            refreshScheduled = true;
+            queueMicrotask(() => {
+                refreshScheduled = false;
+                if (!disposed) setCacheVersion((version) => version + 1);
+            });
+        });
+        return () => {
+            disposed = true;
+            unsubscribe();
+        };
+    }, [queryClient]);
 
     return useMemo(() => {
         const newestById = new Map<string, Message | undefined>();
-        conversationIds.forEach((id, index) => {
-            const messages = results[index]?.data as Message[] | undefined;
+        conversationIds.forEach((id) => {
+            const messages = queryClient.getQueryData<Message[]>([
+                "messages",
+                id,
+                1,
+            ]);
             newestById.set(id, messages?.[0]);
         });
         return newestById;
-    }, [conversationIds, results]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- cacheVersion re-reads the query cache
+    }, [conversationIds, queryClient, cacheVersion]);
 }
 
-function AuthedImage({ fileId, alt }: { fileId: string; alt: string }) {
-    const { t } = useTranslation();
+function useAuthedFileUrl(fileId: string): string | null {
     const [url, setUrl] = useState<string | null>(null);
 
     useEffect(() => {
@@ -239,13 +266,20 @@ function AuthedImage({ fileId, alt }: { fileId: string; alt: string }) {
                 setUrl(created);
             })
             .catch(() => {
-                // image failed to load — leave placeholder
+                // file failed to load — leave placeholder
             });
         return () => {
             cancelled = true;
             if (objectUrl) URL.revokeObjectURL(objectUrl);
         };
     }, [fileId]);
+
+    return url;
+}
+
+function AuthedImage({ fileId, alt }: { fileId: string; alt: string }) {
+    const { t } = useTranslation();
+    const url = useAuthedFileUrl(fileId);
 
     if (!url) {
         return (
@@ -260,6 +294,29 @@ function AuthedImage({ fileId, alt }: { fileId: string; alt: string }) {
             src={url}
             alt={alt}
             className="max-h-64 max-w-full rounded-lg object-cover"
+        />
+    );
+}
+
+function AuthedAudio({ fileId }: { fileId: string }) {
+    const { t } = useTranslation();
+    const url = useAuthedFileUrl(fileId);
+
+    if (!url) {
+        return (
+            <div className="text-muted-foreground w-60 py-2 text-center text-xs">
+                {t("common.loading")}
+            </div>
+        );
+    }
+
+    return (
+        <audio
+            controls
+            preload="metadata"
+            src={url}
+            aria-label={t("messaging.voiceMessage")}
+            className="h-10 w-60 max-w-full"
         />
     );
 }
@@ -319,6 +376,7 @@ function MessageBubble({
     });
 
     const isImage = message.type === "image" && !!message.fileId;
+    const isAudio = message.type === "audio" && !!message.fileId;
     const isFile = message.type === "file" && !!message.fileId;
 
     return (
@@ -341,6 +399,8 @@ function MessageBubble({
                         fileId={message.fileId!}
                         alt={message.fileName ?? t("messaging.imageAlt")}
                     />
+                ) : isAudio ? (
+                    <AuthedAudio fileId={message.fileId!} />
                 ) : isFile ? (
                     <FileAttachment message={message} />
                 ) : (
@@ -371,6 +431,17 @@ function ConversationThread({
 
     const { data: fetchedMessages, isLoading } = useMessages(conversationId);
     const sendFile = useSendFileMessage(conversationId);
+
+    const recorder = useVoiceRecorder({
+        onRecordingComplete: (file) =>
+            sendFile.mutate(file, {
+                onError: () => toast.error(t("messaging.uploadError")),
+            }),
+        onPermissionDenied: () =>
+            toast.error(t("messaging.micPermissionDenied")),
+        onRecordingUnsupported: () =>
+            toast.error(t("messaging.recordingUnsupported")),
+    });
 
     const handleNewMessage = useCallback((msg: Message) => {
         setLocalMessages((prev) => {
@@ -445,44 +516,91 @@ function ConversationThread({
             </ScrollArea>
 
             <form onSubmit={handleSend} className="border-border border-t p-4">
-                <InputGroup>
-                    <InputGroupInput
-                        value={inputValue}
-                        onChange={(e) => {
-                            setInputValue(e.target.value);
-                            notifyTyping();
-                        }}
-                        placeholder={t("messaging.typePlaceholder")}
-                        autoComplete="off"
-                    />
-                    <InputGroupAddon align="inline-start">
-                        <InputGroupButton
+                {recorder.isRecording ? (
+                    <div className="border-input flex h-11 items-center gap-3 rounded-xl border px-3">
+                        <span className="relative flex size-2.5 shrink-0">
+                            <span className="bg-destructive absolute inline-flex size-full animate-ping rounded-full opacity-75" />
+                            <span className="bg-destructive relative inline-flex size-2.5 rounded-full" />
+                        </span>
+                        <span
+                            aria-live="polite"
+                            className="flex-1 text-sm tabular-nums"
+                        >
+                            <span className="sr-only">
+                                {t("messaging.recording")}{" "}
+                            </span>
+                            {formatRecordingDuration(recorder.elapsedMs)}
+                        </span>
+                        <Button
                             type="button"
                             variant="ghost"
-                            size="icon-sm"
-                            disabled={sendFile.isPending}
-                            onClick={() => fileInputRef.current?.click()}
+                            size="sm"
+                            onClick={recorder.cancel}
                         >
-                            <HugeiconsIcon icon={Attachment01Icon} />
-                            <span className="sr-only">
-                                {t("messaging.attachFile")}
-                            </span>
-                        </InputGroupButton>
-                    </InputGroupAddon>
-                    <InputGroupAddon align="inline-end">
-                        <InputGroupButton
-                            type="submit"
-                            variant="default"
-                            size="icon-sm"
-                            disabled={!inputValue.trim()}
+                            {t("common.cancel")}
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            onClick={recorder.stopAndSend}
                         >
-                            <HugeiconsIcon icon={SentIcon} />
-                            <span className="sr-only">
-                                {t("pages.messages.send")}
-                            </span>
-                        </InputGroupButton>
-                    </InputGroupAddon>
-                </InputGroup>
+                            <HugeiconsIcon icon={SentIcon} size={14} />
+                            {t("pages.messages.send")}
+                        </Button>
+                    </div>
+                ) : (
+                    <InputGroup>
+                        <InputGroupInput
+                            value={inputValue}
+                            onChange={(e) => {
+                                setInputValue(e.target.value);
+                                notifyTyping();
+                            }}
+                            placeholder={t("messaging.typePlaceholder")}
+                            autoComplete="off"
+                        />
+                        <InputGroupAddon align="inline-start">
+                            <InputGroupButton
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                disabled={sendFile.isPending}
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                <HugeiconsIcon icon={Attachment01Icon} />
+                                <span className="sr-only">
+                                    {t("messaging.attachFile")}
+                                </span>
+                            </InputGroupButton>
+                        </InputGroupAddon>
+                        <InputGroupAddon align="inline-end">
+                            {sendFile.isPending && <Spinner />}
+                            <InputGroupButton
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                disabled={sendFile.isPending}
+                                onClick={() => void recorder.start()}
+                            >
+                                <HugeiconsIcon icon={Mic01Icon} />
+                                <span className="sr-only">
+                                    {t("messaging.recordVoice")}
+                                </span>
+                            </InputGroupButton>
+                            <InputGroupButton
+                                type="submit"
+                                variant="default"
+                                size="icon-sm"
+                                disabled={!inputValue.trim()}
+                            >
+                                <HugeiconsIcon icon={SentIcon} />
+                                <span className="sr-only">
+                                    {t("pages.messages.send")}
+                                </span>
+                            </InputGroupButton>
+                        </InputGroupAddon>
+                    </InputGroup>
+                )}
                 <input
                     ref={fileInputRef}
                     type="file"

@@ -160,7 +160,7 @@ export interface Message {
     _id: string;
     conversationId: string;
     senderId: string;
-    type: "text" | "file" | "image";
+    type: "text" | "file" | "image" | "audio";
     content: string | null;
     fileId: string | null;
     fileName: string | null;
