@@ -490,22 +490,12 @@ export function useFitBounds(positions: LatLng[]): RefObject<MapRef | null> {
     return ref;
 }
 
-// ─── DrawControl (stub – admin app consumer; ported library TBD) ───────────
+// ─── DrawControl (terra-draw polygon toolbar; see map-draw.tsx) ─────────────
 
-interface DrawControlProps {
-    mode: "polygon";
-    onCreate?: (geometry: GeoJSON.Polygon) => void;
-    onEdit?: (geometry: GeoJSON.Polygon) => void;
-    onDelete?: () => void;
-}
-
-/**
- * Stub. The Leaflet-draw polygon toolbar has not yet been ported to MapLibre.
- * Admin neighborhood polygon editing is temporarily unavailable.
- */
-export function DrawControl(_props: DrawControlProps) {
-    return null;
-}
+export {
+    DrawControl,
+    type DrawControlProps,
+} from "@workspace/ui/components/map-draw";
 
 // ─── UserLocation (stub – no consumer uses this; kept for import compat) ───
 
