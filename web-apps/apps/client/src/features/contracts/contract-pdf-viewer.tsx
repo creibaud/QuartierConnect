@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -11,14 +11,29 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     import.meta.url,
 ).toString();
 
+const MAX_PAGE_WIDTH = 560;
+const CONTAINER_PADDING = 32;
+
 export function ContractPdfViewer({ contractId }: { contractId: string }) {
     const { t } = useTranslation();
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [containerWidth, setContainerWidth] = useState<number | null>(null);
     const [buffer, setBuffer] = useState<ArrayBuffer | null>(null);
     const [numPages, setNumPages] = useState(0);
     const [error, setError] = useState(false);
     const [loadedContractId, setLoadedContractId] = useState<string | null>(
         null,
     );
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+        const observer = new ResizeObserver(([entry]) => {
+            setContainerWidth(entry.contentRect.width);
+        });
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, []);
 
     // Reset stale results when contractId changes, before the effect
     // fetches the new PDF (see https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes).
@@ -49,34 +64,37 @@ export function ContractPdfViewer({ contractId }: { contractId: string }) {
         [buffer],
     );
 
-    if (error) {
-        return (
-            <div className="text-muted-foreground rounded-md border p-6 text-center text-sm">
-                {t("pages.contractDetail.pdfError")}
-            </div>
-        );
-    }
-    if (!file) {
-        return <Skeleton className="h-[600px] w-full rounded-md" />;
-    }
+    const pageWidth = containerWidth
+        ? Math.min(MAX_PAGE_WIDTH, Math.max(1, containerWidth - CONTAINER_PADDING))
+        : MAX_PAGE_WIDTH;
 
     return (
-        <div className="bg-muted/30 overflow-auto rounded-md border p-4">
-            <Document
-                file={file}
-                onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                onLoadError={() => setError(true)}
-                loading={<Skeleton className="h-[600px] w-full" />}
-            >
-                {Array.from({ length: numPages }).map((_, i) => (
-                    <Page
-                        key={i}
-                        pageNumber={i + 1}
-                        width={560}
-                        className="mx-auto mb-4 shadow"
-                    />
-                ))}
-            </Document>
+        <div ref={containerRef} className="min-w-0">
+            {error ? (
+                <div className="text-muted-foreground rounded-md border p-6 text-center text-sm">
+                    {t("pages.contractDetail.pdfError")}
+                </div>
+            ) : !file ? (
+                <Skeleton className="h-[600px] w-full rounded-md" />
+            ) : (
+                <div className="bg-muted/30 overflow-x-auto rounded-md border p-4">
+                    <Document
+                        file={file}
+                        onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                        onLoadError={() => setError(true)}
+                        loading={<Skeleton className="h-[600px] w-full" />}
+                    >
+                        {Array.from({ length: numPages }).map((_, i) => (
+                            <Page
+                                key={i}
+                                pageNumber={i + 1}
+                                width={pageWidth}
+                                className="mx-auto mb-4 shadow"
+                            />
+                        ))}
+                    </Document>
+                </div>
+            )}
         </div>
     );
 }
