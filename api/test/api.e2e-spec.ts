@@ -175,10 +175,20 @@ describe("API modules (e2e)", () => {
 
     describe("Services", () => {
         let serviceId: string;
+        let otherUserToken: string;
 
-        it("GET /services returns array", async () => {
+        beforeAll(async () => {
+            const otherUser = await registerAndLogin(
+                app,
+                `e2e-other-${Date.now()}@test.fr`,
+            );
+            otherUserToken = otherUser.accessToken;
+        }, 30000);
+
+        it("GET /services returns array for authenticated user", async () => {
             const res = await request(app.getHttpServer())
                 .get("/services")
+                .set("Authorization", `Bearer ${userToken}`)
                 .expect(200);
             expect(Array.isArray(res.body)).toBe(true);
         });
@@ -204,6 +214,8 @@ describe("API modules (e2e)", () => {
                     description: "Garde enfants",
                     category: "childcare",
                     type: "paid",
+                    direction: "offer",
+                    duration: 60,
                 })
                 .expect(201);
 
@@ -228,22 +240,17 @@ describe("API modules (e2e)", () => {
         });
 
         it("PATCH /services/:id returns 403 for non-owner non-admin", async () => {
-            const ts = Date.now();
-            const otherUser = await registerAndLogin(
-                app,
-                `other-${ts}@test.fr`,
-            );
             await request(app.getHttpServer())
                 .patch(`/services/${serviceId}`)
-                .set("Authorization", `Bearer ${otherUser.accessToken}`)
+                .set("Authorization", `Bearer ${otherUserToken}`)
                 .send({ title: "Hacked" })
                 .expect(403);
         });
 
-        it("DELETE /services/:id returns 403 for non-admin", async () => {
+        it("DELETE /services/:id returns 403 for non-owner non-admin", async () => {
             await request(app.getHttpServer())
                 .delete(`/services/${serviceId}`)
-                .set("Authorization", `Bearer ${userToken}`)
+                .set("Authorization", `Bearer ${otherUserToken}`)
                 .expect(403);
         });
 
