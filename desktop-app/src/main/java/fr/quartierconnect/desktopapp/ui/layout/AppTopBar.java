@@ -1,6 +1,7 @@
 package fr.quartierconnect.desktopapp.ui.layout;
 
 import fr.quartierconnect.desktopapp.i18n.I18n;
+import fr.quartierconnect.desktopapp.plugin.PluginEventBus;
 import fr.quartierconnect.desktopapp.plugin.PluginRegistry;
 import fr.quartierconnect.desktopapp.services.ApiService;
 import javafx.application.Platform;
@@ -70,6 +71,19 @@ public class AppTopBar extends HBox {
         breadcrumb.setText(text);
     }
 
+    /**
+     * Updates the connectivity badge instantly whenever ONLINE_STATUS_CHANGED
+     * is published (offline toggle, successful sync). The periodic poll stays
+     * as a safety net for silent network drops.
+     */
+    public void attachEventBus(PluginEventBus eventBus) {
+        eventBus.subscribe(data -> {
+            if (data.event() != PluginEventBus.Event.ONLINE_STATUS_CHANGED) return;
+            if (!(data.payload() instanceof Boolean online)) return;
+            Platform.runLater(() -> applyConnectState(online));
+        });
+    }
+
     public void shutdown() {
         poller.shutdownNow();
     }
@@ -80,7 +94,7 @@ public class AppTopBar extends HBox {
         poller.scheduleAtFixedRate(() -> {
             boolean online = ApiService.isReachable();
             Platform.runLater(() -> applyConnectState(online));
-        }, 0, 30, TimeUnit.SECONDS);
+        }, 0, 10, TimeUnit.SECONDS);
     }
 
     private void applyConnectState(boolean online) {

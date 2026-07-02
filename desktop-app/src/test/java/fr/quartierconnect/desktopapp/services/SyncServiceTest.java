@@ -63,7 +63,35 @@ class SyncServiceTest {
 
     @Test
     void onIncidentsChanged_listenerIsRegistered_doesNotThrow() {
-        assertDoesNotThrow(() -> syncService.setOnIncidentsChanged(() -> {}));
+        assertDoesNotThrow(() -> syncService.setOnIncidentsChanged(receivedCount -> {}));
+    }
+
+    @Test
+    void parseSkippedIds_extractsIdsFromSyncResponse() {
+        String body = "{\"upserted\":1,\"skipped\":2,\"skippedIds\":[\"id-a\",\"id-b\"]}";
+        assertEquals(java.util.Set.of("id-a", "id-b"), SyncService.parseSkippedIds(body));
+    }
+
+    @Test
+    void parseSkippedIds_withoutSkippedIdsField_returnsEmptySet() {
+        assertEquals(java.util.Set.of(), SyncService.parseSkippedIds("{\"upserted\":3,\"skipped\":0}"));
+    }
+
+    @Test
+    void parseSkippedIds_onMalformedBody_returnsEmptySet() {
+        assertEquals(java.util.Set.of(), SyncService.parseSkippedIds("not json"));
+    }
+
+    @Test
+    void parseSkippedIds_onNullOrBlankBody_returnsEmptySet() {
+        assertEquals(java.util.Set.of(), SyncService.parseSkippedIds(null));
+        assertEquals(java.util.Set.of(), SyncService.parseSkippedIds("  "));
+    }
+
+    @Test
+    void parseSkippedIds_ignoresNonTextualEntries() {
+        String body = "{\"skippedIds\":[\"id-a\",42,null]}";
+        assertEquals(java.util.Set.of("id-a"), SyncService.parseSkippedIds(body));
     }
 
     @Test

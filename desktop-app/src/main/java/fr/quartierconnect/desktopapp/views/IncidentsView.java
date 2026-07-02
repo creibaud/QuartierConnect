@@ -56,7 +56,6 @@ public class IncidentsView {
     private List<IncidentRepository.Incident> allIncidents = List.of();
     private final TableView<IncidentRepository.Incident> table = new TableView<>();
     private final Label footerInfo = new Label("—");
-    private Runnable onLocalChange;
 
     public IncidentsView(AppModal appModal, ToastManager toast, SyncService syncService) {
         this.appModal    = appModal;
@@ -66,12 +65,7 @@ public class IncidentsView {
         refresh();
     }
 
-    public void setOnLocalChange(Runnable callback) { this.onLocalChange = callback; }
     public VBox getRoot() { return root; }
-
-    private void notifyLocalChange() {
-        if (onLocalChange != null) onLocalChange.run();
-    }
 
     // ── Refresh ──────────────────────────────────────────────────────────────
 
@@ -185,7 +179,6 @@ public class IncidentsView {
             try {
                 SQLiteDatabase.insertDemoConflicts();
                 refresh();
-                notifyLocalChange();
                 toast.showSuccess(I18n.get("incidents.demoConflictsInserted"));
             } catch (Exception ex) {
                 toast.showError(I18n.get("incidents.error", ex.getMessage()));
@@ -540,18 +533,40 @@ public class IncidentsView {
         new Thread(() -> {
             try {
                 repo.updateStatusLocally(incident.localId(), newStatus);
-                Platform.runLater(() -> { refresh(); notifyLocalChange(); toast.showSuccess(I18n.get("incidents.statusUpdated")); });
             } catch (Exception ex) {
                 Platform.runLater(() -> toast.showError(I18n.get("incidents.statusFailed", ex.getMessage())));
                 return;
             }
-            if (incident.remoteId() != null) {
-                try {
-                    ApiService.patch("/incidents/" + incident.remoteId(),
-                        "{\"status\": \"" + newStatus + "\"}", AuthService.getInstance().getAccessToken());
-                } catch (Exception ignored) {}
-            }
+            Platform.runLater(this::refresh);
+            pushStatusChange(incident, newStatus);
         }, "incident-status").start();
+    }
+
+    private void pushStatusChange(IncidentRepository.Incident incident, String newStatus) {
+        if (incident.remoteId() == null || incident.remoteId().isBlank()) {
+            Platform.runLater(() -> toast.showInfo(I18n.get("incidents.statusSavedLocally")));
+            return;
+        }
+        try {
+            ApiService.patch("/incidents/" + incident.remoteId() + "/status",
+                "{\"status\": \"" + newStatus + "\"}", AuthService.getInstance().getAccessToken());
+            Platform.runLater(() -> toast.showSuccess(I18n.get("incidents.statusUpdated")));
+        } catch (Exception ex) {
+            Platform.runLater(() -> showStatusPushFailure(ex));
+        }
+    }
+
+    private void showStatusPushFailure(Exception failure) {
+        if (isStateMachineRejection(failure)) {
+            toast.showError(I18n.get("incidents.statusRejected"));
+        } else {
+            toast.showInfo(I18n.get("incidents.statusSavedLocally"));
+        }
+    }
+
+    private static boolean isStateMachineRejection(Exception failure) {
+        return failure.getMessage() != null
+                && failure.getMessage().equals(I18n.get("common.apiError", 400));
     }
 
     private void deleteIncident(IncidentRepository.Incident incident) {
@@ -565,7 +580,7 @@ public class IncidentsView {
             }
             try {
                 repo.deleteByLocalId(incident.localId());
-                Platform.runLater(() -> { refresh(); notifyLocalChange(); toast.showSuccess(I18n.get("incidents.deleted")); });
+                Platform.runLater(() -> { refresh(); toast.showSuccess(I18n.get("incidents.deleted")); });
             } catch (Exception ex) {
                 Platform.runLater(() -> toast.showError(I18n.get("incidents.error", ex.getMessage())));
             }
@@ -576,7 +591,6 @@ public class IncidentsView {
         try {
             repo.resolveConflict(localId, acceptRemote);
             refresh();
-            notifyLocalChange();
             toast.showSuccess(acceptRemote ? I18n.get("incidents.conflict.acceptedRemote") : I18n.get("incidents.conflict.keptLocal"));
         } catch (SQLException e) {
             toast.showError(I18n.get("incidents.conflict.resolveError"));
@@ -632,7 +646,7 @@ public class IncidentsView {
             }
             try {
                 repo.insertDirty(t, descField.getText().trim());
-                appModal.hide(); refresh(); notifyLocalChange();
+                appModal.hide(); refresh();
                 toast.showSuccess(I18n.get("incidents.created"));
             } catch (SQLException ex) {
                 errorMsg.setText(I18n.get("incidents.form.retryError"));
@@ -906,7 +920,7 @@ public class IncidentsView {
                 try {
                     repo.updateLocally(item.localId(), t, descField.getText().trim(), item.status());
                     Platform.runLater(() -> {
-                        refresh(); notifyLocalChange();
+                        refresh();
                         toast.showSuccess(I18n.get("incidents.detail.saved")); appModal.hide();
                     });
                 } catch (Exception ex) {
