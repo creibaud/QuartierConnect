@@ -19,6 +19,7 @@ describe("UsersController", () => {
             select: jest.fn().mockReturnThis(),
             from: jest.fn().mockReturnThis(),
             offset: jest.fn().mockReturnThis(),
+            orderBy: jest.fn().mockReturnThis(),
             limit: jest.fn().mockResolvedValue([mockUser]),
             update: jest.fn().mockReturnThis(),
             set: jest.fn().mockReturnThis(),
@@ -77,5 +78,34 @@ describe("UsersController", () => {
         const result = await controller.searchByEmail("  b  ", authReq());
         expect(result).toEqual([]);
         expect(mockDb.where).not.toHaveBeenCalled();
+    });
+
+    const neighborReq = (
+        neighborhoodId: string | null = "nb-1",
+    ): { user: { sub: string; neighborhoodId: string | null } } => ({
+        user: { sub: "user-uuid-1", neighborhoodId },
+    });
+
+    it("GET /users/neighbors returns empty list when caller has no neighborhood", async () => {
+        const result = await controller.findNeighbors("", neighborReq(null));
+        expect(result).toEqual([]);
+        expect(mockDb.select).not.toHaveBeenCalled();
+    });
+
+    it("GET /users/neighbors maps rows to id and display name capped at 20", async () => {
+        mockDb.limit.mockResolvedValue([
+            { id: "user-uuid-2", firstName: "Bob", lastName: "Durand" },
+        ]);
+        const result = await controller.findNeighbors("", neighborReq());
+        expect(result).toEqual([{ id: "user-uuid-2", name: "Bob Durand" }]);
+        expect(mockDb.limit).toHaveBeenCalledWith(20);
+    });
+
+    it("GET /users/neighbors falls back to a generic name when names are missing", async () => {
+        mockDb.limit.mockResolvedValue([
+            { id: "user-uuid-3", firstName: null, lastName: null },
+        ]);
+        const result = await controller.findNeighbors("bob", neighborReq());
+        expect(result).toEqual([{ id: "user-uuid-3", name: "Voisin" }]);
     });
 });
