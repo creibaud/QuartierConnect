@@ -434,7 +434,17 @@ describe("ContractsService", () => {
             expect(
                 mockPointsService.completeServicePayment,
             ).not.toHaveBeenCalled();
-            expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+            expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+                "contract.signed",
+                expect.objectContaining({
+                    contractId: "ct-1",
+                    signerId: "user-1",
+                }),
+            );
+            expect(mockEventEmitter.emit).not.toHaveBeenCalledWith(
+                "contract.fully_signed",
+                expect.anything(),
+            );
         });
 
         it("throws BadRequestException when the contract is cancelled", async () => {
@@ -483,7 +493,84 @@ describe("ContractsService", () => {
             expect(contract.status).toBe(ContractStatus.FULLY_SIGNED);
             expect(mockEventEmitter.emit).toHaveBeenCalledWith(
                 "contract.fully_signed",
-                { contractId: "ct-1", bookingId: "booking-1" },
+                expect.objectContaining({
+                    contractId: "ct-1",
+                    bookingId: "booking-1",
+                    signatories: ["user-1"],
+                }),
+            );
+        });
+
+        it("emits contract.signed with the signer identity and the counterpart signatories", async () => {
+            const contract = {
+                ...mockContractDoc,
+                signatories: ["user-1", "user-2"],
+                signatures: [],
+                pointsAmount: 12,
+                save: jest.fn().mockResolvedValue({}),
+            };
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(contract),
+            });
+            mockDb.select.mockReturnValue({
+                from: jest.fn().mockReturnThis(),
+                where: jest.fn().mockReturnThis(),
+                limit: jest.fn().mockResolvedValue([
+                    {
+                        totpSecret: "SECRET",
+                        firstName: "Alice",
+                        lastName: "Martin",
+                        email: "alice@demo.fr",
+                    },
+                ]),
+            });
+            mockTotpService.verify.mockReturnValue(true);
+
+            await service.sign("ct-1", "user-1", "123456");
+
+            expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+                "contract.signed",
+                {
+                    contractId: "ct-1",
+                    signerId: "user-1",
+                    signatories: ["user-1", "user-2"],
+                    bookingId: undefined,
+                    serviceTitle: "Test Contract",
+                    amount: 12,
+                    actorName: "Alice Martin",
+                },
+            );
+        });
+
+        it("falls back to the signer email as actorName when no name is set", async () => {
+            const contract = {
+                ...mockContractDoc,
+                signatories: ["user-1", "user-2"],
+                signatures: [],
+                save: jest.fn().mockResolvedValue({}),
+            };
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(contract),
+            });
+            mockDb.select.mockReturnValue({
+                from: jest.fn().mockReturnThis(),
+                where: jest.fn().mockReturnThis(),
+                limit: jest.fn().mockResolvedValue([
+                    {
+                        totpSecret: "SECRET",
+                        firstName: null,
+                        lastName: null,
+                        email: "alice@demo.fr",
+                    },
+                ]),
+            });
+            mockTotpService.verify.mockReturnValue(true);
+
+            await service.sign("ct-1", "user-1", "123456");
+
+            expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+                "contract.signed",
+                expect.objectContaining({ actorName: "alice@demo.fr" }),
             );
         });
 
@@ -511,7 +598,14 @@ describe("ContractsService", () => {
             expect(
                 mockPointsService.completeServicePayment,
             ).not.toHaveBeenCalled();
-            expect(mockEventEmitter.emit).not.toHaveBeenCalled();
+            expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+                "contract.signed",
+                expect.objectContaining({ signerId: "user-1" }),
+            );
+            expect(mockEventEmitter.emit).not.toHaveBeenCalledWith(
+                "contract.fully_signed",
+                expect.anything(),
+            );
         });
 
         it("does not persist the signature when settlement fails on the final signer", async () => {

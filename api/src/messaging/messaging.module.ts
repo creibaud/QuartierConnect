@@ -7,6 +7,7 @@ import { DrizzleModule } from "../database/drizzle.module";
 import { MessagingController } from "./messaging.controller";
 import { MessagingGateway } from "./messaging.gateway";
 import { MessagingService } from "./messaging.service";
+import { NotificationsListener } from "./notifications.listener";
 import {
     Conversation,
     ConversationSchema,
@@ -30,7 +31,7 @@ import { Message, MessageSchema } from "./schemas/message.schema";
         DrizzleModule,
     ],
     controllers: [MessagingController],
-    providers: [MessagingService, MessagingGateway],
+    providers: [MessagingService, MessagingGateway, NotificationsListener],
     exports: [MessagingService],
 })
 export class MessagingModule {}

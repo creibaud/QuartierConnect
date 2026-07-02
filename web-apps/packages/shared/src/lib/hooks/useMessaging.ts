@@ -1,8 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { io, Socket } from "socket.io-client";
 import { apiGet, apiPost, apiUpload } from "../api";
-import { getAccessToken } from "../auth";
+import { connectRealtimeSocket, getRealtimeSocket } from "../realtime";
 import type { Conversation, Message } from "../types";
 
 export function useConversations() {
@@ -62,40 +61,36 @@ export function useSocketMessages(
     onMessage: (msg: Message) => void,
 ) {
     const queryClient = useQueryClient();
-    const socketRef = useRef<Socket | null>(null);
 
     useEffect(() => {
         if (!conversationId) return;
 
-        const token = getAccessToken();
-        const socket = io("/messaging", {
-            path: "/api/socket.io",
-            auth: { token },
-            transports: ["websocket"],
-        });
-        socketRef.current = socket;
+        const socket = connectRealtimeSocket();
 
-        socket.on("connect", () => {
+        const joinConversation = () => {
             socket.emit("join_conversation", conversationId);
-        });
+        };
 
-        socket.on("new_message", (msg: Message) => {
+        const handleNewMessage = (msg: Message) => {
+            if (msg.conversationId !== conversationId) return;
             onMessage(msg);
             queryClient.invalidateQueries({
                 queryKey: ["messages", conversationId],
             });
-        });
+        };
+
+        if (socket.connected) joinConversation();
+        socket.on("connect", joinConversation);
+        socket.on("new_message", handleNewMessage);
 
         return () => {
-            if (socket.connected) {
-                socket.emit("leave_conversation", conversationId);
-            }
-            socket.disconnect();
+            socket.off("connect", joinConversation);
+            socket.off("new_message", handleNewMessage);
         };
     }, [conversationId, onMessage, queryClient]);
 
     const sendMessage = (content: string) => {
-        socketRef.current?.emit("send_message", { conversationId, content });
+        getRealtimeSocket()?.emit("send_message", { conversationId, content });
     };
 
     return { sendMessage };

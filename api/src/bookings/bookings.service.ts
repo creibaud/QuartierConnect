@@ -4,9 +4,17 @@ import {
     Injectable,
     NotFoundException,
 } from "@nestjs/common";
-import { OnEvent } from "@nestjs/event-emitter";
+import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
+import {
+    BOOKING_ACCEPTED_EVENT,
+    BOOKING_CANCELLED_EVENT,
+    BOOKING_CREATED_EVENT,
+    BOOKING_DECLINED_EVENT,
+    BookingLifecycleEvent,
+    CONTRACT_FULLY_SIGNED_EVENT,
+} from "../common/notification-events";
 import { ContractsService } from "../contracts/contracts.service";
 import { formatFrenchDate, formatPointsAmount } from "../contracts/lib/format";
 import { PointsService } from "../points/points.service";
@@ -28,6 +36,7 @@ export class BookingsService {
         private readonly serviceModel: Model<ServiceDocument>,
         private readonly contractsService: ContractsService,
         private readonly pointsService: PointsService,
+        private readonly eventEmitter: EventEmitter2,
     ) {}
 
     async request(serviceId: string, initiatorId: string) {
@@ -62,7 +71,7 @@ export class BookingsService {
             pointsMultiplier: service.pointsMultiplier,
             override: service.pointsAmount,
         });
-        return this.bookingModel.create({
+        const booking = await this.bookingModel.create({
             serviceId,
             initiatorId,
             payerId,
@@ -70,6 +79,15 @@ export class BookingsService {
             pointsAmount: amount,
             status: BookingStatus.PENDING,
         });
+        this.eventEmitter.emit(BOOKING_CREATED_EVENT, {
+            bookingId: String(booking._id),
+            ownerId: service.createdBy,
+            initiatorId,
+            actorId: initiatorId,
+            serviceTitle: service.title,
+            amount,
+        } satisfies BookingLifecycleEvent);
+        return booking;
     }
 
     async accept(bookingId: string, userId: string) {
@@ -114,6 +132,15 @@ export class BookingsService {
         });
         claimed.contractId = String(contract._id);
         await claimed.save();
+        this.eventEmitter.emit(BOOKING_ACCEPTED_EVENT, {
+            bookingId: String(claimed._id),
+            ownerId: userId,
+            initiatorId: claimed.initiatorId,
+            actorId: userId,
+            serviceTitle: service.title,
+            amount: claimed.pointsAmount,
+            actorName: partyNames[userId],
+        } satisfies BookingLifecycleEvent);
         return claimed;
     }
 
@@ -130,6 +157,14 @@ export class BookingsService {
         }
         booking.status = BookingStatus.DECLINED;
         await booking.save();
+        this.eventEmitter.emit(BOOKING_DECLINED_EVENT, {
+            bookingId: String(booking._id),
+            ownerId: userId,
+            initiatorId: booking.initiatorId,
+            actorId: userId,
+            serviceTitle: service.title,
+            amount: booking.pointsAmount,
+        } satisfies BookingLifecycleEvent);
         return booking;
     }
 
@@ -161,6 +196,14 @@ export class BookingsService {
         }
         booking.status = BookingStatus.CANCELLED;
         await booking.save();
+        this.eventEmitter.emit(BOOKING_CANCELLED_EVENT, {
+            bookingId: String(booking._id),
+            ownerId: service.createdBy,
+            initiatorId: booking.initiatorId,
+            actorId: userId,
+            serviceTitle: service.title,
+            amount: booking.pointsAmount,
+        } satisfies BookingLifecycleEvent);
         return booking;
     }
 
@@ -169,7 +212,7 @@ export class BookingsService {
             .find({ createdBy: userId })
             .select("_id")
             .lean();
-        const ownedIds = owned.map((s) => s._id);
+        const ownedIds = owned.map((s) => String(s._id));
         return this.bookingModel
             .find({
                 $or: [
@@ -191,7 +234,7 @@ export class BookingsService {
         return booking;
     }
 
-    @OnEvent("contract.fully_signed")
+    @OnEvent(CONTRACT_FULLY_SIGNED_EVENT)
     async onContractFullySigned(payload: {
         contractId: string;
         bookingId: string;

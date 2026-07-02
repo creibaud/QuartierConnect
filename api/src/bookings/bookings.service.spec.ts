@@ -22,35 +22,45 @@ function makeService(svc: any) {
     return { findById: jest.fn().mockResolvedValue(svc) };
 }
 
+function makeEmitter() {
+    return { emit: jest.fn() };
+}
+
 describe("BookingsService.request", () => {
     it("rejects booking a non-paid service", async () => {
         const bookingModel: any = {
             findOne: jest.fn().mockResolvedValue(null),
         };
+        const emitter = makeEmitter();
         const svc = new BookingsService(
             bookingModel,
             makeService(paidService({ type: "free" })) as any,
             {} as any,
             {} as any,
+            emitter as any,
         );
         await expect(svc.request("svc1", "initiator")).rejects.toBeInstanceOf(
             BadRequestException,
         );
+        expect(emitter.emit).not.toHaveBeenCalled();
     });
 
     it("rejects the owner booking their own service", async () => {
         const bookingModel: any = {
             findOne: jest.fn().mockResolvedValue(null),
         };
+        const emitter = makeEmitter();
         const svc = new BookingsService(
             bookingModel,
             makeService(paidService()) as any,
             {} as any,
             {} as any,
+            emitter as any,
         );
         await expect(svc.request("svc1", "owner")).rejects.toBeInstanceOf(
             ForbiddenException,
         );
+        expect(emitter.emit).not.toHaveBeenCalled();
     });
 
     it("freezes the derived price and payer=initiator for an offer", async () => {
@@ -69,12 +79,42 @@ describe("BookingsService.request", () => {
             makeService(paidService({ pointsMultiplier: 1.5 })) as any,
             {} as any,
             {} as any,
+            makeEmitter() as any,
         );
         await svc.request("svc1", "initiator");
         expect(created.payerId).toBe("initiator");
         expect(created.payeeId).toBe("owner");
         expect(created.pointsAmount).toBe(3); // ceil(base(60)=2 * 1.5)
         expect(created.status).toBe(BookingStatus.PENDING);
+    });
+
+    it("emits booking.created after persisting the booking", async () => {
+        const bookingModel: any = {
+            findOne: jest.fn().mockResolvedValue(null),
+            create: jest
+                .fn()
+                .mockImplementation((doc: Record<string, unknown>) => ({
+                    ...doc,
+                    _id: "b1",
+                })),
+        };
+        const emitter = makeEmitter();
+        const svc = new BookingsService(
+            bookingModel,
+            makeService(paidService()) as any,
+            {} as any,
+            {} as any,
+            emitter as any,
+        );
+        await svc.request("svc1", "initiator");
+        expect(emitter.emit).toHaveBeenCalledWith("booking.created", {
+            bookingId: "b1",
+            ownerId: "owner",
+            initiatorId: "initiator",
+            actorId: "initiator",
+            serviceTitle: "Gardening",
+            amount: 2,
+        });
     });
 });
 
@@ -84,6 +124,7 @@ describe("BookingsService.accept", () => {
             _id: "b1",
             serviceId: "svc1",
             status: BookingStatus.ACCEPTED,
+            initiatorId: "initiator",
             payerId: "initiator",
             payeeId: "owner",
             pointsAmount: 3,
@@ -107,11 +148,13 @@ describe("BookingsService.accept", () => {
         const points: any = {
             reserveServicePayment: jest.fn().mockResolvedValue(undefined),
         };
+        const emitter = makeEmitter();
         const svc = new BookingsService(
             bookingModel,
             makeService(paidService()) as any,
             contracts,
             points,
+            emitter as any,
         );
         await svc.accept("b1", "owner");
         expect(contracts.resolveNames).toHaveBeenCalledWith([
@@ -139,6 +182,15 @@ describe("BookingsService.accept", () => {
         );
         expect(claimed.status).toBe(BookingStatus.ACCEPTED);
         expect(claimed.contractId).toBe("c1");
+        expect(emitter.emit).toHaveBeenCalledWith("booking.accepted", {
+            bookingId: "b1",
+            ownerId: "owner",
+            initiatorId: "initiator",
+            actorId: "owner",
+            serviceTitle: "Gardening",
+            amount: 3,
+            actorName: "Bob Dupont",
+        });
     });
 
     it("rejects accept by a non-owner without claiming the booking", async () => {
@@ -155,6 +207,7 @@ describe("BookingsService.accept", () => {
             makeService(paidService()) as any,
             {} as any,
             {} as any,
+            makeEmitter() as any,
         );
         await expect(svc.accept("b1", "stranger")).rejects.toBeInstanceOf(
             ForbiddenException,
@@ -177,39 +230,55 @@ describe("BookingsService.accept", () => {
         const points: any = {
             reserveServicePayment: jest.fn(),
         };
+        const emitter = makeEmitter();
         const svc = new BookingsService(
             bookingModel,
             makeService(paidService()) as any,
             contracts,
             points,
+            emitter as any,
         );
         await expect(svc.accept("b1", "owner")).rejects.toBeInstanceOf(
             BadRequestException,
         );
         expect(contracts.createServiceContract).not.toHaveBeenCalled();
         expect(points.reserveServicePayment).not.toHaveBeenCalled();
+        expect(emitter.emit).not.toHaveBeenCalled();
     });
 });
 
 describe("BookingsService.decline", () => {
-    it("declines a pending booking as the owner", async () => {
+    it("declines a pending booking as the owner and notifies the initiator", async () => {
         const booking: any = {
+            _id: "b1",
             serviceId: "svc1",
+            initiatorId: "initiator",
+            pointsAmount: 2,
             status: BookingStatus.PENDING,
             save: jest.fn().mockResolvedValue(undefined),
         };
         const bookingModel: any = {
             findById: jest.fn().mockResolvedValue(booking),
         };
+        const emitter = makeEmitter();
         const svc = new BookingsService(
             bookingModel,
             makeService(paidService()) as any,
             {} as any,
             {} as any,
+            emitter as any,
         );
         await svc.decline("b1", "owner");
         expect(booking.status).toBe(BookingStatus.DECLINED);
         expect(booking.save).toHaveBeenCalled();
+        expect(emitter.emit).toHaveBeenCalledWith("booking.declined", {
+            bookingId: "b1",
+            ownerId: "owner",
+            initiatorId: "initiator",
+            actorId: "owner",
+            serviceTitle: "Gardening",
+            amount: 2,
+        });
     });
 
     it("rejects decline by a non-owner", async () => {
@@ -221,16 +290,19 @@ describe("BookingsService.decline", () => {
         const bookingModel: any = {
             findById: jest.fn().mockResolvedValue(booking),
         };
+        const emitter = makeEmitter();
         const svc = new BookingsService(
             bookingModel,
             makeService(paidService()) as any,
             {} as any,
             {} as any,
+            emitter as any,
         );
         await expect(svc.decline("b1", "stranger")).rejects.toBeInstanceOf(
             ForbiddenException,
         );
         expect(booking.save).not.toHaveBeenCalled();
+        expect(emitter.emit).not.toHaveBeenCalled();
     });
 
     it("rejects declining a booking that is not pending", async () => {
@@ -242,39 +314,54 @@ describe("BookingsService.decline", () => {
         const bookingModel: any = {
             findById: jest.fn().mockResolvedValue(booking),
         };
+        const emitter = makeEmitter();
         const svc = new BookingsService(
             bookingModel,
             makeService(paidService()) as any,
             {} as any,
             {} as any,
+            emitter as any,
         );
         await expect(svc.decline("b1", "owner")).rejects.toBeInstanceOf(
             BadRequestException,
         );
         expect(booking.save).not.toHaveBeenCalled();
+        expect(emitter.emit).not.toHaveBeenCalled();
     });
 });
 
 describe("BookingsService.cancel", () => {
-    it("cancels a pending booking as the initiator", async () => {
+    it("cancels a pending booking as the initiator and notifies the owner", async () => {
         const booking: any = {
+            _id: "b1",
             serviceId: "svc1",
             status: BookingStatus.PENDING,
             initiatorId: "initiator",
+            pointsAmount: 2,
             save: jest.fn().mockResolvedValue(undefined),
         };
         const bookingModel: any = {
             findById: jest.fn().mockResolvedValue(booking),
         };
+        const emitter = makeEmitter();
         const svc = new BookingsService(
             bookingModel,
             makeService(paidService()) as any,
             {} as any,
             {} as any,
+            emitter as any,
         );
         await svc.cancel("b1", "initiator");
         expect(booking.status).toBe(BookingStatus.CANCELLED);
         expect(booking.save).toHaveBeenCalled();
+        expect(emitter.emit).toHaveBeenCalledWith("booking.cancelled", {
+            bookingId: "b1",
+            ownerId: "owner",
+            initiatorId: "initiator",
+            actorId: "initiator",
+            serviceTitle: "Gardening",
+            amount: 2,
+        });
     });
 
     it("rejects cancelling a pending booking as the owner (non-initiator)", async () => {
@@ -287,24 +374,29 @@ describe("BookingsService.cancel", () => {
         const bookingModel: any = {
             findById: jest.fn().mockResolvedValue(booking),
         };
+        const emitter = makeEmitter();
         const svc = new BookingsService(
             bookingModel,
             makeService(paidService()) as any,
             {} as any,
             {} as any,
+            emitter as any,
         );
         await expect(svc.cancel("b1", "owner")).rejects.toBeInstanceOf(
             ForbiddenException,
         );
         expect(booking.save).not.toHaveBeenCalled();
+        expect(emitter.emit).not.toHaveBeenCalled();
     });
 
     it("unwinds contract and payment when cancelling an accepted booking", async () => {
         const booking: any = {
+            _id: "b1",
             serviceId: "svc1",
             status: BookingStatus.ACCEPTED,
             initiatorId: "initiator",
             contractId: "c1",
+            pointsAmount: 2,
             save: jest.fn().mockResolvedValue(undefined),
         };
         const bookingModel: any = {
@@ -316,17 +408,23 @@ describe("BookingsService.cancel", () => {
         const points: any = {
             cancelServicePayment: jest.fn().mockResolvedValue(undefined),
         };
+        const emitter = makeEmitter();
         const svc = new BookingsService(
             bookingModel,
             makeService(paidService()) as any,
             contracts,
             points,
+            emitter as any,
         );
         await svc.cancel("b1", "initiator");
         expect(contracts.cancelContract).toHaveBeenCalledWith("c1");
         expect(points.cancelServicePayment).toHaveBeenCalledWith("c1");
         expect(booking.status).toBe(BookingStatus.CANCELLED);
         expect(booking.save).toHaveBeenCalled();
+        expect(emitter.emit).toHaveBeenCalledWith(
+            "booking.cancelled",
+            expect.objectContaining({ bookingId: "b1", actorId: "initiator" }),
+        );
     });
 
     it.each([
@@ -343,16 +441,19 @@ describe("BookingsService.cancel", () => {
         const bookingModel: any = {
             findById: jest.fn().mockResolvedValue(booking),
         };
+        const emitter = makeEmitter();
         const svc = new BookingsService(
             bookingModel,
             makeService(paidService()) as any,
             {} as any,
             {} as any,
+            emitter as any,
         );
         await expect(svc.cancel("b1", "initiator")).rejects.toBeInstanceOf(
             BadRequestException,
         );
         expect(booking.save).not.toHaveBeenCalled();
+        expect(emitter.emit).not.toHaveBeenCalled();
     });
 });
 
@@ -370,6 +471,7 @@ describe("BookingsService.onContractFullySigned", () => {
             makeService(paidService()) as any,
             {} as any,
             {} as any,
+            makeEmitter() as any,
         );
         await svc.onContractFullySigned({
             contractId: "c1",
@@ -392,6 +494,7 @@ describe("BookingsService.onContractFullySigned", () => {
             makeService(paidService()) as any,
             {} as any,
             {} as any,
+            makeEmitter() as any,
         );
         await svc.onContractFullySigned({
             contractId: "c1",

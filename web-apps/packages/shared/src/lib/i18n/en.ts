@@ -179,6 +179,45 @@ export default {
         uploadError: "Unable to send the file",
         imageAlt: "Attachment",
     },
+    realtime: {
+        typing: "typing…",
+        presence: {
+            online: "Online",
+        },
+        notifications: {
+            fallbackActor: "A neighbor",
+            fallbackService: "a service",
+            bookingCreated: {
+                title: "New booking",
+                body: '{{actorName}} booked "{{serviceTitle}}"',
+            },
+            bookingAccepted: {
+                title: "Booking accepted",
+                body: '{{actorName}} accepted your booking for "{{serviceTitle}}"',
+            },
+            bookingDeclined: {
+                title: "Booking declined",
+                body: '{{actorName}} declined the booking for "{{serviceTitle}}"',
+            },
+            bookingCancelled: {
+                title: "Booking cancelled",
+                body: '{{actorName}} cancelled the booking for "{{serviceTitle}}"',
+            },
+            contractSigned: {
+                title: "Contract signed",
+                body: '{{actorName}} signed the contract for "{{serviceTitle}}"',
+            },
+            contractFullySigned: {
+                title: "Contract fully signed",
+                body: 'All parties signed the contract for "{{serviceTitle}}"',
+            },
+            pointsSettled: {
+                title: "Settlement completed",
+                body: '{{amount}} points settled for "{{serviceTitle}}"',
+                bodyNoAmount: 'The settlement for "{{serviceTitle}}" was completed',
+            },
+        },
+    },
     votes: {
         like: "Like",
         dislike: "Dislike",
