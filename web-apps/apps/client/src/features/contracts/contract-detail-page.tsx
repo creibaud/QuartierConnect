@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import { useContract } from "@workspace/shared/lib/hooks/useContracts";
-import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
     Card,
@@ -13,6 +12,10 @@ import {
 import { DataState } from "@workspace/ui/components/data-state";
 import { PageHeader } from "@workspace/ui/components/page-header";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import {
+    StatusBadge,
+    statusTone,
+} from "@workspace/ui/components/status-badge";
 import { ContractAuditTimeline } from "./contract-audit-timeline";
 import { ContractPdfViewer } from "./contract-pdf-viewer";
 import { SignContractDialog } from "./sign-contract-dialog";
@@ -46,9 +49,11 @@ export function ContractDetailPage({ id }: { id: string }) {
                             description={t("pages.contractDetail.description")}
                             actions={
                                 <div className="flex items-center gap-2">
-                                    <Badge>
+                                    <StatusBadge
+                                        tone={statusTone(contract.status)}
+                                    >
                                         {t(`contracts.status.${contract.status}`)}
-                                    </Badge>
+                                    </StatusBadge>
                                     {canSign && (
                                         <Button onClick={() => setSignOpen(true)}>
                                             {t("contracts.sign")}
