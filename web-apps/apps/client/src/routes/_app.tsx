@@ -10,8 +10,6 @@ import {
 import { useHead } from "@unhead/react";
 import { ensureAuthenticated } from "@workspace/shared/lib/api";
 import { usePointBalance } from "@workspace/shared/lib/hooks/points.hooks";
-import { fetchNeighborhoodStatus } from "@/features/onboarding/hooks/address.hooks";
-import { gateState, type NeighborhoodStatus } from "@/features/onboarding/lib/address-state";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -34,6 +32,12 @@ import {
 } from "@workspace/ui/components/tooltip";
 import { AppSidebar } from "@/components/app-sidebar";
 import { clientNavItems } from "@/components/nav-items";
+import { fetchNeighborhoodStatus } from "@/features/onboarding/hooks/address.hooks";
+import {
+    gateState,
+    type NeighborhoodStatus,
+} from "@/features/onboarding/lib/address-state";
+import { RealtimeProvider } from "@/features/realtime/realtime-provider";
 
 export const Route = createFileRoute("/_app")({
     beforeLoad: async () => {
@@ -53,7 +57,8 @@ export const Route = createFileRoute("/_app")({
                 if (state === "needs-address") {
                     throw redirect({ to: "/onboarding/address" });
                 }
-                if (state === "pending") throw redirect({ to: "/onboarding/pending" });
+                if (state === "pending")
+                    throw redirect({ to: "/onboarding/pending" });
             }
         }
     },
@@ -101,42 +106,44 @@ function AppLayout() {
 
     return (
         <TooltipProvider>
-            <SidebarProvider>
-                <AppSidebar />
-                <SidebarInset className="h-svh overflow-hidden">
-                    <header className="bg-background/75 supports-[backdrop-filter]:bg-background/60 z-20 flex h-16 shrink-0 items-center gap-2 border-b px-4 backdrop-blur">
-                        <SidebarTrigger className="-ml-1" />
-                        <Separator
-                            orientation="vertical"
-                            className="mt-6 mr-1 data-[orientation=vertical]:h-4"
-                        />
-                        <Breadcrumb>
-                            <BreadcrumbList>
-                                <BreadcrumbItem className="hidden md:block">
-                                    <BreadcrumbPage>
-                                        QuartierConnect
-                                    </BreadcrumbPage>
-                                </BreadcrumbItem>
-                                <BreadcrumbSeparator className="hidden md:block" />
-                                <BreadcrumbItem>
-                                    <BreadcrumbPage>
-                                        {sectionTitle}
-                                    </BreadcrumbPage>
-                                </BreadcrumbItem>
-                            </BreadcrumbList>
-                        </Breadcrumb>
-                        <div className="ml-auto flex items-center gap-2">
-                            <HeaderPoints />
-                            {/* Notification bell goes here once the notifications feature ships */}
-                        </div>
-                    </header>
-                    <ScrollArea className="min-h-0 flex-1">
-                        <div className="flex flex-1 flex-col">
-                            <Outlet />
-                        </div>
-                    </ScrollArea>
-                </SidebarInset>
-            </SidebarProvider>
+            <RealtimeProvider>
+                <SidebarProvider>
+                    <AppSidebar />
+                    <SidebarInset className="h-svh overflow-hidden">
+                        <header className="bg-background/75 supports-[backdrop-filter]:bg-background/60 z-20 flex h-16 shrink-0 items-center gap-2 border-b px-4 backdrop-blur">
+                            <SidebarTrigger className="-ml-1" />
+                            <Separator
+                                orientation="vertical"
+                                className="mt-6 mr-1 data-[orientation=vertical]:h-4"
+                            />
+                            <Breadcrumb>
+                                <BreadcrumbList>
+                                    <BreadcrumbItem className="hidden md:block">
+                                        <BreadcrumbPage>
+                                            QuartierConnect
+                                        </BreadcrumbPage>
+                                    </BreadcrumbItem>
+                                    <BreadcrumbSeparator className="hidden md:block" />
+                                    <BreadcrumbItem>
+                                        <BreadcrumbPage>
+                                            {sectionTitle}
+                                        </BreadcrumbPage>
+                                    </BreadcrumbItem>
+                                </BreadcrumbList>
+                            </Breadcrumb>
+                            <div className="ml-auto flex items-center gap-2">
+                                <HeaderPoints />
+                                {/* Notification bell goes here once the notifications feature ships */}
+                            </div>
+                        </header>
+                        <ScrollArea className="min-h-0 flex-1">
+                            <div className="flex flex-1 flex-col">
+                                <Outlet />
+                            </div>
+                        </ScrollArea>
+                    </SidebarInset>
+                </SidebarProvider>
+            </RealtimeProvider>
         </TooltipProvider>
     );
 }

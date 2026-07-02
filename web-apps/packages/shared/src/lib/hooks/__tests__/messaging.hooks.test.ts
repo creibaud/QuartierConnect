@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import * as api from "../../api";
+import { disconnectRealtimeSocket } from "../../realtime";
 import {
     useConversations,
     useCreateConversation,
@@ -16,6 +17,7 @@ import {
 const { mockSocket, mockIo } = vi.hoisted(() => {
     const mockSocket = {
         on: vi.fn(),
+        off: vi.fn(),
         emit: vi.fn(),
         disconnect: vi.fn(),
         connected: true,
@@ -143,6 +145,7 @@ describe("useMessages", () => {
 
 describe("useSocketMessages", () => {
     beforeEach(() => {
+        disconnectRealtimeSocket();
         vi.clearAllMocks();
         // Reset mock socket state
         mockSocket.connected = true;
@@ -157,11 +160,44 @@ describe("useSocketMessages", () => {
 
         expect(mockIo).toHaveBeenCalledWith(
             expect.stringContaining("/messaging"),
-            expect.objectContaining({ auth: { token: "mock-access-token" } }),
+            expect.objectContaining({ auth: expect.any(Function) }),
+        );
+        const [, ioOptions] = mockIo.mock.calls[0] as unknown as [
+            string,
+            { auth: (provideAuth: (data: object) => void) => void },
+        ];
+        const provideAuth = vi.fn();
+        ioOptions.auth(provideAuth);
+        expect(provideAuth).toHaveBeenCalledWith({
+            token: "mock-access-token",
+        });
+    });
+
+    it("reuses a single shared connection across hooks", () => {
+        renderHook(() => useSocketMessages("conv-1", vi.fn()), {
+            wrapper: createWrapper(),
+        });
+        renderHook(() => useSocketMessages("conv-2", vi.fn()), {
+            wrapper: createWrapper(),
+        });
+
+        expect(mockIo).toHaveBeenCalledTimes(1);
+    });
+
+    it("emits join_conversation immediately when already connected", () => {
+        mockSocket.connected = true;
+        renderHook(() => useSocketMessages("conv-1", vi.fn()), {
+            wrapper: createWrapper(),
+        });
+
+        expect(mockSocket.emit).toHaveBeenCalledWith(
+            "join_conversation",
+            "conv-1",
         );
     });
 
     it("emits join_conversation on connect", () => {
+        mockSocket.connected = false;
         const onMessage = vi.fn();
         renderHook(() => useSocketMessages("conv-1", onMessage), {
             wrapper: createWrapper(),
@@ -193,6 +229,20 @@ describe("useSocketMessages", () => {
         expect(onMessage).toHaveBeenCalledWith(mockMessage);
     });
 
+    it("ignores new_message events from other conversations", () => {
+        const onMessage = vi.fn();
+        renderHook(() => useSocketMessages("conv-1", onMessage), {
+            wrapper: createWrapper(),
+        });
+
+        const newMessageHandler = mockSocket.on.mock.calls.find(
+            ([event]) => event === "new_message",
+        )?.[1];
+        newMessageHandler?.({ ...mockMessage, conversationId: "conv-other" });
+
+        expect(onMessage).not.toHaveBeenCalled();
+    });
+
     it("sendMessage emits send_message with content", () => {
         const onMessage = vi.fn();
         const { result } = renderHook(
@@ -210,7 +260,7 @@ describe("useSocketMessages", () => {
         });
     });
 
-    it("emits leave_conversation and disconnects on unmount", () => {
+    it("removes its listeners but keeps the shared socket on unmount", () => {
         const onMessage = vi.fn();
         const { unmount } = renderHook(
             () => useSocketMessages("conv-1", onMessage),
@@ -219,11 +269,15 @@ describe("useSocketMessages", () => {
 
         unmount();
 
-        expect(mockSocket.emit).toHaveBeenCalledWith(
-            "leave_conversation",
-            "conv-1",
+        expect(mockSocket.off).toHaveBeenCalledWith(
+            "new_message",
+            expect.any(Function),
         );
-        expect(mockSocket.disconnect).toHaveBeenCalled();
+        expect(mockSocket.off).toHaveBeenCalledWith(
+            "connect",
+            expect.any(Function),
+        );
+        expect(mockSocket.disconnect).not.toHaveBeenCalled();
     });
 
     it("does not connect when conversationId is empty", () => {
