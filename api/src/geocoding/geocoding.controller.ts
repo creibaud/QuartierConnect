@@ -25,8 +25,20 @@ interface AuthRequest {
     user: { sub: string };
 }
 
-// Half-size of the soft bias box, in degrees (~55 km) around the caller's home.
-const VIEWBOX_HALF_DEG = 0.5;
+// Half-size of the soft bias box, in degrees (~5 km) around the caller's home —
+// roughly their neighborhood, so nearby streets outrank same-named ones in
+// other cities (bias only: farther addresses still appear, ranked lower).
+const VIEWBOX_HALF_DEG = 0.05;
+
+function buildViewbox(lat: number, lng: number): string {
+    const deg = (value: number) => value.toFixed(3);
+    return [
+        deg(lng - VIEWBOX_HALF_DEG),
+        deg(lat - VIEWBOX_HALF_DEG),
+        deg(lng + VIEWBOX_HALF_DEG),
+        deg(lat + VIEWBOX_HALF_DEG),
+    ].join(",");
+}
 
 @ApiTags("Geocoding")
 @ApiBearerAuth()
@@ -43,7 +55,7 @@ export class GeocodingController {
     @ApiOperation({
         summary: "Address autocomplete suggestions (Nominatim proxy)",
         description:
-            "Softly biased toward the caller's home and preferred language; never restricted, so addresses elsewhere are still findable.",
+            "Softly biased toward the caller's neighborhood (~5 km around home) and preferred language; never restricted, so addresses elsewhere are still findable.",
     })
     @ApiQuery({
         name: "q",
@@ -74,7 +86,7 @@ export class GeocodingController {
             .where(eq(schema.users.id, req.user.sub));
         const viewbox =
             me?.lat != null && me?.lng != null
-                ? `${me.lng - VIEWBOX_HALF_DEG},${me.lat - VIEWBOX_HALF_DEG},${me.lng + VIEWBOX_HALF_DEG},${me.lat + VIEWBOX_HALF_DEG}`
+                ? buildViewbox(me.lat, me.lng)
                 : undefined;
 
         return this.geocoding.search(query, { lang, viewbox });

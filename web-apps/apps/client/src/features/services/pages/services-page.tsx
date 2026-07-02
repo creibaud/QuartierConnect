@@ -9,6 +9,7 @@ import {
     useInfiniteServices,
     useUpdateService,
 } from "@workspace/shared/lib/hooks/services.hooks";
+import { computeServicePoints } from "@workspace/shared/lib/pricing";
 import type { Service } from "@workspace/shared/lib/types";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -158,7 +159,7 @@ export function ServicesPage() {
                                         focusedNeighborhood.geometry,
                                     )}
                                     zoom={14}
-                                    className="h-[420px] w-full"
+                                    className="h-[40dvh] min-h-64 w-full md:h-[420px]"
                                 >
                                     <NeighborhoodPolygon
                                         geometry={focusedNeighborhood.geometry}
@@ -211,7 +212,9 @@ export function ServicesPage() {
                                                             {s.title}
                                                         </p>
                                                         <p className="text-muted-foreground text-xs">
-                                                            {s.category}
+                                                            {t(
+                                                                `pages.services.categories.${s.category}`,
+                                                            )}
                                                         </p>
                                                     </div>
                                                 }
@@ -458,7 +461,7 @@ function ServiceFormDialog({
                                 <SelectTrigger className="w-full">
                                     <SelectValue
                                         placeholder={t(
-                                            "pages.services.chooseCategory",
+                                            "pages.services.categoryPlaceholder",
                                         )}
                                     />
                                 </SelectTrigger>
@@ -516,6 +519,20 @@ function ServiceFormDialog({
                                 )}
                                 required
                             />
+                            {typeof duration === "number" &&
+                                duration >= 1 && (
+                                    <p className="text-muted-foreground text-xs">
+                                        {t("pages.services.pointsCost", {
+                                            count: computeServicePoints({
+                                                duration,
+                                                pointsMultiplier:
+                                                    initial?.pointsMultiplier,
+                                                pointsAmount:
+                                                    initial?.pointsAmount,
+                                            }),
+                                        })}
+                                    </p>
+                                )}
                         </div>
                     )}
                     <div className="space-y-2">
@@ -529,6 +546,9 @@ function ServiceFormDialog({
                             onSelect={(s) => { setAddress(s.label); setPicked({ lat: s.lat, lng: s.lng }); }}
                             placeholder={t("pages.services.addressPlaceholder")}
                         />
+                        <p className="text-muted-foreground text-xs">
+                            {t("pages.services.addressMapHint")}
+                        </p>
                         {picked && myLocation?.neighborhood?.geometry &&
                             !pointInPolygon(picked.lat, picked.lng, myLocation.neighborhood.geometry) && (
                                 <p className="text-amber-600 dark:text-amber-500 text-xs">
@@ -551,21 +571,31 @@ function ServiceFormDialog({
                             required
                         />
                     </div>
-                    <div className="flex justify-end gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => onOpenChange(false)}
-                        >
-                            {t("common.cancel")}
-                        </Button>
-                        <Button type="submit" disabled={isPending || !isValid}>
-                            {isPending
-                                ? "…"
-                                : initial
-                                  ? t("common.save")
-                                  : t("common.create")}
-                        </Button>
+                    <div className="flex flex-col items-end gap-1.5">
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => onOpenChange(false)}
+                            >
+                                {t("common.cancel")}
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={isPending || !isValid}
+                            >
+                                {isPending
+                                    ? "…"
+                                    : initial
+                                      ? t("common.save")
+                                      : t("common.create")}
+                            </Button>
+                        </div>
+                        {!isValid && (
+                            <p className="text-muted-foreground text-xs">
+                                {t("pages.services.requiredFieldsHint")}
+                            </p>
+                        )}
                     </div>
                 </form>
             </DialogContent>

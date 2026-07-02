@@ -100,9 +100,9 @@ function RecommendationsPage() {
                                 to={TYPE_ROUTES[recommendation.type]}
                                 className="focus-visible:ring-ring block rounded-xl focus-visible:ring-2 focus-visible:outline-none"
                             >
-                                <Card className="hover:border-primary/40 transition-colors">
-                                    <CardContent className="flex items-center gap-4 p-5">
-                                        <div className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-xl">
+                                <Card className="hover:ring-primary/40 py-0 transition-shadow">
+                                    <CardContent className="flex items-start gap-3 p-4">
+                                        <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-xl">
                                             <HugeiconsIcon
                                                 icon={
                                                     TYPE_ICON[
@@ -138,7 +138,7 @@ function RecommendationsPage() {
                                         </div>
                                         <HugeiconsIcon
                                             icon={ArrowRight01Icon}
-                                            className="text-muted-foreground size-5 shrink-0"
+                                            className="text-muted-foreground size-5 shrink-0 self-center"
                                         />
                                     </CardContent>
                                 </Card>

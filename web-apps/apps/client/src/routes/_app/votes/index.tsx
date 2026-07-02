@@ -68,6 +68,23 @@ interface CommunityVote {
     casts: Array<{ userId: string; choices: string[] }>;
 }
 
+interface VoteTotals {
+    totals: Record<string, number>;
+    totalParticipants: number;
+}
+
+function computeVoteTotals(vote: CommunityVote): VoteTotals {
+    const totals: Record<string, number> = Object.fromEntries(
+        vote.options.map((option) => [option.id, 0]),
+    );
+    for (const cast of vote.casts) {
+        for (const choiceId of cast.choices) {
+            totals[choiceId] = (totals[choiceId] ?? 0) + 1;
+        }
+    }
+    return { totals, totalParticipants: vote.casts.length };
+}
+
 function VotesPage() {
     const { t } = useTranslation();
     const user = getCurrentUser();
@@ -201,12 +218,6 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
     const { t, i18n } = useTranslation();
     const queryClient = useQueryClient();
     const user = getCurrentUser();
-    const voteTypeLabels: Record<string, string> = {
-        binary: t("pages.votes.types.binary"),
-        single_choice: t("pages.votes.types.singleChoice"),
-        multiple_choice: t("pages.votes.types.multipleChoice"),
-        weighted: t("pages.votes.types.weighted"),
-    };
     const [selectedChoices, setSelectedChoices] = useState<string[]>([]);
     const [weights, setWeights] = useState<Record<string, number>>({});
     const isExpired = new Date() > new Date(vote.endsAt);
@@ -217,8 +228,10 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
     const myChoices = user
         ? (vote.casts.find((c) => c.userId === user.sub)?.choices ?? [])
         : [];
+    const isMultiSelect =
+        vote.voteType === "multiple_choice" || vote.voteType === "weighted";
 
-    const { data: results } = useQuery({
+    const { data: apiResults } = useQuery({
         queryKey: ["community-votes", vote._id, "results"],
         queryFn: () =>
             apiGet<Record<string, unknown>>(
@@ -226,6 +239,15 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
             ),
         enabled: isClosed,
     });
+
+    const localResults = computeVoteTotals(vote);
+    const totals =
+        (apiResults?.totals as Record<string, number> | undefined) ??
+        localResults.totals;
+    const totalParticipants =
+        (apiResults?.totalParticipants as number | undefined) ??
+        localResults.totalParticipants;
+    const showResults = hasVoted || isClosed;
 
     const cast = useMutation({
         mutationFn: (payload: {
@@ -264,9 +286,9 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
     return (
         <Card>
             <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                     <CardTitle className="text-base">{vote.title}</CardTitle>
-                    <div className="flex flex-shrink-0 flex-wrap justify-end gap-2">
+                    <div className="flex flex-wrap gap-2 sm:shrink-0 sm:justify-end">
                         {hasVoted && (
                             <Badge variant="outline">
                                 <HugeiconsIcon icon={Tick01Icon} />
@@ -280,9 +302,6 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
                                 ? t("pages.votes.closed")
                                 : t("pages.votes.open")}
                         </StatusBadge>
-                        <Badge variant="outline">
-                            {voteTypeLabels[vote.voteType]}
-                        </Badge>
                     </div>
                 </div>
                 {vote.description && (
@@ -302,73 +321,64 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
             </CardHeader>
 
             <CardContent className="flex flex-col gap-3">
-                {isClosed && results ? (
-                    <ResultsView vote={vote} results={results} />
-                ) : hasVoted ? (
-                    <div className="flex flex-col gap-2">
-                        {vote.options.map((opt) => {
-                            const chosen = myChoices.includes(opt.id);
-                            return (
-                                <div
-                                    key={opt.id}
-                                    className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm ${
-                                        chosen
-                                            ? "border-primary bg-primary/5 font-medium"
-                                            : "border-border text-muted-foreground"
-                                    }`}
-                                >
-                                    {chosen && (
-                                        <HugeiconsIcon
-                                            icon={Tick01Icon}
-                                            className="text-primary size-4 shrink-0"
-                                        />
-                                    )}
-                                    <span>{opt.label}</span>
-                                </div>
-                            );
-                        })}
-                        <p className="text-muted-foreground text-xs">
-                            {t("pages.votes.votedNote")}
-                        </p>
-                    </div>
+                {showResults ? (
+                    <ResultsView
+                        vote={vote}
+                        totals={totals}
+                        totalParticipants={totalParticipants}
+                        myChoices={myChoices}
+                        isClosed={isClosed}
+                    />
                 ) : (
                     <>
                         <div className="flex flex-col gap-2">
-                            {vote.options.map((opt) => (
-                                <button
-                                    key={opt.id}
-                                    type="button"
-                                    onClick={() => toggleChoice(opt.id)}
-                                    className={`w-full rounded-md border px-3 py-2 text-left text-sm transition-colors ${
-                                        selectedChoices.includes(opt.id)
-                                            ? "border-primary bg-primary/5 font-medium"
-                                            : "border-border hover:border-primary/50"
-                                    }`}
-                                >
-                                    {opt.label}
-                                    {vote.voteType === "weighted" &&
-                                        selectedChoices.includes(opt.id) && (
-                                            <input
-                                                type="number"
-                                                min={1}
-                                                max={10}
-                                                className="ml-2 w-16 rounded border px-1 text-xs"
-                                                value={weights[opt.id] ?? 1}
-                                                onChange={(e) =>
-                                                    setWeights((prev) => ({
-                                                        ...prev,
-                                                        [opt.id]: Number(
-                                                            e.target.value,
-                                                        ),
-                                                    }))
-                                                }
-                                                onClick={(e) =>
-                                                    e.stopPropagation()
-                                                }
-                                            />
-                                        )}
-                                </button>
-                            ))}
+                            {vote.options.map((opt) => {
+                                const selected = selectedChoices.includes(
+                                    opt.id,
+                                );
+                                return (
+                                    <button
+                                        key={opt.id}
+                                        type="button"
+                                        aria-pressed={selected}
+                                        onClick={() => toggleChoice(opt.id)}
+                                        className={`flex w-full cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                                            selected
+                                                ? "border-primary bg-primary/5 font-medium"
+                                                : "border-border hover:border-primary/50 hover:bg-muted/50"
+                                        }`}
+                                    >
+                                        <ChoiceIndicator
+                                            selected={selected}
+                                            multiple={isMultiSelect}
+                                        />
+                                        <span className="flex-1">
+                                            {opt.label}
+                                        </span>
+                                        {vote.voteType === "weighted" &&
+                                            selected && (
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    max={10}
+                                                    className="w-16 rounded border px-1 text-xs"
+                                                    value={weights[opt.id] ?? 1}
+                                                    onChange={(e) =>
+                                                        setWeights((prev) => ({
+                                                            ...prev,
+                                                            [opt.id]: Number(
+                                                                e.target.value,
+                                                            ),
+                                                        }))
+                                                    }
+                                                    onClick={(e) =>
+                                                        e.stopPropagation()
+                                                    }
+                                                />
+                                            )}
+                                    </button>
+                                );
+                            })}
                         </div>
                         <Button
                             size="sm"
@@ -389,21 +399,56 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
     );
 }
 
+function ChoiceIndicator({
+    selected,
+    multiple,
+}: {
+    selected: boolean;
+    multiple: boolean;
+}) {
+    return (
+        <span
+            aria-hidden
+            className={`flex size-4 shrink-0 items-center justify-center border transition-colors ${
+                multiple ? "rounded-[4px]" : "rounded-full"
+            } ${selected ? "border-primary" : "border-muted-foreground/40"}`}
+        >
+            {selected &&
+                (multiple ? (
+                    <HugeiconsIcon
+                        icon={Tick01Icon}
+                        className="text-primary size-3"
+                    />
+                ) : (
+                    <span className="bg-primary size-2 rounded-full" />
+                ))}
+        </span>
+    );
+}
+
 function ResultsView({
     vote,
-    results,
+    totals,
+    totalParticipants,
+    myChoices,
+    isClosed,
 }: {
     vote: CommunityVote;
-    results: Record<string, unknown>;
+    totals: Record<string, number>;
+    totalParticipants: number;
+    myChoices: string[];
+    isClosed: boolean;
 }) {
     const { t } = useTranslation();
-    const totals = (results.totals as Record<string, number>) ?? {};
-    const totalParticipants = (results.totalParticipants as number) ?? 0;
     const max = Math.max(...Object.values(totals), 1);
 
     return (
         <div className="flex flex-col gap-3">
             <p className="text-muted-foreground text-xs">
+                {isClosed
+                    ? t("pages.votes.finalResults")
+                    : t("pages.votes.liveResults")}
+                {" · "}
                 {t("pages.votes.participantCount", {
                     count: totalParticipants,
                 })}
@@ -420,12 +465,28 @@ function ResultsView({
                                   100,
                           )
                         : 0;
+                const isMyChoice = myChoices.includes(opt.id);
                 return (
                     <div key={opt.id} className="space-y-1.5">
-                        <div className="flex justify-between text-sm">
-                            <span>{opt.label}</span>
-                            <span className="text-muted-foreground tabular-nums">
-                                {count} ({pct}%)
+                        <div className="flex items-center justify-between gap-2 text-sm">
+                            <span
+                                className={`flex flex-wrap items-center gap-x-1.5 ${
+                                    isMyChoice ? "font-medium" : ""
+                                }`}
+                            >
+                                {opt.label}
+                                {isMyChoice && (
+                                    <span className="text-primary inline-flex items-center gap-0.5 text-xs font-medium">
+                                        <HugeiconsIcon
+                                            icon={Tick01Icon}
+                                            className="size-3.5"
+                                        />
+                                        {t("pages.votes.yourChoice")}
+                                    </span>
+                                )}
+                            </span>
+                            <span className="text-muted-foreground shrink-0 tabular-nums">
+                                {t("pages.votes.voteCount", { count, pct })}
                             </span>
                         </div>
                         <Progress value={pct} className="h-2" />

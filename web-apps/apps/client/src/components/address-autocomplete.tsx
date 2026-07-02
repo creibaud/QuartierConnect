@@ -83,10 +83,16 @@ export function AddressAutocomplete({
             <PopoverContent
                 align="start"
                 sideOffset={4}
+                collisionPadding={8}
                 onOpenAutoFocus={(e) => e.preventDefault()}
                 className="w-(--radix-popover-trigger-width) p-0"
             >
-                <ScrollArea viewportClassName="max-h-56">
+                {/* The viewport is capped to the space Radix reports as free, so
+                    the list never runs past the screen edge on mobile; forcing
+                    the inner wrapper back to `block` (Radix defaults it to
+                    `table`) lets long labels truncate instead of widening the
+                    list. */}
+                <ScrollArea viewportClassName="max-h-[min(14rem,var(--radix-popover-content-available-height))] [&>div]:block!">
                     <ul className="p-1">
                         {suggestions.map((s) => (
                             <li key={`${s.lat},${s.lng},${s.label}`}>

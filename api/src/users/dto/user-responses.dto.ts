@@ -33,6 +33,17 @@ export class UserSearchResultDto {
     role: string;
 }
 
+export class NeighborDto {
+    @ApiProperty({ example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890" })
+    id: string;
+
+    @ApiProperty({
+        example: "Alice Martin",
+        description: "Display name built from first and last name",
+    })
+    name: string;
+}
+
 export class PointsBalanceDto {
     @ApiProperty({ example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890" })
     userId: string;

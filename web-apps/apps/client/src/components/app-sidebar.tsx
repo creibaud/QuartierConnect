@@ -17,6 +17,11 @@ import { clientNavGroups } from "@/components/nav-items";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 
+// Terracotta tint (primary at 10%) for the active/hover item, replacing the
+// package's default sage token — keeps the sidebar in the warm Voisinage family.
+const warmAccentTint =
+    "[--sidebar-accent:color-mix(in_oklab,var(--primary)_10%,transparent)] [--sidebar-accent-foreground:var(--primary)]";
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { t } = useTranslation();
     const role = getCurrentUser()?.role ?? "resident";
@@ -27,7 +32,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     return (
         <Sidebar collapsible="icon" {...props}>
-            <SidebarHeader>
+            <SidebarHeader className={warmAccentTint}>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
@@ -48,10 +53,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
-            <SidebarContent>
+            <SidebarContent className={warmAccentTint}>
                 <NavMain groups={clientNavGroups} role={role} />
             </SidebarContent>
-            <SidebarFooter>
+            <SidebarFooter className={warmAccentTint}>
                 <NavUser />
             </SidebarFooter>
             <SidebarRail />
