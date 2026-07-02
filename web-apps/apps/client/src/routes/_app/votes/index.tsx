@@ -66,7 +66,8 @@ interface CommunityVote {
 
 function VotesPage() {
     const { t } = useTranslation();
-    const [tab, setTab] = useState<"open" | "closed">("open");
+    const user = getCurrentUser();
+    const [tab, setTab] = useState<"open" | "voted" | "closed">("open");
     const [sort, setSort] = useState<"deadline" | "recent">("deadline");
     const { data, isLoading, isError, refetch } = useQuery<CommunityVote[]>({
         queryKey: ["community-votes"],
@@ -77,13 +78,23 @@ function VotesPage() {
     const now = Date.now();
     const isVoteClosed = (v: CommunityVote) =>
         v.status === "closed" || now > new Date(v.endsAt).getTime();
+    const hasVotedOn = (v: CommunityVote) =>
+        !!user && v.casts.some((c) => c.userId === user.sub);
     const sortFn = (a: CommunityVote, b: CommunityVote) =>
         sort === "deadline"
             ? new Date(a.endsAt).getTime() - new Date(b.endsAt).getTime()
             : new Date(b.endsAt).getTime() - new Date(a.endsAt).getTime();
     const openVotes = votes.filter((v) => !isVoteClosed(v)).sort(sortFn);
+    const votedVotes = votes.filter(hasVotedOn).sort(sortFn);
     const closedVotes = votes.filter(isVoteClosed).sort(sortFn);
-    const shown = tab === "open" ? openVotes : closedVotes;
+    const shown =
+        tab === "open" ? openVotes : tab === "voted" ? votedVotes : closedVotes;
+    const emptyMsg =
+        tab === "open"
+            ? t("pages.votes.emptyTitle")
+            : tab === "voted"
+              ? t("pages.votes.noAnswered")
+              : t("pages.votes.noHistory");
 
     return (
         <div className="p-6 md:p-8">
@@ -146,11 +157,16 @@ function VotesPage() {
                 >
                     <Tabs
                         value={tab}
-                        onValueChange={(v) => setTab(v as "open" | "closed")}
+                        onValueChange={(v) =>
+                            setTab(v as "open" | "voted" | "closed")
+                        }
                     >
                         <TabsList>
                             <TabsTrigger value="open">
                                 {t("pages.votes.open")} ({openVotes.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="voted">
+                                {t("pages.votes.answered")} ({votedVotes.length})
                             </TabsTrigger>
                             <TabsTrigger value="closed">
                                 {t("pages.votes.closed")} ({closedVotes.length})
@@ -162,9 +178,7 @@ function VotesPage() {
                         >
                             {shown.length === 0 ? (
                                 <p className="text-muted-foreground text-sm">
-                                    {tab === "open"
-                                        ? t("pages.votes.emptyTitle")
-                                        : t("pages.votes.noHistory")}
+                                    {emptyMsg}
                                 </p>
                             ) : (
                                 shown.map((vote) => (
