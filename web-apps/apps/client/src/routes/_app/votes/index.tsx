@@ -75,7 +75,7 @@ function VotesPage() {
     });
 
     const votes = data ?? [];
-    const now = Date.now();
+    const [now] = useState(() => Date.now());
     const isVoteClosed = (v: CommunityVote) =>
         v.status === "closed" || now > new Date(v.endsAt).getTime();
     const hasVotedOn = (v: CommunityVote) =>
