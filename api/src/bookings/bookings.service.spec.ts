@@ -99,6 +99,10 @@ describe("BookingsService.accept", () => {
         };
         const contracts: any = {
             createServiceContract: jest.fn().mockResolvedValue({ _id: "c1" }),
+            resolveNames: jest.fn().mockResolvedValue({
+                initiator: "Alice Martin",
+                owner: "Bob Dupont",
+            }),
         };
         const points: any = {
             reserveServicePayment: jest.fn().mockResolvedValue(undefined),
@@ -110,14 +114,26 @@ describe("BookingsService.accept", () => {
             points,
         );
         await svc.accept("b1", "owner");
+        expect(contracts.resolveNames).toHaveBeenCalledWith([
+            "initiator",
+            "owner",
+        ]);
         expect(contracts.createServiceContract).toHaveBeenCalledWith(
             expect.objectContaining({
+                title: "Contrat de service — Gardening",
                 serviceId: "svc1",
                 bookingId: "b1",
                 signatories: ["initiator", "owner"],
                 pointsAmount: 3,
             }),
         );
+        const { content } = contracts.createServiceContract.mock.calls[0][0];
+        expect(content).toContain("Contrat de service pour « Gardening »");
+        expect(content).toContain(
+            "Payeur : Alice Martin. Bénéficiaire : Bob Dupont.",
+        );
+        expect(content).toContain("Montant : 3 points.");
+        expect(content).not.toContain("initiator");
         expect(points.reserveServicePayment).toHaveBeenCalledWith(
             expect.objectContaining({ contractId: "c1", amount: 3 }),
         );

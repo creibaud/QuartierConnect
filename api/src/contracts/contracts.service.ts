@@ -19,7 +19,7 @@ import { ContractDocumentsService } from "../documents/contract-documents.servic
 import { ContractPdfData, PdfService } from "../documents/pdf.service";
 import { PointsService } from "../points/points.service";
 import { CreateContractDto } from "./dto/create-contract.dto";
-import { formatFrenchDate, formatPointsAmount } from "./lib/format";
+import { formatFrenchDate } from "./lib/format";
 import {
     Contract,
     ContractDocument,
@@ -150,12 +150,12 @@ export class ContractsService {
             payerName: names[payerId] ?? payerId,
             payeeName: names[payeeId] ?? payeeId ?? "",
             pointsAmount: contract.pointsAmount ?? 0,
-            date: new Date().toISOString().slice(0, 10),
+            date: formatFrenchDate(new Date()),
             body: contract.content,
         };
     }
 
-    private async resolveNames(ids: string[]): Promise<Record<string, string>> {
+    async resolveNames(ids: string[]): Promise<Record<string, string>> {
         const cleanIds = ids.filter((id): id is string => Boolean(id));
         if (cleanIds.length === 0) return {};
 
@@ -284,7 +284,7 @@ export class ContractsService {
                         zoneIndex,
                         {
                             name: names[userId] ?? userId,
-                            date: new Date().toISOString().slice(0, 10),
+                            date: formatFrenchDate(new Date()),
                             hash: hash.slice(0, 8),
                             image: signatureImage,
                         },

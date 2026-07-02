@@ -1,6 +1,14 @@
 import * as crypto from "crypto";
 import { Injectable } from "@nestjs/common";
-import { PDFDocument, PDFFont, PDFPage, rgb, StandardFonts } from "pdf-lib";
+import {
+    PDFDocument,
+    PDFFont,
+    PDFImage,
+    PDFPage,
+    rgb,
+    StandardFonts,
+} from "pdf-lib";
+import { formatPointsAmount } from "../contracts/lib/format";
 
 export interface ContractPdfData {
     title: string;
@@ -24,6 +32,15 @@ export const SIGNATURE_ZONES: { x: number; y: number; label: string }[] = [
     { x: 320, y: 140, label: "Bénéficiaire" },
 ];
 
+const ZONE_BOX = { offsetX: -6, offsetY: -8, width: 212, height: 96 };
+const ZONE_LINE_WIDTH = 200;
+const ZONE_FILL = rgb(0.98, 0.97, 0.95);
+const ZONE_BORDER = rgb(0.72, 0.68, 0.62);
+const ZONE_LINE = rgb(0.55, 0.5, 0.45);
+const INK_BLUE = rgb(0.12, 0.2, 0.45);
+const MIN_STAMP_IMAGE_WIDTH = 16;
+const MIN_STAMP_IMAGE_HEIGHT = 8;
+
 function wrapLines(text: string, max: number): string[] {
     const out: string[] = [];
     for (const raw of text.split("\n")) {
@@ -39,6 +56,17 @@ function wrapLines(text: string, max: number): string[] {
         out.push(line);
     }
     return out;
+}
+
+function fitTextSize(
+    font: PDFFont,
+    text: string,
+    preferredSize: number,
+    maxWidth: number,
+): number {
+    const width = font.widthOfTextAtSize(text, preferredSize);
+    if (width <= maxWidth) return preferredSize;
+    return Math.max(9, (preferredSize * maxWidth) / width);
 }
 
 @Injectable()
@@ -64,7 +92,7 @@ export class PdfService {
         y -= 18;
         draw(`Bénéficiaire : ${data.payeeName}`, 60, y);
         y -= 18;
-        draw(`Montant : ${data.pointsAmount} points`, 60, y);
+        draw(`Montant : ${formatPointsAmount(data.pointsAmount)}`, 60, y);
         y -= 18;
         draw(`Date : ${data.date}`, 60, y);
         y -= 34;
@@ -75,15 +103,26 @@ export class PdfService {
             y -= 15;
         }
 
-        for (const z of SIGNATURE_ZONES) {
-            draw(`À signer — ${z.label}`, z.x, z.y + 40, 10, bold);
-            page.drawLine({
-                start: { x: z.x, y: z.y + 34 },
-                end: { x: z.x + 200, y: z.y + 34 },
-                thickness: 0.75,
-                color: rgb(0.4, 0.4, 0.4),
+        const signatoryNames = [data.payerName, data.payeeName];
+        SIGNATURE_ZONES.forEach((zone, index) => {
+            const name = signatoryNames[index] || zone.label;
+            draw(`Signature — ${name}`, zone.x, zone.y + 94, 9, bold);
+            page.drawRectangle({
+                x: zone.x + ZONE_BOX.offsetX,
+                y: zone.y + ZONE_BOX.offsetY,
+                width: ZONE_BOX.width,
+                height: ZONE_BOX.height,
+                color: ZONE_FILL,
+                borderColor: ZONE_BORDER,
+                borderWidth: 0.75,
             });
-        }
+            page.drawLine({
+                start: { x: zone.x, y: zone.y + 34 },
+                end: { x: zone.x + ZONE_LINE_WIDTH, y: zone.y + 34 },
+                thickness: 0.75,
+                color: ZONE_LINE,
+            });
+        });
 
         return Buffer.from(await doc.save());
     }
@@ -100,58 +139,11 @@ export class PdfService {
         const page: PDFPage = doc.getPages()[0];
         const font = await doc.embedFont(StandardFonts.Helvetica);
 
-        const zoneWidth = 200;
-        // Cover the "À signer — label" prompt: once signed, the transparent
-        // signature PNG would otherwise let that prompt show through.
-        page.drawRectangle({
-            x: zone.x - 2,
-            y: zone.y + 36,
-            width: zoneWidth + 6,
-            height: 16,
-            color: rgb(1, 1, 1),
-        });
-
-        let drewImage = false;
-        if (stamp.image) {
-            try {
-                const base64 = stamp.image.replace(
-                    /^data:image\/png;base64,/,
-                    "",
-                );
-                const png = await doc.embedPng(Buffer.from(base64, "base64"));
-                // Fit within the signing box, preserving the drawn signature's
-                // aspect ratio (the old fixed 120x48 squished it), then centre it.
-                const maxWidth = 180;
-                const maxHeight = 46;
-                const scale = Math.min(
-                    maxWidth / png.width,
-                    maxHeight / png.height,
-                    1,
-                );
-                const width = png.width * scale;
-                const height = png.height * scale;
-                page.drawImage(png, {
-                    x: zone.x + (zoneWidth - width) / 2,
-                    y: zone.y + 37,
-                    width,
-                    height,
-                });
-                drewImage = true;
-            } catch {
-                // best-effort: fall back to the typed signature below
-            }
-        }
-
-        // No drawn signature → render the name as a typed signature above the
-        // line (ink blue) so the signing area is never an empty box.
+        const drewImage = stamp.image
+            ? await this.tryDrawSignatureImage(doc, page, zone, stamp.image)
+            : false;
         if (!drewImage) {
-            page.drawText(stamp.name, {
-                x: zone.x,
-                y: zone.y + 44,
-                size: 18,
-                font,
-                color: rgb(0.09, 0.15, 0.42),
-            });
+            await this.drawTypedSignature(doc, page, zone, stamp.name);
         }
 
         page.drawText(stamp.name, {
@@ -177,6 +169,59 @@ export class PdfService {
         });
 
         return Buffer.from(await doc.save());
+    }
+
+    // Draws the hand-drawn signature PNG above the signing line, preserving
+    // its aspect ratio. Degenerate images (e.g. a stretched 1x1 pixel would
+    // render as a solid box) are rejected so the typed fallback takes over.
+    private async tryDrawSignatureImage(
+        doc: PDFDocument,
+        page: PDFPage,
+        zone: { x: number; y: number },
+        image: string,
+    ): Promise<boolean> {
+        let png: PDFImage;
+        try {
+            const base64 = image.replace(/^data:image\/png;base64,/, "");
+            png = await doc.embedPng(Buffer.from(base64, "base64"));
+        } catch {
+            return false;
+        }
+        if (
+            png.width < MIN_STAMP_IMAGE_WIDTH ||
+            png.height < MIN_STAMP_IMAGE_HEIGHT
+        ) {
+            return false;
+        }
+        const maxWidth = 180;
+        const maxHeight = 46;
+        const scale = Math.min(maxWidth / png.width, maxHeight / png.height, 1);
+        const width = png.width * scale;
+        const height = png.height * scale;
+        page.drawImage(png, {
+            x: zone.x + (ZONE_LINE_WIDTH - width) / 2,
+            y: zone.y + 37,
+            width,
+            height,
+        });
+        return true;
+    }
+
+    private async drawTypedSignature(
+        doc: PDFDocument,
+        page: PDFPage,
+        zone: { x: number; y: number },
+        name: string,
+    ): Promise<void> {
+        const italic = await doc.embedFont(StandardFonts.TimesRomanItalic);
+        const size = fitTextSize(italic, name, 22, ZONE_LINE_WIDTH - 8);
+        page.drawText(name, {
+            x: zone.x + 4,
+            y: zone.y + 40,
+            size,
+            font: italic,
+            color: INK_BLUE,
+        });
     }
 
     sha256(buffer: Buffer): string {
