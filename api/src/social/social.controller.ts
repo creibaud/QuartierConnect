@@ -45,9 +45,10 @@ export class SocialController {
 
     @Post("social/interest")
     @ApiOperation({
-        summary: "Record interest in an event (feeds Neo4j)",
+        summary: "Record interest in an event (deprecated)",
+        deprecated: true,
         description:
-            "Creates or removes an INTERESTED_IN relationship in Neo4j between the user and the event.",
+            "Deprecated: use POST /events/:id/interest, which updates the Mongo interested count and writes the same Neo4j relationship. This endpoint only writes the Neo4j INTERESTED_IN / NOT_INTERESTED_IN relationship.",
     })
     @ApiBody({ type: RecordInterestBodyDto })
     @ApiResponse({ status: 201, type: RecordInterestResponseDto })
@@ -58,7 +59,7 @@ export class SocialController {
         return this.socialService.recordEventInterest(
             req.user.sub,
             body.eventId,
-            body.interested,
+            { interested: body.interested, source: "swipe" },
         );
     }
 }

@@ -3,8 +3,10 @@ import {
     createEvent,
     deleteEvent,
     fetchEvents,
+    markEventInterest,
     updateEvent,
 } from "../api/events.api";
+import type { EventInterestSource } from "../api/events.api";
 import type { Event } from "../types";
 
 export function useEvents(limit = 100) {
@@ -49,5 +51,25 @@ export function useDeleteEvent() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["events"] });
         },
+    });
+}
+
+export function useEventInterest() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({
+            eventId,
+            source,
+        }: {
+            eventId: string;
+            source: EventInterestSource;
+        }) => markEventInterest(eventId, source),
+        onSuccess: () =>
+            Promise.all([
+                queryClient.invalidateQueries({ queryKey: ["events"] }),
+                queryClient.invalidateQueries({
+                    queryKey: ["recommendations"],
+                }),
+            ]),
     });
 }

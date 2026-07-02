@@ -4,7 +4,9 @@ import { NEO4J_DRIVER } from "./neo4j/neo4j.provider";
 
 export type RecommendationReason =
     | "serviceInNeighborhood"
-    | "upcomingEventNearby";
+    | "upcomingEventNearby"
+    | "sharedInterests"
+    | "reliableNeighbor";
 
 export interface Recommendation {
     type: "service" | "event" | "neighbor";
@@ -12,6 +14,20 @@ export interface Recommendation {
     name: string;
     score: number;
     reason: RecommendationReason;
+}
+
+export type ParticipationSource = "swipe" | "participate";
+
+export interface EventParticipation {
+    interested: boolean;
+    source?: ParticipationSource;
+}
+
+export interface HelpRendered {
+    payerId: string;
+    payeeId: string;
+    serviceId: string;
+    points: number;
 }
 
 const MAX_RECOMMENDATIONS = 10;
@@ -31,7 +47,40 @@ WHERE NOT (u)-[:ATTENDING]->(e)
   AND (e.createdBy IS NULL OR e.createdBy <> $userId)
 RETURN e.id AS id, e.name AS name, 'event' AS type, 2 AS score,
        'upcomingEventNearby' AS reason
+UNION
+MATCH (u:User {id: $userId})-[:INTERESTED_IN|ATTENDING]->(:Event)
+      <-[:INTERESTED_IN|ATTENDING]-(peer:User)
+WHERE peer.id <> $userId
+MATCH (peer)-[:INTERESTED_IN|ATTENDING]->(e:Event)
+WHERE NOT (u)-[:INTERESTED_IN|ATTENDING]->(e)
+  AND NOT (u)-[:NOT_INTERESTED_IN]->(e)
+  AND e.date > datetime()
+  AND (e.createdBy IS NULL OR e.createdBy <> $userId)
+WITH e, count(DISTINCT peer) AS peerCount
+RETURN e.id AS id, e.name AS name, 'event' AS type, 3 + peerCount AS score,
+       'sharedInterests' AS reason
+UNION
+MATCH (u:User {id: $userId})-[:LIVES_IN]->(:Neighborhood)
+      <-[:LIVES_IN]-(peer:User)
+WHERE peer.id <> $userId
+MATCH (peer)<-[h:HELPED]-(:User)
+WITH u, peer, count(h) AS helpCount
+OPTIONAL MATCH (u)-[:INTERESTED_IN|ATTENDING]->(shared:Event)
+               <-[:INTERESTED_IN|ATTENDING]-(peer)
+WITH peer, helpCount, count(DISTINCT shared) AS sharedEvents
+RETURN peer.id AS id, coalesce(peer.name, peer.id) AS name,
+       'neighbor' AS type, 4 + helpCount + sharedEvents AS score,
+       'reliableNeighbor' AS reason
 `;
+
+function resolveParticipationRelation(
+    participation: EventParticipation,
+): "INTERESTED_IN" | "ATTENDING" | "NOT_INTERESTED_IN" {
+    if (!participation.interested) return "NOT_INTERESTED_IN";
+    return participation.source === "participate"
+        ? "ATTENDING"
+        : "INTERESTED_IN";
+}
 
 function toRecommendation(record: Neo4jRecord): Recommendation {
     const rawScore = record.get("score") as
@@ -106,10 +155,13 @@ export class SocialService {
             const result = await session.run(RECOMMENDATIONS_QUERY, {
                 userId,
             });
-            const recommendations = result.records.map(toRecommendation);
-            return dedupeByTypeAndName(recommendations)
-                .sort((a, b) => b.score - a.score)
-                .slice(0, MAX_RECOMMENDATIONS);
+            const recommendations = result.records
+                .map(toRecommendation)
+                .sort((a, b) => b.score - a.score);
+            return dedupeByTypeAndName(recommendations).slice(
+                0,
+                MAX_RECOMMENDATIONS,
+            );
         } catch (error) {
             this.logger.warn(`Neo4j query failed, returning empty: ${error}`);
             return [];
@@ -236,15 +288,14 @@ export class SocialService {
     async recordEventInterest(
         userId: string,
         eventId: string,
-        interested: boolean,
+        participation: EventParticipation,
     ): Promise<{ success: boolean }> {
         try {
             await this.withRetry(async () => {
                 const session = this.driver.session();
                 try {
-                    const relation = interested
-                        ? "INTERESTED_IN"
-                        : "NOT_INTERESTED_IN";
+                    const relation =
+                        resolveParticipationRelation(participation);
                     await session.run(
                         `MERGE (u:User {id: $userId})
          MERGE (e:Event {id: $eventId})
@@ -262,6 +313,34 @@ export class SocialService {
                 `Neo4j recordEventInterest failed after retries: ${error}`,
             );
             return { success: false };
+        }
+    }
+
+    async recordHelpRendered(help: HelpRendered): Promise<void> {
+        try {
+            await this.withRetry(async () => {
+                const session = this.driver.session();
+                try {
+                    await session.run(
+                        `MERGE (payer:User {id: $payerId})
+         MERGE (payee:User {id: $payeeId})
+         MERGE (payer)-[h:HELPED {serviceId: $serviceId}]->(payee)
+         ON CREATE SET h.points = $points, h.timestamp = datetime()`,
+                        {
+                            payerId: help.payerId,
+                            payeeId: help.payeeId,
+                            serviceId: help.serviceId,
+                            points: help.points,
+                        },
+                    );
+                } finally {
+                    await session.close();
+                }
+            });
+        } catch (error) {
+            this.logger.warn(
+                `Neo4j recordHelpRendered failed after retries: ${error}`,
+            );
         }
     }
 

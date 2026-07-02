@@ -3,14 +3,16 @@ import {
     ArrowRight01Icon,
     Calendar01Icon,
     CustomerServiceIcon,
+    Message01Icon,
     SparklesIcon,
     UserIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useRecommendations } from "@workspace/shared/lib/hooks/useRecommendations";
 import type { Recommendation } from "@workspace/shared/lib/types";
 import { Badge } from "@workspace/ui/components/badge";
+import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { DataState } from "@workspace/ui/components/data-state";
 import {
@@ -22,6 +24,8 @@ import {
 } from "@workspace/ui/components/empty";
 import { PageHeader } from "@workspace/ui/components/page-header";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { toast } from "sonner";
+import { useContact } from "@/features/services/hooks/services-core.hooks";
 
 const TYPE_VARIANTS: Record<
     Recommendation["type"],
@@ -94,59 +98,106 @@ function RecommendationsPage() {
                     }
                 >
                     <div className="flex flex-col gap-3">
-                        {recommendations.map((recommendation) => (
-                            <Link
-                                key={`${recommendation.type}-${recommendation.id}`}
-                                to={TYPE_ROUTES[recommendation.type]}
-                                className="focus-visible:ring-ring block rounded-xl focus-visible:ring-2 focus-visible:outline-none"
-                            >
-                                <Card className="hover:ring-primary/40 py-0 transition-shadow">
-                                    <CardContent className="flex items-start gap-3 p-4">
-                                        <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-xl">
-                                            <HugeiconsIcon
-                                                icon={
-                                                    TYPE_ICON[
-                                                        recommendation.type
-                                                    ]
-                                                }
-                                                className="size-5"
+                        {recommendations.map((recommendation) =>
+                            recommendation.type === "neighbor" ? (
+                                <NeighborRecommendationCard
+                                    key={`${recommendation.type}-${recommendation.id}`}
+                                    recommendation={recommendation}
+                                />
+                            ) : (
+                                <Link
+                                    key={`${recommendation.type}-${recommendation.id}`}
+                                    to={TYPE_ROUTES[recommendation.type]}
+                                    className="focus-visible:ring-ring block rounded-xl focus-visible:ring-2 focus-visible:outline-none"
+                                >
+                                    <Card className="hover:ring-primary/40 py-0 transition-shadow">
+                                        <CardContent className="flex items-start gap-3 p-4">
+                                            <RecommendationSummary
+                                                recommendation={recommendation}
                                             />
-                                        </div>
-                                        <div className="min-w-0 flex-1 space-y-1">
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <h3 className="font-medium">
-                                                    {recommendation.name}
-                                                </h3>
-                                                <Badge
-                                                    variant={
-                                                        TYPE_VARIANTS[
-                                                            recommendation.type
-                                                        ]
-                                                    }
-                                                    className="shrink-0"
-                                                >
-                                                    {t(
-                                                        `recommendations.types.${recommendation.type}`,
-                                                    )}
-                                                </Badge>
-                                            </div>
-                                            <p className="text-muted-foreground text-sm">
-                                                {t(
-                                                    `recommendations.reasons.${recommendation.reason}`,
-                                                )}
-                                            </p>
-                                        </div>
-                                        <HugeiconsIcon
-                                            icon={ArrowRight01Icon}
-                                            className="text-muted-foreground size-5 shrink-0 self-center"
-                                        />
-                                    </CardContent>
-                                </Card>
-                            </Link>
-                        ))}
+                                            <HugeiconsIcon
+                                                icon={ArrowRight01Icon}
+                                                className="text-muted-foreground size-5 shrink-0 self-center"
+                                            />
+                                        </CardContent>
+                                    </Card>
+                                </Link>
+                            ),
+                        )}
                     </div>
                 </DataState>
             </div>
         </div>
+    );
+}
+
+function RecommendationSummary({
+    recommendation,
+}: {
+    recommendation: Recommendation;
+}) {
+    const { t } = useTranslation();
+
+    return (
+        <>
+            <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-xl">
+                <HugeiconsIcon
+                    icon={TYPE_ICON[recommendation.type]}
+                    className="size-5"
+                />
+            </div>
+            <div className="min-w-0 flex-1 space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-medium">{recommendation.name}</h3>
+                    <Badge
+                        variant={TYPE_VARIANTS[recommendation.type]}
+                        className="shrink-0"
+                    >
+                        {t(`recommendations.types.${recommendation.type}`)}
+                    </Badge>
+                </div>
+                <p className="text-muted-foreground text-sm">
+                    {t(`recommendations.reasons.${recommendation.reason}`)}
+                </p>
+            </div>
+        </>
+    );
+}
+
+function NeighborRecommendationCard({
+    recommendation,
+}: {
+    recommendation: Recommendation;
+}) {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+    const contact = useContact();
+
+    async function openConversation() {
+        try {
+            const { id } = await contact.mutateAsync(recommendation.id);
+            void navigate({ to: "/messages", search: { conversation: id } });
+        } catch {
+            toast.error(t("recommendations.contactError"));
+        }
+    }
+
+    return (
+        <Card className="py-0">
+            <CardContent className="flex items-start gap-3 p-4">
+                <RecommendationSummary recommendation={recommendation} />
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 self-center"
+                    disabled={contact.isPending}
+                    onClick={() => void openConversation()}
+                >
+                    <HugeiconsIcon icon={Message01Icon} />
+                    {t("recommendations.contact")}
+                </Button>
+            </CardContent>
+        </Card>
     );
 }

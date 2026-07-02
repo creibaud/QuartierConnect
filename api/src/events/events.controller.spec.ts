@@ -22,6 +22,7 @@ describe("EventsController", () => {
     let controller: EventsController;
     let model: any;
     let geocoding: any;
+    let socialService: any;
 
     beforeEach(async () => {
         model = {
@@ -43,16 +44,16 @@ describe("EventsController", () => {
             }),
         };
 
+        socialService = {
+            syncEvent: jest.fn().mockResolvedValue(undefined),
+            recordEventInterest: jest.fn().mockResolvedValue({ success: true }),
+        };
+
         const module: TestingModule = await Test.createTestingModule({
             controllers: [EventsController],
             providers: [
                 { provide: getModelToken(Event.name), useValue: model },
-                {
-                    provide: SocialService,
-                    useValue: {
-                        syncEvent: jest.fn().mockResolvedValue(undefined),
-                    },
-                },
+                { provide: SocialService, useValue: socialService },
                 {
                     provide: GeocodingService,
                     useValue: { geocode: jest.fn() },
@@ -127,6 +128,56 @@ describe("EventsController", () => {
         );
     });
 
+    it("POST /events/:id/interest records INTERESTED_IN in Neo4j by default", async () => {
+        await controller.markInterest("evt-id-1", authReq() as any);
+        expect(socialService.recordEventInterest).toHaveBeenCalledWith(
+            "user-uuid-1",
+            "evt-id-1",
+            { interested: true, source: "swipe" },
+        );
+    });
+
+    it("POST /events/:id/interest with source participate records ATTENDING", async () => {
+        await controller.markInterest("evt-id-1", authReq() as any, {
+            source: "participate",
+        });
+        expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+            "evt-id-1",
+            { $addToSet: { interestedUserIds: "user-uuid-1" } },
+            { new: true },
+        );
+        expect(socialService.recordEventInterest).toHaveBeenCalledWith(
+            "user-uuid-1",
+            "evt-id-1",
+            { interested: true, source: "participate" },
+        );
+    });
+
+    it("POST /events/:id/interest with interested=false removes the user from the list", async () => {
+        model.findByIdAndUpdate.mockReturnValue({
+            exec: jest.fn().mockResolvedValue({
+                ...mockEvent,
+                interestedUserIds: [],
+            }),
+        });
+        const result = await controller.markInterest(
+            "evt-id-1",
+            authReq() as any,
+            { interested: false },
+        );
+        expect(result).toEqual({ interested: 0 });
+        expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+            "evt-id-1",
+            { $pull: { interestedUserIds: "user-uuid-1" } },
+            { new: true },
+        );
+        expect(socialService.recordEventInterest).toHaveBeenCalledWith(
+            "user-uuid-1",
+            "evt-id-1",
+            { interested: false, source: "swipe" },
+        );
+    });
+
     it("POST /events/:id/interest throws 404 when event not found", async () => {
         model.findByIdAndUpdate.mockReturnValue({
             exec: jest.fn().mockResolvedValue(null),
@@ -134,6 +185,7 @@ describe("EventsController", () => {
         await expect(
             controller.markInterest("bad-id", authReq() as any),
         ).rejects.toThrow(NotFoundException);
+        expect(socialService.recordEventInterest).not.toHaveBeenCalled();
     });
 
     it("POST /events geocodes the address into location", async () => {

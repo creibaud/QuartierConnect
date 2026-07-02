@@ -40,4 +40,19 @@ describe("SocialController", () => {
         const result = await controller.getRecommendations(req as any);
         expect(result).toEqual([]);
     });
+
+    it("records swipe interest through the deprecated endpoint", async () => {
+        const run = jest.fn().mockResolvedValue({ records: [] });
+        mockDriver.session.mockReturnValueOnce({
+            run,
+            close: jest.fn().mockResolvedValue(undefined),
+        });
+        const req = { user: { sub: "user-123" } };
+        const result = await controller.recordInterest(
+            { eventId: "evt-1", interested: true },
+            req as any,
+        );
+        expect(result).toEqual({ success: true });
+        expect(run.mock.calls[0][0]).toContain("[r:INTERESTED_IN]");
+    });
 });

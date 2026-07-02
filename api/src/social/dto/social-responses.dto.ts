@@ -3,7 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 export class RecommendationItemDto {
     @ApiProperty({
         example: "service",
-        enum: ["service", "event", "neighborhood"],
+        enum: ["service", "event", "neighbor"],
     })
     type: string;
 
@@ -21,7 +21,12 @@ export class RecommendationItemDto {
 
     @ApiPropertyOptional({
         example: "serviceInNeighborhood",
-        enum: ["serviceInNeighborhood", "upcomingEventNearby"],
+        enum: [
+            "serviceInNeighborhood",
+            "upcomingEventNearby",
+            "sharedInterests",
+            "reliableNeighbor",
+        ],
         description: "Reason code translated by the client",
     })
     reason?: string;
