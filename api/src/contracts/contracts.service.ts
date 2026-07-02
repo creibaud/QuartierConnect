@@ -330,12 +330,16 @@ export class ContractsService {
         }
 
         if (willBeFullySigned && contract.bookingId) {
+            const [payerId, payeeId] = contract.signatories;
             this.eventEmitter.emit(CONTRACT_FULLY_SIGNED_EVENT, {
                 contractId,
                 bookingId: contract.bookingId,
                 signatories: [...contract.signatories],
                 serviceTitle: contract.title,
                 amount: contract.pointsAmount ?? undefined,
+                payerId,
+                payeeId,
+                serviceId: contract.serviceId ?? undefined,
             } satisfies ContractFullySignedEvent);
         }
         return saved;

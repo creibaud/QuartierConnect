@@ -49,6 +49,9 @@ export interface ContractFullySignedEvent {
     signatories?: string[];
     serviceTitle?: string;
     amount?: number;
+    payerId?: string;
+    payeeId?: string;
+    serviceId?: string;
 }
 
 export interface PointsSettledEvent {
