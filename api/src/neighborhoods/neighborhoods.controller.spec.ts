@@ -1,6 +1,9 @@
-import { NotFoundException } from "@nestjs/common";
+import { INestApplication, NotFoundException } from "@nestjs/common";
 import { getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
+import request from "supertest";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { RolesGuard } from "../auth/guards/roles.guard";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import { NEO4J_DRIVER } from "../social/neo4j/neo4j.provider";
 import { SocialService } from "../social/social.service";
@@ -17,6 +20,7 @@ const mockNeighborhood = {
 
 describe("NeighborhoodsController", () => {
     let controller: NeighborhoodsController;
+    let moduleRef: TestingModule;
     let model: any;
     let dbUpdateSet: jest.Mock;
     let dbSelectWhere: jest.Mock;
@@ -50,7 +54,7 @@ describe("NeighborhoodsController", () => {
             }),
         };
 
-        const module: TestingModule = await Test.createTestingModule({
+        moduleRef = await Test.createTestingModule({
             controllers: [NeighborhoodsController],
             providers: [
                 { provide: getModelToken(Neighborhood.name), useValue: model },
@@ -91,9 +95,14 @@ describe("NeighborhoodsController", () => {
                     },
                 },
             ],
-        }).compile();
+        })
+            .overrideGuard(JwtAuthGuard)
+            .useValue({ canActivate: () => true })
+            .overrideGuard(RolesGuard)
+            .useValue({ canActivate: () => true })
+            .compile();
 
-        controller = module.get<NeighborhoodsController>(
+        controller = moduleRef.get<NeighborhoodsController>(
             NeighborhoodsController,
         );
     });
@@ -179,5 +188,25 @@ describe("NeighborhoodsController", () => {
             expect.objectContaining({ neighborhoodId: "nb-12" }),
         );
         expect(neo4jRun).toHaveBeenCalledTimes(1);
+    });
+
+    describe("route order", () => {
+        let app: INestApplication;
+
+        afterEach(async () => {
+            await app?.close();
+        });
+
+        it("routes GET /neighborhoods/uncovered-addresses to the static handler, not :id", async () => {
+            app = moduleRef.createNestApplication();
+            await app.init();
+
+            const res = await request(app.getHttpServer())
+                .get("/neighborhoods/uncovered-addresses")
+                .expect(200);
+
+            expect(res.body).toEqual([]);
+            expect(model.findById).not.toHaveBeenCalled();
+        });
     });
 });
