@@ -366,7 +366,7 @@ function TransferForm() {
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="max-w-md space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="points-recipient">
                             {t("pages.points.recipientLabel")}

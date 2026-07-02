@@ -1,8 +1,14 @@
-import { useState } from "react";
+import { useDeferredValue, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Add01Icon, Agreement01Icon } from "@hugeicons/core-free-icons";
+import {
+    Add01Icon,
+    Agreement01Icon,
+    Cancel01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { apiGet } from "@workspace/shared/lib/api";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import {
     useContracts,
@@ -10,7 +16,20 @@ import {
     useSignContract,
 } from "@workspace/shared/lib/hooks/useContracts";
 import type { Contract } from "@workspace/shared/lib/types";
+import {
+    Avatar,
+    AvatarFallback,
+} from "@workspace/ui/components/avatar";
+import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@workspace/ui/components/command";
 import { DataState } from "@workspace/ui/components/data-state";
 import {
     Dialog,
@@ -39,6 +58,7 @@ import {
 import { Label } from "@workspace/ui/components/label";
 import { PageHeader } from "@workspace/ui/components/page-header";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { Spinner } from "@workspace/ui/components/spinner";
 import {
     StatusBadge,
     statusTone,
@@ -49,6 +69,34 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_app/contracts/")({
     component: ContractsPage,
 });
+
+interface Neighbor {
+    id: string;
+    name: string;
+}
+
+function useNeighborSearch(search: string, enabled: boolean) {
+    const term = search.trim();
+    return useQuery<Neighbor[]>({
+        queryKey: ["users", "neighbors", term],
+        queryFn: () =>
+            apiGet<Neighbor[]>(
+                `/users/neighbors?search=${encodeURIComponent(term)}`,
+            ),
+        enabled,
+        staleTime: 30_000,
+        placeholderData: keepPreviousData,
+    });
+}
+
+function neighborInitials(name: string): string {
+    return name
+        .split(/\s+/)
+        .map((part) => part.charAt(0))
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
+}
 
 function ContractsPage() {
     const { t, i18n } = useTranslation();
@@ -71,6 +119,24 @@ function ContractsPage() {
         !contract.signatures.some((s) => s.userId === user.sub) &&
         contract.status !== "fully_signed" &&
         contract.status !== "cancelled";
+
+    const contractMeta = (contract: Contract): string =>
+        [
+            t("pages.contracts.signatureCount", {
+                signed: contract.signatures.length,
+                total: contract.signatories.length,
+                count: contract.signatories.length,
+            }),
+            contract.signedAt
+                ? t("pages.contracts.signedOnDate", {
+                      date: new Date(contract.signedAt).toLocaleDateString(
+                          i18n.language,
+                      ),
+                  })
+                : "",
+        ]
+            .filter(Boolean)
+            .join(" · ");
 
     return (
         <div className="p-6 md:p-8">
@@ -146,19 +212,7 @@ function ContractsPage() {
                                         </StatusBadge>
                                     </div>
                                     <ItemDescription>
-                                        {t("pages.contracts.signatureCount", {
-                                            signed: contract.signatures.length,
-                                            total: contract.signatories.length,
-                                            count: contract.signatories.length,
-                                        })}
-                                        {contract.signedAt &&
-                                            ` · ${t("pages.contracts.signedOn", {
-                                                date: new Date(
-                                                    contract.signedAt,
-                                                ).toLocaleDateString(
-                                                    i18n.language,
-                                                ),
-                                            })}`}
+                                        {contractMeta(contract)}
                                     </ItemDescription>
                                     <p className="text-muted-foreground line-clamp-2 text-sm">
                                         {contract.content}
@@ -214,28 +268,49 @@ function CreateContractDialog({
     const { t } = useTranslation();
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
-    const [signatoriesRaw, setSignatoriesRaw] = useState("");
+    const [signatories, setSignatories] = useState<Neighbor[]>([]);
+    const [search, setSearch] = useState("");
+    const deferredSearch = useDeferredValue(search);
     const createContract = useCreateContract();
+    const {
+        data: neighbors,
+        isLoading: neighborsLoading,
+        isError: neighborsError,
+    } = useNeighborSearch(deferredSearch, open);
+
+    const isSelected = (id: string) =>
+        signatories.some((neighbor) => neighbor.id === id);
+
+    function toggleSignatory(neighbor: Neighbor) {
+        setSignatories((current) =>
+            current.some((s) => s.id === neighbor.id)
+                ? current.filter((s) => s.id !== neighbor.id)
+                : [...current, neighbor],
+        );
+    }
+
+    function removeSignatory(id: string) {
+        setSignatories((current) => current.filter((s) => s.id !== id));
+    }
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (!title.trim() || !content.trim()) return;
-        const signatories = signatoriesRaw
-            .split(/[\n,]+/)
-            .map((s) => s.trim())
-            .filter(Boolean);
+        const signatoryIds = signatories.map((neighbor) => neighbor.id);
         createContract.mutate(
             {
                 title: title.trim(),
                 content: content.trim(),
-                signatories: signatories.length > 0 ? signatories : undefined,
+                signatories:
+                    signatoryIds.length > 0 ? signatoryIds : undefined,
             },
             {
                 onSuccess: () => {
                     toast.success(t("pages.contracts.createSuccess"));
                     setTitle("");
                     setContent("");
-                    setSignatoriesRaw("");
+                    setSignatories([]);
+                    setSearch("");
                     onSuccess();
                 },
                 onError: () => toast.error(t("pages.contracts.createError")),
@@ -284,19 +359,101 @@ function CreateContractDialog({
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="ct-signatories">
-                            {t("pages.contracts.signatories")}
+                        <Label htmlFor="ct-signatory-search">
+                            {t("pages.contracts.signatoriesLabel")}
                         </Label>
-                        <Textarea
-                            id="ct-signatories"
-                            value={signatoriesRaw}
-                            onChange={(e) => setSignatoriesRaw(e.target.value)}
-                            placeholder={
-                                "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\nyyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
-                            }
-                            rows={2}
-                            className="font-mono text-xs"
-                        />
+                        {signatories.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                                {signatories.map((neighbor) => (
+                                    <Badge
+                                        key={neighbor.id}
+                                        variant="secondary"
+                                        className="gap-1 pr-1"
+                                    >
+                                        {neighbor.name}
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                removeSignatory(neighbor.id)
+                                            }
+                                            aria-label={t(
+                                                "pages.contracts.removeSignatory",
+                                                { name: neighbor.name },
+                                            )}
+                                            className="hover:bg-foreground/10 rounded-sm p-0.5"
+                                        >
+                                            <HugeiconsIcon
+                                                icon={Cancel01Icon}
+                                                className="size-3"
+                                            />
+                                        </button>
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+                        <Command
+                            shouldFilter={false}
+                            className="rounded-lg border"
+                        >
+                            <CommandInput
+                                id="ct-signatory-search"
+                                value={search}
+                                onValueChange={setSearch}
+                                placeholder={t(
+                                    "pages.contracts.searchNeighborsPlaceholder",
+                                )}
+                            />
+                            <CommandList className="max-h-40">
+                                {neighborsLoading ? (
+                                    <div className="text-muted-foreground flex items-center justify-center gap-2 py-4 text-sm">
+                                        <Spinner className="size-4" />
+                                        {t("pages.contracts.neighborsLoading")}
+                                    </div>
+                                ) : neighborsError ? (
+                                    <div className="text-destructive py-4 text-center text-sm">
+                                        {t("pages.contracts.neighborsError")}
+                                    </div>
+                                ) : (
+                                    <>
+                                        <CommandEmpty>
+                                            {t(
+                                                "pages.contracts.neighborsEmpty",
+                                            )}
+                                        </CommandEmpty>
+                                        <CommandGroup>
+                                            {(neighbors ?? []).map(
+                                                (neighbor) => (
+                                                    <CommandItem
+                                                        key={neighbor.id}
+                                                        value={neighbor.id}
+                                                        data-checked={isSelected(
+                                                            neighbor.id,
+                                                        )}
+                                                        onSelect={() =>
+                                                            toggleSignatory(
+                                                                neighbor,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Avatar className="size-6">
+                                                            <AvatarFallback className="text-[10px]">
+                                                                {neighborInitials(
+                                                                    neighbor.name,
+                                                                )}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        {neighbor.name}
+                                                    </CommandItem>
+                                                ),
+                                            )}
+                                        </CommandGroup>
+                                    </>
+                                )}
+                            </CommandList>
+                        </Command>
+                        <p className="text-muted-foreground text-xs">
+                            {t("pages.contracts.signatoriesHint")}
+                        </p>
                     </div>
                     <div className="flex justify-end gap-2">
                         <Button

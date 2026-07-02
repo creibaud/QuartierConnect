@@ -28,13 +28,13 @@ describe("GeocodingController", () => {
         controller = mod.get(GeocodingController);
     });
 
-    it("returns suggestions and softly biases by the caller's home viewbox", async () => {
+    it("returns suggestions biased by a neighborhood-sized viewbox around home", async () => {
         expect(
             await controller.search(authReq() as any, "rue de", "fr"),
         ).toEqual([{ label: "X", lat: 1, lng: 2 }]);
         expect(search).toHaveBeenCalledWith("rue de", {
             lang: "fr",
-            viewbox: "1.85,48.35,2.85,49.35",
+            viewbox: "2.300,48.800,2.400,48.900",
         });
     });
 

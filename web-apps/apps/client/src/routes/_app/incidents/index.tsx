@@ -1,10 +1,9 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
 import { centroidOf, pointInPolygon } from "@workspace/shared/lib/geo";
-import { AddressAutocomplete } from "@/components/address-autocomplete";
 import {
     useCreateIncident,
     useInfiniteIncidents,
@@ -43,28 +42,26 @@ import {
 } from "@workspace/ui/components/item";
 import { Label } from "@workspace/ui/components/label";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@workspace/ui/components/select";
-import {
     Map,
     MapClickHandler,
     MapControls,
     Marker,
     NeighborhoodPolygon,
 } from "@workspace/ui/components/map";
-import { useMyLocation } from "@/features/onboarding/hooks/address.hooks";
 import { PageHeader } from "@workspace/ui/components/page-header";
-import { Skeleton } from "@workspace/ui/components/skeleton";
 import {
-    StatusBadge,
-    statusTone,
-} from "@workspace/ui/components/status-badge";
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@workspace/ui/components/select";
+import { Skeleton } from "@workspace/ui/components/skeleton";
+import { StatusBadge, statusTone } from "@workspace/ui/components/status-badge";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { toast } from "sonner";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
+import { useMyLocation } from "@/features/onboarding/hooks/address.hooks";
 
 export const Route = createFileRoute("/_app/incidents/")({
     component: IncidentsPage,
@@ -122,9 +119,11 @@ function IncidentsPage() {
                         <CardContent>
                             <div className="relative isolate">
                                 <Map
-                                    center={centroidOf(firstNeighborhood.geometry)}
+                                    center={centroidOf(
+                                        firstNeighborhood.geometry,
+                                    )}
                                     zoom={14}
-                                    className="h-[400px] min-h-[400px] w-full"
+                                    className="h-[40dvh] min-h-64 w-full md:h-[400px] md:min-h-[400px]"
                                 >
                                     {neighborhoods?.map((n) =>
                                         n.geometry ? (
@@ -151,8 +150,10 @@ function IncidentsPage() {
                                                             {
                                                                 status:
                                                                     statusLabels[
-                                                                        inc.status
-                                                                    ] ?? inc.status,
+                                                                        inc
+                                                                            .status
+                                                                    ] ??
+                                                                    inc.status,
                                                             },
                                                         )}
                                                     </p>
@@ -164,12 +165,15 @@ function IncidentsPage() {
                                         home={
                                             myLocation?.lat != null &&
                                             myLocation?.lng != null
-                                                ? [myLocation.lat, myLocation.lng]
+                                                ? [
+                                                      myLocation.lat,
+                                                      myLocation.lng,
+                                                  ]
                                                 : null
                                         }
                                         fitGeometry={
-                                            myLocation?.neighborhood?.geometry ??
-                                            null
+                                            myLocation?.neighborhood
+                                                ?.geometry ?? null
                                         }
                                     />
                                 </Map>
@@ -304,6 +308,7 @@ function CreateIncidentDialog({
     const { data: neighborhoods } = useNeighborhoods();
     const { data: myLocation } = useMyLocation();
     const firstNeighborhood = neighborhoods?.find((n) => n.geometry);
+    const missingRequiredFields = !title.trim() || !description.trim();
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -327,8 +332,7 @@ function CreateIncidentDialog({
                     setAddress("");
                     onSuccess();
                 },
-                onError: () =>
-                    toast.error(t("pages.incidents.reportError")),
+                onError: () => toast.error(t("pages.incidents.reportError")),
             },
         );
     }
@@ -392,25 +396,35 @@ function CreateIncidentDialog({
                                     ] as const
                                 ).map((c) => (
                                     <SelectItem key={c} value={c}>
-                                        {t(
-                                            `pages.incidents.categories.${c}`,
-                                        )}
+                                        {t(`pages.incidents.categories.${c}`)}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="incident-address">{t("pages.incidents.addressLabel")}</Label>
+                        <Label htmlFor="incident-address">
+                            {t("pages.incidents.addressLabel")}
+                        </Label>
                         <AddressAutocomplete
                             id="incident-address"
                             value={address}
                             onChange={setAddress}
-                            onSelect={(s) => { setAddress(s.label); setPickedLat(s.lat); setPickedLng(s.lng); }}
+                            onSelect={(s) => {
+                                setAddress(s.label);
+                                setPickedLat(s.lat);
+                                setPickedLng(s.lng);
+                            }}
                         />
-                        {pickedLat != null && pickedLng != null && myLocation?.neighborhood?.geometry &&
-                            !pointInPolygon(pickedLat, pickedLng, myLocation.neighborhood.geometry) && (
-                                <p className="text-amber-600 dark:text-amber-500 text-xs">
+                        {pickedLat != null &&
+                            pickedLng != null &&
+                            myLocation?.neighborhood?.geometry &&
+                            !pointInPolygon(
+                                pickedLat,
+                                pickedLng,
+                                myLocation.neighborhood.geometry,
+                            ) && (
+                                <p className="text-xs text-amber-600 dark:text-amber-500">
                                     {t("address.outsideQuartier")}
                                 </p>
                             )}
@@ -425,7 +439,9 @@ function CreateIncidentDialog({
                             </Label>
                             <div className="relative isolate">
                                 <Map
-                                    center={centroidOf(firstNeighborhood.geometry)}
+                                    center={centroidOf(
+                                        firstNeighborhood.geometry,
+                                    )}
                                     zoom={15}
                                     className="h-64 min-h-64"
                                 >
@@ -438,48 +454,61 @@ function CreateIncidentDialog({
                                             setPickedLng(lng);
                                         }}
                                     />
-                                    {pickedLat !== null && pickedLng !== null && (
-                                        <Marker
-                                            variant="incident"
-                                            position={[pickedLat, pickedLng]}
-                                        />
-                                    )}
+                                    {pickedLat !== null &&
+                                        pickedLng !== null && (
+                                            <Marker
+                                                variant="incident"
+                                                position={[
+                                                    pickedLat,
+                                                    pickedLng,
+                                                ]}
+                                            />
+                                        )}
                                     <MapControls
                                         home={
                                             myLocation?.lat != null &&
                                             myLocation?.lng != null
-                                                ? [myLocation.lat, myLocation.lng]
+                                                ? [
+                                                      myLocation.lat,
+                                                      myLocation.lng,
+                                                  ]
                                                 : null
                                         }
                                         fitGeometry={
-                                            myLocation?.neighborhood?.geometry ??
-                                            null
+                                            myLocation?.neighborhood
+                                                ?.geometry ?? null
                                         }
                                     />
                                 </Map>
                             </div>
                         </div>
                     )}
-                    <div className="flex justify-end gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => onOpenChange(false)}
-                        >
-                            {t("common.cancel")}
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={
-                                createIncident.isPending ||
-                                !title.trim() ||
-                                !description.trim()
-                            }
-                        >
-                            {createIncident.isPending
-                                ? t("pages.incidents.sending")
-                                : t("pages.incidents.report")}
-                        </Button>
+                    <div className="space-y-2">
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => onOpenChange(false)}
+                            >
+                                {t("common.cancel")}
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={
+                                    createIncident.isPending ||
+                                    missingRequiredFields
+                                }
+                            >
+                                {createIncident.isPending
+                                    ? t("pages.incidents.sending")
+                                    : t("pages.incidents.report")}
+                            </Button>
+                        </div>
+                        {missingRequiredFields && (
+                            <p className="text-muted-foreground text-xs">
+                                {t("pages.incidents.requiredFieldsHint")}
+                            </p>
+                        )}
                     </div>
                 </form>
             </DialogContent>
