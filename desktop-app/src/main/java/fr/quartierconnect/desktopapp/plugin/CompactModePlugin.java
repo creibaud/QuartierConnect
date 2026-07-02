@@ -22,16 +22,18 @@ public class CompactModePlugin implements QuartierConnectPlugin, PluginRegistry.
     private boolean compactActive = false;
 
     private static final String COMPACT_CSS =
-        ".content-title{-fx-font-size:13px;}" +
-        ".content-subtitle{-fx-font-size:10.5px;}" +
-        ".card{-fx-padding:10 13;}" +
-        ".card-value{-fx-font-size:26px;}" +
-        ".admin-table .table-row-cell{-fx-pref-height:30;}" +
-        ".admin-table .table-cell{-fx-padding:4 8;}" +
-        ".filter-button{-fx-padding:3 8;-fx-font-size:11px;}" +
-        ".menu-button,.menu-button-active{-fx-padding:5 10;-fx-font-size:12px;}" +
-        ".topbar{-fx-min-height:38;-fx-max-height:38;}" +
-        ".statusbar{-fx-min-height:19;-fx-max-height:19;}";
+        ".content-title{-fx-font-size:16px;}" +
+        ".content-subtitle{-fx-font-size:11.5px;}" +
+        ".card{-fx-padding:8 12 0 12;-fx-min-height:58;}" +
+        ".card-value{-fx-font-size:20px;}" +
+        ".incidents-table .table-row-cell{-fx-pref-height:30;}" +
+        ".incidents-table .table-cell{-fx-padding:2 6;}" +
+        ".filter-btn{-fx-padding:2 7;-fx-font-size:10.5px;}" +
+        ".nav-label{-fx-font-size:11.5px;}" +
+        ".app-topbar{-fx-min-height:40px;-fx-max-height:40px;-fx-pref-height:40px;}" +
+        ".sync-card{-fx-padding:8 12;}" +
+        ".recent-card-head{-fx-padding:6 10;}" +
+        ".recent-row{-fx-padding:5 10;}";
 
     private String compactDataUri;
 
@@ -57,7 +59,7 @@ public class CompactModePlugin implements QuartierConnectPlugin, PluginRegistry.
     @Override
     public Node getPanel() {
         Label desc = new Label(I18n.get("plugin.compact.panelDesc"));
-        desc.setStyle("-fx-font-size: 11.5px; -fx-text-fill: -color-fg-muted;");
+        desc.setStyle("-fx-font-size: 12.5px; -fx-text-fill: -color-fg-muted;");
         desc.setWrapText(true);
 
         ToggleButton toggle = new ToggleButton(compactActive ? I18n.get("plugin.compact.enabled") : I18n.get("plugin.compact.enable"));
@@ -75,7 +77,7 @@ public class CompactModePlugin implements QuartierConnectPlugin, PluginRegistry.
         });
 
         Label note = new Label(I18n.get("plugin.compact.note"));
-        note.setStyle("-fx-font-size: 10.5px; -fx-text-fill: -color-fg-subtle;");
+        note.setStyle("-fx-font-size: 12px; -fx-text-fill: -color-fg-subtle;");
 
         HBox toggleRow = new HBox(10, toggle);
         toggleRow.setAlignment(Pos.CENTER_LEFT);

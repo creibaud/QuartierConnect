@@ -2,10 +2,9 @@ package fr.quartierconnect.desktopapp.plugin;
 
 import fr.quartierconnect.desktopapp.database.IncidentRepository;
 import fr.quartierconnect.desktopapp.i18n.I18n;
-import javafx.application.Platform;
+import fr.quartierconnect.desktopapp.ui.components.ToastManager;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.HBox;
@@ -16,7 +15,7 @@ import java.util.function.Consumer;
 
 /**
  * Built-in plugin — monitors conflicts via the EventBus (INCIDENTS_CHANGED)
- * and shows a JavaFX Alert when new conflicts are detected.
+ * and shows an in-app toast when new conflicts are detected.
  */
 public class NotificationPlugin implements QuartierConnectPlugin, PluginRegistry.ContextAwarePlugin, ViewablePlugin {
 
@@ -54,7 +53,7 @@ public class NotificationPlugin implements QuartierConnectPlugin, PluginRegistry
     @Override
     public Node getPanel() {
         Label desc = new Label(I18n.get("plugin.notifications.panelDesc"));
-        desc.setStyle("-fx-font-size: 11.5px; -fx-text-fill: -color-fg-muted;");
+        desc.setStyle("-fx-font-size: 12.5px; -fx-text-fill: -color-fg-muted;");
         desc.setWrapText(true);
 
         ToggleButton toggle = new ToggleButton(alertsEnabled
@@ -72,13 +71,13 @@ public class NotificationPlugin implements QuartierConnectPlugin, PluginRegistry
                 statusLabel.setText(alertsEnabled
                         ? I18n.get("plugin.notifications.monitoringActive")
                         : I18n.get("plugin.notifications.monitoringPaused"));
-                statusLabel.setStyle("-fx-font-size: 11px; -fx-font-family: monospace; -fx-text-fill: "
-                        + (alertsEnabled ? "#15803d" : "#71717a") + ";");
+                statusLabel.setStyle("-fx-font-size: 12px; -fx-font-family: monospace; -fx-text-fill: "
+                        + (alertsEnabled ? "-color-success-fg" : "-color-fg-muted") + ";");
             }
         });
 
         statusLabel = new Label(I18n.get("plugin.notifications.monitoringActive"));
-        statusLabel.setStyle("-fx-font-size: 11px; -fx-font-family: monospace; -fx-text-fill: #15803d;");
+        statusLabel.setStyle("-fx-font-size: 12px; -fx-font-family: monospace; -fx-text-fill: -color-success-fg;");
 
         HBox toggleRow = new HBox(10, toggle, statusLabel);
         toggleRow.setAlignment(Pos.CENTER_LEFT);
@@ -98,17 +97,16 @@ public class NotificationPlugin implements QuartierConnectPlugin, PluginRegistry
             long conflicts = repo.listConflicts().size();
             int previous = lastKnownConflicts.getAndSet((int) conflicts);
             if (conflicts > previous && conflicts > 0) {
-                long newConflicts = conflicts - previous;
-                Platform.runLater(() -> {
-                    Alert alert = new Alert(Alert.AlertType.WARNING);
-                    alert.setTitle(I18n.get("plugin.notifications.alertTitle"));
-                    alert.setHeaderText(newConflicts > 1
-                            ? I18n.get("plugin.notifications.alertHeaderMany", newConflicts)
-                            : I18n.get("plugin.notifications.alertHeaderOne", newConflicts));
-                    alert.setContentText(I18n.get("plugin.notifications.alertContent"));
-                    alert.show();
-                });
+                notifyNewConflicts(conflicts - previous);
             }
         } catch (Exception ignored) {}
+    }
+
+    private void notifyNewConflicts(long newConflicts) {
+        ToastManager toast = context != null ? context.getToastManager() : null;
+        if (toast == null) return;
+        toast.showError(newConflicts > 1
+                ? I18n.get("plugin.notifications.toastMany", newConflicts)
+                : I18n.get("plugin.notifications.toastOne", newConflicts));
     }
 }

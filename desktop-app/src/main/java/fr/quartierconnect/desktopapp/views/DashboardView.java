@@ -6,6 +6,7 @@ import fr.quartierconnect.desktopapp.ui.components.AppBadge;
 import fr.quartierconnect.desktopapp.ui.components.AppButton;
 import fr.quartierconnect.desktopapp.ui.components.EmptyState;
 import fr.quartierconnect.desktopapp.ui.components.StatCard;
+import fr.quartierconnect.desktopapp.services.StatisticsService;
 import fr.quartierconnect.desktopapp.services.SyncService;
 import fr.quartierconnect.desktopapp.util.UiHelper;
 import fr.quartierconnect.desktopapp.ui.components.ToastManager;
@@ -50,6 +51,13 @@ public class DashboardView {
     private final StatCard inProgressCard = new StatCard(I18n.get("dashboard.stat.inProgress"),  StatCard.Accent.BLUE);
     private final StatCard conflictsCard  = new StatCard(I18n.get("dashboard.stat.conflicts"),   StatCard.Accent.RED);
 
+    private final StatisticsService statisticsService = new StatisticsService();
+    private final StatCard usersCard           = new StatCard(I18n.get("dashboard.stat.users"),           StatCard.Accent.MUTED);
+    private final StatCard neighborhoodsCard   = new StatCard(I18n.get("dashboard.stat.neighborhoods"),   StatCard.Accent.MUTED);
+    private final StatCard remoteIncidentsCard = new StatCard(I18n.get("dashboard.stat.remoteIncidents"), StatCard.Accent.MUTED);
+    private final StatCard activeIncidentsCard = new StatCard(I18n.get("dashboard.stat.activeIncidents"), StatCard.Accent.MUTED);
+    private final Label participationOfflineNote = new Label(I18n.get("dashboard.participation.offline"));
+
     private final VBox  recentContainer = new VBox(0);
     private final Label lastSyncLabel   = new Label(I18n.get("time.never"));
     private final Label dirtyLabel      = new Label("—");
@@ -72,11 +80,17 @@ public class DashboardView {
         this.toast       = toast;
         this.root        = buildLayout();
         loadAsync();
+        loadParticipationStatsAsync();
         startSyncLabelTimer();
     }
 
     public VBox getRoot() {
         return root;
+    }
+
+    /** Reloads the stat cards, breakdown bar and recent list from local storage. */
+    public void refresh() {
+        loadAsync();
     }
 
     private void startSyncLabelTimer() {
@@ -99,6 +113,7 @@ public class DashboardView {
             buildSyncCard(),
             buildStatsGrid(),
             buildBreakdownBar(),
+            buildParticipationSection(),
             buildRecentSection()
         );
         scrollContent.setPadding(new Insets(22, 22, 22, 22));
@@ -185,6 +200,7 @@ public class DashboardView {
                 if (ok) {
                     toast.showSuccess(I18n.get("dashboard.syncSuccess"));
                     loadAsync();
+                    loadParticipationStatsAsync();
                 } else {
                     toast.showError(I18n.get("dashboard.syncFailed"));
                 }
@@ -210,16 +226,16 @@ public class DashboardView {
     }
 
     private VBox buildBreakdownBar() {
-        openBar.setStyle("-fx-background-color: #b45309; -fx-background-radius: 4 0 0 4;");
+        openBar.setStyle("-fx-background-color: -color-warning-emphasis; -fx-background-radius: 4 0 0 4;");
         openBar.setPrefHeight(6);
 
-        inProgressBar.setStyle("-fx-background-color: #2563eb;");
+        inProgressBar.setStyle("-fx-background-color: -color-accent-emphasis;");
         inProgressBar.setPrefHeight(6);
 
-        resolvedBar.setStyle("-fx-background-color: #15803d;");
+        resolvedBar.setStyle("-fx-background-color: -color-success-emphasis;");
         resolvedBar.setPrefHeight(6);
 
-        conflictBar.setStyle("-fx-background-color: #dc2626; -fx-background-radius: 0 4 4 0;");
+        conflictBar.setStyle("-fx-background-color: -color-danger-emphasis; -fx-background-radius: 0 4 4 0;");
         conflictBar.setPrefHeight(6);
 
         // Bind each segment's width to the container's actual width × its ratio
@@ -234,10 +250,10 @@ public class DashboardView {
         HBox.setHgrow(barContainer, Priority.ALWAYS);
 
         HBox legend = new HBox(14,
-            legendDot("#b45309", I18n.get("dashboard.legend.open")),
-            legendDot("#2563eb", I18n.get("dashboard.legend.inProgress")),
-            legendDot("#15803d", I18n.get("dashboard.legend.resolved")),
-            legendDot("#dc2626", I18n.get("dashboard.legend.conflicts"))
+            legendDot("-color-warning-fg", I18n.get("dashboard.legend.open")),
+            legendDot("-color-accent-fg",  I18n.get("dashboard.legend.inProgress")),
+            legendDot("-color-success-fg", I18n.get("dashboard.legend.resolved")),
+            legendDot("-color-danger-fg",  I18n.get("dashboard.legend.conflicts"))
         );
         legend.setAlignment(Pos.CENTER_LEFT);
 
@@ -248,8 +264,35 @@ public class DashboardView {
 
     private Label legendDot(String color, String text) {
         Label lbl = new Label("● " + text);
-        lbl.setStyle("-fx-font-size: 10.5px; -fx-text-fill: " + color + ";");
+        lbl.setStyle("-fx-font-size: 12px; -fx-text-fill: " + color + ";");
         return lbl;
+    }
+
+    private VBox buildParticipationSection() {
+        Label sectionLabel = new Label(I18n.get("dashboard.participation"));
+        sectionLabel.getStyleClass().add("section-label");
+        VBox.setMargin(sectionLabel, new Insets(20, 0, 8, 0));
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+
+        ColumnConstraints cc = new ColumnConstraints();
+        cc.setHgrow(Priority.ALWAYS);
+        cc.setFillWidth(true);
+        grid.getColumnConstraints().addAll(cc, cc, cc, cc);
+
+        grid.add(usersCard,           0, 0);
+        grid.add(neighborhoodsCard,   1, 0);
+        grid.add(remoteIncidentsCard, 2, 0);
+        grid.add(activeIncidentsCard, 3, 0);
+
+        participationOfflineNote.setStyle("-fx-font-size: 12px; -fx-text-fill: -color-fg-muted;");
+        participationOfflineNote.setVisible(false);
+        participationOfflineNote.setManaged(false);
+        VBox.setMargin(participationOfflineNote, new Insets(6, 0, 0, 0));
+
+        return new VBox(0, sectionLabel, grid, participationOfflineNote);
     }
 
     private VBox buildRecentSection() {
@@ -267,7 +310,7 @@ public class DashboardView {
 
         AppButton viewAllBtn = new AppButton(I18n.get("dashboard.viewAll"), AppButton.Variant.GHOST);
         viewAllBtn.setOnAction(e -> navigateTo.accept("incidents"));
-        viewAllBtn.setStyle("-fx-font-size: 11px; -fx-padding: 2 6;");
+        viewAllBtn.setStyle("-fx-font-size: 12.5px; -fx-padding: 2 6;");
 
         recentHead.getChildren().addAll(recentTitle, headSpacer, viewAllBtn);
 
@@ -317,6 +360,31 @@ public class DashboardView {
         }, "dashboard-load").start();
     }
 
+    private void loadParticipationStatsAsync() {
+        new Thread(() -> {
+            StatisticsService.Stats stats = statisticsService.computeStats();
+            Platform.runLater(() -> renderParticipationStats(stats));
+        }, "dashboard-remote-stats").start();
+    }
+
+    private void renderParticipationStats(StatisticsService.Stats stats) {
+        usersCard.setValue(formatCounter(stats.remoteUsers()));
+        neighborhoodsCard.setValue(formatCounter(stats.remoteNeighborhoods()));
+        remoteIncidentsCard.setValue(formatCounter(stats.remoteIncidents()));
+        activeIncidentsCard.setValue(formatCounter(stats.remoteActiveIncidents()));
+
+        boolean offline = stats.remoteUsers() == null
+                && stats.remoteNeighborhoods() == null
+                && stats.remoteIncidents() == null
+                && stats.remoteActiveIncidents() == null;
+        participationOfflineNote.setVisible(offline);
+        participationOfflineNote.setManaged(offline);
+    }
+
+    private static String formatCounter(Integer value) {
+        return value != null ? String.valueOf(value) : "—";
+    }
+
     private void renderRecent(List<IncidentRepository.Incident> incidents) {
         recentContainer.getChildren().clear();
         if (incidents.isEmpty()) {
@@ -339,7 +407,7 @@ public class DashboardView {
         titleLbl.setMaxWidth(Double.MAX_VALUE);
 
         Label timeLbl = new Label(formatTimestamp(i.updatedAt()));
-        timeLbl.setStyle("-fx-font-size: 10px; -fx-text-fill: #a1a1aa;");
+        timeLbl.setStyle("-fx-font-size: 11.5px; -fx-text-fill: -color-fg-muted;");
 
         HBox row = new HBox(9, statusBadge, titleLbl, timeLbl);
         row.setAlignment(Pos.CENTER_LEFT);
@@ -348,8 +416,8 @@ public class DashboardView {
 
         if (i.isConflict()) {
             Label conflictTag = new Label(I18n.get("dashboard.conflictTag"));
-            conflictTag.setStyle("-fx-font-size: 9.5px; -fx-text-fill: #dc2626; "
-                    + "-fx-background-color: rgba(220,38,38,0.12); -fx-padding: 1 5; "
+            conflictTag.setStyle("-fx-font-size: 11px; -fx-text-fill: -color-danger-fg; "
+                    + "-fx-background-color: -color-danger-subtle; -fx-padding: 1 5; "
                     + "-fx-background-radius: 4;");
             row.getChildren().add(conflictTag);
         }
