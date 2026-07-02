@@ -12,14 +12,9 @@ import {
     type LoginResponse,
 } from "@workspace/shared/lib/auth";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
+import { AuthLayout } from "@workspace/ui/components/auth-layout";
 import { Button } from "@workspace/ui/components/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent } from "@workspace/ui/components/card";
 import { Spinner } from "@workspace/ui/components/spinner";
 import { useAppForm } from "@workspace/ui/lib/form";
 import { useTranslation } from "react-i18next";
@@ -103,18 +98,14 @@ function AdminLoginPage() {
     });
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 dark:bg-zinc-950">
-            <Card className="w-full max-w-sm">
-                <CardHeader className="text-center">
-                    <CardTitle className="text-2xl">
-                        QuartierConnect Admin
-                    </CardTitle>
-                    <CardDescription>
-                        {step === "credentials"
-                            ? t("adminPages.auth.loginSubtitle")
-                            : t("adminPages.auth.twoStepVerification")}
-                    </CardDescription>
-                </CardHeader>
+        <AuthLayout
+            subtitle={
+                step === "credentials"
+                    ? t("adminPages.auth.loginSubtitle")
+                    : t("adminPages.auth.twoStepVerification")
+            }
+        >
+            <Card className="border-border/60 shadow-foreground/5 shadow-lg">
                 <CardContent className="space-y-4">
                     {serverError && (
                         <Alert variant="destructive">
@@ -203,6 +194,6 @@ function AdminLoginPage() {
                     )}
                 </CardContent>
             </Card>
-        </div>
+        </AuthLayout>
     );
 }

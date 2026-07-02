@@ -1,7 +1,8 @@
 @import "@fontsource-variable/fraunces";
 
-/* Client theme: "Voisinage" — warm community palette (terracotta + civic green,
-   warm neutrals). Client-scoped override of the shared globals.css tokens.
+/* "Voisinage" theme — warm community palette (terracotta + civic green,
+   warm neutrals) shared by the client and admin apps. Overrides the
+   factory tokens from globals.css; import it right after globals.css.
    Contrasts tuned for WCAG AA. */
 
 :root {
@@ -37,7 +38,7 @@
     --sidebar-accent-foreground: oklch(0.35 0.06 150);
     --sidebar-border: oklch(0.9 0.012 75);
     --sidebar-ring: oklch(0.5 0.14 42);
-    /* Client headings: Fraunces (warm editorial display). Body stays Inter. */
+    /* Headings: Fraunces (warm editorial display). Body stays Inter. */
     --font-heading: "Fraunces Variable", Georgia, "Times New Roman", serif;
 }
 

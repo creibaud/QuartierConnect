@@ -32,6 +32,10 @@ export default defineConfig({
                 __dirname,
                 "../../packages/ui/src/styles/globals.css",
             ),
+            "@workspace/ui/voisinage.css": path.resolve(
+                __dirname,
+                "../../packages/ui/src/styles/voisinage.css",
+            ),
             "@workspace/ui": path.resolve(__dirname, "../../packages/ui/src"),
         },
     },

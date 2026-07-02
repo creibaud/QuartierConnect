@@ -25,15 +25,13 @@ const STATUS_TONES: Record<string, StatusTone> = {
     draft: "neutral",
 };
 
-/* The success tone mirrors the Voisinage accent (sage green) from
-   apps/client/src/client.css so client and admin render identical status
-   colors until both apps share the theme tokens. */
+/* The success tone uses the Voisinage accent (sage green) from
+   packages/ui/src/styles/voisinage.css, shared by client and admin. */
 const TONE_CLASSES: Record<StatusTone, string> = {
     pending:
         "border-amber-600/30 bg-amber-500/10 text-amber-700 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-300",
     progress: "border-transparent bg-secondary text-secondary-foreground",
-    success:
-        "border-[oklch(0.35_0.06_150)]/25 bg-[oklch(0.94_0.03_150)] text-[oklch(0.35_0.06_150)] dark:border-[oklch(0.9_0.05_150)]/25 dark:bg-[oklch(0.3_0.04_150)] dark:text-[oklch(0.9_0.05_150)]",
+    success: "border-accent-foreground/25 bg-accent text-accent-foreground",
     danger: "border-destructive/25 bg-destructive/10 text-destructive dark:bg-destructive/20",
     neutral: "border-border bg-transparent text-muted-foreground",
 };
