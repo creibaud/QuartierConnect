@@ -5,6 +5,7 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
+import { SkipThrottle } from "@nestjs/throttler";
 import { and, count, eq, isNull } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { HealthResponseDto, StatsResponseDto } from "./app.dto";
@@ -25,6 +26,7 @@ export class AppController {
     ) {}
 
     @Get("health")
+    @SkipThrottle()
     @ApiOperation({
         summary: "Health check",
         description:

@@ -73,7 +73,7 @@ export const Route = createFileRoute("/_app/events/")({
 type ViewMode = "list" | "calendar" | "swipe" | "map";
 
 function EventsPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [createOpen, setCreateOpen] = useState(false);
     const [viewMode, setViewMode] = useState<ViewMode>("calendar");
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(
@@ -185,9 +185,9 @@ function EventsPage() {
                     }
                 >
                     {viewMode === "calendar" ? (
-                        <div className="flex flex-col gap-4">
-                            <Card>
-                                <CardContent className="flex justify-center pt-4">
+                        <div className="grid gap-6 lg:grid-cols-[auto_1fr] lg:items-start">
+                            <Card className="w-fit">
+                                <CardContent className="flex justify-center p-2 sm:p-3">
                                     <Calendar
                                         mode="single"
                                         selected={selectedDate}
@@ -201,43 +201,37 @@ function EventsPage() {
                                 </CardContent>
                             </Card>
 
-                            {selectedDate && (
-                                <div className="flex flex-col gap-3">
-                                    <p className="text-sm font-medium">
-                                        {selectedDate.toLocaleDateString(
-                                            "fr-FR",
-                                            {
-                                                weekday: "long",
-                                                day: "numeric",
-                                                month: "long",
-                                            },
-                                        )}
+                            <div className="flex flex-col gap-3">
+                                <p className="text-sm font-medium">
+                                    {selectedDate
+                                        ? selectedDate.toLocaleDateString(
+                                              i18n.language,
+                                              {
+                                                  weekday: "long",
+                                                  day: "numeric",
+                                                  month: "long",
+                                              },
+                                          )
+                                        : t("pages.events.upcoming")}
+                                </p>
+                                {(selectedDate ? eventsOnSelected : upcoming)
+                                    .length === 0 ? (
+                                    <p className="text-muted-foreground text-sm">
+                                        {selectedDate
+                                            ? t("pages.events.noneThisDay")
+                                            : t(
+                                                  "pages.events.emptyDescription",
+                                              )}
                                     </p>
-                                    {eventsOnSelected.length === 0 ? (
-                                        <p className="text-muted-foreground text-sm">
-                                            {t("pages.events.noneThisDay")}
-                                        </p>
-                                    ) : (
-                                        eventsOnSelected.map((evt) => (
-                                            <EventCard
-                                                key={evt._id}
-                                                event={evt}
-                                            />
-                                        ))
-                                    )}
-                                </div>
-                            )}
-
-                            {!selectedDate && upcoming.length > 0 && (
-                                <div className="flex flex-col gap-3">
-                                    <p className="text-muted-foreground text-sm font-medium">
-                                        {t("pages.events.upcoming")}
-                                    </p>
-                                    {upcoming.slice(0, 3).map((evt) => (
+                                ) : (
+                                    (selectedDate
+                                        ? eventsOnSelected
+                                        : upcoming.slice(0, 6)
+                                    ).map((evt) => (
                                         <EventCard key={evt._id} event={evt} />
-                                    ))}
-                                </div>
-                            )}
+                                    ))
+                                )}
+                            </div>
                         </div>
                     ) : viewMode === "swipe" ? (
                         <SwipeView events={upcoming} />
@@ -269,7 +263,7 @@ function EventsPage() {
 }
 
 function SwipeView({ events }: { events: Event[] }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [index, setIndex] = useState(0);
     const [swipeDirection, setSwipeDirection] = useState<
         "left" | "right" | null
@@ -387,7 +381,7 @@ function SwipeView({ events }: { events: Event[] }) {
                         )}
                         <p className="text-sm font-medium">
                             {new Date(current.date).toLocaleDateString(
-                                "fr-FR",
+                                i18n.language,
                                 {
                                     weekday: "long",
                                     day: "numeric",
@@ -444,7 +438,7 @@ function SwipeView({ events }: { events: Event[] }) {
 }
 
 function EventCard({ event }: { event: Event }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const date = new Date(event.date);
     const isPast = date < new Date();
 
@@ -462,7 +456,7 @@ function EventCard({ event }: { event: Event }) {
                             </Badge>
                         )}
                         <span className="text-muted-foreground text-xs whitespace-nowrap">
-                            {date.toLocaleDateString("fr-FR", {
+                            {date.toLocaleDateString(i18n.language, {
                                 day: "numeric",
                                 month: "short",
                                 year: "numeric",
@@ -623,7 +617,7 @@ function CreateEventDialog({
 }
 
 function MapView({ events }: { events: Event[] }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { data: neighborhoods } = useNeighborhoods();
     const { data: myLocation } = useMyLocation();
     const firstNeighborhood = neighborhoods?.find((n) => n.geometry);
@@ -679,7 +673,7 @@ function MapView({ events }: { events: Event[] }) {
                                             <p className="text-xs text-muted-foreground">
                                                 {new Date(
                                                     evt.date,
-                                                ).toLocaleString("fr-FR")}
+                                                ).toLocaleString(i18n.language)}
                                             </p>
                                         </div>
                                     }

@@ -60,6 +60,8 @@ describe("Auth (e2e)", () => {
     let disposableAccessToken: string;
     let disposableRefreshToken: string;
     let refreshTestRefreshToken: string;
+    let loginTestEmail: string;
+    let loginTestTotpSecret: string;
     let preMintedSsoToken: string;
     let preMintedSsoTokenForAlreadyUsed: string;
 
@@ -89,6 +91,15 @@ describe("Auth (e2e)", () => {
         const email3 = `e2e-refresh-${ts}@test.fr`;
         const refresh = await registerAndLogin(app, email3);
         refreshTestRefreshToken = refresh.refreshToken;
+
+        loginTestEmail = `e2e-login-${ts}@test.fr`;
+        const loginReg = await request(app.getHttpServer())
+            .post("/auth/register")
+            .send({ email: loginTestEmail, password: DEMO_PASSWORD })
+            .expect(201);
+        loginTestTotpSecret = new URL(
+            loginReg.body.otpauthUrl.replace("otpauth://", "http://"),
+        ).searchParams.get("secret")!;
 
         const db =
             moduleFixture.get<PostgresJsDatabase<typeof schema>>(DRIZZLE_TOKEN);
@@ -172,9 +183,9 @@ describe("Auth (e2e)", () => {
             const res = await request(app.getHttpServer())
                 .post("/auth/login")
                 .send({
-                    email: registeredEmail,
+                    email: loginTestEmail,
                     password: DEMO_PASSWORD,
-                    totpCode: currentTotp(totpSecret, -30),
+                    totpCode: currentTotp(loginTestTotpSecret),
                 })
                 .expect(200);
 

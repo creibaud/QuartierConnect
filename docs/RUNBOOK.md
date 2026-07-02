@@ -306,6 +306,12 @@ aws s3 cp "s3://$BACKUP_BUCKET/mongo/mongo-<DATE>.tar.gz" /var/backups/quartierc
 
 ---
 
+## Migrations PostgreSQL (Drizzle)
+
+Base provisionnée par `drizzle-kit push` (table `drizzle.__drizzle_migrations` vide) : insérer une ligne de baseline — `INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES ('baseline-push-provisioned', <max "when" de api/drizzle/meta/_journal.json>);` — sinon le migrator du bootstrap API rejoue `0000` et crashe.
+
+---
+
 ## Journal des drills de restauration
 
 > À remplir après chaque test de restauration (cf. DEPLOYMENT.md §9).

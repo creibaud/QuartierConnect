@@ -100,6 +100,18 @@ export class PdfService {
         const page: PDFPage = doc.getPages()[0];
         const font = await doc.embedFont(StandardFonts.Helvetica);
 
+        const zoneWidth = 200;
+        // Cover the "À signer — label" prompt: once signed, the transparent
+        // signature PNG would otherwise let that prompt show through.
+        page.drawRectangle({
+            x: zone.x - 2,
+            y: zone.y + 36,
+            width: zoneWidth + 6,
+            height: 16,
+            color: rgb(1, 1, 1),
+        });
+
+        let drewImage = false;
         if (stamp.image) {
             try {
                 const base64 = stamp.image.replace(
@@ -107,15 +119,39 @@ export class PdfService {
                     "",
                 );
                 const png = await doc.embedPng(Buffer.from(base64, "base64"));
+                // Fit within the signing box, preserving the drawn signature's
+                // aspect ratio (the old fixed 120x48 squished it), then centre it.
+                const maxWidth = 180;
+                const maxHeight = 46;
+                const scale = Math.min(
+                    maxWidth / png.width,
+                    maxHeight / png.height,
+                    1,
+                );
+                const width = png.width * scale;
+                const height = png.height * scale;
                 page.drawImage(png, {
-                    x: zone.x,
-                    y: zone.y + 34,
-                    width: 120,
-                    height: 48,
+                    x: zone.x + (zoneWidth - width) / 2,
+                    y: zone.y + 37,
+                    width,
+                    height,
                 });
+                drewImage = true;
             } catch {
-                // best-effort: fall back to the text caption below
+                // best-effort: fall back to the typed signature below
             }
+        }
+
+        // No drawn signature → render the name as a typed signature above the
+        // line (ink blue) so the signing area is never an empty box.
+        if (!drewImage) {
+            page.drawText(stamp.name, {
+                x: zone.x,
+                y: zone.y + 44,
+                size: 18,
+                font,
+                color: rgb(0.09, 0.15, 0.42),
+            });
         }
 
         page.drawText(stamp.name, {

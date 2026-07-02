@@ -67,7 +67,7 @@ export const Route = createFileRoute("/_app/users/")({
 });
 
 function UsersPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { data, isLoading, isError, fetchNextPage, hasNextPage } =
         useInfiniteUsers();
     const updateRole = useUpdateUserRole();
@@ -218,7 +218,7 @@ function UsersPage() {
                                         <TableCell className="text-muted-foreground py-2 text-sm tabular-nums">
                                             {new Date(
                                                 user.createdAt,
-                                            ).toLocaleDateString("fr-FR")}
+                                            ).toLocaleDateString(i18n.language)}
                                         </TableCell>
                                         <TableCell className="py-2 text-right">
                                             <div className="flex items-center justify-end gap-2">

@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsArray, IsNotEmpty, IsObject, IsOptional } from "class-validator";
 
-export class CastVoteDto {
+export class CastCommunityVoteDto {
     @ApiProperty({
         description: "IDs of the chosen options",
         example: ["yes"],

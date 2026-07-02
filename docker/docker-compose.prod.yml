@@ -103,6 +103,8 @@ services:
 
   caddy:
     restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
     volumes:
       - /var/log/quartierconnect/caddy:/var/log/caddy
     logging:

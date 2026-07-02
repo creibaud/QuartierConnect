@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { DashboardSquare01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
@@ -18,6 +19,7 @@ import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    const { t } = useTranslation();
     return (
         <Sidebar collapsible="icon" {...props}>
             <SidebarHeader>
@@ -36,7 +38,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                         QuartierConnect
                                     </span>
                                     <span className="truncate text-xs">
-                                        Administration
+                                        {t("nav.administration")}
                                     </span>
                                 </div>
                             </Link>

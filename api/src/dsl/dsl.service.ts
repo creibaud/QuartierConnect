@@ -135,15 +135,39 @@ export class DslService {
         return query.exec() as Promise<unknown>;
     }
 
+    private extractEqualityFilter(
+        filter: Record<string, unknown>,
+        field: string,
+        collection: string,
+    ): string | undefined {
+        const keys = Object.keys(filter);
+        if (keys.length === 0) return undefined;
+
+        const value = filter[field];
+        const isSimpleEquality =
+            keys.length === 1 && keys[0] === field && typeof value === "string";
+        if (!isSimpleEquality) {
+            throw new BadRequestException(
+                `Only simple equality filters on "${field}" are supported for ${collection} (PostgreSQL-backed collection)`,
+            );
+        }
+        return value;
+    }
+
     private async runIncidents(
         type: "find" | "count",
         filter: Record<string, unknown>,
         limit: number | null,
     ): Promise<unknown> {
+        const status = this.extractEqualityFilter(
+            filter,
+            "status",
+            "incidents",
+        );
         const conditions = [isNull(schema.incidents.deletedAt)];
 
-        if (typeof filter["status"] === "string") {
-            conditions.push(eq(schema.incidents.status, filter["status"]));
+        if (status) {
+            conditions.push(eq(schema.incidents.status, status));
         }
 
         const where = and(...conditions);
@@ -170,10 +194,8 @@ export class DslService {
         filter: Record<string, unknown>,
         limit: number | null,
     ): Promise<unknown> {
-        const where =
-            typeof filter["role"] === "string"
-                ? eq(schema.users.role, filter["role"])
-                : undefined;
+        const role = this.extractEqualityFilter(filter, "role", "users");
+        const where = role ? eq(schema.users.role, role) : undefined;
 
         if (type === "count") {
             const rows = await this.db

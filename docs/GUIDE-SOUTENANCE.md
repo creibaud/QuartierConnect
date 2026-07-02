@@ -155,7 +155,7 @@ make totp
 2. Type: `FIND incidents WHERE status = 'open' LIMIT 5`
 3. Press Ctrl+Enter → results appear
 4. Type: `FIND passwords` → "Unknown collection" error
-5. Type: `FIND incidents WHERE status = 'open' OR status = 'in_progress'`
+5. Type: `FIND services WHERE type = 'free' OR type = 'exchange'` → the `OR` compiles to a MongoDB `$or` filter
 
 **Points to highlight:**
 - PLY LALR(1) lexer/parser

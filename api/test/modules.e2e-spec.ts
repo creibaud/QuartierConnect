@@ -171,7 +171,7 @@ describe("New modules (e2e)", () => {
         });
 
         it("POST /contracts/:id/sign with valid TOTP signs the contract", async () => {
-            const totp = currentTotp(userTotpSecret);
+            const totp = currentTotp(userTotpSecret, 30);
             const res = await request(app.getHttpServer())
                 .post(`/contracts/${contractId}/sign`)
                 .set("Authorization", `Bearer ${userToken}`)
