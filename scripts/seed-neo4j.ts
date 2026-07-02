@@ -91,12 +91,13 @@ async function main() {
     for (const svc of services) {
       await session.run(
         `MERGE (s:Service {id: $id})
-         ON CREATE SET s.name = $name, s.category = $category, s.createdAt = datetime()
-         ON MATCH SET s.name = $name, s.category = $category, s.updatedAt = datetime()`,
+         ON CREATE SET s.name = $name, s.category = $category, s.createdBy = $createdBy, s.createdAt = datetime()
+         ON MATCH SET s.name = $name, s.category = $category, s.createdBy = $createdBy, s.updatedAt = datetime()`,
         {
           id: svc._id.toString(),
           name: (svc.title ?? svc.name ?? "") as string,
           category: (svc.category ?? "") as string,
+          createdBy: (svc.createdBy ?? null) as string | null,
         },
       );
 
@@ -127,9 +128,14 @@ async function main() {
 
       await session.run(
         `MERGE (e:Event {id: $id})
-         ON CREATE SET e.name = $name, e.date = datetime($date), e.createdAt = datetime()
-         ON MATCH SET e.name = $name, e.date = datetime($date), e.updatedAt = datetime()`,
-        { id: evt._id.toString(), name: evt.title as string, date: dateStr },
+         ON CREATE SET e.name = $name, e.date = datetime($date), e.createdBy = $createdBy, e.createdAt = datetime()
+         ON MATCH SET e.name = $name, e.date = datetime($date), e.createdBy = $createdBy, e.updatedAt = datetime()`,
+        {
+          id: evt._id.toString(),
+          name: evt.title as string,
+          date: dateStr,
+          createdBy: (evt.createdBy ?? null) as string | null,
+        },
       );
 
       if (evt.neighborhoodId) {

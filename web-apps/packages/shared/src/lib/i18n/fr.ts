@@ -197,7 +197,10 @@ export default {
         loadError: "Impossible de charger les recommandations",
         emptyDescription:
             "Participez à la vie du quartier pour recevoir des suggestions adaptées.",
-        scoreLabel: "Pertinence : {{score}}",
+        reasons: {
+            serviceInNeighborhood: "Service proposé dans votre quartier",
+            upcomingEventNearby: "Événement à venir près de chez vous",
+        },
         types: {
             service: "Service",
             event: "Événement",
@@ -419,6 +422,8 @@ export default {
             emptyDescription: "Vos transferts de points apparaîtront ici.",
             received: "Reçu de {{user}}",
             sent: "Envoyé à {{user}}",
+            servicePayment: "Paiement de service",
+            servicePaymentFor: "Paiement du service « {{service}} »",
             loadError: "Impossible de charger l'historique",
         },
         services: {
@@ -427,7 +432,8 @@ export default {
                 "L'annuaire des services et commerces de votre quartier.",
             allNeighborhoods: "Tous les quartiers",
             nearby: "Services à proximité",
-            locatedCount: "{{count}} service(s) localisé(s)",
+            locatedCount_one: "{{count}} service localisé",
+            locatedCount_other: "{{count}} services localisés",
             emptyTitle: "Aucun service disponible",
             emptyDescription:
                 "Aucun service n'est répertorié pour ce quartier pour le moment.",
@@ -469,7 +475,8 @@ export default {
             proposeCta: "Proposer",
             interestedCta: "Je suis intéressé",
             respondedCta: "Répondu",
-            responderCount: "{{count}} répondant(s)",
+            responderCount_one: "{{count}} répondant",
+            responderCount_other: "{{count}} répondants",
             directionOffer: "Offre",
             directionRequest: "Demande",
             allDirections: "Toutes les directions",
@@ -505,7 +512,8 @@ export default {
             recording: "Enregistrement…",
             vote: "Voter",
             voteRecorded: "Vote enregistré",
-            participantCount: "{{count}} participant(s)",
+            participantCount_one: "{{count}} participant",
+            participantCount_other: "{{count}} participants",
             votedNote: "Vous avez déjà voté.",
             sortDeadline: "Fin proche",
             sortRecent: "Plus récents",
@@ -522,7 +530,8 @@ export default {
         incidents: {
             description: "Signalements de votre quartier",
             mapTitle: "Carte des incidents",
-            locatedCount: "{{count}} incident(s) localisé(s)",
+            locatedCount_one: "{{count}} incident localisé",
+            locatedCount_other: "{{count}} incidents localisés",
             statusLabel: "Statut : {{status}}",
             emptyTitle: "Aucun incident pour l'instant",
             emptyDescription:
@@ -660,7 +669,8 @@ export default {
             descriptionLabel: "Description",
             noNeighborhoodMapped: "Aucun quartier cartographié pour le moment.",
             nearby: "Événements à proximité",
-            locatedCount: "{{count}} événement(s) localisé(s)",
+            locatedCount_one: "{{count}} événement localisé",
+            locatedCount_other: "{{count}} événements localisés",
         },
     },
     adminPages: {
@@ -918,7 +928,8 @@ export default {
             endDateLabel: "Date de fin *",
             viewResults: "Voir les résultats",
             resultsTitle: "Résultats du vote",
-            totalVotes: "{{count}} vote(s) au total",
+            totalVotes_one: "{{count}} vote au total",
+            totalVotes_other: "{{count}} votes au total",
             quorumReached: "Quorum atteint",
             quorumNotReached: "Quorum non atteint",
             resultsLoadError: "Impossible de charger les résultats",

@@ -1,13 +1,65 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import { Driver, Neo4jError } from "neo4j-driver";
+import { Driver, Neo4jError, Record as Neo4jRecord } from "neo4j-driver";
 import { NEO4J_DRIVER } from "./neo4j/neo4j.provider";
+
+export type RecommendationReason =
+    | "serviceInNeighborhood"
+    | "upcomingEventNearby";
 
 export interface Recommendation {
     type: "service" | "event" | "neighbor";
     id: string;
     name: string;
     score: number;
-    reason: string;
+    reason: RecommendationReason;
+}
+
+const MAX_RECOMMENDATIONS = 10;
+
+const RECOMMENDATIONS_QUERY = `
+MATCH (u:User {id: $userId})-[:LIVES_IN]->(n:Neighborhood)
+MATCH (n)<-[:LOCATED_IN]-(s:Service)
+WHERE NOT (u)-[:USED]->(s)
+  AND (s.createdBy IS NULL OR s.createdBy <> $userId)
+RETURN s.id AS id, s.name AS name, 'service' AS type, 3 AS score,
+       'serviceInNeighborhood' AS reason
+UNION
+MATCH (u:User {id: $userId})-[:LIVES_IN]->(n:Neighborhood)
+MATCH (n)<-[:HELD_IN]-(e:Event)
+WHERE NOT (u)-[:ATTENDING]->(e)
+  AND e.date > datetime()
+  AND (e.createdBy IS NULL OR e.createdBy <> $userId)
+RETURN e.id AS id, e.name AS name, 'event' AS type, 2 AS score,
+       'upcomingEventNearby' AS reason
+`;
+
+function toRecommendation(record: Neo4jRecord): Recommendation {
+    const rawScore = record.get("score") as
+        | { toNumber?: () => number }
+        | number;
+    const score =
+        typeof rawScore === "object" && rawScore.toNumber
+            ? rawScore.toNumber()
+            : (rawScore as number);
+    return {
+        type: record.get("type") as Recommendation["type"],
+        id: record.get("id") as string,
+        name: record.get("name") as string,
+        score,
+        reason: record.get("reason") as RecommendationReason,
+    };
+}
+
+function dedupeByTypeAndName(
+    recommendations: Recommendation[],
+): Recommendation[] {
+    const seen = new Set<string>();
+    return recommendations.filter((recommendation) => {
+        const key = `${recommendation.type}:${recommendation.name.trim().toLowerCase()}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
 }
 
 @Injectable()
@@ -51,44 +103,13 @@ export class SocialService {
     async getRecommendations(userId: string): Promise<Recommendation[]> {
         const session = this.driver.session();
         try {
-            const result = await session.run(
-                `
-        MATCH (u:User {id: $userId})-[:LIVES_IN]->(n:Neighborhood)
-        OPTIONAL MATCH (n)<-[:LOCATED_IN]-(s:Service)
-        WHERE NOT (u)-[:USED]->(s)
-        WITH s, n, 3 AS score, 'service' AS type, 'Service in your neighborhood' AS reason
-        RETURN s.id AS id, s.name AS name, type, score, reason
-        UNION
-        MATCH (u:User {id: $userId})-[:LIVES_IN]->(n:Neighborhood)
-        OPTIONAL MATCH (n)<-[:HELD_IN]-(e:Event)
-        WHERE NOT (u)-[:ATTENDING]->(e) AND e.date > datetime()
-        WITH e, n, 2 AS score, 'event' AS type, 'Upcoming event near you' AS reason
-        RETURN e.id AS id, e.name AS name, type, score, reason
-        ORDER BY score DESC
-        LIMIT 10
-        `,
-                { userId },
-            );
-
-            return result.records.map((record) => {
-                const rawScore = record.get("score") as
-                    | { toNumber?: () => number }
-                    | number;
-                const score =
-                    typeof rawScore === "object" && rawScore.toNumber
-                        ? rawScore.toNumber()
-                        : (rawScore as number);
-                return {
-                    type: record.get("type") as
-                        | "service"
-                        | "event"
-                        | "neighbor",
-                    id: record.get("id") as string,
-                    name: record.get("name") as string,
-                    score,
-                    reason: record.get("reason") as string,
-                };
+            const result = await session.run(RECOMMENDATIONS_QUERY, {
+                userId,
             });
+            const recommendations = result.records.map(toRecommendation);
+            return dedupeByTypeAndName(recommendations)
+                .sort((a, b) => b.score - a.score)
+                .slice(0, MAX_RECOMMENDATIONS);
         } catch (error) {
             this.logger.warn(`Neo4j query failed, returning empty: ${error}`);
             return [];
@@ -179,6 +200,7 @@ export class SocialService {
         serviceId: string,
         name: string,
         neighborhoodId?: string,
+        createdBy?: string,
     ): Promise<void> {
         try {
             await this.withRetry(async () => {
@@ -186,9 +208,9 @@ export class SocialService {
                 try {
                     await session.run(
                         `MERGE (s:Service {id: $serviceId})
-         ON CREATE SET s.name = $name, s.createdAt = datetime()
-         ON MATCH SET s.name = $name, s.updatedAt = datetime()`,
-                        { serviceId, name },
+         ON CREATE SET s.name = $name, s.createdBy = $createdBy, s.createdAt = datetime()
+         ON MATCH SET s.name = $name, s.createdBy = coalesce($createdBy, s.createdBy), s.updatedAt = datetime()`,
+                        { serviceId, name, createdBy: createdBy ?? null },
                     );
 
                     if (neighborhoodId) {
@@ -248,6 +270,7 @@ export class SocialService {
         name: string,
         date: Date,
         neighborhoodId?: string,
+        createdBy?: string,
     ): Promise<void> {
         try {
             await this.withRetry(async () => {
@@ -255,9 +278,14 @@ export class SocialService {
                 try {
                     await session.run(
                         `MERGE (e:Event {id: $eventId})
-         ON CREATE SET e.name = $name, e.date = datetime($date), e.createdAt = datetime()
-         ON MATCH SET e.name = $name, e.date = datetime($date), e.updatedAt = datetime()`,
-                        { eventId, name, date: date.toISOString() },
+         ON CREATE SET e.name = $name, e.date = datetime($date), e.createdBy = $createdBy, e.createdAt = datetime()
+         ON MATCH SET e.name = $name, e.date = datetime($date), e.createdBy = coalesce($createdBy, e.createdBy), e.updatedAt = datetime()`,
+                        {
+                            eventId,
+                            name,
+                            date: date.toISOString(),
+                            createdBy: createdBy ?? null,
+                        },
                     );
 
                     if (neighborhoodId) {
