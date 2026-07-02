@@ -508,6 +508,8 @@ export default {
             sortDeadline: "Fin proche",
             sortRecent: "Plus récents",
             noHistory: "Aucun vote terminé pour l'instant.",
+            answered: "Répondu",
+            noAnswered: "Vous n'avez encore répondu à aucun vote.",
             types: {
                 binary: "Binaire",
                 singleChoice: "Choix unique",

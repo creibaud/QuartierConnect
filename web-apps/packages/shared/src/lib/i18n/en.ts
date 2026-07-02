@@ -503,6 +503,8 @@ export default {
             sortDeadline: "Ending soon",
             sortRecent: "Most recent",
             noHistory: "No closed votes yet.",
+            answered: "Answered",
+            noAnswered: "You haven't answered any vote yet.",
             types: {
                 binary: "Binary",
                 singleChoice: "Single choice",
