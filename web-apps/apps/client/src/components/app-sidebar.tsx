@@ -12,7 +12,7 @@ import {
     SidebarMenuItem,
     SidebarRail,
 } from "@workspace/ui/components/sidebar";
-import { BrandLogo } from "@/components/brand-logo";
+import { BrandLogo } from "@workspace/ui/components/brand-logo";
 import { clientNavGroups } from "@/components/nav-items";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";

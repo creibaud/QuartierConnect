@@ -7,7 +7,7 @@ import { Card, CardContent } from "@workspace/ui/components/card";
 import { Label } from "@workspace/ui/components/label";
 import { Spinner } from "@workspace/ui/components/spinner";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
-import { AuthLayout } from "@/components/auth-layout";
+import { AuthLayout } from "@workspace/ui/components/auth-layout";
 import { useSubmitAddress } from "../hooks/address.hooks";
 
 export function AddressGatePage() {
