@@ -1,5 +1,4 @@
-import { Alert01Icon, Calendar01Icon, Clock01Icon, CustomerServiceIcon, ThumbsUpIcon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Alert01Icon, Calendar01Icon, CustomerServiceIcon, ThumbsUpIcon } from "@hugeicons/core-free-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -8,6 +7,14 @@ import { useEvents } from "@workspace/shared/lib/hooks/events.hooks";
 import { useInfiniteIncidents } from "@workspace/shared/lib/hooks/incidents.hooks";
 import { useServices } from "@workspace/shared/lib/hooks/services.hooks";
 import { Button } from "@workspace/ui/components/button";
+import {
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemDescription,
+    ItemGroup,
+    ItemTitle,
+} from "@workspace/ui/components/item";
 import type { CommunityVote } from "../lib/community-vote";
 import {
     countOpenIncidents,
@@ -87,28 +94,26 @@ export function ModerationOverview({ now }: { now: number }) {
                     ) : incidents.length === 0 ? (
                         <EmptyBlock icon={Alert01Icon} title={t("pages.dashboard.moderation.noIncidents")} />
                     ) : (
-                        <ul className="-mx-2 space-y-0.5">
+                        <ItemGroup className="gap-2">
                             {incidents.slice(0, 4).map((i) => (
-                                <li key={i.id}>
-                                    <Link
-                                        to="/incidents/$id"
-                                        params={{ id: i.id }}
-                                        className="hover:bg-muted/60 flex items-center gap-3 rounded-lg px-2 py-2 transition-colors"
-                                    >
+                                <Item key={i.id} variant="outline" size="sm" asChild>
+                                    <Link to="/incidents/$id" params={{ id: i.id }}>
                                         <span
-                                            className={`size-2 shrink-0 rounded-full ${INCIDENT_DOT[i.status]}`}
+                                            className={`size-2.5 shrink-0 rounded-full ${INCIDENT_DOT[i.status]}`}
                                             aria-hidden
                                         />
-                                        <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                                            {i.title}
-                                        </span>
-                                        <span className="text-muted-foreground shrink-0 text-xs">
-                                            {fmtDate(i.createdAt)}
-                                        </span>
+                                        <ItemContent>
+                                            <ItemTitle className="truncate">
+                                                {i.title}
+                                            </ItemTitle>
+                                            <ItemDescription>
+                                                {fmtDate(i.createdAt)}
+                                            </ItemDescription>
+                                        </ItemContent>
                                     </Link>
-                                </li>
+                                </Item>
                             ))}
-                        </ul>
+                        </ItemGroup>
                     )}
                 </FeedCard>
 
@@ -122,32 +127,29 @@ export function ModerationOverview({ now }: { now: number }) {
                     ) : openVotes.length === 0 ? (
                         <EmptyBlock icon={ThumbsUpIcon} title={t("pages.dashboard.moderation.noPendingVotes")} />
                     ) : (
-                        <ul className="space-y-1">
+                        <ItemGroup className="gap-2">
                             {openVotes.map((v) => (
-                                <li
-                                    key={v._id}
-                                    className="flex items-center justify-between gap-3 py-1"
-                                >
-                                    <div className="min-w-0">
-                                        <p className="truncate text-sm font-medium">
+                                <Item key={v._id} variant="outline" size="sm">
+                                    <ItemContent>
+                                        <ItemTitle className="truncate">
                                             {v.title}
-                                        </p>
+                                        </ItemTitle>
                                         {v.endsAt && (
-                                            <p className="text-muted-foreground flex items-center gap-1 text-xs">
-                                                <HugeiconsIcon
-                                                    icon={Clock01Icon}
-                                                    className="size-3"
-                                                />
+                                            <ItemDescription>
                                                 {fmtDate(v.endsAt)}
-                                            </p>
+                                            </ItemDescription>
                                         )}
-                                    </div>
-                                    <Button asChild size="sm" variant="outline" className="shrink-0">
-                                        <Link to="/votes">{t("pages.dashboard.respond")}</Link>
-                                    </Button>
-                                </li>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <Button asChild size="sm" variant="outline">
+                                            <Link to="/votes">
+                                                {t("pages.dashboard.respond")}
+                                            </Link>
+                                        </Button>
+                                    </ItemActions>
+                                </Item>
                             ))}
-                        </ul>
+                        </ItemGroup>
                     )}
                 </FeedCard>
             </div>
