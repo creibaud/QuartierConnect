@@ -154,6 +154,78 @@ describe("SocialService", () => {
             const result = await service.getRecommendations("user-1");
             expect(result).toEqual([]);
         });
+
+        it("maps sharedInterests and reliableNeighbor reason codes", async () => {
+            mockSession.run.mockResolvedValue({
+                records: [
+                    recommendationRecord({
+                        type: "event",
+                        id: "evt-9",
+                        name: "Atelier compost",
+                        score: 4,
+                        reason: "sharedInterests",
+                    }),
+                    recommendationRecord({
+                        type: "neighbor",
+                        id: "user-9",
+                        name: "Alice Martin",
+                        score: 6,
+                        reason: "reliableNeighbor",
+                    }),
+                ],
+            });
+
+            const result = await service.getRecommendations("user-1");
+            expect(result[0]).toMatchObject({
+                type: "neighbor",
+                reason: "reliableNeighbor",
+                score: 6,
+            });
+            expect(result[1]).toMatchObject({
+                type: "event",
+                reason: "sharedInterests",
+                score: 4,
+            });
+        });
+
+        it("keeps the highest-scored variant when an event matches several reasons", async () => {
+            mockSession.run.mockResolvedValue({
+                records: [
+                    recommendationRecord({
+                        type: "event",
+                        id: "evt-1",
+                        name: "Atelier compost",
+                        score: 2,
+                        reason: "upcomingEventNearby",
+                    }),
+                    recommendationRecord({
+                        type: "event",
+                        id: "evt-1",
+                        name: "Atelier compost",
+                        score: 4,
+                        reason: "sharedInterests",
+                    }),
+                ],
+            });
+
+            const result = await service.getRecommendations("user-1");
+            expect(result).toHaveLength(1);
+            expect(result[0]).toMatchObject({
+                score: 4,
+                reason: "sharedInterests",
+            });
+        });
+
+        it("queries shared interests and reliable neighbors in the graph", async () => {
+            mockSession.run.mockResolvedValue({ records: [] });
+
+            await service.getRecommendations("user-1");
+
+            const query = mockSession.run.mock.calls[0][0] as string;
+            expect(query).toContain("'sharedInterests' AS reason");
+            expect(query).toContain("'reliableNeighbor' AS reason");
+            expect(query).toContain("[h:HELPED]");
+        });
     });
 
     describe("syncUser", () => {
@@ -354,27 +426,44 @@ describe("SocialService", () => {
     });
 
     describe("recordEventInterest", () => {
-        it("records interest successfully", async () => {
+        const lastRunQuery = (): string =>
+            mockSession.run.mock.calls.at(-1)?.[0] as string;
+
+        it("records swipe interest as INTERESTED_IN", async () => {
             mockSession.run.mockResolvedValue({});
 
             const result = await service.recordEventInterest(
                 "user-1",
                 "evt-1",
-                true,
+                { interested: true },
             );
             expect(result).toEqual({ success: true });
             expect(mockSession.run).toHaveBeenCalledTimes(1);
+            expect(lastRunQuery()).toContain("[r:INTERESTED_IN]");
         });
 
-        it("records disinterest successfully", async () => {
+        it("records participation as ATTENDING", async () => {
             mockSession.run.mockResolvedValue({});
 
             const result = await service.recordEventInterest(
                 "user-1",
                 "evt-1",
-                false,
+                { interested: true, source: "participate" },
             );
             expect(result).toEqual({ success: true });
+            expect(lastRunQuery()).toContain("[r:ATTENDING]");
+        });
+
+        it("records disinterest as NOT_INTERESTED_IN regardless of source", async () => {
+            mockSession.run.mockResolvedValue({});
+
+            const result = await service.recordEventInterest(
+                "user-1",
+                "evt-1",
+                { interested: false, source: "participate" },
+            );
+            expect(result).toEqual({ success: true });
+            expect(lastRunQuery()).toContain("[r:NOT_INTERESTED_IN]");
         });
 
         it("returns success: false after all retries exhausted", async () => {
@@ -384,7 +473,7 @@ describe("SocialService", () => {
             const resultPromise = service.recordEventInterest(
                 "user-1",
                 "evt-1",
-                true,
+                { interested: true },
             );
             await jest.runAllTimersAsync();
             const result = await resultPromise;
@@ -402,13 +491,59 @@ describe("SocialService", () => {
             const resultPromise = service.recordEventInterest(
                 "user-1",
                 "evt-1",
-                true,
+                { interested: true },
             );
             await jest.runAllTimersAsync();
             const result = await resultPromise;
 
             expect(result).toEqual({ success: true });
             expect(mockSession.run).toHaveBeenCalledTimes(2);
+        });
+    });
+
+    describe("recordHelpRendered", () => {
+        const help = {
+            payerId: "payer-1",
+            payeeId: "payee-1",
+            serviceId: "svc-1",
+            points: 12,
+        };
+
+        it("merges a HELPED relation with service, points and timestamp", async () => {
+            mockSession.run.mockResolvedValue({});
+
+            await service.recordHelpRendered(help);
+
+            expect(mockSession.run).toHaveBeenCalledTimes(1);
+            const [query, params] = mockSession.run.mock.calls[0];
+            expect(query).toContain("HELPED {serviceId: $serviceId}");
+            expect(query).toContain("h.points = $points");
+            expect(params).toEqual(help);
+            expect(mockSession.close).toHaveBeenCalled();
+        });
+
+        it("retries on transient failure and succeeds", async () => {
+            jest.useFakeTimers();
+            mockSession.run
+                .mockRejectedValueOnce(retriableError())
+                .mockResolvedValue({});
+
+            const helpPromise = service.recordHelpRendered(help);
+            await jest.runAllTimersAsync();
+            await helpPromise;
+
+            expect(mockSession.run).toHaveBeenCalledTimes(2);
+        });
+
+        it("swallows the error after all retries exhausted", async () => {
+            jest.useFakeTimers();
+            mockSession.run.mockRejectedValue(retriableError());
+
+            const helpPromise = service.recordHelpRendered(help);
+            await jest.runAllTimersAsync();
+            await expect(helpPromise).resolves.toBeUndefined();
+
+            expect(mockSession.run).toHaveBeenCalledTimes(3);
         });
     });
 });
