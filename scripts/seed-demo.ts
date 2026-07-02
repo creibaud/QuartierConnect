@@ -294,6 +294,12 @@ const SPREAD: Array<[number, number]> = [
   [-0.001, -0.004],
 ];
 
+async function warnIfFailed(label: string, res: Response): Promise<void> {
+  if (res.ok) return;
+  const detail = await res.text();
+  console.warn(`  ! ${label} failed (${res.status}): ${detail}`);
+}
+
 async function seedContent(
   token: string,
   nbh: DemoNeighborhood,
@@ -348,11 +354,12 @@ async function seedContent(
     },
   ];
   for (const e of events) {
-    await fetch(`${BASE_URL}/events`, {
+    const res = await fetch(`${BASE_URL}/events`, {
       method: "POST",
       headers,
       body: JSON.stringify(e),
     });
+    await warnIfFailed(`event "${e.title}"`, res);
   }
 
   const services = [
@@ -372,6 +379,7 @@ async function seedContent(
         "Étudiant disponible pour aider collégiens et lycéens en maths.",
       category: "other",
       type: "paid",
+      duration: 60,
       direction: "offer",
       neighborhoodId,
       location: at(1),
@@ -401,6 +409,7 @@ async function seedContent(
         "Besoin d'un coup de main pour déplacer quelques meubles ce mois-ci.",
       category: "handyman",
       type: "paid",
+      duration: 90,
       direction: "request",
       neighborhoodId,
       location: at(4),
@@ -417,11 +426,12 @@ async function seedContent(
     },
   ];
   for (const s of services) {
-    await fetch(`${BASE_URL}/services`, {
+    const res = await fetch(`${BASE_URL}/services`, {
       method: "POST",
       headers,
       body: JSON.stringify(s),
     });
+    await warnIfFailed(`service "${s.title}"`, res);
   }
 
   const incidents = [
@@ -473,14 +483,15 @@ async function seedContent(
     },
   ];
   for (const i of incidents) {
-    await fetch(`${BASE_URL}/incidents`, {
+    const res = await fetch(`${BASE_URL}/incidents`, {
       method: "POST",
       headers,
       body: JSON.stringify(i),
     });
+    await warnIfFailed(`incident "${i.title}"`, res);
   }
 
-  await fetch(`${BASE_URL}/community-votes`, {
+  const voteRes = await fetch(`${BASE_URL}/community-votes`, {
     method: "POST",
     headers,
     body: JSON.stringify({
@@ -494,6 +505,7 @@ async function seedContent(
       endsAt: inDays(14),
     }),
   });
+  await warnIfFailed("community vote", voteRes);
 }
 
 /** Assign an address + neighborhood to the non-admin demo residents so they
