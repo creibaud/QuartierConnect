@@ -148,6 +148,7 @@ export default {
             sent: "Envoyées",
         },
         pointsLabel: "{{points}} points",
+        pointUnit: "point",
         pointsUnit: "points",
         serviceFallback: "Service payant",
         status: {

@@ -48,8 +48,11 @@ export function BookingCard({
 
     return (
         <Card className="transition-colors hover:border-primary/40">
-            <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0 space-y-2">
+            <CardContent className="flex items-center gap-4 p-5">
+                <div className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-xl">
+                    <HugeiconsIcon icon={Coins01Icon} className="size-5" />
+                </div>
+                <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                         <h3 className="truncate font-medium">
                             {serviceTitle ?? t("bookings.serviceFallback")}
@@ -61,24 +64,26 @@ export function BookingCard({
                             {t(`bookings.status.${booking.status}`)}
                         </Badge>
                     </div>
-                    <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                        <span className="inline-flex items-center gap-1.5">
-                            <HugeiconsIcon
-                                icon={Coins01Icon}
-                                className="text-primary size-4"
-                            />
+                    <p className="text-muted-foreground flex flex-wrap items-center gap-x-2 text-sm">
+                        <span>
                             <span className="text-foreground font-medium tabular-nums">
                                 {booking.pointsAmount}
-                            </span>
-                            {t("bookings.pointsUnit")}
+                            </span>{" "}
+                            {booking.pointsAmount === 1
+                                ? t("bookings.pointUnit")
+                                : t("bookings.pointsUnit")}
                         </span>
-                        <span className="inline-flex items-center gap-1.5">
-                            <HugeiconsIcon icon={Calendar01Icon} className="size-4" />
+                        <span aria-hidden>·</span>
+                        <span className="inline-flex items-center gap-1">
+                            <HugeiconsIcon
+                                icon={Calendar01Icon}
+                                className="size-3.5"
+                            />
                             {date}
                         </span>
-                    </div>
+                    </p>
                 </div>
-                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                     {booking.contractId && (
                         <Button asChild variant="outline" size="sm">
                             <Link

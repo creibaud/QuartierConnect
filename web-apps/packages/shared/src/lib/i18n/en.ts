@@ -148,6 +148,7 @@ export default {
             sent: "Sent",
         },
         pointsLabel: "{{points}} points",
+        pointUnit: "point",
         pointsUnit: "points",
         serviceFallback: "Paid service",
         status: {
