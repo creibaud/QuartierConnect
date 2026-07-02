@@ -445,7 +445,7 @@ function ServiceFormDialog({
                                 value={category}
                                 onValueChange={setCategory}
                             >
-                                <SelectTrigger>
+                                <SelectTrigger className="w-full">
                                     <SelectValue
                                         placeholder={t(
                                             "pages.services.chooseCategory",
@@ -471,7 +471,7 @@ function ServiceFormDialog({
                                     setType(v as "free" | "paid" | "exchange")
                                 }
                             >
-                                <SelectTrigger>
+                                <SelectTrigger className="w-full">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
