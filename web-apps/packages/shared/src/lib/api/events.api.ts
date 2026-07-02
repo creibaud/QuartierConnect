@@ -35,3 +35,16 @@ export function updateEvent(
 export function deleteEvent(id: string): Promise<void> {
     return apiDelete<void>(`/events/${id}`);
 }
+
+export type EventInterestSource = "participate" | "swipe";
+
+export interface EventInterestResult {
+    interested: number;
+}
+
+export function markEventInterest(
+    id: string,
+    source: EventInterestSource,
+): Promise<EventInterestResult> {
+    return apiPost<EventInterestResult>(`/events/${id}/interest`, { source });
+}

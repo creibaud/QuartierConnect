@@ -4,7 +4,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import * as api from "../../api/events.api";
-import { useCreateEvent, useEvents } from "../events.hooks";
+import {
+    useCreateEvent,
+    useEventInterest,
+    useEvents,
+} from "../events.hooks";
 
 vi.mock("../../api/events.api");
 
@@ -78,5 +82,41 @@ describe("useCreateEvent", () => {
             date: "2026-06-21T18:00:00Z",
             category: "community",
         });
+    });
+});
+
+describe("useEventInterest", () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it("marks interest with the given source", async () => {
+        vi.mocked(api.markEventInterest).mockResolvedValue({ interested: 4 });
+        const { result } = renderHook(() => useEventInterest(), {
+            wrapper: createWrapper(),
+        });
+        result.current.mutate({ eventId: "evt-1", source: "participate" });
+        await waitFor(() => expect(result.current.isSuccess).toBe(true));
+        expect(api.markEventInterest).toHaveBeenCalledWith(
+            "evt-1",
+            "participate",
+        );
+    });
+
+    it("supports the swipe source", async () => {
+        vi.mocked(api.markEventInterest).mockResolvedValue({ interested: 1 });
+        const { result } = renderHook(() => useEventInterest(), {
+            wrapper: createWrapper(),
+        });
+        result.current.mutate({ eventId: "evt-2", source: "swipe" });
+        await waitFor(() => expect(result.current.isSuccess).toBe(true));
+        expect(api.markEventInterest).toHaveBeenCalledWith("evt-2", "swipe");
+    });
+
+    it("enters error state when the API call fails", async () => {
+        vi.mocked(api.markEventInterest).mockRejectedValue(new Error("fail"));
+        const { result } = renderHook(() => useEventInterest(), {
+            wrapper: createWrapper(),
+        });
+        result.current.mutate({ eventId: "evt-1", source: "participate" });
+        await waitFor(() => expect(result.current.isError).toBe(true));
     });
 });
