@@ -2,11 +2,14 @@ package fr.quartierconnect.desktopapp.views;
 
 import atlantafx.base.controls.ToggleSwitch;
 import fr.quartierconnect.desktopapp.i18n.I18n;
+import fr.quartierconnect.desktopapp.plugin.AppContext;
+import fr.quartierconnect.desktopapp.plugin.ExportPlugin;
 import fr.quartierconnect.desktopapp.plugin.PluginRegistry;
 import fr.quartierconnect.desktopapp.plugin.QuartierConnectPlugin;
 import fr.quartierconnect.desktopapp.plugin.ViewablePlugin;
 import fr.quartierconnect.desktopapp.ui.components.AppButton;
 import fr.quartierconnect.desktopapp.ui.components.AppModal;
+import fr.quartierconnect.desktopapp.ui.components.ToastManager;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -19,11 +22,22 @@ import javafx.scene.layout.VBox;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 public class PluginsView {
 
+    private static final Path PLUGINS_DIRECTORY = Paths.get("plugins");
+
     private final AppModal appModal;
+    private final VBox pluginListContainer = new VBox(8);
+    private final Label dirInfoLabel = new Label();
+    private final Label builtinInfoLabel = new Label();
     private final VBox root;
 
     public PluginsView(AppModal appModal) {
@@ -48,31 +62,13 @@ public class PluginsView {
         HBox infoBox = buildInfoBox();
         VBox.setMargin(infoBox, new Insets(0, 0, 16, 0));
 
-        List<QuartierConnectPlugin> plugins = PluginRegistry.getInstance().getPlugins();
+        rebuildPluginList();
 
-        VBox pluginsList = new VBox(8);
-        if (plugins.isEmpty()) {
-            pluginsList.getChildren().add(buildEmptyState());
-        } else {
-            String[] borderColors = {"#7c3aed", "#059669", "#2563eb", "#b45309", "#dc2626"};
-            String[] gradients = {
-                "linear-gradient(135deg, #4c1d95, #7c3aed)",
-                "linear-gradient(135deg, #064e3b, #10b981)",
-                "linear-gradient(135deg, #1e3a8a, #3b82f6)",
-                "linear-gradient(135deg, #78350f, #f59e0b)",
-                "linear-gradient(135deg, #7f1d1d, #dc2626)"
-            };
-            for (int i = 0; i < plugins.size(); i++) {
-                String border = borderColors[i % borderColors.length];
-                String grad = gradients[i % gradients.length];
-                pluginsList.getChildren().add(buildPluginCard(plugins.get(i), border, grad));
-            }
-        }
-
-        VBox dirRow = buildDirInfoRow(plugins.size());
+        VBox dirRow = buildDirInfoRow();
         VBox.setMargin(dirRow, new Insets(14, 0, 0, 0));
+        refreshDirInfo();
 
-        VBox scrollContent = new VBox(0, titleBlock, infoBox, pluginsList, dirRow);
+        VBox scrollContent = new VBox(0, titleBlock, infoBox, pluginListContainer, dirRow);
         scrollContent.setPadding(new Insets(22, 22, 14, 22));
 
         ScrollPane scroll = new ScrollPane(scrollContent);
@@ -101,20 +97,20 @@ public class PluginsView {
         return box;
     }
 
-    private VBox buildPluginCard(QuartierConnectPlugin plugin, String borderColor, String gradient) {
-        Region iconBg = new Region();
-        iconBg.setStyle("-fx-background-color: " + gradient + "; -fx-background-radius: 10; "
-                + "-fx-min-width: 40; -fx-max-width: 40; -fx-min-height: 40; -fx-max-height: 40; "
-                + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 8, 0, 0, 2);");
+    private void rebuildPluginList() {
+        pluginListContainer.getChildren().clear();
+        List<QuartierConnectPlugin> plugins = PluginRegistry.getInstance().getPlugins();
+        if (plugins.isEmpty()) {
+            pluginListContainer.getChildren().add(buildEmptyState());
+            return;
+        }
+        for (QuartierConnectPlugin plugin : plugins) {
+            pluginListContainer.getChildren().add(buildPluginCard(plugin));
+        }
+    }
 
-        FontIcon pluginIcon = new FontIcon(FontAwesomeSolid.PUZZLE_PIECE);
-        pluginIcon.setIconSize(16);
-        pluginIcon.setStyle("-fx-icon-color: white;");
-
-        StackPane iconWrapper = new StackPane(iconBg, pluginIcon);
-        iconWrapper.setAlignment(Pos.CENTER);
-        iconWrapper.setMinSize(40, 40);
-        iconWrapper.setMaxSize(40, 40);
+    private VBox buildPluginCard(QuartierConnectPlugin plugin) {
+        StackPane iconWrapper = buildPluginIcon(plugin);
 
         Label nameLbl = new Label(plugin.getName());
         nameLbl.getStyleClass().add("plugin-name-lbl");
@@ -127,24 +123,77 @@ public class PluginsView {
 
         String description = plugin.getDescription();
         Label descLbl = new Label(description != null && !description.isEmpty() ? description : plugin.getId());
-        descLbl.setStyle("-fx-font-size: 11px; -fx-text-fill: -color-fg-muted;");
+        descLbl.setStyle("-fx-font-size: 12.5px; -fx-text-fill: -color-fg-muted;");
         descLbl.setWrapText(true);
 
         Label idLbl = new Label(plugin.getId());
         idLbl.getStyleClass().add("plugin-id-lbl");
 
-        Label tagLbl = new Label(plugin instanceof ViewablePlugin ? I18n.get("plugins.tagConfigurable") : I18n.get("plugins.tag"));
-        tagLbl.setStyle("-fx-background-color: " + getLightColor(borderColor) + "; -fx-text-fill: " + borderColor
-                + "; -fx-background-radius: 4; -fx-padding: 2 7; -fx-font-size: 9px; -fx-font-weight: bold;");
+        Label tagLbl = new Label(tagTextFor(plugin));
+        tagLbl.setStyle("-fx-background-color: -color-accent-subtle; -fx-text-fill: -color-accent-fg; "
+                + "-fx-background-radius: 4; -fx-padding: 2 7; -fx-font-size: 10.5px; -fx-font-weight: bold;");
         VBox.setMargin(tagLbl, new Insets(4, 0, 0, 0));
 
         Label statusDot = new Label(I18n.get("plugins.loaded"));
-        statusDot.setStyle("-fx-text-fill: -color-success-fg; -fx-font-size: 11px;");
+        statusDot.setStyle("-fx-text-fill: -color-success-fg; -fx-font-size: 12.5px;");
         VBox.setMargin(statusDot, new Insets(6, 0, 0, 0));
 
         VBox info = new VBox(0, nameRow, descLbl, idLbl, tagLbl, statusDot);
         HBox.setHgrow(info, Priority.ALWAYS);
 
+        VBox actions = buildPluginActions(plugin, statusDot);
+
+        HBox cardRow = new HBox(14, iconWrapper, info, actions);
+        cardRow.setAlignment(Pos.TOP_LEFT);
+        cardRow.setPadding(new Insets(14, 16, 14, 16));
+
+        VBox card = new VBox(cardRow);
+        card.setStyle("-fx-border-color: transparent transparent transparent -color-accent-emphasis; "
+                + "-fx-border-width: 0 0 0 3; "
+                + "-fx-background-color: -color-bg-default; -fx-background-radius: 11; "
+                + "-fx-border-radius: 11; "
+                + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 6, 0, 0, 1);");
+        return card;
+    }
+
+    private StackPane buildPluginIcon(QuartierConnectPlugin plugin) {
+        Region iconBg = new Region();
+        iconBg.setStyle("-fx-background-color: -color-accent-subtle; -fx-background-radius: 10; "
+                + "-fx-min-width: 40; -fx-max-width: 40; -fx-min-height: 40; -fx-max-height: 40;");
+
+        FontIcon pluginIcon = new FontIcon(iconFor(plugin.getId()));
+        pluginIcon.setIconSize(16);
+        pluginIcon.setStyle("-fx-icon-color: -color-accent-fg;");
+
+        StackPane iconWrapper = new StackPane(iconBg, pluginIcon);
+        iconWrapper.setAlignment(Pos.CENTER);
+        iconWrapper.setMinSize(40, 40);
+        iconWrapper.setMaxSize(40, 40);
+        return iconWrapper;
+    }
+
+    private static FontAwesomeSolid iconFor(String pluginId) {
+        return switch (pluginId) {
+            case "fr.quartierconnect.plugin.theme"         -> FontAwesomeSolid.PAINT_BRUSH;
+            case "fr.quartierconnect.plugin.compact"       -> FontAwesomeSolid.COMPRESS;
+            case "fr.quartierconnect.plugin.export"        -> FontAwesomeSolid.FILE_CSV;
+            case "fr.quartierconnect.plugin.notifications" -> FontAwesomeSolid.BELL;
+            case "fr.quartierconnect.plugin.offline"       -> FontAwesomeSolid.PLANE;
+            case "fr.quartierconnect.plugin.lang.es"       -> FontAwesomeSolid.LANGUAGE;
+            default                                        -> FontAwesomeSolid.PUZZLE_PIECE;
+        };
+    }
+
+    private static String tagTextFor(QuartierConnectPlugin plugin) {
+        if (isExternal(plugin)) {
+            return I18n.get("plugins.tagExternal");
+        }
+        return plugin instanceof ViewablePlugin
+                ? I18n.get("plugins.tagConfigurable")
+                : I18n.get("plugins.tag");
+    }
+
+    private VBox buildPluginActions(QuartierConnectPlugin plugin, Label statusDot) {
         VBox actions = new VBox(6);
         actions.setAlignment(Pos.TOP_RIGHT);
 
@@ -154,11 +203,11 @@ public class PluginsView {
             if (newVal) {
                 PluginRegistry.getInstance().enable(plugin.getId());
                 statusDot.setText(I18n.get("plugins.loaded"));
-                statusDot.setStyle("-fx-text-fill: -color-success-fg; -fx-font-size: 11px;");
+                statusDot.setStyle("-fx-text-fill: -color-success-fg; -fx-font-size: 12.5px;");
             } else {
                 PluginRegistry.getInstance().disable(plugin.getId());
                 statusDot.setText(I18n.get("plugins.disabled"));
-                statusDot.setStyle("-fx-text-fill: -color-fg-muted; -fx-font-size: 11px;");
+                statusDot.setStyle("-fx-text-fill: -color-fg-muted; -fx-font-size: 12.5px;");
             }
         });
         actions.getChildren().add(toggle);
@@ -169,19 +218,7 @@ public class PluginsView {
             configBtn.setOnAction(e -> appModal.showWide(I18n.get("plugins.configureTitle", plugin.getName()), viewable.getPanel()));
             actions.getChildren().add(configBtn);
         }
-
-        VBox card = new VBox(0);
-        HBox cardRow = new HBox(14, iconWrapper, info, actions);
-        cardRow.setAlignment(Pos.TOP_LEFT);
-        cardRow.setPadding(new Insets(14, 16, 14, 16));
-        card.getChildren().add(cardRow);
-        card.setStyle("-fx-border-color: " + borderColor + " transparent transparent transparent; "
-                + "-fx-border-width: 0 0 0 3; "
-                + "-fx-background-color: -color-bg-default; -fx-background-radius: 11; "
-                + "-fx-border-radius: 11; "
-                + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.04), 6, 0, 0, 1);");
-
-        return card;
+        return actions;
     }
 
     private VBox buildEmptyState() {
@@ -205,20 +242,20 @@ public class PluginsView {
         return state;
     }
 
-    private VBox buildDirInfoRow(int totalPlugins) {
+    private VBox buildDirInfoRow() {
         Label dirTitle = new Label(I18n.get("plugins.dir"));
         dirTitle.getStyleClass().add("plugin-dir-lbl");
 
-        Label dirSub = new Label(I18n.get("plugins.dirInfo", totalPlugins, totalPlugins));
-        dirSub.getStyleClass().add("plugin-dir-sub");
+        dirInfoLabel.getStyleClass().add("plugin-dir-sub");
+        builtinInfoLabel.getStyleClass().add("plugin-dir-sub");
 
-        VBox info = new VBox(2, dirTitle, dirSub);
+        VBox info = new VBox(2, dirTitle, dirInfoLabel, builtinInfoLabel);
         HBox.setHgrow(info, Priority.ALWAYS);
 
         AppButton rescanBtn = new AppButton(I18n.get("plugins.rescan"), AppButton.Variant.SECONDARY);
         rescanBtn.setGraphic(makeIcon(FontAwesomeSolid.SYNC_ALT, 11));
         rescanBtn.setGraphicTextGap(6);
-        rescanBtn.setOnAction(e -> {});
+        rescanBtn.setOnAction(e -> rescanPluginsDirectory());
 
         HBox row = new HBox(info, rescanBtn);
         row.setAlignment(Pos.CENTER_LEFT);
@@ -228,20 +265,79 @@ public class PluginsView {
         return new VBox(row);
     }
 
+    // ── Rescan ──────────────────────────────────────────────────────────────
+
+    private void rescanPluginsDirectory() {
+        PluginRegistry registry = PluginRegistry.getInstance();
+        AppContext context = findAppContext();
+
+        unloadExternalPlugins(registry);
+        if (context != null) {
+            registry.loadFromDirectory(PLUGINS_DIRECTORY, context);
+        }
+
+        rebuildPluginList();
+        refreshDirInfo();
+        showRescanResult(context);
+    }
+
+    private void unloadExternalPlugins(PluginRegistry registry) {
+        List<QuartierConnectPlugin> externals = registry.getPlugins().stream()
+                .filter(PluginsView::isExternal)
+                .toList();
+        externals.forEach(plugin -> registry.unregister(plugin.getId()));
+    }
+
+    private void showRescanResult(AppContext context) {
+        ToastManager toast = context != null ? context.getToastManager() : null;
+        if (toast == null) return;
+        long external = countExternalPlugins();
+        if (external > 0) {
+            toast.showSuccess(I18n.get("plugins.rescan.loaded", external));
+        } else {
+            toast.showInfo(I18n.get("plugins.rescan.none"));
+        }
+    }
+
+    private void refreshDirInfo() {
+        long external = countExternalPlugins();
+        long builtIn = PluginRegistry.getInstance().getPlugins().size() - external;
+        dirInfoLabel.setText(I18n.get("plugins.dirInfo", countScannedJars(), external));
+        builtinInfoLabel.setText(I18n.get("plugins.builtinInfo", builtIn));
+    }
+
+    private static long countExternalPlugins() {
+        return PluginRegistry.getInstance().getPlugins().stream()
+                .filter(PluginsView::isExternal)
+                .count();
+    }
+
+    /** Built-ins share the application class loader; JAR plugins live in their own URLClassLoader. */
+    private static boolean isExternal(QuartierConnectPlugin plugin) {
+        return plugin.getClass().getClassLoader() != PluginsView.class.getClassLoader();
+    }
+
+    private static long countScannedJars() {
+        if (!Files.isDirectory(PLUGINS_DIRECTORY)) return 0;
+        try (Stream<Path> entries = Files.list(PLUGINS_DIRECTORY)) {
+            return entries.filter(p -> p.toString().endsWith(".jar")).count();
+        } catch (IOException e) {
+            return 0;
+        }
+    }
+
+    private static AppContext findAppContext() {
+        return PluginRegistry.getInstance().getPlugins().stream()
+                .filter(ExportPlugin.class::isInstance)
+                .map(plugin -> ((ExportPlugin) plugin).getAppContext())
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
+
     private FontIcon makeIcon(org.kordamp.ikonli.Ikon icon, int size) {
         FontIcon fi = new FontIcon(icon);
         fi.setIconSize(size);
         return fi;
-    }
-
-    private String getLightColor(String hex) {
-        return switch (hex) {
-            case "#7c3aed" -> "#ede9fe";
-            case "#059669" -> "#d1fae5";
-            case "#2563eb" -> "#eff6ff";
-            case "#b45309" -> "#fef3c7";
-            case "#dc2626" -> "#fee2e2";
-            default -> "#f5f5f6";
-        };
     }
 }

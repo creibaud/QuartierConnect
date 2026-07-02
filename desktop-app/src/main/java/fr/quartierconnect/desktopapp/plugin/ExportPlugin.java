@@ -3,9 +3,9 @@ package fr.quartierconnect.desktopapp.plugin;
 import fr.quartierconnect.desktopapp.database.IncidentRepository;
 import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.ui.components.AppButton;
+import fr.quartierconnect.desktopapp.ui.components.ToastManager;
 import javafx.application.Platform;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
@@ -19,6 +19,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Built-in plugin — exports local incidents to CSV.
@@ -31,6 +32,9 @@ public class ExportPlugin implements QuartierConnectPlugin, PluginRegistry.Conte
 
     @Override
     public void setContext(AppContext ctx) { this.context = ctx; }
+
+    /** Exposes the application context so views can drive registry operations (e.g. plugin rescan). */
+    public AppContext getAppContext() { return context; }
 
     @Override public String getId()      { return "fr.quartierconnect.plugin.export"; }
     @Override public String getName()    { return I18n.get("plugin.export.name"); }
@@ -61,11 +65,11 @@ public class ExportPlugin implements QuartierConnectPlugin, PluginRegistry.Conte
     @Override
     public Node getPanel() {
         Label desc = new Label(I18n.get("plugin.export.panelDesc"));
-        desc.setStyle("-fx-font-size: 11.5px; -fx-text-fill: -color-fg-muted;");
+        desc.setStyle("-fx-font-size: 12.5px; -fx-text-fill: -color-fg-muted;");
         desc.setWrapText(true);
 
         Label note = new Label(I18n.get("plugin.export.note"));
-        note.setStyle("-fx-font-size: 10.5px; -fx-text-fill: -color-fg-subtle;");
+        note.setStyle("-fx-font-size: 12px; -fx-text-fill: -color-fg-subtle;");
         note.setWrapText(true);
 
         return new VBox(8, desc, note);
@@ -98,26 +102,25 @@ public class ExportPlugin implements QuartierConnectPlugin, PluginRegistry.Conte
                 String path = outputPath.toAbsolutePath().toString();
                 Platform.runLater(() -> {
                     btn.setDisable(false);
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                    alert.setTitle(I18n.get("plugin.export.successTitle"));
-                    alert.setHeaderText(count > 1
-                            ? I18n.get("plugin.export.successHeaderMany", count)
-                            : I18n.get("plugin.export.successHeaderOne", count));
-                    alert.setContentText(I18n.get("plugin.export.successContent", path));
-                    alert.show();
+                    notify(toast -> toast.showSuccess(count > 1
+                            ? I18n.get("plugin.export.toastSuccessMany", count, path)
+                            : I18n.get("plugin.export.toastSuccessOne", count, path)));
                 });
             } catch (Exception ex) {
                 String msg = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
                 Platform.runLater(() -> {
                     btn.setDisable(false);
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle(I18n.get("plugin.export.errorTitle"));
-                    alert.setHeaderText(I18n.get("plugin.export.errorHeader"));
-                    alert.setContentText(msg);
-                    alert.show();
+                    notify(toast -> toast.showError(I18n.get("plugin.export.toastError", msg)));
                 });
             }
         }, "export-csv").start();
+    }
+
+    private void notify(Consumer<ToastManager> action) {
+        ToastManager toast = context != null ? context.getToastManager() : null;
+        if (toast != null) {
+            action.accept(toast);
+        }
     }
 
     private String csvRow(String... values) {
