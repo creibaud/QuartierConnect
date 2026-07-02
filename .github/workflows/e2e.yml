@@ -111,6 +111,25 @@ jobs:
           API_URL=http://localhost/api PG_CONTAINER=docker-postgres-1 \
             pnpm exec tsx ../scripts/seed-demo.ts || echo "Seed failed"
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('dsl/uv.lock') }}
+          restore-keys: uv-${{ runner.os }}-
+
+      - name: Préparer le venv du DSL (pythonia)
+        working-directory: dsl
+        run: uv sync --frozen
+
       - name: Run Playwright
         working-directory: web-apps
         env:
