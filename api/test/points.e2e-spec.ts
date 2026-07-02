@@ -249,7 +249,7 @@ describe("Points (e2e)", () => {
             await request(app.getHttpServer())
                 .post(`/contracts/${contractId}/sign`)
                 .set("Authorization", `Bearer ${buyerToken}`)
-                .send({ totpCode: currentTotp(buyerTotp) })
+                .send({ totpCode: currentTotp(buyerTotp, 30) })
                 .expect(201);
             await request(app.getHttpServer())
                 .post(`/contracts/${contractId}/sign`)

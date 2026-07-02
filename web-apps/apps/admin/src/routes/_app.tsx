@@ -1,4 +1,5 @@
 import { useHead } from "@unhead/react";
+import { useTranslation } from "react-i18next";
 import {
     createFileRoute,
     Outlet,
@@ -37,17 +38,18 @@ export const Route = createFileRoute("/_app")({
     component: AppLayout,
 });
 
-function useActiveSectionTitle(): string {
+function useActiveSectionTitleKey(): string {
     const { pathname } = useLocation();
     const active = adminNavItems.find(
         (item) =>
             pathname === item.to || pathname.startsWith(`${item.to}/`),
     );
-    return active?.title ?? "Administration";
+    return active?.title ?? "nav.administration";
 }
 
 function AppLayout() {
-    const sectionTitle = useActiveSectionTitle();
+    const { t } = useTranslation();
+    const sectionTitle = t(useActiveSectionTitleKey());
     useHead({ title: sectionTitle });
 
     return (

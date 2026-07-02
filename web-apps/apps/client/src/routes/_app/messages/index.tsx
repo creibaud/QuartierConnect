@@ -19,6 +19,7 @@ import {
     useSocketMessages,
 } from "@workspace/shared/lib/hooks/useMessaging";
 import type { Conversation, Message } from "@workspace/shared/lib/types";
+import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import {
     Dialog,
@@ -165,8 +166,8 @@ function MessageBubble({
     message: Message;
     isOutgoing: boolean;
 }) {
-    const { t } = useTranslation();
-    const time = new Date(message.createdAt).toLocaleTimeString("fr-FR", {
+    const { t, i18n } = useTranslation();
+    const time = new Date(message.createdAt).toLocaleTimeString(i18n.language, {
         hour: "2-digit",
         minute: "2-digit",
     });
@@ -343,7 +344,7 @@ function ConversationList({
     onSelect: (id: string) => void;
     currentUserId: string;
 }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { data: conversations, isLoading, isError } = useConversations();
 
     const sorted = useMemo(
@@ -386,33 +387,47 @@ function ConversationList({
 
     return (
         <div className="flex flex-col gap-1 p-2">
-            {sorted.map((conv) => (
-                <button
-                    key={conv._id}
-                    onClick={() => onSelect(conv._id)}
-                    className={cn(
-                        "hover:bg-muted flex w-full flex-col gap-0.5 rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
-                        activeId === conv._id &&
-                            "bg-primary/10 text-primary-foreground",
-                    )}
-                >
-                    <p
+            {sorted.map((conv) => {
+                const label = conversationLabel(conv, currentUserId, t);
+                const parts = label.split(/\s+/).filter(Boolean);
+                const initials = (
+                    parts.length > 1
+                        ? parts[0][0] + parts[1][0]
+                        : label.slice(0, 2)
+                ).toUpperCase();
+                const isActive = activeId === conv._id;
+                return (
+                    <button
+                        key={conv._id}
+                        onClick={() => onSelect(conv._id)}
                         className={cn(
-                            "font-medium",
-                            activeId === conv._id && "text-foreground",
+                            "hover:bg-muted flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                            isActive && "bg-primary/10",
                         )}
                     >
-                        {conversationLabel(conv, currentUserId, t)}
-                    </p>
-                    {conv.lastMessageAt && (
-                        <p className="text-muted-foreground text-xs tabular-nums">
-                            {new Date(conv.lastMessageAt).toLocaleDateString(
-                                "fr-FR",
+                        <Avatar size="sm">
+                            <AvatarFallback>{initials}</AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                            <p
+                                className={cn(
+                                    "truncate text-sm font-medium",
+                                    isActive && "text-primary",
+                                )}
+                            >
+                                {label}
+                            </p>
+                            {conv.lastMessageAt && (
+                                <p className="text-muted-foreground text-xs tabular-nums">
+                                    {new Date(
+                                        conv.lastMessageAt,
+                                    ).toLocaleDateString(i18n.language)}
+                                </p>
                             )}
-                        </p>
-                    )}
-                </button>
-            ))}
+                        </div>
+                    </button>
+                );
+            })}
         </div>
     );
 }
@@ -560,7 +575,7 @@ function MessagesPage() {
                             </SheetContent>
                         </Sheet>
                     </div>
-                    <h1 className="text-lg font-semibold">
+                    <h1 className="font-heading text-xl font-semibold">
                         {t("pages.messages.title")}
                     </h1>
                 </div>

@@ -51,7 +51,7 @@ export const Route = createFileRoute("/_app/incidents/$id")({
 });
 
 function IncidentDetailPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { id } = Route.useParams();
     const user = getCurrentUser();
     const statusLabels: Record<string, string> = {
@@ -77,7 +77,7 @@ function IncidentDetailPage() {
                             ? t("pages.incidentDetail.reportedOn", {
                                   date: new Date(
                                       incident.createdAt,
-                                  ).toLocaleDateString("fr-FR"),
+                                  ).toLocaleDateString(i18n.language),
                               })
                             : undefined
                     }

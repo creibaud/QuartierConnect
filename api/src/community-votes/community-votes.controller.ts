@@ -20,7 +20,7 @@ import {
 } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { CommunityVotesService } from "./community-votes.service";
-import { CastVoteDto } from "./dto/cast-vote.dto";
+import { CastCommunityVoteDto } from "./dto/cast-community-vote.dto";
 import {
     CommunityVoteDto,
     CommunityVoteResultsDto,
@@ -91,7 +91,7 @@ export class CommunityVotesController {
     @ApiResponse({ status: 409, description: "User has already voted" })
     cast(
         @Param("id") id: string,
-        @Body() dto: CastVoteDto,
+        @Body() dto: CastCommunityVoteDto,
         @Request() req: AuthRequest,
     ) {
         return this.communityVotesService.cast(id, dto, req.user.sub);

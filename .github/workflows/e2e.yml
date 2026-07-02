@@ -111,6 +111,25 @@ jobs:
           API_URL=http://localhost/api PG_CONTAINER=docker-postgres-1 \
             pnpm exec tsx ../scripts/seed-demo.ts || echo "Seed failed"
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('dsl/uv.lock') }}
+          restore-keys: uv-${{ runner.os }}-
+
+      - name: Préparer le venv du DSL (pythonia)
+        working-directory: dsl
+        run: uv sync --frozen
+
       - name: Run Playwright
         working-directory: web-apps
         env:
@@ -131,8 +150,11 @@ jobs:
       - name: API E2E (Supertest)
         if: always()
         working-directory: api
+        env:
+          POSTGRES_URL: postgresql://qc:testpass@localhost:5432/quartierconnect
+          MONGO_URI: mongodb://root:testpass@localhost:27017/quartierconnect?authSource=admin
+          NEO4J_URI: bolt://localhost:7687
         run: pnpm run test:e2e
-        continue-on-error: true
 
       - name: Upload Playwright report
         if: always()

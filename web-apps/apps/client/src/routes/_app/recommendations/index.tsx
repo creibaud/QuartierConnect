@@ -1,17 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { SparklesIcon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { Calendar01Icon, CustomerServiceIcon, SparklesIcon, UserIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useRecommendations } from "@workspace/shared/lib/hooks/useRecommendations";
 import type { Recommendation } from "@workspace/shared/lib/types";
 import { Badge } from "@workspace/ui/components/badge";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent } from "@workspace/ui/components/card";
 import { DataState } from "@workspace/ui/components/data-state";
 import {
     Empty,
@@ -30,6 +24,12 @@ const TYPE_VARIANTS: Record<
     service: "default",
     event: "secondary",
     neighbor: "outline",
+};
+
+const TYPE_ICON: Record<Recommendation["type"], IconSvgElement> = {
+    service: CustomerServiceIcon,
+    event: Calendar01Icon,
+    neighbor: UserIcon,
 };
 
 export const Route = createFileRoute("/_app/recommendations/")({
@@ -85,35 +85,42 @@ function RecommendationsPage() {
                         {recommendations.map((recommendation) => (
                             <Card
                                 key={`${recommendation.type}-${recommendation.id}`}
+                                className="transition-colors hover:border-primary/40"
                             >
-                                <CardHeader>
-                                    <div className="flex items-start justify-between gap-2">
-                                        <CardTitle className="text-base">
-                                            {recommendation.name}
-                                        </CardTitle>
-                                        <Badge
-                                            variant={
-                                                TYPE_VARIANTS[
-                                                    recommendation.type
-                                                ]
-                                            }
-                                            className="shrink-0"
-                                        >
-                                            {t(
-                                                `recommendations.types.${recommendation.type}`,
-                                            )}
-                                        </Badge>
+                                <CardContent className="flex items-start gap-4 p-5">
+                                    <div className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-xl">
+                                        <HugeiconsIcon
+                                            icon={TYPE_ICON[recommendation.type]}
+                                            className="size-5"
+                                        />
                                     </div>
-                                    <CardDescription>
-                                        {recommendation.reason}
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-muted-foreground text-xs tabular-nums">
-                                        {t("recommendations.scoreLabel", {
-                                            score: recommendation.score,
-                                        })}
-                                    </p>
+                                    <div className="min-w-0 flex-1 space-y-1">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <h3 className="font-medium">
+                                                {recommendation.name}
+                                            </h3>
+                                            <Badge
+                                                variant={
+                                                    TYPE_VARIANTS[
+                                                        recommendation.type
+                                                    ]
+                                                }
+                                                className="shrink-0"
+                                            >
+                                                {t(
+                                                    `recommendations.types.${recommendation.type}`,
+                                                )}
+                                            </Badge>
+                                        </div>
+                                        <p className="text-muted-foreground text-sm">
+                                            {recommendation.reason}
+                                        </p>
+                                        <p className="text-muted-foreground text-xs tabular-nums">
+                                            {t("recommendations.scoreLabel", {
+                                                score: recommendation.score,
+                                            })}
+                                        </p>
+                                    </div>
                                 </CardContent>
                             </Card>
                         ))}

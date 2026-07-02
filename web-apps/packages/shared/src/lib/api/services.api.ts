@@ -21,10 +21,12 @@ export function createService(data: {
     title: string;
     category: string;
     type: "free" | "paid" | "exchange";
+    direction?: "offer" | "request";
     description?: string;
     address?: string;
     neighborhoodId?: string;
     pointsMultiplier?: number;
+    duration?: number;
     location?: GeoJsonPoint;
 }): Promise<Service> {
     return apiPost<Service>("/services", data);
@@ -36,10 +38,12 @@ export function updateService(
         title: string;
         category: string;
         type: string;
+        direction: "offer" | "request";
         description: string;
         address: string;
         neighborhoodId: string;
         pointsMultiplier: number;
+        duration: number;
         location: GeoJsonPoint;
     }>,
 ): Promise<Service> {

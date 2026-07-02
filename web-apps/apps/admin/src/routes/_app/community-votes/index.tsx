@@ -73,7 +73,7 @@ function voteTypeLabel(t: TranslateFn, voteType: VoteType): string {
 }
 
 function CommunityVotesPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [createOpen, setCreateOpen] = useState(false);
     const [resultsVote, setResultsVote] = useState<CommunityVote | null>(null);
     const queryClient = useQueryClient();
@@ -199,7 +199,9 @@ function CommunityVotesPage() {
                                             <dd className="font-medium tabular-nums">
                                                 {new Date(
                                                     vote.endsAt,
-                                                ).toLocaleDateString("fr-FR")}
+                                                ).toLocaleDateString(
+                                                    i18n.language,
+                                                )}
                                             </dd>
                                         </div>
                                     </dl>

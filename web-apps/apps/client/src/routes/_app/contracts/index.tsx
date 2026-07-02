@@ -12,13 +12,6 @@ import {
 import type { Contract } from "@workspace/shared/lib/types";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@workspace/ui/components/card";
 import { DataState } from "@workspace/ui/components/data-state";
 import {
     Dialog,
@@ -36,6 +29,14 @@ import {
     EmptyTitle,
 } from "@workspace/ui/components/empty";
 import { Input } from "@workspace/ui/components/input";
+import {
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemDescription,
+    ItemGroup,
+    ItemTitle,
+} from "@workspace/ui/components/item";
 import { Label } from "@workspace/ui/components/label";
 import { PageHeader } from "@workspace/ui/components/page-header";
 import { Skeleton } from "@workspace/ui/components/skeleton";
@@ -57,7 +58,7 @@ export const Route = createFileRoute("/_app/contracts/")({
 });
 
 function ContractsPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const user = getCurrentUser();
     const [createOpen, setCreateOpen] = useState(false);
     const [signTarget, setSignTarget] = useState<Contract | null>(null);
@@ -129,12 +130,12 @@ function ContractsPage() {
                         </Empty>
                     }
                 >
-                    <div className="flex flex-col gap-4">
+                    <ItemGroup className="gap-3">
                         {contracts.map((contract) => (
-                            <Card key={contract._id}>
-                                <CardHeader>
-                                    <div className="flex items-start justify-between gap-3">
-                                        <CardTitle className="text-base">
+                            <Item key={contract._id} variant="outline">
+                                <ItemContent>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <ItemTitle>
                                             <Link
                                                 to="/contracts/$id"
                                                 params={{ id: contract._id }}
@@ -142,7 +143,7 @@ function ContractsPage() {
                                             >
                                                 {contract.title}
                                             </Link>
-                                        </CardTitle>
+                                        </ItemTitle>
                                         <Badge
                                             variant={
                                                 STATUS_VARIANTS[
@@ -155,45 +156,41 @@ function ContractsPage() {
                                                 contract.status}
                                         </Badge>
                                     </div>
-                                    <CardDescription>
+                                    <ItemDescription>
                                         {t("pages.contracts.signatureCount", {
                                             signed: contract.signatures.length,
                                             total: contract.signatories.length,
                                             count: contract.signatories.length,
                                         })}
-                                        {contract.signedAt && (
-                                            <span className="ml-2">
-                                                {t("pages.contracts.signedOn", {
-                                                    date: new Date(
-                                                        contract.signedAt,
-                                                    ).toLocaleDateString(
-                                                        "fr-FR",
-                                                    ),
-                                                })}
-                                            </span>
-                                        )}
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="flex flex-col gap-4">
+                                        {contract.signedAt &&
+                                            ` · ${t("pages.contracts.signedOn", {
+                                                date: new Date(
+                                                    contract.signedAt,
+                                                ).toLocaleDateString(
+                                                    i18n.language,
+                                                ),
+                                            })}`}
+                                    </ItemDescription>
                                     <p className="text-muted-foreground line-clamp-2 text-sm">
                                         {contract.content}
                                     </p>
-                                    {canSign(contract) && (
+                                </ItemContent>
+                                {canSign(contract) && (
+                                    <ItemActions>
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            className="w-fit"
                                             onClick={() =>
                                                 setSignTarget(contract)
                                             }
                                         >
                                             {t("pages.contracts.signWithTotp")}
                                         </Button>
-                                    )}
-                                </CardContent>
-                            </Card>
+                                    </ItemActions>
+                                )}
+                            </Item>
                         ))}
-                    </div>
+                    </ItemGroup>
                 </DataState>
 
                 <CreateContractDialog
@@ -261,7 +258,9 @@ function CreateContractDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{t("pages.contracts.create")}</DialogTitle>
+                    <DialogTitle className="text-xl">
+                        {t("pages.contracts.create")}
+                    </DialogTitle>
                     <DialogDescription>
                         {t("pages.contracts.hashNotice")}
                     </DialogDescription>
@@ -307,6 +306,7 @@ function CreateContractDialog({
                                 "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\nyyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
                             }
                             rows={2}
+                            className="font-mono text-xs"
                         />
                     </div>
                     <div className="flex justify-end gap-2">
@@ -368,7 +368,9 @@ function SignContractDialog({
         <Dialog open onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{t("contracts.signDialog.title")}</DialogTitle>
+                    <DialogTitle className="text-xl">
+                        {t("contracts.signDialog.title")}
+                    </DialogTitle>
                     <DialogDescription>
                         {t("pages.contracts.signDescription", {
                             title: contract.title,

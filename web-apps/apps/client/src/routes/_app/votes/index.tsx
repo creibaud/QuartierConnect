@@ -27,7 +27,20 @@ import {
 } from "@workspace/ui/components/empty";
 import { PageHeader } from "@workspace/ui/components/page-header";
 import { Progress } from "@workspace/ui/components/progress";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@workspace/ui/components/select";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from "@workspace/ui/components/tabs";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/votes/")({
@@ -53,12 +66,35 @@ interface CommunityVote {
 
 function VotesPage() {
     const { t } = useTranslation();
+    const user = getCurrentUser();
+    const [tab, setTab] = useState<"open" | "voted" | "closed">("open");
+    const [sort, setSort] = useState<"deadline" | "recent">("deadline");
     const { data, isLoading, isError, refetch } = useQuery<CommunityVote[]>({
         queryKey: ["community-votes"],
         queryFn: () => apiGet<CommunityVote[]>("/community-votes"),
     });
 
     const votes = data ?? [];
+    const [now] = useState(() => Date.now());
+    const isVoteClosed = (v: CommunityVote) =>
+        v.status === "closed" || now > new Date(v.endsAt).getTime();
+    const hasVotedOn = (v: CommunityVote) =>
+        !!user && v.casts.some((c) => c.userId === user.sub);
+    const sortFn = (a: CommunityVote, b: CommunityVote) =>
+        sort === "deadline"
+            ? new Date(a.endsAt).getTime() - new Date(b.endsAt).getTime()
+            : new Date(b.endsAt).getTime() - new Date(a.endsAt).getTime();
+    const openVotes = votes.filter((v) => !isVoteClosed(v)).sort(sortFn);
+    const votedVotes = votes.filter(hasVotedOn).sort(sortFn);
+    const closedVotes = votes.filter(isVoteClosed).sort(sortFn);
+    const shown =
+        tab === "open" ? openVotes : tab === "voted" ? votedVotes : closedVotes;
+    const emptyMsg =
+        tab === "open"
+            ? t("pages.votes.emptyTitle")
+            : tab === "voted"
+              ? t("pages.votes.noAnswered")
+              : t("pages.votes.noHistory");
 
     return (
         <div className="p-6 md:p-8">
@@ -66,6 +102,26 @@ function VotesPage() {
                 <PageHeader
                     title={t("pages.votes.title")}
                     description={t("pages.votes.description")}
+                    actions={
+                        <Select
+                            value={sort}
+                            onValueChange={(v) =>
+                                setSort(v as "deadline" | "recent")
+                            }
+                        >
+                            <SelectTrigger className="w-44">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="deadline">
+                                    {t("pages.votes.sortDeadline")}
+                                </SelectItem>
+                                <SelectItem value="recent">
+                                    {t("pages.votes.sortRecent")}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    }
                 />
 
                 <DataState
@@ -99,11 +155,38 @@ function VotesPage() {
                         </Empty>
                     }
                 >
-                    <div className="flex flex-col gap-4">
-                        {votes.map((vote) => (
-                            <VoteCard key={vote._id} vote={vote} />
-                        ))}
-                    </div>
+                    <Tabs
+                        value={tab}
+                        onValueChange={(v) =>
+                            setTab(v as "open" | "voted" | "closed")
+                        }
+                    >
+                        <TabsList>
+                            <TabsTrigger value="open">
+                                {t("pages.votes.open")} ({openVotes.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="voted">
+                                {t("pages.votes.answered")} ({votedVotes.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="closed">
+                                {t("pages.votes.closed")} ({closedVotes.length})
+                            </TabsTrigger>
+                        </TabsList>
+                        <TabsContent
+                            value={tab}
+                            className="mt-4 flex flex-col gap-4"
+                        >
+                            {shown.length === 0 ? (
+                                <p className="text-muted-foreground text-sm">
+                                    {emptyMsg}
+                                </p>
+                            ) : (
+                                shown.map((vote) => (
+                                    <VoteCard key={vote._id} vote={vote} />
+                                ))
+                            )}
+                        </TabsContent>
+                    </Tabs>
                 </DataState>
             </div>
         </div>
@@ -111,7 +194,7 @@ function VotesPage() {
 }
 
 function VoteCard({ vote }: { vote: CommunityVote }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const queryClient = useQueryClient();
     const user = getCurrentUser();
     const voteTypeLabels: Record<string, string> = {
@@ -127,6 +210,9 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
     const hasVoted = user
         ? vote.casts.some((c) => c.userId === user.sub)
         : false;
+    const myChoices = user
+        ? (vote.casts.find((c) => c.userId === user.sub)?.choices ?? [])
+        : [];
 
     const { data: results } = useQuery({
         queryKey: ["community-votes", vote._id, "results"],
@@ -200,7 +286,7 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
                 )}
                 <p className="text-muted-foreground text-xs">
                     {t("pages.votes.endsOn", {
-                        date: new Date(vote.endsAt).toLocaleDateString("fr-FR", {
+                        date: new Date(vote.endsAt).toLocaleDateString(i18n.language, {
                             day: "numeric",
                             month: "long",
                             year: "numeric",
@@ -212,6 +298,33 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
             <CardContent className="flex flex-col gap-3">
                 {isClosed && results ? (
                     <ResultsView vote={vote} results={results} />
+                ) : hasVoted ? (
+                    <div className="flex flex-col gap-2">
+                        {vote.options.map((opt) => {
+                            const chosen = myChoices.includes(opt.id);
+                            return (
+                                <div
+                                    key={opt.id}
+                                    className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm ${
+                                        chosen
+                                            ? "border-primary bg-primary/5 font-medium"
+                                            : "border-border text-muted-foreground"
+                                    }`}
+                                >
+                                    {chosen && (
+                                        <HugeiconsIcon
+                                            icon={Tick01Icon}
+                                            className="text-primary size-4 shrink-0"
+                                        />
+                                    )}
+                                    <span>{opt.label}</span>
+                                </div>
+                            );
+                        })}
+                        <p className="text-muted-foreground text-xs">
+                            {t("pages.votes.votedNote")}
+                        </p>
+                    </div>
                 ) : (
                     <>
                         <div className="flex flex-col gap-2">

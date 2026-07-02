@@ -7,6 +7,14 @@ import { useEvents } from "@workspace/shared/lib/hooks/events.hooks";
 import { useInfiniteIncidents } from "@workspace/shared/lib/hooks/incidents.hooks";
 import { useServices } from "@workspace/shared/lib/hooks/services.hooks";
 import { Button } from "@workspace/ui/components/button";
+import {
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemDescription,
+    ItemGroup,
+    ItemTitle,
+} from "@workspace/ui/components/item";
 import type { CommunityVote } from "../lib/community-vote";
 import {
     countOpenIncidents,
@@ -17,8 +25,19 @@ import {
 import { EmptyBlock, FeedCard, Rows } from "./feed-card";
 import { KpiCard } from "./kpi-card";
 
+const INCIDENT_DOT: Record<string, string> = {
+    open: "bg-amber-500",
+    in_progress: "bg-blue-500",
+    resolved: "bg-emerald-500",
+};
+
 export function ModerationOverview({ now }: { now: number }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const fmtDate = (d: string) =>
+        new Date(d).toLocaleDateString(i18n.language, {
+            day: "numeric",
+            month: "short",
+        });
 
     const { data: incidentsData, isLoading: incidentsLoading } = useInfiniteIncidents(20, "open");
     const incidents = incidentsData?.pages?.[0] ?? [];
@@ -75,13 +94,26 @@ export function ModerationOverview({ now }: { now: number }) {
                     ) : incidents.length === 0 ? (
                         <EmptyBlock icon={Alert01Icon} title={t("pages.dashboard.moderation.noIncidents")} />
                     ) : (
-                        <ul className="space-y-2">
+                        <ItemGroup className="gap-2">
                             {incidents.slice(0, 4).map((i) => (
-                                <li key={i.id} className="flex items-center justify-between gap-2 text-sm">
-                                    <span className="truncate font-medium">{i.title}</span>
-                                </li>
+                                <Item key={i.id} variant="outline" size="sm" asChild>
+                                    <Link to="/incidents/$id" params={{ id: i.id }}>
+                                        <span
+                                            className={`size-2.5 shrink-0 rounded-full ${INCIDENT_DOT[i.status]}`}
+                                            aria-hidden
+                                        />
+                                        <ItemContent>
+                                            <ItemTitle className="truncate">
+                                                {i.title}
+                                            </ItemTitle>
+                                            <ItemDescription>
+                                                {fmtDate(i.createdAt)}
+                                            </ItemDescription>
+                                        </ItemContent>
+                                    </Link>
+                                </Item>
                             ))}
-                        </ul>
+                        </ItemGroup>
                     )}
                 </FeedCard>
 
@@ -95,16 +127,29 @@ export function ModerationOverview({ now }: { now: number }) {
                     ) : openVotes.length === 0 ? (
                         <EmptyBlock icon={ThumbsUpIcon} title={t("pages.dashboard.moderation.noPendingVotes")} />
                     ) : (
-                        <ul className="space-y-2">
+                        <ItemGroup className="gap-2">
                             {openVotes.map((v) => (
-                                <li key={v._id} className="flex items-center justify-between gap-2">
-                                    <span className="truncate text-sm font-medium">{v.title}</span>
-                                    <Button asChild size="sm" variant="outline" className="shrink-0">
-                                        <Link to="/votes">{t("pages.dashboard.respond")}</Link>
-                                    </Button>
-                                </li>
+                                <Item key={v._id} variant="outline" size="sm">
+                                    <ItemContent>
+                                        <ItemTitle className="truncate">
+                                            {v.title}
+                                        </ItemTitle>
+                                        {v.endsAt && (
+                                            <ItemDescription>
+                                                {fmtDate(v.endsAt)}
+                                            </ItemDescription>
+                                        )}
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <Button asChild size="sm" variant="outline">
+                                            <Link to="/votes">
+                                                {t("pages.dashboard.respond")}
+                                            </Link>
+                                        </Button>
+                                    </ItemActions>
+                                </Item>
                             ))}
-                        </ul>
+                        </ItemGroup>
                     )}
                 </FeedCard>
             </div>

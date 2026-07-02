@@ -342,6 +342,9 @@ function ServiceFormDialog({
     const [type, setType] = useState<"free" | "paid" | "exchange">(
         (initial?.type as "free" | "paid" | "exchange") ?? "free",
     );
+    const [duration, setDuration] = useState<number | "">(
+        initial?.duration ?? "",
+    );
     const [description, setDescription] = useState(initial?.description ?? "");
     const [address, setAddress] = useState(initial?.address ?? "");
     const [picked, setPicked] = useState<{ lat: number; lng: number } | null>(
@@ -355,7 +358,10 @@ function ServiceFormDialog({
 
     const isPending = createService.isPending || updateService.isPending;
     const isValid =
-        title.trim() !== "" && category !== "" && description.trim() !== "";
+        title.trim() !== "" &&
+        category !== "" &&
+        description.trim() !== "" &&
+        (type !== "paid" || (typeof duration === "number" && duration >= 1));
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -366,6 +372,10 @@ function ServiceFormDialog({
             category,
             type,
             description: description.trim(),
+            duration:
+                type === "paid" && typeof duration === "number"
+                    ? duration
+                    : undefined,
             address: address.trim() || undefined,
             location: picked
                 ? { type: "Point" as const, coordinates: [picked.lng, picked.lat] as [number, number] }
@@ -397,7 +407,7 @@ function ServiceFormDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>
+                    <DialogTitle className="text-xl">
                         {initial
                             ? t("pages.services.editTitle")
                             : t("pages.services.createTitle")}
@@ -438,14 +448,14 @@ function ServiceFormDialog({
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
                             <Label>{t("pages.services.categoryLabel")}</Label>
                             <Select
                                 value={category}
                                 onValueChange={setCategory}
                             >
-                                <SelectTrigger>
+                                <SelectTrigger className="w-full">
                                     <SelectValue
                                         placeholder={t(
                                             "pages.services.chooseCategory",
@@ -471,7 +481,7 @@ function ServiceFormDialog({
                                     setType(v as "free" | "paid" | "exchange")
                                 }
                             >
-                                <SelectTrigger>
+                                <SelectTrigger className="w-full">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -484,6 +494,30 @@ function ServiceFormDialog({
                             </Select>
                         </div>
                     </div>
+                    {type === "paid" && (
+                        <div className="space-y-2">
+                            <Label htmlFor="svc-duration">
+                                {t("pages.services.durationLabel")}
+                            </Label>
+                            <Input
+                                id="svc-duration"
+                                type="number"
+                                min={1}
+                                value={duration}
+                                onChange={(e) =>
+                                    setDuration(
+                                        e.target.value === ""
+                                            ? ""
+                                            : Number(e.target.value),
+                                    )
+                                }
+                                placeholder={t(
+                                    "pages.services.durationPlaceholder",
+                                )}
+                                required
+                            />
+                        </div>
+                    )}
                     <div className="space-y-2">
                         <Label htmlFor="svc-address">
                             {t("pages.services.addressLabel")}

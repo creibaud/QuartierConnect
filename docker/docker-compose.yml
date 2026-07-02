@@ -19,6 +19,8 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
 
   client:
     build:

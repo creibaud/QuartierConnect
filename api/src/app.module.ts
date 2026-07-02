@@ -40,7 +40,7 @@ import { VotesModule } from "./votes/votes.module";
                 ),
             }),
         }),
-        ThrottlerModule.forRoot([{ ttl: 900000, limit: 100 }]),
+        ThrottlerModule.forRoot([{ ttl: 900000, limit: 1000 }]),
         I18nModule.forRoot({
             fallbackLanguage: "fr",
             loaderOptions: {
