@@ -8,6 +8,7 @@ import {
     ThumbsUpIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { formatAddress } from "@workspace/shared/lib/address";
 import {
     useDeleteService,
 } from "@workspace/shared/lib/hooks/services.hooks";
@@ -104,7 +105,9 @@ export function ServiceCard({
                     </div>
                 </div>
                 {service.address && (
-                    <CardDescription>{service.address}</CardDescription>
+                    <CardDescription>
+                        {formatAddress(service.address)}
+                    </CardDescription>
                 )}
             </CardHeader>
             <CardContent className="flex flex-1 flex-col gap-3">
