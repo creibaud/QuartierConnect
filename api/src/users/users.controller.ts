@@ -18,7 +18,7 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
-import { and, eq, ilike, ne } from "drizzle-orm";
+import { and, eq, ilike, ne, notInArray, sql } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -26,17 +26,36 @@ import { RolesGuard } from "../auth/guards/roles.guard";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { UpdateRoleDto } from "./dto/update-role.dto";
-import { UserPublicDto, UserSearchResultDto } from "./dto/user-responses.dto";
+import {
+    NeighborDto,
+    UserPublicDto,
+    UserSearchResultDto,
+} from "./dto/user-responses.dto";
 
 interface AuthRequest {
-    user: { sub: string };
+    user: { sub: string; neighborhoodId?: string | null };
 }
 
 const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_RESULTS = 10;
+const MAX_NEIGHBOR_RESULTS = 20;
+const EXCLUDED_NEIGHBOR_ROLES = ["banned", "deleted"];
+const FALLBACK_NEIGHBOR_NAME = "Voisin";
 
 function escapeLikePattern(value: string): string {
     return value.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
+
+function fullNameColumn() {
+    return sql`concat_ws(' ', ${schema.users.firstName}, ${schema.users.lastName})`;
+}
+
+function formatNeighborName(row: {
+    firstName: string | null;
+    lastName: string | null;
+}): string {
+    const name = [row.firstName, row.lastName].filter(Boolean).join(" ");
+    return name || FALLBACK_NEIGHBOR_NAME;
 }
 
 @ApiTags("Users (admin)")
@@ -78,6 +97,50 @@ export class UsersController {
                 ),
             )
             .limit(MAX_SEARCH_RESULTS);
+    }
+
+    @Get("neighbors")
+    @Roles("resident", "moderator", "admin")
+    @ApiOperation({
+        summary: "List neighbors by name",
+        description:
+            "Returns up to 20 residents of the caller's neighborhood (id and display name only), excluding the caller and banned accounts. The optional search term filters on the full name. Returns an empty list when the caller has no neighborhood.",
+    })
+    @ApiQuery({ name: "search", required: false, example: "Alice" })
+    @ApiResponse({ status: 200, type: [NeighborDto] })
+    async findNeighbors(
+        @Query("search") search = "",
+        @Request() req: AuthRequest,
+    ): Promise<NeighborDto[]> {
+        const { sub, neighborhoodId } = req.user;
+        if (!neighborhoodId) return [];
+
+        const conditions = [
+            eq(schema.users.neighborhoodId, neighborhoodId),
+            ne(schema.users.id, sub),
+            notInArray(schema.users.role, EXCLUDED_NEIGHBOR_ROLES),
+        ];
+        const term = search.trim();
+        if (term.length > 0) {
+            const pattern = `%${escapeLikePattern(term)}%`;
+            conditions.push(ilike(fullNameColumn(), pattern));
+        }
+
+        const rows = await this.db
+            .select({
+                id: schema.users.id,
+                firstName: schema.users.firstName,
+                lastName: schema.users.lastName,
+            })
+            .from(schema.users)
+            .where(and(...conditions))
+            .orderBy(schema.users.firstName, schema.users.lastName)
+            .limit(MAX_NEIGHBOR_RESULTS);
+
+        return rows.map((row) => ({
+            id: row.id,
+            name: formatNeighborName(row),
+        }));
     }
 
     @Get()
