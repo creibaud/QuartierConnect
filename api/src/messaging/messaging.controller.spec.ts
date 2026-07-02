@@ -1,9 +1,15 @@
-import { ForbiddenException, NotFoundException } from "@nestjs/common";
+import {
+    BadRequestException,
+    ForbiddenException,
+    NotFoundException,
+    PayloadTooLargeException,
+} from "@nestjs/common";
 import { getConnectionToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
 import { MessagingController } from "./messaging.controller";
 import { MessagingGateway } from "./messaging.gateway";
 import { MessagingService } from "./messaging.service";
+import { MessageType } from "./schemas/message.schema";
 
 const mockConversation = {
     _id: "conv-1",
@@ -97,5 +103,108 @@ describe("MessagingController", () => {
         await expect(
             controller.getMessages("missing", req as any),
         ).rejects.toThrow(NotFoundException);
+    });
+
+    describe("uploadFile", () => {
+        const makeUpload = (mimetype: string, size = 1024) => ({
+            originalname: "clip.bin",
+            mimetype,
+            size,
+            buffer: Buffer.from("data"),
+        });
+
+        it("derives type audio for a whitelisted audio MIME with codecs", async () => {
+            mockService.sendFileMessage.mockResolvedValue({
+                ...mockMessage,
+                type: MessageType.AUDIO,
+            });
+            await controller.uploadFile(
+                "conv-1",
+                makeUpload("audio/webm;codecs=opus") as any,
+                req as any,
+            );
+            expect(mockService.sendFileMessage).toHaveBeenCalledWith(
+                "conv-1",
+                "user-1",
+                expect.any(String),
+                "clip.bin",
+                MessageType.AUDIO,
+            );
+        });
+
+        it("relays the audio message on new_message", async () => {
+            const audioMessage = { ...mockMessage, type: MessageType.AUDIO };
+            mockService.sendFileMessage.mockResolvedValue(audioMessage);
+            await controller.uploadFile(
+                "conv-1",
+                makeUpload("audio/mpeg") as any,
+                req as any,
+            );
+            expect(mockGateway.emitToConversation).toHaveBeenCalledWith(
+                "conv-1",
+                "new_message",
+                audioMessage,
+            );
+        });
+
+        it("rejects a non-whitelisted audio MIME with 400", async () => {
+            await expect(
+                controller.uploadFile(
+                    "conv-1",
+                    makeUpload("audio/wav") as any,
+                    req as any,
+                ),
+            ).rejects.toThrow(BadRequestException);
+            expect(mockService.sendFileMessage).not.toHaveBeenCalled();
+        });
+
+        it("rejects audio above 5 MB with 413", async () => {
+            await expect(
+                controller.uploadFile(
+                    "conv-1",
+                    makeUpload("audio/mp4", 5 * 1024 * 1024 + 1) as any,
+                    req as any,
+                ),
+            ).rejects.toThrow(PayloadTooLargeException);
+            expect(mockService.sendFileMessage).not.toHaveBeenCalled();
+        });
+
+        it("still derives type image for image MIME types", async () => {
+            mockService.sendFileMessage.mockResolvedValue({
+                ...mockMessage,
+                type: MessageType.IMAGE,
+            });
+            await controller.uploadFile(
+                "conv-1",
+                makeUpload("image/png") as any,
+                req as any,
+            );
+            expect(mockService.sendFileMessage).toHaveBeenCalledWith(
+                "conv-1",
+                "user-1",
+                expect.any(String),
+                "clip.bin",
+                MessageType.IMAGE,
+            );
+        });
+
+        it("keeps a large non-audio upload as type file", async () => {
+            mockService.sendFileMessage.mockResolvedValue({
+                ...mockMessage,
+                type: MessageType.FILE,
+            });
+            await controller.uploadFile(
+                "conv-1",
+                makeUpload("application/pdf", 8 * 1024 * 1024) as any,
+                req as any,
+            );
+            expect(mockService.sendFileMessage).toHaveBeenCalledWith(
+                "conv-1",
+                "user-1",
+                expect.any(String),
+                "clip.bin",
+                MessageType.FILE,
+            );
+        });
     });
 });

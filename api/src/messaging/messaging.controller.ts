@@ -35,6 +35,10 @@ import {
     FileUploadBodyDto,
     MessageDto,
 } from "./dto/messaging-responses.dto";
+import {
+    assertAudioSizeWithinLimit,
+    resolveUploadMessageType,
+} from "./message-upload.policy";
 import { MessagingGateway } from "./messaging.gateway";
 import { MessagingService } from "./messaging.service";
 import { MessageType } from "./schemas/message.schema";
@@ -133,12 +137,14 @@ export class MessagingController {
     @ApiOperation({
         summary: "Send a file in a conversation (GridFS)",
         description:
-            "Uploads a file (max 10 MB). Creates a message of type FILE or IMAGE depending on the MIME type. The file is accessible via its GridFS fileId.",
+            "Uploads a file (max 10 MB; audio max 5 MB). Creates a message of type FILE, IMAGE or AUDIO depending on the MIME type. Accepted audio types: audio/webm, audio/ogg, audio/mpeg, audio/mp4. The file is accessible via its GridFS fileId.",
     })
     @ApiConsumes("multipart/form-data")
     @ApiBody({ type: FileUploadBodyDto })
     @ApiParam({ name: "id", description: "MongoDB ID of the conversation" })
     @ApiResponse({ status: 201, type: MessageDto })
+    @ApiResponse({ status: 400, description: "Unsupported audio MIME type" })
+    @ApiResponse({ status: 413, description: "Audio file larger than 5 MB" })
     @UseInterceptors(
         FileInterceptor("file", { limits: { fileSize: 10 * 1024 * 1024 } }),
     )
@@ -148,6 +154,11 @@ export class MessagingController {
         @Request() req: AuthRequest,
     ) {
         if (!file) throw new BadRequestException("No file provided");
+
+        const messageType = resolveUploadMessageType(file.mimetype);
+        if (messageType === MessageType.AUDIO) {
+            assertAudioSizeWithinLimit(file.size);
+        }
 
         const fileId = new ObjectId();
         await new Promise<void>((resolve) => {
@@ -165,13 +176,12 @@ export class MessagingController {
             stream.end(file.buffer, () => resolve());
         });
 
-        const isImage = file.mimetype.startsWith("image/");
         const message = await this.messagingService.sendFileMessage(
             conversationId,
             req.user.sub,
             fileId.toHexString(),
             file.originalname,
-            isImage ? MessageType.IMAGE : MessageType.FILE,
+            messageType,
         );
 
         this.gateway.emitToConversation(conversationId, "new_message", message);
