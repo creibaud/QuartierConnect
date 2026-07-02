@@ -178,6 +178,13 @@ export default {
         download: "Download",
         uploadError: "Unable to send the file",
         imageAlt: "Attachment",
+        recordVoice: "Record a voice message",
+        recording: "Recording in progress",
+        voiceMessage: "Voice message",
+        micPermissionDenied:
+            "Microphone access denied. Allow microphone access in your browser to record a voice message.",
+        recordingUnsupported:
+            "Audio recording is not supported in this browser.",
     },
     realtime: {
         typing: "typing…",
@@ -660,6 +667,7 @@ export default {
             conversations: "Conversations",
             previewImage: "Photo",
             previewFile: "Attachment",
+            previewAudio: "Voice message",
             previewFromYou: "You: {{preview}}",
             unread: "Unread messages",
             new: "New",
