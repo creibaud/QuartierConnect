@@ -10,19 +10,17 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useSwipeable } from "react-swipeable";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { formatAddress } from "@workspace/shared/lib/address";
-import { apiPost } from "@workspace/shared/lib/api";
 import { centroidOf, pointInPolygon, pointToLatLng } from "@workspace/shared/lib/geo";
 import {
     useCreateEvent,
+    useEventInterest,
     useEvents,
 } from "@workspace/shared/lib/hooks/events.hooks";
 import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
 import type { Event } from "@workspace/shared/lib/types";
-import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Calendar } from "@workspace/ui/components/calendar";
 import { calendarLocaleFor } from "@workspace/ui/lib/calendar-locales";
@@ -71,6 +69,9 @@ import {
 } from "@workspace/ui/components/tooltip";
 import { toast } from "sonner";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
+import { EventCard } from "@/features/events/components/event-card";
+import { ParticipantCount } from "@/features/events/components/event-participation";
+import { formatEventDateTime } from "@/features/events/lib/event-date";
 import { useMyLocation } from "@/features/onboarding/hooks/address.hooks";
 
 export const Route = createFileRoute("/_app/events/")({
@@ -289,65 +290,45 @@ function ViewToggleItem({
     );
 }
 
-function formatEventDateTime(
-    date: Date,
-    language: string,
-    dateFormat: Intl.DateTimeFormatOptions,
-): string {
-    const day = date.toLocaleDateString(language, dateFormat);
-    if (date.getHours() === 0 && date.getMinutes() === 0) return day;
-    const time = date.toLocaleTimeString(language, {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
-    return `${day} · ${language.startsWith("fr") ? time.replace(":", "h") : time}`;
-}
-
 function SwipeView({ events }: { events: Event[] }) {
     const { t, i18n } = useTranslation();
     const [index, setIndex] = useState(0);
     const [swipeDirection, setSwipeDirection] = useState<
         "left" | "right" | null
     >(null);
-    const queryClient = useQueryClient();
-
-    const recordInterest = useMutation({
-        mutationFn: ({
-            eventId,
-            interested,
-        }: {
-            eventId: string;
-            interested: boolean;
-        }) => apiPost("/social/interest", { eventId, interested }),
-        onSuccess: () => {
-            void queryClient.invalidateQueries({
-                queryKey: ["recommendations"],
-            });
-        },
-    });
+    const interest = useEventInterest();
 
     const current = events[index];
 
+    function advance(direction: "left" | "right") {
+        setSwipeDirection(direction);
+        setTimeout(() => {
+            setSwipeDirection(null);
+            setIndex((i) => i + 1);
+        }, 300);
+    }
+
+    function markInterested() {
+        if (!current) return;
+        interest.mutate(
+            { eventId: current._id, source: "swipe" },
+            {
+                onError: () =>
+                    toast.error(t("pages.events.participateError")),
+            },
+        );
+        toast.success(t("pages.events.interested"));
+        advance("right");
+    }
+
+    function skip() {
+        if (!current) return;
+        advance("left");
+    }
+
     const handlers = useSwipeable({
-        onSwipedRight: () => {
-            if (!current) return;
-            setSwipeDirection("right");
-            recordInterest.mutate({ eventId: current._id, interested: true });
-            toast.success(t("pages.events.interested"));
-            setTimeout(() => {
-                setSwipeDirection(null);
-                setIndex((i) => i + 1);
-            }, 300);
-        },
-        onSwipedLeft: () => {
-            if (!current) return;
-            setSwipeDirection("left");
-            recordInterest.mutate({ eventId: current._id, interested: false });
-            setTimeout(() => {
-                setSwipeDirection(null);
-                setIndex((i) => i + 1);
-            }, 300);
-        },
+        onSwipedRight: markInterested,
+        onSwipedLeft: skip,
         trackMouse: true,
         preventScrollOnSwipe: true,
     });
@@ -432,6 +413,9 @@ function SwipeView({ events }: { events: Event[] }) {
                                 },
                             )}
                         </p>
+                        <ParticipantCount
+                            count={current.interestedUserIds?.length ?? 0}
+                        />
                     </CardContent>
                 </Card>
             </div>
@@ -441,17 +425,7 @@ function SwipeView({ events }: { events: Event[] }) {
                     size="icon"
                     aria-label={t("pages.events.skip")}
                     className="border-destructive text-destructive hover:bg-destructive/10 size-14 rounded-full border-2"
-                    onClick={() => {
-                        setSwipeDirection("left");
-                        recordInterest.mutate({
-                            eventId: current._id,
-                            interested: false,
-                        });
-                        setTimeout(() => {
-                            setSwipeDirection(null);
-                            setIndex((i) => i + 1);
-                        }, 300);
-                    }}
+                    onClick={skip}
                 >
                     <HugeiconsIcon icon={Cancel01Icon} />
                 </Button>
@@ -459,70 +433,12 @@ function SwipeView({ events }: { events: Event[] }) {
                     size="icon"
                     aria-label={t("pages.events.imInterested")}
                     className="size-14 rounded-full"
-                    onClick={() => {
-                        setSwipeDirection("right");
-                        recordInterest.mutate({
-                            eventId: current._id,
-                            interested: true,
-                        });
-                        toast.success(t("pages.events.interested"));
-                        setTimeout(() => {
-                            setSwipeDirection(null);
-                            setIndex((i) => i + 1);
-                        }, 300);
-                    }}
+                    onClick={markInterested}
                 >
                     <HugeiconsIcon icon={FavouriteIcon} />
                 </Button>
             </div>
         </div>
-    );
-}
-
-function EventCard({ event }: { event: Event }) {
-    const { t, i18n } = useTranslation();
-    const date = new Date(event.date);
-    const isPast = date < new Date();
-
-    return (
-        <Card className={isPast ? "opacity-60" : ""}>
-            <CardHeader className="pb-2">
-                <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="text-sm font-medium">
-                        {event.title}
-                    </CardTitle>
-                    <div className="flex shrink-0 items-center gap-2">
-                        {isPast && (
-                            <Badge variant="outline" className="text-xs">
-                                {t("pages.events.past")}
-                            </Badge>
-                        )}
-                        <span className="text-muted-foreground text-xs whitespace-nowrap">
-                            {formatEventDateTime(date, i18n.language, {
-                                day: "numeric",
-                                month: "short",
-                                ...(date.getFullYear() !==
-                                new Date().getFullYear()
-                                    ? { year: "numeric" as const }
-                                    : {}),
-                            })}
-                        </span>
-                    </div>
-                </div>
-                {event.address && (
-                    <CardDescription>
-                        {formatAddress(event.address)}
-                    </CardDescription>
-                )}
-            </CardHeader>
-            {event.description && (
-                <CardContent className="pt-0">
-                    <p className="text-muted-foreground line-clamp-2 text-sm">
-                        {event.description}
-                    </p>
-                </CardContent>
-            )}
-        </Card>
     );
 }
 
@@ -722,6 +638,12 @@ function MapView({ events }: { events: Event[] }) {
                                                     evt.date,
                                                 ).toLocaleString(i18n.language)}
                                             </p>
+                                            <ParticipantCount
+                                                count={
+                                                    evt.interestedUserIds
+                                                        ?.length ?? 0
+                                                }
+                                            />
                                         </div>
                                     }
                                 />
