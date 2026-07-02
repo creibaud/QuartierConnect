@@ -19,6 +19,7 @@ import { ContractDocumentsService } from "../documents/contract-documents.servic
 import { ContractPdfData, PdfService } from "../documents/pdf.service";
 import { PointsService } from "../points/points.service";
 import { CreateContractDto } from "./dto/create-contract.dto";
+import { formatFrenchDate, formatPointsAmount } from "./lib/format";
 import {
     Contract,
     ContractDocument,
