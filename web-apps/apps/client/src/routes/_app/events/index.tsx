@@ -13,6 +13,7 @@ import { useSwipeable } from "react-swipeable";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { formatAddress } from "@workspace/shared/lib/address";
 import { apiPost } from "@workspace/shared/lib/api";
 import { centroidOf, pointInPolygon, pointToLatLng } from "@workspace/shared/lib/geo";
 import {
@@ -63,6 +64,11 @@ import {
     ToggleGroup,
     ToggleGroupItem,
 } from "@workspace/ui/components/toggle-group";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@workspace/ui/components/tooltip";
 import { toast } from "sonner";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { useMyLocation } from "@/features/onboarding/hooks/address.hooks";
@@ -120,30 +126,26 @@ function EventsPage() {
                                     if (value) setViewMode(value as ViewMode);
                                 }}
                             >
-                                <ToggleGroupItem
+                                <ViewToggleItem
                                     value="calendar"
-                                    aria-label={t("pages.events.viewCalendar")}
-                                >
-                                    <HugeiconsIcon icon={Calendar01Icon} />
-                                </ToggleGroupItem>
-                                <ToggleGroupItem
+                                    label={t("pages.events.viewCalendar")}
+                                    icon={Calendar01Icon}
+                                />
+                                <ViewToggleItem
                                     value="list"
-                                    aria-label={t("pages.events.viewList")}
-                                >
-                                    <HugeiconsIcon icon={ListViewIcon} />
-                                </ToggleGroupItem>
-                                <ToggleGroupItem
+                                    label={t("pages.events.viewList")}
+                                    icon={ListViewIcon}
+                                />
+                                <ViewToggleItem
                                     value="swipe"
-                                    aria-label={t("pages.events.viewCards")}
-                                >
-                                    <HugeiconsIcon icon={GridViewIcon} />
-                                </ToggleGroupItem>
-                                <ToggleGroupItem
+                                    label={t("pages.events.viewSwipe")}
+                                    icon={GridViewIcon}
+                                />
+                                <ViewToggleItem
                                     value="map"
-                                    aria-label={t("pages.events.viewMap")}
-                                >
-                                    <HugeiconsIcon icon={Location01Icon} />
-                                </ToggleGroupItem>
+                                    label={t("pages.events.viewMap")}
+                                    icon={Location01Icon}
+                                />
                             </ToggleGroup>
                             <Button onClick={() => setCreateOpen(true)}>
                                 <HugeiconsIcon icon={Add01Icon} />
@@ -266,6 +268,41 @@ function EventsPage() {
     );
 }
 
+function ViewToggleItem({
+    value,
+    label,
+    icon,
+}: {
+    value: ViewMode;
+    label: string;
+    icon: React.ComponentProps<typeof HugeiconsIcon>["icon"];
+}) {
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <ToggleGroupItem value={value} aria-label={label}>
+                    <HugeiconsIcon icon={icon} />
+                </ToggleGroupItem>
+            </TooltipTrigger>
+            <TooltipContent>{label}</TooltipContent>
+        </Tooltip>
+    );
+}
+
+function formatEventDateTime(
+    date: Date,
+    language: string,
+    dateFormat: Intl.DateTimeFormatOptions,
+): string {
+    const day = date.toLocaleDateString(language, dateFormat);
+    if (date.getHours() === 0 && date.getMinutes() === 0) return day;
+    const time = date.toLocaleTimeString(language, {
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+    return `${day} · ${language.startsWith("fr") ? time.replace(":", "h") : time}`;
+}
+
 function SwipeView({ events }: { events: Event[] }) {
     const { t, i18n } = useTranslation();
     const [index, setIndex] = useState(0);
@@ -373,7 +410,7 @@ function SwipeView({ events }: { events: Event[] }) {
                         </CardTitle>
                         {current.address && (
                             <CardDescription>
-                                {current.address}
+                                {formatAddress(current.address)}
                             </CardDescription>
                         )}
                     </CardHeader>
@@ -384,7 +421,8 @@ function SwipeView({ events }: { events: Event[] }) {
                             </p>
                         )}
                         <p className="text-sm font-medium">
-                            {new Date(current.date).toLocaleDateString(
+                            {formatEventDateTime(
+                                new Date(current.date),
                                 i18n.language,
                                 {
                                     weekday: "long",
@@ -460,16 +498,21 @@ function EventCard({ event }: { event: Event }) {
                             </Badge>
                         )}
                         <span className="text-muted-foreground text-xs whitespace-nowrap">
-                            {date.toLocaleDateString(i18n.language, {
+                            {formatEventDateTime(date, i18n.language, {
                                 day: "numeric",
                                 month: "short",
-                                year: "numeric",
+                                ...(date.getFullYear() !==
+                                new Date().getFullYear()
+                                    ? { year: "numeric" as const }
+                                    : {}),
                             })}
                         </span>
                     </div>
                 </div>
                 {event.address && (
-                    <CardDescription>{event.address}</CardDescription>
+                    <CardDescription>
+                        {formatAddress(event.address)}
+                    </CardDescription>
                 )}
             </CardHeader>
             {event.description && (
