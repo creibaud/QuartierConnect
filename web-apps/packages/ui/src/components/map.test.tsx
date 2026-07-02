@@ -6,12 +6,46 @@
 // and pure hooks are tested below.
 
 import { describe, it, expect, vi } from "vitest";
-import { render, renderHook } from "@testing-library/react";
+import { render, renderHook, screen } from "@testing-library/react";
+
+// ── Mock terra-draw before importing the wrapper ──────────────────────────
+// terra-draw drives a real MapLibre instance, which jsdom cannot provide.
+vi.mock("terra-draw", () => {
+    class MockTerraDraw {
+        enabled = true;
+        private readyListeners: (() => void)[] = [];
+        start = vi.fn(() => {
+            for (const listener of this.readyListeners) listener();
+        });
+        stop = vi.fn();
+        on = vi.fn((event: string, listener: () => void) => {
+            if (event === "ready") this.readyListeners.push(listener);
+        });
+        off = vi.fn();
+        setMode = vi.fn();
+        addFeatures = vi.fn(() => []);
+        removeFeatures = vi.fn();
+        hasFeature = vi.fn(() => true);
+        selectFeature = vi.fn();
+        getSnapshot = vi.fn(() => []);
+        getSnapshotFeature = vi.fn(() => undefined);
+    }
+    return {
+        TerraDraw: MockTerraDraw,
+        TerraDrawPolygonMode: class {},
+        TerraDrawSelectMode: class {},
+    };
+});
+vi.mock("terra-draw-maplibre-gl-adapter", () => ({
+    TerraDrawMapLibreGLAdapter: class {},
+}));
 
 // ── Mock the underlying mapcn layer before importing the wrapper ──────────
 // This prevents maplibre-gl from initialising a WebGL context in jsdom.
 vi.mock("@workspace/ui/components/ui/map", async () => {
     const React = await import("react");
+    const mapContainer = document.createElement("div");
+    document.body.appendChild(mapContainer);
 
     const MockMap = React.forwardRef<
         {
@@ -73,7 +107,7 @@ vi.mock("@workspace/ui/components/ui/map", async () => {
                 off: vi.fn(),
                 once: vi.fn(),
                 loaded: () => true,
-                getContainer: () => document.createElement("div"),
+                getContainer: () => mapContainer,
             },
             isLoaded: true,
             resolvedTheme: "light" as const,
@@ -114,12 +148,50 @@ describe("map module", () => {
 
 // ─── DrawControl ──────────────────────────────────────────────────────────
 
+const SQUARE: GeoJSON.Polygon = {
+    type: "Polygon",
+    coordinates: [
+        [
+            [2.35, 48.85],
+            [2.36, 48.85],
+            [2.36, 48.86],
+            [2.35, 48.86],
+            [2.35, 48.85],
+        ],
+    ],
+};
+
 describe("<DrawControl>", () => {
     it("mounts and unmounts without throwing", () => {
         const { unmount } = render(
             <DrawControl mode="polygon" onCreate={() => {}} />,
         );
         expect(() => unmount()).not.toThrow();
+    });
+
+    it("renders the draw / edit / delete toolbar", () => {
+        const { unmount } = render(<DrawControl mode="polygon" />);
+        expect(screen.getByTestId("map-draw-polygon")).toBeInTheDocument();
+        expect(screen.getByTestId("map-edit-polygon")).toBeInTheDocument();
+        expect(screen.getByTestId("map-delete-polygon")).toBeInTheDocument();
+        unmount();
+    });
+
+    it("disables edit and delete while no polygon exists", () => {
+        const { unmount } = render(<DrawControl mode="polygon" />);
+        expect(screen.getByTestId("map-draw-polygon")).toBeEnabled();
+        expect(screen.getByTestId("map-edit-polygon")).toBeDisabled();
+        expect(screen.getByTestId("map-delete-polygon")).toBeDisabled();
+        unmount();
+    });
+
+    it("enables edit and delete when given an initial geometry", () => {
+        const { unmount } = render(
+            <DrawControl mode="polygon" initialGeometry={SQUARE} />,
+        );
+        expect(screen.getByTestId("map-edit-polygon")).toBeEnabled();
+        expect(screen.getByTestId("map-delete-polygon")).toBeEnabled();
+        unmount();
     });
 });
 
