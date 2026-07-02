@@ -1,7 +1,10 @@
 package fr.quartierconnect.desktopapp.views;
 
+import atlantafx.base.controls.ModalPane;
 import fr.quartierconnect.desktopapp.database.IncidentRepository;
 import fr.quartierconnect.desktopapp.i18n.I18n;
+import fr.quartierconnect.desktopapp.plugin.PluginRegistry;
+import fr.quartierconnect.desktopapp.plugin.ThemePlugin;
 import fr.quartierconnect.desktopapp.services.ApiService;
 import fr.quartierconnect.desktopapp.services.AuthService;
 import fr.quartierconnect.desktopapp.services.SyncService;
@@ -9,6 +12,7 @@ import fr.quartierconnect.desktopapp.services.UninstallService;
 import fr.quartierconnect.desktopapp.services.UpdateService;
 import fr.quartierconnect.desktopapp.ui.components.AppBadge;
 import fr.quartierconnect.desktopapp.ui.components.AppButton;
+import fr.quartierconnect.desktopapp.ui.components.AppModal;
 import fr.quartierconnect.desktopapp.util.TimeFormatter;
 import fr.quartierconnect.desktopapp.util.UiHelper;
 import javafx.animation.Animation;
@@ -17,8 +21,8 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
+import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -30,8 +34,12 @@ import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
 import java.util.Locale;
+import java.util.Optional;
+import java.util.logging.Logger;
 
 public class ProfileView {
+
+    private static final Logger LOG = Logger.getLogger(ProfileView.class.getName());
 
     private static final long REFRESH_THRESHOLD_SECONDS = 60;
     private static final long TOKEN_LIFETIME_SECONDS = 15 * 60;
@@ -134,13 +142,16 @@ public class ProfileView {
         VBox languageCard = buildLanguageCard();
         VBox.setMargin(languageCard, new Insets(0, 0, 9, 0));
 
+        VBox appearanceCard = buildAppearanceCard();
+        VBox.setMargin(appearanceCard, new Insets(0, 0, 9, 0));
+
         VBox applicationCard = buildApplicationCard();
         VBox.setMargin(applicationCard, new Insets(0, 0, 14, 0));
 
         AppButton logoutBtn = new AppButton(I18n.get("profile.logout"), AppButton.Variant.DESTRUCTIVE, true);
         logoutBtn.setOnAction(e -> onLogout.run());
 
-        VBox profileLayout = new VBox(0, profileHero, sessionCard, dbCard, languageCard, applicationCard, logoutBtn);
+        VBox profileLayout = new VBox(0, profileHero, sessionCard, dbCard, languageCard, appearanceCard, applicationCard, logoutBtn);
         profileLayout.setMaxWidth(460);
 
         VBox centeredProfile = new VBox(profileLayout);
@@ -240,18 +251,11 @@ public class ProfileView {
         pathVal.getStyleClass().add("detail-row-val-mono");
         HBox pathRow = UiHelper.detailRow(pathLbl, pathVal);
 
-        Label versionLbl = new Label(I18n.get("profile.version"));
-        versionLbl.getStyleClass().add("detail-row-lbl");
-        Label versionVal = new Label("v1.4.0 · Java 21 · JavaFX 21");
-        versionVal.getStyleClass().add("detail-row-val-mono");
-        HBox versionRow = UiHelper.detailRow(versionLbl, versionVal);
-
         VBox card = new VBox(0,
             cardTitle,
             incidentsRow, UiHelper.separator(),
             conflictsRow, UiHelper.separator(),
-            pathRow, UiHelper.separator(),
-            versionRow
+            pathRow
         );
         card.getStyleClass().add("detail-card");
 
@@ -300,6 +304,35 @@ public class ProfileView {
         return card;
     }
 
+    private VBox buildAppearanceCard() {
+        Label cardTitle = new Label(I18n.get("profile.appearance").toUpperCase(Locale.ROOT));
+        cardTitle.getStyleClass().add("detail-card-title");
+        VBox.setMargin(cardTitle, new Insets(0, 0, 12, 0));
+
+        Node themeSelector = PluginRegistry.getInstance().getPlugins().stream()
+                .filter(ThemePlugin.class::isInstance)
+                .map(ThemePlugin.class::cast)
+                .findFirst()
+                .map(plugin -> (Node) plugin.getPanel())
+                .orElseGet(this::buildThemePluginDisabledNote);
+
+        Label pluginNote = new Label(I18n.get("profile.appearance.note"));
+        pluginNote.getStyleClass().add("profile-meta-text");
+        pluginNote.setWrapText(true);
+        VBox.setMargin(pluginNote, new Insets(10, 0, 0, 0));
+
+        VBox card = new VBox(0, cardTitle, themeSelector, pluginNote);
+        card.getStyleClass().add("detail-card");
+        return card;
+    }
+
+    private Node buildThemePluginDisabledNote() {
+        Label note = new Label(I18n.get("profile.appearance.pluginDisabled"));
+        note.getStyleClass().add("profile-meta-text");
+        note.setWrapText(true);
+        return note;
+    }
+
     private VBox buildApplicationCard() {
         Label cardTitle = new Label(I18n.get("profile.app").toUpperCase(Locale.ROOT));
         cardTitle.getStyleClass().add("detail-card-title");
@@ -317,7 +350,8 @@ public class ProfileView {
         VBox.setMargin(updateStatus, new Insets(10, 0, 0, 0));
 
         AppButton updateBtn = new AppButton(I18n.get("profile.update.check"), AppButton.Variant.PRIMARY, true);
-        updateBtn.setOnAction(e -> startUpdate(updateBtn, updateStatus));
+        updateBtn.setOnAction(e -> checkForUpdate(updateBtn, updateStatus));
+        UpdateService.knownAvailableUpdate().ifPresent(version -> offerInstall(updateBtn, updateStatus, version));
 
         AppButton uninstallBtn = new AppButton(I18n.get("profile.uninstall"), AppButton.Variant.DESTRUCTIVE, true);
         uninstallBtn.setOnAction(e -> confirmAndUninstall());
@@ -330,9 +364,35 @@ public class ProfileView {
         return card;
     }
 
-    private void startUpdate(AppButton trigger, Label status) {
+    private void checkForUpdate(AppButton trigger, Label status) {
         trigger.setDisable(true);
         status.setText(I18n.get("profile.update.checking"));
+        new Thread(() -> {
+            try {
+                Optional<String> newerVersion = updateService.findAvailableUpdate();
+                Platform.runLater(() -> {
+                    trigger.setDisable(false);
+                    newerVersion.ifPresentOrElse(
+                        version -> offerInstall(trigger, status, version),
+                        () -> status.setText(I18n.get("profile.update.upToDate", UpdateService.currentVersion())));
+                });
+            } catch (Exception ex) {
+                Platform.runLater(() -> {
+                    status.setText(I18n.get("profile.update.failed", ex.getMessage()));
+                    trigger.setDisable(false);
+                });
+            }
+        }, "update-check").start();
+    }
+
+    private void offerInstall(AppButton trigger, Label status, String version) {
+        status.setText(I18n.get("profile.update.available", version));
+        trigger.setText(I18n.get("profile.update.install", version));
+        trigger.setOnAction(e -> installUpdate(trigger, status));
+    }
+
+    private void installUpdate(AppButton trigger, Label status) {
+        trigger.setDisable(true);
         new Thread(() -> {
             try {
                 updateService.downloadAndInstallLatest(stage ->
@@ -348,23 +408,58 @@ public class ProfileView {
     }
 
     private void confirmAndUninstall() {
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                I18n.get("profile.uninstall.confirm"), ButtonType.OK, ButtonType.CANCEL);
-        confirm.setTitle(I18n.get("profile.uninstall"));
-        confirm.setHeaderText(I18n.get("profile.uninstall.confirmTitle"));
-        confirm.showAndWait()
-                .filter(button -> button == ButtonType.OK)
-                .ifPresent(button -> runUninstall());
+        findAppModal().ifPresentOrElse(
+            this::showUninstallConfirm,
+            () -> LOG.warning("Modal pane unavailable — uninstall confirmation skipped"));
     }
 
-    private void runUninstall() {
+    private void showUninstallConfirm(AppModal modal) {
+        Label message = new Label(I18n.get("profile.uninstall.confirm"));
+        message.setWrapText(true);
+        message.getStyleClass().add("muted-label");
+
+        Label errorLabel = new Label();
+        errorLabel.getStyleClass().add("error-label");
+        errorLabel.setWrapText(true);
+        errorLabel.setVisible(false);
+        errorLabel.setManaged(false);
+
+        AppButton cancelBtn = new AppButton(I18n.get("profile.uninstall.cancel"), AppButton.Variant.GHOST);
+        cancelBtn.setOnAction(e -> modal.hide());
+
+        AppButton confirmBtn = new AppButton(I18n.get("profile.uninstall.confirmBtn"), AppButton.Variant.DESTRUCTIVE);
+        confirmBtn.setOnAction(e -> runUninstall(errorLabel));
+
+        Region actionSpacer = new Region();
+        HBox.setHgrow(actionSpacer, Priority.ALWAYS);
+        HBox actions = new HBox(8, actionSpacer, cancelBtn, confirmBtn);
+        actions.setAlignment(Pos.CENTER_RIGHT);
+
+        VBox content = new VBox(14, message, errorLabel, actions);
+        modal.show(I18n.get("profile.uninstall.confirmTitle"), content);
+    }
+
+    private void runUninstall(Label errorLabel) {
         try {
             uninstallService.uninstall();
             Platform.exit();
         } catch (Exception ex) {
-            new Alert(Alert.AlertType.ERROR,
-                    I18n.get("profile.uninstall.failed", ex.getMessage()), ButtonType.OK).showAndWait();
+            errorLabel.setText(I18n.get("profile.uninstall.failed", ex.getMessage()));
+            errorLabel.setVisible(true);
+            errorLabel.setManaged(true);
         }
+    }
+
+    private Optional<AppModal> findAppModal() {
+        return Optional.ofNullable(root.getScene())
+                .map(Scene::getRoot)
+                .filter(StackPane.class::isInstance)
+                .map(StackPane.class::cast)
+                .flatMap(rootPane -> rootPane.getChildren().stream()
+                        .filter(ModalPane.class::isInstance)
+                        .map(ModalPane.class::cast)
+                        .findFirst())
+                .map(AppModal::new);
     }
 
     private Locale selectedLocale() {

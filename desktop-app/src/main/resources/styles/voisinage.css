@@ -1,0 +1,50 @@
+/* ═══════════════════════════════════════════════════════════════
+   QuartierConnect — Thème « Voisinage »
+   Base : AtlantaFX PrimerLight + tokens chauds alignés sur le web
+   (crème, terracotta, vert sauge — cf. web-apps client)
+   ═══════════════════════════════════════════════════════════════ */
+
+.root {
+    /* Accent — terracotta */
+    -color-accent-fg: #a1512b;
+    -color-accent-emphasis: #a1512b;
+    -color-accent-muted: #d8a98f;
+    -color-accent-subtle: #f2e2d7;
+
+    /* Backgrounds — crème chaude */
+    -color-bg-default: #faf8f4;
+    -color-bg-subtle: #f4f0e8;
+    -color-bg-inset: #efe9de;
+    -color-bg-overlay: #fffdf9;
+
+    /* Foregrounds — encre chaude */
+    -color-fg-default: #2f2b25;
+    -color-fg-muted: #6b6459;
+    -color-fg-subtle: #99917f;
+
+    /* Borders — beige */
+    -color-border-default: #ddd5c6;
+    -color-border-muted: #e8e1d3;
+
+    /* Success — vert sauge */
+    -color-success-fg: #4f7942;
+    -color-success-emphasis: #5c8a4e;
+    -color-success-muted: #b9cfae;
+    -color-success-subtle: #e9f0e3;
+}
+
+/* ── Radius 8-10 sur les contrôles standards ─────────────────── */
+
+.button,
+.toggle-button {
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+
+.text-field,
+.text-area,
+.combo-box-base,
+.choice-box {
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
