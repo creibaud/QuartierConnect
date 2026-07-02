@@ -11,7 +11,6 @@ import {
     useCastVote,
     useVoteScore,
 } from "@workspace/shared/lib/hooks/useVotes";
-import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
     Card,
@@ -23,13 +22,11 @@ import {
 import { DataState } from "@workspace/ui/components/data-state";
 import { PageHeader } from "@workspace/ui/components/page-header";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import {
+    StatusBadge,
+    statusTone,
+} from "@workspace/ui/components/status-badge";
 import { toast } from "sonner";
-
-const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {
-    open: "default",
-    in_progress: "secondary",
-    resolved: "outline",
-};
 
 const NEXT_STATUS_VALUES: Record<
     string,
@@ -83,14 +80,10 @@ function IncidentDetailPage() {
                     }
                     actions={
                         incident ? (
-                            <Badge
-                                variant={
-                                    STATUS_VARIANTS[incident.status] ?? "outline"
-                                }
-                            >
+                            <StatusBadge tone={statusTone(incident.status)}>
                                 {statusLabels[incident.status] ??
                                     incident.status}
-                            </Badge>
+                            </StatusBadge>
                         ) : undefined
                     }
                 />

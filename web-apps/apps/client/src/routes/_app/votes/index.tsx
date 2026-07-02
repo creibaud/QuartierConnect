@@ -28,6 +28,10 @@ import {
 import { PageHeader } from "@workspace/ui/components/page-header";
 import { Progress } from "@workspace/ui/components/progress";
 import {
+    StatusBadge,
+    statusTone,
+} from "@workspace/ui/components/status-badge";
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -269,11 +273,13 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
                                 {t("pages.votes.youVoted")}
                             </Badge>
                         )}
-                        <Badge variant={isClosed ? "secondary" : "default"}>
+                        <StatusBadge
+                            tone={statusTone(isClosed ? "closed" : "open")}
+                        >
                             {isClosed
                                 ? t("pages.votes.closed")
                                 : t("pages.votes.open")}
-                        </Badge>
+                        </StatusBadge>
                         <Badge variant="outline">
                             {voteTypeLabels[vote.voteType]}
                         </Badge>
