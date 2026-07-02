@@ -100,29 +100,33 @@ export function ServiceCard({
                         {service.description}
                     </p>
                 )}
-                <div className="mt-auto flex flex-wrap items-center justify-between gap-2">
-                    <ServiceVoteButtons serviceId={service._id} />
-                    <div className="flex items-center gap-2">
+                <div className="mt-auto flex flex-col gap-3 pt-1">
+                    <div className="flex items-center justify-between gap-2">
+                        <ServiceVoteButtons serviceId={service._id} />
                         <span className="text-muted-foreground text-xs">
                             {responderText}
                         </span>
-                        {!isOwn && (
-                            <RespondButton
-                                serviceId={service._id}
-                                hasResponded={service.hasResponded ?? false}
-                                ctaLabel={ctaLabel}
-                            />
-                        )}
-                        {!isOwn && service.type === "paid" && (
-                            <ReserveButton serviceId={service._id} />
-                        )}
-                        {canManage && (
-                            <ServiceManageButtons
-                                service={service}
-                                onEdit={onEdit}
-                            />
-                        )}
                     </div>
+                    {(!isOwn || canManage) && (
+                        <div className="flex flex-wrap items-center gap-2">
+                            {!isOwn && (
+                                <RespondButton
+                                    serviceId={service._id}
+                                    hasResponded={service.hasResponded ?? false}
+                                    ctaLabel={ctaLabel}
+                                />
+                            )}
+                            {!isOwn && service.type === "paid" && (
+                                <ReserveButton serviceId={service._id} />
+                            )}
+                            {canManage && (
+                                <ServiceManageButtons
+                                    service={service}
+                                    onEdit={onEdit}
+                                />
+                            )}
+                        </div>
+                    )}
                 </div>
             </CardContent>
         </Card>
