@@ -2,8 +2,10 @@
  * Seed Neo4j graph with existing MongoDB/PostgreSQL data.
  * Run: npx ts-node scripts/seed-neo4j.ts
  *
- * Requires: NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD, MONGO_URI, DATABASE_URL
+ * Requires: NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD, MONGO_URI,
+ * PG_CONTAINER/POSTGRES_USER/POSTGRES_DB (Postgres read via docker exec)
  */
+import { execSync } from "child_process";
 import neo4j from "neo4j-driver";
 import mongoose from "mongoose";
 import * as dotenv from "dotenv";
@@ -15,6 +17,42 @@ const NEO4J_USER = process.env.NEO4J_USER ?? "neo4j";
 const NEO4J_PASSWORD = process.env.NEO4J_PASSWORD ?? "";
 const MONGO_URI =
   process.env.MONGO_URI ?? "mongodb://localhost:27017/quartierconnect";
+const PG_CONTAINER = process.env.PG_CONTAINER ?? "docker-postgres-1";
+const PG_USER = process.env.POSTGRES_USER ?? "qc";
+const PG_DB = process.env.POSTGRES_DB ?? "quartierconnect";
+
+const INTERESTED_EVENTS_PER_RESIDENT = 3;
+
+interface Resident {
+  id: string;
+  neighborhoodId: string;
+}
+
+function pgQuery(sql: string): string {
+  return execSync(
+    `docker exec ${PG_CONTAINER} psql -U "${PG_USER}" -d "${PG_DB}" -t -A -c "${sql}"`,
+    { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] },
+  ).trim();
+}
+
+function fetchResidents(): Resident[] {
+  let output: string;
+  try {
+    output = pgQuery(
+      "SELECT id, neighborhood_id FROM users WHERE neighborhood_id IS NOT NULL",
+    );
+  } catch {
+    console.warn(
+      "Could not read users from PostgreSQL — is Docker running? Skipping LIVES_IN seed.",
+    );
+    return [];
+  }
+  if (!output) return [];
+  return output.split("\n").map((line) => {
+    const [id, neighborhoodId] = line.split("|").map((v) => v.trim());
+    return { id, neighborhoodId };
+  });
+}
 
 async function main() {
   const driver = neo4j.driver(
@@ -107,6 +145,45 @@ async function main() {
       }
     }
     console.log(`Seeded ${events.length} events`);
+
+    // Seed Users + LIVES_IN
+    const residents = fetchResidents();
+
+    for (const resident of residents) {
+      await session.run(
+        `MERGE (u:User {id: $userId})
+         ON CREATE SET u.createdAt = datetime()
+         ON MATCH SET u.updatedAt = datetime()`,
+        { userId: resident.id },
+      );
+
+      await session.run(
+        `MERGE (n:Neighborhood {id: $neighborhoodId})
+         WITH n
+         MATCH (u:User {id: $userId})
+         MERGE (u)-[:LIVES_IN]->(n)`,
+        { userId: resident.id, neighborhoodId: resident.neighborhoodId },
+      );
+    }
+    console.log(`Seeded ${residents.length} users with LIVES_IN`);
+
+    // Seed INTERESTED_IN
+    const interestedEvents = events.slice(0, INTERESTED_EVENTS_PER_RESIDENT);
+    let interestCount = 0;
+
+    for (const resident of residents) {
+      for (const evt of interestedEvents) {
+        await session.run(
+          `MERGE (u:User {id: $userId})
+           MERGE (e:Event {id: $eventId})
+           MERGE (u)-[r:INTERESTED_IN]->(e)
+           ON CREATE SET r.timestamp = datetime()`,
+          { userId: resident.id, eventId: evt._id.toString() },
+        );
+        interestCount++;
+      }
+    }
+    console.log(`Seeded ${interestCount} INTERESTED_IN relations`);
 
     console.log("Neo4j seed completed successfully");
   } finally {
