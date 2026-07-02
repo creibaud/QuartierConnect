@@ -1,4 +1,5 @@
 import { BadRequestException } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Test, TestingModule } from "@nestjs/testing";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import { PointsService } from "./points.service";
@@ -87,6 +88,7 @@ describe("PointsService", () => {
             providers: [
                 PointsService,
                 { provide: DRIZZLE_TOKEN, useValue: db },
+                { provide: EventEmitter2, useValue: { emit: jest.fn() } },
             ],
         }).compile();
 

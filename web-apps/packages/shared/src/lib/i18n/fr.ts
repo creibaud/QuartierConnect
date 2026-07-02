@@ -179,6 +179,46 @@ export default {
         uploadError: "Impossible d'envoyer le fichier",
         imageAlt: "Pièce jointe",
     },
+    realtime: {
+        typing: "écrit…",
+        presence: {
+            online: "En ligne",
+        },
+        notifications: {
+            fallbackActor: "Un voisin",
+            fallbackService: "un service",
+            bookingCreated: {
+                title: "Nouvelle réservation",
+                body: "{{actorName}} a réservé « {{serviceTitle}} »",
+            },
+            bookingAccepted: {
+                title: "Réservation acceptée",
+                body: "{{actorName}} a accepté votre réservation de « {{serviceTitle}} »",
+            },
+            bookingDeclined: {
+                title: "Réservation refusée",
+                body: "{{actorName}} a refusé la réservation de « {{serviceTitle}} »",
+            },
+            bookingCancelled: {
+                title: "Réservation annulée",
+                body: "{{actorName}} a annulé la réservation de « {{serviceTitle}} »",
+            },
+            contractSigned: {
+                title: "Contrat signé",
+                body: "{{actorName}} a signé le contrat de « {{serviceTitle}} »",
+            },
+            contractFullySigned: {
+                title: "Contrat entièrement signé",
+                body: "Toutes les parties ont signé le contrat de « {{serviceTitle}} »",
+            },
+            pointsSettled: {
+                title: "Règlement effectué",
+                body: "{{amount}} points réglés pour « {{serviceTitle}} »",
+                bodyNoAmount:
+                    "Le règlement de « {{serviceTitle}} » a été effectué",
+            },
+        },
+    },
     votes: {
         like: "J'aime",
         dislike: "Je n'aime pas",

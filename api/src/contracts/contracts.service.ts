@@ -13,6 +13,12 @@ import { eq, inArray } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Model } from "mongoose";
 import { TotpService } from "../auth/totp.service";
+import {
+    CONTRACT_FULLY_SIGNED_EVENT,
+    CONTRACT_SIGNED_EVENT,
+    ContractFullySignedEvent,
+    ContractSignedEvent,
+} from "../common/notification-events";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { ContractDocumentsService } from "../documents/contract-documents.service";
@@ -237,7 +243,12 @@ export class ContractsService {
         }
 
         const [user] = await this.db
-            .select({ totpSecret: schema.users.totpSecret })
+            .select({
+                totpSecret: schema.users.totpSecret,
+                firstName: schema.users.firstName,
+                lastName: schema.users.lastName,
+                email: schema.users.email,
+            })
             .from(schema.users)
             .where(eq(schema.users.id, userId))
             .limit(1);
@@ -245,6 +256,9 @@ export class ContractsService {
         if (!this.totpService.verify(user.totpSecret, totpCode)) {
             throw new BadRequestException("Invalid TOTP code");
         }
+        const signerName =
+            [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
+            user.email;
 
         const signerIds = new Set(contract.signatures.map((s) => s.userId));
         signerIds.add(userId);
@@ -271,6 +285,16 @@ export class ContractsService {
             contract.status = ContractStatus.PARTIAL;
         }
         const saved = await contract.save();
+
+        this.eventEmitter.emit(CONTRACT_SIGNED_EVENT, {
+            contractId,
+            signerId: userId,
+            signatories: [...contract.signatories],
+            bookingId: contract.bookingId ?? undefined,
+            serviceTitle: contract.title,
+            amount: contract.pointsAmount ?? undefined,
+            actorName: signerName,
+        } satisfies ContractSignedEvent);
 
         // Best-effort PDF stamp — must never affect settlement/signature/status.
         if (contract.bookingId) {
@@ -306,10 +330,13 @@ export class ContractsService {
         }
 
         if (willBeFullySigned && contract.bookingId) {
-            this.eventEmitter.emit("contract.fully_signed", {
+            this.eventEmitter.emit(CONTRACT_FULLY_SIGNED_EVENT, {
                 contractId,
                 bookingId: contract.bookingId,
-            });
+                signatories: [...contract.signatories],
+                serviceTitle: contract.title,
+                amount: contract.pointsAmount ?? undefined,
+            } satisfies ContractFullySignedEvent);
         }
         return saved;
     }
