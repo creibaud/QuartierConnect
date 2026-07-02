@@ -111,6 +111,7 @@ export class PdfService {
             color: rgb(1, 1, 1),
         });
 
+        let drewImage = false;
         if (stamp.image) {
             try {
                 const base64 = stamp.image.replace(
@@ -135,9 +136,22 @@ export class PdfService {
                     width,
                     height,
                 });
+                drewImage = true;
             } catch {
-                // best-effort: fall back to the text caption below
+                // best-effort: fall back to the typed signature below
             }
+        }
+
+        // No drawn signature → render the name as a typed signature above the
+        // line (ink blue) so the signing area is never an empty box.
+        if (!drewImage) {
+            page.drawText(stamp.name, {
+                x: zone.x,
+                y: zone.y + 44,
+                size: 18,
+                font,
+                color: rgb(0.09, 0.15, 0.42),
+            });
         }
 
         page.drawText(stamp.name, {
