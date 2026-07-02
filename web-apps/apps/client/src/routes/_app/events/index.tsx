@@ -263,7 +263,7 @@ function EventsPage() {
 }
 
 function SwipeView({ events }: { events: Event[] }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [index, setIndex] = useState(0);
     const [swipeDirection, setSwipeDirection] = useState<
         "left" | "right" | null
@@ -381,7 +381,7 @@ function SwipeView({ events }: { events: Event[] }) {
                         )}
                         <p className="text-sm font-medium">
                             {new Date(current.date).toLocaleDateString(
-                                "fr-FR",
+                                i18n.language,
                                 {
                                     weekday: "long",
                                     day: "numeric",
@@ -438,7 +438,7 @@ function SwipeView({ events }: { events: Event[] }) {
 }
 
 function EventCard({ event }: { event: Event }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const date = new Date(event.date);
     const isPast = date < new Date();
 
@@ -456,7 +456,7 @@ function EventCard({ event }: { event: Event }) {
                             </Badge>
                         )}
                         <span className="text-muted-foreground text-xs whitespace-nowrap">
-                            {date.toLocaleDateString("fr-FR", {
+                            {date.toLocaleDateString(i18n.language, {
                                 day: "numeric",
                                 month: "short",
                                 year: "numeric",
@@ -617,7 +617,7 @@ function CreateEventDialog({
 }
 
 function MapView({ events }: { events: Event[] }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { data: neighborhoods } = useNeighborhoods();
     const { data: myLocation } = useMyLocation();
     const firstNeighborhood = neighborhoods?.find((n) => n.geometry);
@@ -673,7 +673,7 @@ function MapView({ events }: { events: Event[] }) {
                                             <p className="text-xs text-muted-foreground">
                                                 {new Date(
                                                     evt.date,
-                                                ).toLocaleString("fr-FR")}
+                                                ).toLocaleString(i18n.language)}
                                             </p>
                                         </div>
                                     }

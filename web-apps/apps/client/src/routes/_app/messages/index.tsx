@@ -166,8 +166,8 @@ function MessageBubble({
     message: Message;
     isOutgoing: boolean;
 }) {
-    const { t } = useTranslation();
-    const time = new Date(message.createdAt).toLocaleTimeString("fr-FR", {
+    const { t, i18n } = useTranslation();
+    const time = new Date(message.createdAt).toLocaleTimeString(i18n.language, {
         hour: "2-digit",
         minute: "2-digit",
     });

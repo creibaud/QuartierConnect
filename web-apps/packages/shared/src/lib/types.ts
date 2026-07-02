@@ -53,6 +53,7 @@ export interface Service {
     address?: string;
     neighborhoodId?: string;
     pointsMultiplier?: number;
+    duration?: number;
     createdBy?: string;
     location?: GeoJsonPoint;
     direction: "offer" | "request";

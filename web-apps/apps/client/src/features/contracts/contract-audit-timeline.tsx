@@ -4,7 +4,7 @@ import { DataState } from "@workspace/ui/components/data-state";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 
 export function ContractAuditTimeline({ contractId }: { contractId: string }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { data, isLoading, isError, refetch } = useContractAudit(contractId);
     const entries = data ?? [];
 
@@ -28,7 +28,7 @@ export function ContractAuditTimeline({ contractId }: { contractId: string }) {
                             {t(`contracts.audit.action.${e.action}`)}
                         </span>
                         <span className="text-muted-foreground block text-xs">
-                            {new Date(e.at).toLocaleString("fr-FR")}
+                            {new Date(e.at).toLocaleString(i18n.language)}
                             {e.sha256 ? ` · #${e.sha256.slice(0, 8)}` : ""}
                         </span>
                     </li>

@@ -322,11 +322,11 @@ function CreateIncidentDialog({
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        if (!title.trim()) return;
+        if (!title.trim() || !description.trim()) return;
         createIncident.mutate(
             {
                 title: title.trim(),
-                description: description.trim() || undefined,
+                description: description.trim(),
                 category,
                 lat: pickedLat ?? undefined,
                 lng: pickedLng ?? undefined,
@@ -372,7 +372,7 @@ function CreateIncidentDialog({
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="incident-description">
-                            {t("incidents.fields.description")}
+                            {t("pages.incidents.descriptionRequired")}
                         </Label>
                         <Textarea
                             id="incident-description"
@@ -382,6 +382,7 @@ function CreateIncidentDialog({
                                 "pages.incidents.descriptionPlaceholder",
                             )}
                             rows={3}
+                            required
                         />
                     </div>
                     <div className="space-y-2">
@@ -484,7 +485,11 @@ function CreateIncidentDialog({
                         </Button>
                         <Button
                             type="submit"
-                            disabled={createIncident.isPending || !title.trim()}
+                            disabled={
+                                createIncident.isPending ||
+                                !title.trim() ||
+                                !description.trim()
+                            }
                         >
                             {createIncident.isPending
                                 ? t("pages.incidents.sending")
