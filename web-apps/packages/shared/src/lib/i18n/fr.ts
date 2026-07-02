@@ -141,11 +141,15 @@ export default {
         title: "Réservations",
         description: "Vos demandes de services payants",
         empty: "Aucune réservation pour le moment.",
+        emptyReceived: "Aucune demande reçue pour le moment.",
+        emptySent: "Vous n'avez envoyé aucune demande pour le moment.",
         tabs: {
             received: "Reçues",
             sent: "Envoyées",
         },
         pointsLabel: "{{points}} points",
+        pointsUnit: "points",
+        serviceFallback: "Service payant",
         status: {
             pending: "En attente",
             accepted: "Acceptée",
