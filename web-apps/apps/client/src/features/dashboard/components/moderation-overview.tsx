@@ -1,4 +1,5 @@
-import { Alert01Icon, Calendar01Icon, CustomerServiceIcon, ThumbsUpIcon } from "@hugeicons/core-free-icons";
+import { Alert01Icon, Calendar01Icon, Clock01Icon, CustomerServiceIcon, ThumbsUpIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -17,8 +18,19 @@ import {
 import { EmptyBlock, FeedCard, Rows } from "./feed-card";
 import { KpiCard } from "./kpi-card";
 
+const INCIDENT_DOT: Record<string, string> = {
+    open: "bg-amber-500",
+    in_progress: "bg-blue-500",
+    resolved: "bg-emerald-500",
+};
+
 export function ModerationOverview({ now }: { now: number }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const fmtDate = (d: string) =>
+        new Date(d).toLocaleDateString(i18n.language, {
+            day: "numeric",
+            month: "short",
+        });
 
     const { data: incidentsData, isLoading: incidentsLoading } = useInfiniteIncidents(20, "open");
     const incidents = incidentsData?.pages?.[0] ?? [];
@@ -75,10 +87,25 @@ export function ModerationOverview({ now }: { now: number }) {
                     ) : incidents.length === 0 ? (
                         <EmptyBlock icon={Alert01Icon} title={t("pages.dashboard.moderation.noIncidents")} />
                     ) : (
-                        <ul className="space-y-2">
+                        <ul className="-mx-2 space-y-0.5">
                             {incidents.slice(0, 4).map((i) => (
-                                <li key={i.id} className="flex items-center justify-between gap-2 text-sm">
-                                    <span className="truncate font-medium">{i.title}</span>
+                                <li key={i.id}>
+                                    <Link
+                                        to="/incidents/$id"
+                                        params={{ id: i.id }}
+                                        className="hover:bg-muted/60 flex items-center gap-3 rounded-lg px-2 py-2 transition-colors"
+                                    >
+                                        <span
+                                            className={`size-2 shrink-0 rounded-full ${INCIDENT_DOT[i.status]}`}
+                                            aria-hidden
+                                        />
+                                        <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                                            {i.title}
+                                        </span>
+                                        <span className="text-muted-foreground shrink-0 text-xs">
+                                            {fmtDate(i.createdAt)}
+                                        </span>
+                                    </Link>
                                 </li>
                             ))}
                         </ul>
@@ -95,10 +122,26 @@ export function ModerationOverview({ now }: { now: number }) {
                     ) : openVotes.length === 0 ? (
                         <EmptyBlock icon={ThumbsUpIcon} title={t("pages.dashboard.moderation.noPendingVotes")} />
                     ) : (
-                        <ul className="space-y-2">
+                        <ul className="space-y-1">
                             {openVotes.map((v) => (
-                                <li key={v._id} className="flex items-center justify-between gap-2">
-                                    <span className="truncate text-sm font-medium">{v.title}</span>
+                                <li
+                                    key={v._id}
+                                    className="flex items-center justify-between gap-3 py-1"
+                                >
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-medium">
+                                            {v.title}
+                                        </p>
+                                        {v.endsAt && (
+                                            <p className="text-muted-foreground flex items-center gap-1 text-xs">
+                                                <HugeiconsIcon
+                                                    icon={Clock01Icon}
+                                                    className="size-3"
+                                                />
+                                                {fmtDate(v.endsAt)}
+                                            </p>
+                                        )}
+                                    </div>
                                     <Button asChild size="sm" variant="outline" className="shrink-0">
                                         <Link to="/votes">{t("pages.dashboard.respond")}</Link>
                                     </Button>
