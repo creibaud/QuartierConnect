@@ -442,6 +442,8 @@ export default {
             categoryLabel: "Catégorie *",
             chooseCategory: "Choisir une catégorie",
             typeLabel: "Type *",
+            durationLabel: "Durée (minutes) *",
+            durationPlaceholder: "60",
             neighborhoodLabel: "Quartier",
             chooseNeighborhood: "Choisir un quartier",
             addressLabel: "Adresse",
