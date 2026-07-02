@@ -736,32 +736,11 @@ export default {
             stats: {
                 users: "Utilisateurs",
                 activeIncidents: "Incidents ouverts",
-                incidents: "Total incidents",
+                activeIncidentsHint: "sur {{total}} signalés",
                 neighborhoods: "Quartiers",
             },
-            quickLinks: {
-                users: {
-                    label: "Utilisateurs",
-                    desc: "Rôles et bannissements",
-                },
-                incidents: {
-                    label: "Incidents",
-                    desc: "Modération et statuts",
-                },
-                neighborhoods: {
-                    label: "Quartiers",
-                    desc: "Créer, modifier, supprimer",
-                },
-                services: { label: "Services", desc: "Annuaire de quartier" },
-                events: {
-                    label: "Événements",
-                    desc: "Calendrier communautaire",
-                },
-                dsl: {
-                    label: "Éditeur DSL",
-                    desc: "Requêtes en langage naturel",
-                },
-            },
+            recentIncidents: "Derniers incidents",
+            seeAll: "Voir tout",
         },
         users: {
             title: "Utilisateurs",

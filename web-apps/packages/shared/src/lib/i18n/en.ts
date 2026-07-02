@@ -729,23 +729,11 @@ export default {
             stats: {
                 users: "Users",
                 activeIncidents: "Open incidents",
-                incidents: "Total incidents",
+                activeIncidentsHint: "of {{total}} reported",
                 neighborhoods: "Neighborhoods",
             },
-            quickLinks: {
-                users: { label: "Users", desc: "Roles and bans" },
-                incidents: {
-                    label: "Incidents",
-                    desc: "Moderation and statuses",
-                },
-                neighborhoods: {
-                    label: "Neighborhoods",
-                    desc: "Create, edit, delete",
-                },
-                services: { label: "Services", desc: "Neighborhood directory" },
-                events: { label: "Events", desc: "Community calendar" },
-                dsl: { label: "DSL Editor", desc: "Natural language queries" },
-            },
+            recentIncidents: "Latest incidents",
+            seeAll: "See all",
         },
         users: {
             title: "Users",
