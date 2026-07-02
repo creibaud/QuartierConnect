@@ -7,19 +7,14 @@ import {
     useCancelBooking,
     useDeclineBooking,
 } from "@workspace/shared/lib/hooks/useBookings";
-import type { Booking, BookingStatus } from "@workspace/shared/lib/types";
-import { Badge } from "@workspace/ui/components/badge";
+import type { Booking } from "@workspace/shared/lib/types";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent } from "@workspace/ui/components/card";
+import {
+    StatusBadge,
+    statusTone,
+} from "@workspace/ui/components/status-badge";
 import { toast } from "sonner";
-
-const STATUS_STYLE: Record<BookingStatus, string> = {
-    pending: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
-    accepted: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-    completed: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-    declined: "border-destructive/30 bg-destructive/10 text-destructive",
-    cancelled: "border-border bg-muted text-muted-foreground",
-};
 
 export function BookingCard({
     booking,
@@ -57,12 +52,9 @@ export function BookingCard({
                         <h3 className="truncate font-medium">
                             {serviceTitle ?? t("bookings.serviceFallback")}
                         </h3>
-                        <Badge
-                            variant="outline"
-                            className={STATUS_STYLE[booking.status]}
-                        >
+                        <StatusBadge tone={statusTone(booking.status)}>
                             {t(`bookings.status.${booking.status}`)}
-                        </Badge>
+                        </StatusBadge>
                     </div>
                     <p className="text-muted-foreground flex flex-wrap items-center gap-x-2 text-sm">
                         <span>

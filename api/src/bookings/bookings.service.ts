@@ -8,6 +8,7 @@ import { OnEvent } from "@nestjs/event-emitter";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { ContractsService } from "../contracts/contracts.service";
+import { formatFrenchDate, formatPointsAmount } from "../contracts/lib/format";
 import { PointsService } from "../points/points.service";
 import { Service, ServiceDocument } from "../services/schemas/service.schema";
 import { resolveParties } from "./lib/parties";
@@ -90,9 +91,13 @@ export class BookingsService {
         );
         if (!claimed) throw new BadRequestException("Booking is not pending");
 
-        const content = this.renderContent(service, claimed);
+        const partyNames = await this.contractsService.resolveNames([
+            claimed.payerId,
+            claimed.payeeId,
+        ]);
+        const content = this.renderContent(service, claimed, partyNames);
         const contract = await this.contractsService.createServiceContract({
-            title: `Service contract — ${service.title}`,
+            title: `Contrat de service — ${service.title}`,
             content,
             serviceId: String(service._id),
             bookingId: String(claimed._id),
@@ -201,13 +206,19 @@ export class BookingsService {
     private renderContent(
         service: ServiceDocument,
         booking: ServiceBookingDocument,
+        partyNames: Record<string, string>,
     ): string {
+        const payerName = partyNames[booking.payerId] ?? booking.payerId;
+        const payeeName = partyNames[booking.payeeId] ?? booking.payeeId;
+        const description = service.description.endsWith(".")
+            ? service.description
+            : `${service.description}.`;
         return [
-            `Service contract for "${service.title}".`,
-            `Description: ${service.description}.`,
-            `Payer: ${booking.payerId}. Payee: ${booking.payeeId}.`,
-            `Amount: ${booking.pointsAmount} points.`,
-            `Date: ${new Date().toISOString()}.`,
+            `Contrat de service pour « ${service.title} ».`,
+            `Description : ${description}`,
+            `Payeur : ${payerName}. Bénéficiaire : ${payeeName}.`,
+            `Montant : ${formatPointsAmount(booking.pointsAmount)}.`,
+            `Fait le ${formatFrenchDate(new Date())}.`,
         ].join("\n");
     }
 }

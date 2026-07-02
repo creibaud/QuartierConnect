@@ -27,7 +27,6 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
-import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { DataState } from "@workspace/ui/components/data-state";
 import {
@@ -47,6 +46,10 @@ import {
     SelectValue,
 } from "@workspace/ui/components/select";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import {
+    StatusBadge,
+    statusTone,
+} from "@workspace/ui/components/status-badge";
 import {
     Table,
     TableBody,
@@ -73,12 +76,6 @@ function statusLabel(t: TranslateFn, status: string): string {
     };
     return labels[status] ?? status;
 }
-
-const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {
-    open: "default",
-    in_progress: "secondary",
-    resolved: "outline",
-};
 
 const NEXT_STATUSES: Record<
     string,
@@ -224,18 +221,16 @@ function AdminIncidentsPage() {
                                                     {incident.title}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge
-                                                        variant={
-                                                            STATUS_VARIANTS[
-                                                                incident.status
-                                                            ] ?? "outline"
-                                                        }
+                                                    <StatusBadge
+                                                        tone={statusTone(
+                                                            incident.status,
+                                                        )}
                                                     >
                                                         {statusLabel(
                                                             t,
                                                             incident.status,
                                                         )}
-                                                    </Badge>
+                                                    </StatusBadge>
                                                 </TableCell>
                                                 <TableCell className="text-muted-foreground text-sm tabular-nums">
                                                     {new Date(

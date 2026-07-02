@@ -12,7 +12,7 @@ import { Spinner } from "@workspace/ui/components/spinner";
 import { useAppForm } from "@workspace/ui/lib/form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { AuthLayout } from "../components/auth-layout";
+import { AuthLayout } from "@workspace/ui/components/auth-layout";
 
 interface RegisterResponse {
     otpauthUrl: string;

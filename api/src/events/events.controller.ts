@@ -135,6 +135,7 @@ export class EventsController {
             created.title,
             created.date,
             created.neighborhoodId?.toString(),
+            created.createdBy,
         );
         return created;
     }

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { createHead, UnheadProvider } from "@unhead/react/client";
 import "@workspace/ui/globals.css";
+import "@workspace/ui/voisinage.css";
 import "./admin.css";
 import "@workspace/shared/lib/i18n/index";
 import { ThemeProvider } from "./components/theme-provider";

@@ -54,6 +54,7 @@ export interface Service {
     neighborhoodId?: string;
     pointsMultiplier?: number;
     duration?: number;
+    pointsAmount?: number | null;
     createdBy?: string;
     location?: GeoJsonPoint;
     direction: "offer" | "request";
@@ -78,12 +79,15 @@ export interface PointBalance {
     balance: number;
 }
 
+export type PointTransactionType = "bonus" | "service_payment";
+
 export interface PointTransaction {
     id: string;
     senderId: string;
     recipientId: string;
     amount: number;
     note: string | null;
+    type?: PointTransactionType;
     senderEmail: string | null;
     recipientEmail: string | null;
     senderName: string | null;
@@ -107,12 +111,16 @@ export interface PaginatedResponse<T> {
     };
 }
 
+export type RecommendationReason =
+    | "serviceInNeighborhood"
+    | "upcomingEventNearby";
+
 export interface Recommendation {
     type: "service" | "event" | "neighbor";
     id: string;
     name: string;
     score: number;
-    reason: string;
+    reason: RecommendationReason;
 }
 
 export interface Contract {

@@ -19,7 +19,11 @@ export class RecommendationItemDto {
     })
     score: number;
 
-    @ApiPropertyOptional({ example: "Service in your neighborhood" })
+    @ApiPropertyOptional({
+        example: "serviceInNeighborhood",
+        enum: ["serviceInNeighborhood", "upcomingEventNearby"],
+        description: "Reason code translated by the client",
+    })
     reason?: string;
 }
 

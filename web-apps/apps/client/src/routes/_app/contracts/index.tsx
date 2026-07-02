@@ -10,7 +10,6 @@ import {
     useSignContract,
 } from "@workspace/shared/lib/hooks/useContracts";
 import type { Contract } from "@workspace/shared/lib/types";
-import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { DataState } from "@workspace/ui/components/data-state";
 import {
@@ -40,18 +39,12 @@ import {
 import { Label } from "@workspace/ui/components/label";
 import { PageHeader } from "@workspace/ui/components/page-header";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import {
+    StatusBadge,
+    statusTone,
+} from "@workspace/ui/components/status-badge";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { toast } from "sonner";
-
-const STATUS_VARIANTS: Record<
-    string,
-    "default" | "secondary" | "outline" | "destructive"
-> = {
-    draft: "secondary",
-    partial: "default",
-    fully_signed: "outline",
-    cancelled: "destructive",
-};
 
 export const Route = createFileRoute("/_app/contracts/")({
     component: ContractsPage,
@@ -144,17 +137,13 @@ function ContractsPage() {
                                                 {contract.title}
                                             </Link>
                                         </ItemTitle>
-                                        <Badge
-                                            variant={
-                                                STATUS_VARIANTS[
-                                                    contract.status
-                                                ] ?? "secondary"
-                                            }
+                                        <StatusBadge
+                                            tone={statusTone(contract.status)}
                                             className="shrink-0"
                                         >
                                             {statusLabels[contract.status] ??
                                                 contract.status}
-                                        </Badge>
+                                        </StatusBadge>
                                     </div>
                                     <ItemDescription>
                                         {t("pages.contracts.signatureCount", {

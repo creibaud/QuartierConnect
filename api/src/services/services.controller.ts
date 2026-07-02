@@ -249,6 +249,7 @@ export class ServicesController {
             created._id.toString(),
             created.title,
             created.neighborhoodId?.toString(),
+            created.createdBy,
         );
         return created;
     }
@@ -323,6 +324,7 @@ export class ServicesController {
                 updated._id.toString(),
                 updated.title,
                 updated.neighborhoodId?.toString(),
+                updated.createdBy,
             );
         }
         return updated;

@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent } from "@workspace/ui/components/card";
-import { AuthLayout } from "@/components/auth-layout";
+import { AuthLayout } from "@workspace/ui/components/auth-layout";
 
 export function PendingCoveragePage() {
     const { t } = useTranslation();

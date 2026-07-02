@@ -58,6 +58,28 @@ export const Route = createFileRoute("/_app/points/")({
     component: PointsPage,
 });
 
+type TranslateFunction = (
+    key: string,
+    options?: Record<string, unknown>,
+) => string;
+
+const SERVICE_PAYMENT_NOTE_PATTERN = /^Service payment: (.+)$/;
+
+function localizedTransactionNote(
+    transaction: PointTransaction,
+    t: TranslateFunction,
+): string | null {
+    if (transaction.type === "service_payment") {
+        const serviceTitle = transaction.note?.match(
+            SERVICE_PAYMENT_NOTE_PATTERN,
+        )?.[1];
+        return serviceTitle
+            ? t("pages.points.servicePaymentFor", { service: serviceTitle })
+            : t("pages.points.servicePayment");
+    }
+    return transaction.note;
+}
+
 function PointsPage() {
     const { t } = useTranslation();
     const currentUser = getCurrentUser();
@@ -161,6 +183,7 @@ function TransactionRow({
     const date = new Date(transaction.createdAt).toLocaleDateString(
         i18n.language,
     );
+    const note = localizedTransactionNote(transaction, t);
 
     return (
         <li className="bg-card flex items-center justify-between gap-3 rounded-lg border p-3">
@@ -186,9 +209,9 @@ function TransactionRow({
                             ? t("pages.points.received", { user: otherParty })
                             : t("pages.points.sent", { user: otherParty })}
                     </span>
-                    {transaction.note && (
+                    {note && (
                         <span className="text-muted-foreground text-xs">
-                            {transaction.note}
+                            {note}
                         </span>
                     )}
                     <span className="text-muted-foreground text-xs tabular-nums">

@@ -1,133 +1,117 @@
-# QuartierConnect — Design System
+# QuartierConnect — Design System « Voisinage » (v2)
 
-Source of truth for the visual redesign of both web apps (`apps/admin`, `apps/client`).
-Both share `packages/ui` (shadcn/ui, style `radix-nova`, base color neutral) and
-`hugeicons`. Keep that stack. This file defines the patterns; pages apply them.
+Palette communautaire chaude : terracotta + vert civique + neutres chauds.
+Contrastes calibrés WCAG AA. Une seule source de tokens pour le client ET
+l'admin : `packages/ui/src/styles/voisinage.css`, importée juste après
+`@workspace/ui/globals.css` dans le `main.tsx` de chaque app. Ne jamais
+hardcoder d'hex/oklch dans les composants — toujours les tokens sémantiques
+(`bg-primary`, `text-muted-foreground`, `border-border`, …).
 
-## 1. Direction
+## 1. Tokens
 
-**Civic Trust.** Sober, institutional, readable. Flat design (no decorative
-gradients/shadows beyond shadcn defaults). The product is a neighborhood public
-service, so the feel is calm and trustworthy, not playful.
+### Light (défaut)
 
-- **Admin** = blue, dense, data-first (a console).
-- **Client** = same system, accent shifted toward teal/sky, more airy (a resident space).
+| Token | Valeur | Usage |
+|---|---|---|
+| `--background` | `oklch(0.99 0.006 80)` | Fond crème chaud |
+| `--foreground` | `oklch(0.26 0.02 60)` | Texte principal brun sombre |
+| `--card` / `--popover` | `oklch(0.995 0.004 80)` | Surfaces |
+| `--primary` | `oklch(0.5 0.14 42)` | Terracotta — CTA UNIQUEMENT (jamais statut) |
+| `--primary-foreground` | `oklch(0.99 0.012 75)` | Texte sur terracotta |
+| `--secondary` | `oklch(0.95 0.012 75)` | Actions secondaires, statut « en cours » |
+| `--muted` / `--muted-foreground` | `oklch(0.96 0.008 75)` / `oklch(0.47 0.02 60)` | Fonds discrets / méta |
+| `--accent` | `oklch(0.94 0.03 150)` | Vert sauge — succès, résolu, signé, item actif |
+| `--accent-foreground` | `oklch(0.35 0.06 150)` | Texte sur vert sauge |
+| `--destructive` | `oklch(0.55 0.21 27)` | Réservé aux actions irréversibles (dans un menu, pas inline) |
+| `--border` / `--input` | `oklch(0.9 0.012 75)` | Bordures chaudes |
+| `--ring` | `oklch(0.5 0.14 42)` | Focus ring (terracotta) |
+| `--radius` | `0.75rem` | Partout (cards, boutons, inputs, dialogs) |
+| `--sidebar` | `oklch(0.975 0.008 80)` | + `sidebar-primary`/`sidebar-accent` = primary/accent |
+| `--chart-1..5` | `0.58/42 · 0.6/155 · 0.75/75 · 0.55/240 · 0.55/330` (oklch) | Dataviz |
 
-## 2. Color tokens
+### Dark
 
-Defined as OKLCH CSS variables in `packages/ui/src/styles/globals.css` (`:root` + `.dark`).
-Never hardcode hex/oklch in components — always semantic tokens (`bg-primary`,
-`text-muted-foreground`, `border-border`, …).
+Bloc complet dans `voisinage.css` — points clés :
+`--background oklch(0.2 0.012 60)` · `--card oklch(0.24 0.014 60)` ·
+`--primary oklch(0.68 0.14 45)` · `--accent oklch(0.3 0.04 150)` ·
+`--border oklch(1 0 0 / 12%)` · `--sidebar oklch(0.18 0.012 60)`.
+Toute évolution de palette se fait dans `voisinage.css` (light + dark
+ensemble), jamais dans une app.
 
-Shared base (already applied — shadcn "Blue" preset `b1PzeK`):
+## 2. Typographie
 
-| Token | Light | Role |
-|-------|-------|------|
-| `--primary` | `oklch(0.488 0.243 264.376)` (blue) | primary actions, active nav |
-| `--ring` | blue | focus ring |
-| `--sidebar-primary` | `oklch(0.546 0.245 262.881)` | sidebar brand mark |
-| `--chart-1..5` | blue / teal / cyan / amber / orange | data viz spectrum |
-| `--destructive` | red | destructive only |
-| neutrals | pure gray scale | surfaces, text, borders |
+- **Display / titres** : `"Fraunces Variable"` (`@fontsource-variable/fraunces`,
+  importée par `voisinage.css`), fallback Georgia. Portée par `--font-heading`
+  (déclaré dans le `@theme` de `globals.css` et dans `voisinage.css`) et
+  appliquée aux `h1–h6` par `globals.css`. Titres de dialog : agrandis
+  (pattern commits 73c39d7/cc3e8e0), pas les 16px par défaut.
+- **Corps / UI** : `"Inter Variable"`. Jamais de serif dans le corps.
+- **Chiffres** : `tabular-nums` sur points, compteurs, montants, dates de tables.
+- Échelle : titre de page `text-2xl font-semibold` (PageHeader), section
+  `text-lg font-medium`, titre de card `text-base font-medium`, corps
+  `text-sm`, méta `text-xs text-muted-foreground`.
+- Interdit : Newsreader (ancien défaut du package, retiré au profit de Fraunces).
 
-### Accent nuance (per app)
+## 3. Couleur — règles d'usage
 
-Implemented as a **per-app override** layered after `globals.css` (admin: `admin.css`;
-client: new `client.css` imported in `main.tsx`). Override only `--primary`, `--ring`,
-`--sidebar-primary`, `--sidebar-ring` in both `:root` and `.dark`.
+1. **Terracotta plein = action primaire.** UNE seule par vue/carte.
+2. **Statuts = pastille + texte, jamais `primary`** — via `<StatusBadge>`
+   (`packages/ui/src/components/status-badge.tsx`) :
+   ouvert/attente = ambre · en cours = `secondary` · résolu/signé/succès =
+   vert sauge (`accent`) · rejeté/erreur = `destructive` (texte, pas fond plein).
+3. **Destructif : jamais inline en liste** — dans un `DropdownMenu` +
+   `AlertDialog` de confirmation.
+4. **Vert sauge (`accent`) = le secondaire officiel** : item actif de sidebar,
+   badges de succès.
 
-- **Admin** — keep base blue (no override needed).
-- **Client** — teal/sky:
-  - light `--primary: oklch(0.58 0.13 215)`, `--ring: oklch(0.58 0.13 215)`,
-    `--sidebar-primary: oklch(0.6 0.13 210)`
-  - dark `--primary: oklch(0.68 0.12 210)` (+ matching ring/sidebar-primary)
+## 4. Patterns structurels
 
-Rule: primary differs by app; everything else (neutrals, destructive, charts) stays shared.
+- **PageHeader** (`packages/ui/src/components/page-header.tsx`) : titre
+  Fraunces + sous-titre muted (ponctuation : point final partout) + actions à
+  droite. Obligatoire sur toute page, y compris Messages.
+- **4 états** (via `<DataState>`) : loading (skeleton calqué sur le layout
+  final — jamais terminal : timeout → erreur), empty (icône + phrase + CTA),
+  error (message + « Réessayer »), success. Mutations confirmées par `toast`.
+- **Tabs** : défaut = premier onglet non vide ; après une action, ouvrir
+  l'onglet qui contient le résultat (`?tab=…`).
+- **Item list rows** : avatar/pastille de statut + titre + méta (séparateur
+  `·`, segments vides filtrés) — pattern commits cc3e8e0/73c39d7.
+- **BrandLogo** (`packages/ui/src/components/brand-logo.tsx`) : lockup
+  « trois maisons » sur tuile terracotta (`bg-primary`) — sidebar + AuthLayout,
+  client ET admin.
+- **AuthLayout** (`packages/ui/src/components/auth-layout.tsx`) : halo radial
+  `primary/10`, lockup + wordmark Fraunces, entrance motion (respecte
+  `prefers-reduced-motion`) ; sous-titre par app (client : espace résident,
+  admin : espace administrateur).
+- **KPI** : `<StatCard>` (label muted, valeur `text-3xl font-bold
+  tabular-nums`, hint optionnel).
+- **A11y** : cibles tactiles ≥ 44px ; focus ring `--ring` visible (jamais
+  retiré) ; boutons icône avec `aria-label` ; contrastes AA ; jamais la
+  couleur seule pour un statut (pastille + texte).
+- **Mobile** : carte MapLibre ≤ 40vh ; tables admin → colonnes secondaires
+  masquées (`hidden md:table-cell`) + actions en kebab, ou cards sous `md`.
 
-## 3. Typography
+## 5. Contenu
 
-- Body + UI: **Inter** (`Inter Variable`, already imported). Headings: `--font-heading`
-  (Inter, `ss01`/`ss02`, `letter-spacing: -0.015em` — already set in `globals.css`).
-- Serif (`Newsreader`) is available but reserve it for editorial/long-form only; do not
-  use for UI.
-- Scale (Tailwind): page title `text-2xl font-semibold`, section `text-lg font-medium`,
-  card title `text-base font-medium`, body `text-sm`, meta `text-xs text-muted-foreground`.
-- Numbers in tables/stats: `tabular-nums` to prevent column jitter.
+- 100 % français, y compris ce que génère l'API (contrats, raisons de
+  recommandation, libellés de transactions). Dates via `Intl` fr-FR,
+  calendriers en locale fr.
+- Jamais d'UUID, de timestamp ISO, de score interne, ni de « (s) » à l'écran.
+- Adresses : helper partagé « rue + arrondissement », jamais la chaîne brute
+  du geocoder.
+- i18n : parité stricte des clés entre `fr.ts` et `en.ts`
+  (`packages/shared/src/lib/i18n/`).
 
-## 4. Spacing, radius, density
+## 6. Admin = même famille, densité back-office
 
-- 4/8px rhythm. Page padding `p-6` (admin) / `p-6 md:p-8` (client, airier).
-- Section gap `gap-6`; intra-card `gap-3`/`gap-4`. Radius from `--radius` (0.625rem).
-- **Density:** admin tables compact (`py-2` rows), client cards roomier (`p-6`, larger gaps).
-- Content width: admin full-bleed inside `SidebarInset`; client centered `mx-auto max-w-5xl`.
+Mêmes tokens, même BrandLogo, mêmes badges de statut ; les vues denses
+(tables `py-2`, éditeur DSL, layout full-bleed dans `SidebarInset`) restent
+denses. Ce qui distingue l'admin : la densité, pas la palette. Le client
+reste plus aéré (`p-6 md:p-8`, contenus centrés `max-w-5xl`).
 
-## 5. Page structure pattern (every page)
+## 7. Garde-fous anti-slop
 
-```
-<page p-6>
-  <PageHeader>            title (text-2xl font-semibold) + optional subtitle (muted) + primary action (right)
-  <Toolbar?>             filters / search / tabs — only if the page needs them
-  <Content>             table | cards grid | map | form | chat
-</page>
-```
-
-- The app `_app` layout already provides sidebar + breadcrumb top bar; pages must NOT
-  repeat a logo/header or a logout button.
-- One **primary** CTA per page (filled `Button`); everything else `variant="outline"`/`ghost`.
-
-## 6. Component mapping (use these, not custom markup)
-
-| Need | Component | Notes |
-|------|-----------|-------|
-| Page title block | plain header + `Button` | not a Card |
-| KPI stat | `Card` (`CardHeader`/`CardContent`) | label = `text-sm text-muted-foreground`, value = `text-3xl font-bold tabular-nums` |
-| Status / role | `Badge` variants | map status→variant (see §8), never colored text |
-| Data list | `Table` | sticky header, `tabular-nums`, row hover, `Skeleton` while loading |
-| Filters | `Select` / `ToggleGroup` / `Tabs` | `ToggleGroup` for 2–5 exclusive views |
-| Forms | `Field`/`FieldGroup` + controls | never raw `div` + `space-y`; validation via `data-invalid`/`aria-invalid` |
-| Empty state | `Empty` / `empty-state` | icon + title + one-line + primary action |
-| Loading | `Skeleton` | match final layout; no spinners > 1s |
-| Errors | `Alert` (`destructive`) | message + retry action |
-| Confirm destructive | `AlertDialog` | for ban / delete |
-| Overlays | `Dialog` (modal), `Sheet` (side), `Drawer` (mobile) | always a Title |
-| Toasts | `sonner` `toast()` | success/error feedback |
-| Icons | `hugeicons` via `HugeiconsIcon` | no size classes inside buttons (component handles it) |
-
-## 7. Interaction states (mandatory per data view)
-
-Every list/table/map/dashboard specifies all four:
-
-| State | Pattern |
-|-------|---------|
-| Loading | `Skeleton` rows/cards matching final layout |
-| Empty | `Empty`: hugeicon + warm title ("Aucun incident pour l'instant") + context + primary action |
-| Error | `Alert variant="destructive"` + cause + retry button |
-| Success/partial | inline `Badge`/count; mutations confirmed via `toast` |
-
-## 8. Status → Badge mapping (consistency)
-
-- Roles: resident=`secondary`, moderator=`default`, admin=`default` (blue), banned=`destructive`.
-- Incident status: open/new=`default`, in-progress=`secondary`, resolved=`outline`, rejected=`destructive`.
-- Use icon + text in the badge where status is critical (color-not-only, WCAG).
-
-## 9. Accessibility + responsive (checklist, applies everywhere)
-
-- Body text ≥ 14px (`text-sm`), never below; contrast ≥ 4.5:1 (semantic tokens already pass).
-- Visible focus rings (shadcn default `--ring`) — never remove.
-- Icon-only buttons get `aria-label` / `sr-only` text.
-- Touch targets ≥ 44px on interactive controls.
-- Tables: `aria-sort` on sortable headers; provide horizontal scroll container on mobile,
-  or collapse to stacked cards < 768px.
-- Sidebar already responsive (sheet on mobile). Map pages: ensure controls reachable, min height.
-- Respect `prefers-reduced-motion`; transitions 150–250ms ease.
-
-## 10. Anti-slop guardrails
-
-No purple/indigo gradients, no 3-column icon-in-circle hero, no centered-everything, no
-emoji icons, no colored left-borders on cards, no decorative blobs. Cards must earn their
-place (a card = a real grouping or an interaction, not decoration).
-
-## 11. Mockups
-
-Visual mockups deferred. This doc and the per-page plan drive implementation; mockups
-can be produced later if desired.
+Pas de dégradés violets/indigo, pas de héros « 3 colonnes icône-dans-cercle »,
+pas de tout-centré, pas d'emoji-icônes, pas de bordures gauches colorées sur
+les cards, pas de blobs décoratifs. Une card doit mériter sa place (un vrai
+regroupement ou une interaction, pas de la décoration).

@@ -5,7 +5,6 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { apiGet, apiPost } from "@workspace/shared/lib/api";
-import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
     Card,
@@ -14,6 +13,10 @@ import {
     CardTitle,
 } from "@workspace/ui/components/card";
 import { DataState } from "@workspace/ui/components/data-state";
+import {
+    StatusBadge,
+    statusTone,
+} from "@workspace/ui/components/status-badge";
 import {
     Dialog,
     DialogContent,
@@ -158,12 +161,8 @@ function CommunityVotesPage() {
                                         <CardTitle className="text-base">
                                             {vote.title}
                                         </CardTitle>
-                                        <Badge
-                                            variant={
-                                                vote.status === "open"
-                                                    ? "default"
-                                                    : "outline"
-                                            }
+                                        <StatusBadge
+                                            tone={statusTone(vote.status)}
                                         >
                                             {vote.status === "open"
                                                 ? t(
@@ -172,7 +171,7 @@ function CommunityVotesPage() {
                                                 : t(
                                                       "adminPages.communityVotes.statusClosed",
                                                   )}
-                                        </Badge>
+                                        </StatusBadge>
                                     </div>
                                     <p className="text-muted-foreground text-xs">
                                         {voteTypeLabel(t, vote.voteType)}
@@ -327,10 +326,8 @@ function ResultsDialog({
                                     count: data?.totalVotes ?? 0,
                                 })}
                             </p>
-                            <Badge
-                                variant={
-                                    data?.quorumReached ? "default" : "outline"
-                                }
+                            <StatusBadge
+                                tone={data?.quorumReached ? "success" : "neutral"}
                             >
                                 {data?.quorumReached
                                     ? t(
@@ -339,7 +336,7 @@ function ResultsDialog({
                                     : t(
                                           "adminPages.communityVotes.quorumNotReached",
                                       )}
-                            </Badge>
+                            </StatusBadge>
                         </div>
                         <ul className="space-y-3">
                             {data?.results.map((option) => (
