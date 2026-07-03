@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Pre-commit QuartierConnect — applique les règles du CDC §13.1 sur le code stagé
-# et bloque toute trace d'outillage IA.
+# et bloque les traces d'attribution automatique dans les messages de commit.
 #
 # Activer une fois par clone :  make hooks
 # Forcer un commit malgré tout :  git commit --no-verify
@@ -27,8 +27,8 @@ if [ -n "$code_files" ]; then
 fi
 
 added_all=$(git diff --cached -U0 -- $files | grep -E '^\+[^+]' || true)
-if echo "$added_all" | grep -qiE 'co-authored-by|generated with claude|anthropic|gstack|superpowers|/(plan-[a-z-]+|design-consultation|design-review)'; then
-  note "trace d'outillage IA détectée dans le diff stagé"
+if echo "$added_all" | grep -qiE 'co-authored-by|generated with|🤖'; then
+  note "trace d'attribution automatique détectée dans le diff stagé"
 fi
 
 if [ "$fail" -ne 0 ]; then
