@@ -10,6 +10,29 @@ export enum ContractStatus {
     CANCELLED = "cancelled",
 }
 
+export enum ContractSource {
+    GENERATED = "generated",
+    IMPORTED = "imported",
+}
+
+export enum SignatureZoneKind {
+    SIGNATURE = "signature",
+    INITIALS = "initials",
+}
+
+// Normalized (0..1) rectangle relative to its page, origin at the TOP-LEFT
+// corner of the page (screen convention). PdfService flips to pdf-lib's
+// bottom-left origin when stamping.
+export interface SignatureZone {
+    page: number;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    signerId: string;
+    kind: SignatureZoneKind;
+}
+
 @Schema({ timestamps: true })
 export class Contract {
     @Prop({ required: true })
@@ -55,6 +78,16 @@ export class Contract {
 
     @Prop({ type: String, default: null })
     pdfFileId: string | null;
+
+    @Prop({
+        type: String,
+        enum: ContractSource,
+        default: ContractSource.GENERATED,
+    })
+    source: ContractSource;
+
+    @Prop({ type: [Object], default: undefined })
+    zones?: SignatureZone[];
 }
 
 export const ContractSchema = SchemaFactory.createForClass(Contract);
