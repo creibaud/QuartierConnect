@@ -55,8 +55,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             tooltip={t("nav.downloadDesktop")}
                         >
                             <a
-                                href="/telechargements/quartierconnect-desktop.jar"
-                                download
+                                href="https://github.com/creibaud/QuartierConnect/releases/latest"
+                                target="_blank"
+                                rel="noopener noreferrer"
                             >
                                 <HugeiconsIcon icon={Download01Icon} />
                                 <span>{t("nav.downloadDesktop")}</span>
