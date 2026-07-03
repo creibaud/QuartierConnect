@@ -487,6 +487,7 @@ function ServicesMap({
     services: Service[];
     neighborhoods: Neighborhood[];
 }) {
+    const { t } = useTranslation();
     const firstNeighborhood = neighborhoods.find((n) => n.geometry);
     const servicesWithCoords = services.filter((s) => s.location);
     const center: [number, number] = firstNeighborhood?.geometry
