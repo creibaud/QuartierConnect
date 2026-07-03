@@ -28,16 +28,16 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
- * Integration tests for desktop services against a live API.
+ * Tests d'intégration des services desktop face à une API en fonctionnement.
  *
- * Run conditions:
- *   - API must be reachable on http://localhost:5000
- *   - MongoDB + PostgreSQL must be up (docker compose up -d)
+ * Conditions d'exécution :
+ *   - l'API doit être joignable sur http://localhost:5000
+ *   - MongoDB + PostgreSQL doivent être démarrés (docker compose up -d)
  *
- * These tests run during `mvn test` but self-skip via assumeTrue when the API
- * is unreachable, so they never block the standard unit-test phase.
+ * Ces tests s'exécutent pendant `mvn test` mais s'auto-ignorent via assumeTrue lorsque l'API
+ * est injoignable, si bien qu'ils ne bloquent jamais la phase standard de tests unitaires.
  *
- * To run explicitly against a non-default URL:
+ * Pour les lancer explicitement sur une URL non par défaut :
  *   mvn test -Dapi.url=http://localhost:5000
  */
 @Tag("integration")
@@ -51,12 +51,12 @@ class ApiIntegrationTest {
             .connectTimeout(Duration.ofSeconds(3))
             .build();
 
-    // Shared state across ordered tests
+    // État partagé entre les tests ordonnés
     private static String accessToken;
     private static String totpSecret;
 
     // -----------------------------------------------------------------------
-    // Pre-flight: skip all tests if the API is not reachable
+    // Contrôle préalable : ignorer tous les tests si l'API est injoignable
     // -----------------------------------------------------------------------
 
     @BeforeAll
@@ -66,7 +66,7 @@ class ApiIntegrationTest {
 
         System.setProperty("api.url", API);
 
-        // Register a fresh user for this test run
+        // Enregistrer un nouvel utilisateur pour cette exécution de tests
         String email = "integration_" + UUID.randomUUID().toString().substring(0, 8) + "@test.fr";
         String regBody = JSON.writeValueAsString(Map.of("email", email, "password", DEMO_PASSWORD));
 
@@ -85,12 +85,12 @@ class ApiIntegrationTest {
 
         assertFalse(accessToken.isEmpty(), "Login must return a valid access token");
 
-        // Inject into AuthService singleton
+        // Injecter dans le singleton AuthService
         injectAccessToken(accessToken);
     }
 
     // -----------------------------------------------------------------------
-    // Auth: token validity
+    // Auth : validité du jeton
     // -----------------------------------------------------------------------
 
     @Test
@@ -103,7 +103,7 @@ class ApiIntegrationTest {
     @Test
     @Order(2)
     void authService_getCurrentUserEmail_notNull() {
-        // email is embedded in the JWT payload
+        // l'e-mail est intégré dans le payload JWT
         assertNotNull(AuthService.getInstance().getCurrentUserEmail());
     }
 
@@ -117,7 +117,7 @@ class ApiIntegrationTest {
         NeighborhoodsService service = new NeighborhoodsService();
         List<NeighborhoodsService.NeighborhoodSummary> result = service.fetchNeighborhoods();
         assertNotNull(result, "fetchNeighborhoods must not return null");
-        // Result can be empty (no neighborhoods seeded) but must not throw
+        // Le résultat peut être vide (aucun quartier initialisé) mais ne doit pas lever d'exception
     }
 
     // -----------------------------------------------------------------------
@@ -154,7 +154,7 @@ class ApiIntegrationTest {
         StatisticsService service = new StatisticsService();
         StatisticsService.Stats stats = service.computeStats();
         assertNotNull(stats, "fetchStats must not return null");
-        // Remote counts come from the API — at least non-negative
+        // Les compteurs distants viennent de l'API — au moins non négatifs
         if (stats.remoteUsers() != null) {
             assertTrue(stats.remoteUsers() >= 0);
         }
@@ -164,20 +164,20 @@ class ApiIntegrationTest {
     }
 
     // -----------------------------------------------------------------------
-    // Token refresh
+    // Rafraîchissement du jeton
     // -----------------------------------------------------------------------
 
     @Test
     @Order(7)
     void authService_refreshAccessToken_succeedsWithValidRefreshToken() {
-        // The refresh token is not currently stored in AuthService after our manual injection.
-        // This test verifies that refreshAccessToken() returns false gracefully (no refresh token)
-        // rather than throwing an exception — the real refresh flow is tested in auth.e2e-spec.ts.
+        // Le jeton de rafraîchissement n'est pas stocké dans AuthService après notre injection manuelle.
+        // Ce test vérifie que refreshAccessToken() retourne false proprement (aucun jeton de rafraîchissement)
+        // au lieu de lever une exception — le vrai flux de rafraîchissement est testé dans auth.e2e-spec.ts.
         assertDoesNotThrow(() -> AuthService.getInstance().refreshAccessToken());
     }
 
     // -----------------------------------------------------------------------
-    // Helpers
+    // Utilitaires
     // -----------------------------------------------------------------------
 
     private static boolean isApiReachable() {
@@ -214,7 +214,7 @@ class ApiIntegrationTest {
         return end < 0 ? otpauthUrl.substring(idx + 7) : otpauthUrl.substring(idx + 7, end);
     }
 
-    /** RFC 6238 TOTP — pure Java, no external library. */
+    /** TOTP RFC 6238 — Java pur, sans bibliothèque externe. */
     private static String generateTotp(String base32Secret) throws Exception {
         String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
         String upper = base32Secret.toUpperCase().replaceAll("=", "");

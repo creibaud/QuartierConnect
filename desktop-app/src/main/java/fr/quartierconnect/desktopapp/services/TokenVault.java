@@ -24,7 +24,7 @@ public class TokenVault {
         Keyring kr = null;
         try {
             kr = Keyring.create();
-            log.info("TokenVault: OS keychain active (" + kr.getClass().getSimpleName() + ")");
+            log.fine("TokenVault: OS keychain active (" + kr.getClass().getSimpleName() + ")");
         } catch (BackendNotSupportedException e) {
             log.warning("TokenVault: OS keychain unavailable — tokens held in memory only. " + e.getMessage());
         }

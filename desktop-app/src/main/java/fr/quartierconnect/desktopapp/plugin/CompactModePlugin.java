@@ -11,12 +11,16 @@ import javafx.scene.layout.VBox;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * Built-in plugin — injects a compact-mode CSS override that reduces
- * padding and font sizes for higher information density.
+ * Plugin intégré — injecte une surcharge CSS en mode compact qui réduit les marges
+ * internes et les tailles de police pour une densité d'information plus élevée.
  */
 public class CompactModePlugin implements QuartierConnectPlugin, PluginRegistry.ContextAwarePlugin, ViewablePlugin {
+
+    private static final Logger LOG = Logger.getLogger(CompactModePlugin.class.getName());
 
     private AppContext context;
     private boolean compactActive = false;
@@ -48,7 +52,9 @@ public class CompactModePlugin implements QuartierConnectPlugin, PluginRegistry.
         try {
             compactDataUri = "data:text/css;charset=utf-8,"
                     + URLEncoder.encode(COMPACT_CSS, StandardCharsets.UTF_8).replace("+", "%20");
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            LOG.log(Level.FINE, "Compact CSS data URI build failed", e);
+        }
     }
 
     @Override

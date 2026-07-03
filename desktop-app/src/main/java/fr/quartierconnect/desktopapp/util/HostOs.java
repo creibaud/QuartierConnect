@@ -3,9 +3,10 @@ package fr.quartierconnect.desktopapp.util;
 import java.util.Locale;
 
 /**
- * The operating system the desktop app is running on, with the native installer
- * extension used for that platform. Used by update and uninstall flows to pick
- * the right release artifact and system command.
+ * Système d'exploitation sur lequel s'exécute l'application desktop, avec l'extension
+ * d'installateur natif propre à cette plateforme. Utilisé par les flux de mise à jour
+ * et de désinstallation pour choisir le bon artefact de release et la bonne commande
+ * système.
  */
 public enum HostOs {
     LINUX(".deb"),

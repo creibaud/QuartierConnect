@@ -7,9 +7,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests StatisticsService logic in isolation.
- * DB-dependent paths are covered by SyncServiceTest (shared in-memory DB).
- * Here we verify Stats record invariants and remote-null behaviour without a live DB.
+ * Teste la logique de StatisticsService de façon isolée.
+ * Les chemins dépendant de la base sont couverts par SyncServiceTest (base en mémoire partagée).
+ * Ici, on vérifie les invariants du record Stats et le comportement remote-null sans base active.
  */
 class StatisticsServiceTest {
 

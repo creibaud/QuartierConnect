@@ -12,9 +12,9 @@ import java.util.Base64;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for AuthService offline-login and session-resume behaviour.
- * Email is persisted in SQLite; tokens are persisted in TokenVault (in-memory fallback in CI).
- * Uses a temp file SQLite database so connections share state between calls.
+ * Tests du comportement de connexion hors ligne et de reprise de session d'AuthService.
+ * L'e-mail est persisté dans SQLite ; les jetons sont persistés dans TokenVault (repli en mémoire en CI).
+ * Utilise une base SQLite sur fichier temporaire pour que les connexions partagent leur état entre les appels.
  */
 class AuthServiceOfflineTest {
 
@@ -44,11 +44,11 @@ class AuthServiceOfflineTest {
         SQLiteDatabase.initialize();
 
         auth = AuthService.getInstance();
-        auth.clearSession(); // clears memory + TokenVault + SQLite
+        auth.clearSession(); // efface la mémoire + TokenVault + SQLite
     }
 
     // ------------------------------------------------------------------
-    // tryResumeFromDatabase — no session
+    // tryResumeFromDatabase — aucune session
     // ------------------------------------------------------------------
 
     @Test
@@ -58,7 +58,7 @@ class AuthServiceOfflineTest {
     }
 
     // ------------------------------------------------------------------
-    // tryResumeFromDatabase — valid access token cached
+    // tryResumeFromDatabase — jeton d'accès valide en cache
     // ------------------------------------------------------------------
 
     @Test
@@ -73,7 +73,7 @@ class AuthServiceOfflineTest {
     }
 
     // ------------------------------------------------------------------
-    // tryResumeFromDatabase — expired access token but refresh token present
+    // tryResumeFromDatabase — jeton d'accès expiré mais jeton de rafraîchissement présent
     // ------------------------------------------------------------------
 
     @Test
@@ -96,14 +96,14 @@ class AuthServiceOfflineTest {
     @Test
     void tryResume_returnsFalse_whenNoTokensStored() {
         SQLiteDatabase.saveSession("ghost@demo.fr");
-        // No tokens in TokenVault
+        // Aucun jeton dans TokenVault
 
         assertFalse(auth.tryResumeFromDatabase());
         assertFalse(auth.isAuthenticated());
     }
 
     // ------------------------------------------------------------------
-    // clearSession — also clears TokenVault and SQLite
+    // clearSession — efface aussi TokenVault et SQLite
     // ------------------------------------------------------------------
 
     @Test
@@ -120,7 +120,7 @@ class AuthServiceOfflineTest {
     }
 
     // ------------------------------------------------------------------
-    // isAuthenticated — offline mode (only refresh token in memory)
+    // isAuthenticated — mode hors ligne (seul le jeton de rafraîchissement en mémoire)
     // ------------------------------------------------------------------
 
     @Test
@@ -133,7 +133,7 @@ class AuthServiceOfflineTest {
     }
 
     // ------------------------------------------------------------------
-    // refreshAccessToken — no network (no token set)
+    // refreshAccessToken — sans réseau (aucun jeton défini)
     // ------------------------------------------------------------------
 
     @Test
@@ -143,7 +143,7 @@ class AuthServiceOfflineTest {
     }
 
     // ------------------------------------------------------------------
-    // isTokenExpired — boundary cases
+    // isTokenExpired — cas limites
     // ------------------------------------------------------------------
 
     @Test
@@ -164,7 +164,7 @@ class AuthServiceOfflineTest {
     }
 
     // ------------------------------------------------------------------
-    // getCurrentUserEmail — fallback chain
+    // getCurrentUserEmail — chaîne de repli
     // ------------------------------------------------------------------
 
     @Test

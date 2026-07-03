@@ -10,9 +10,9 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for SQLiteDatabase session persistence (offline-login feature).
- * Only email is persisted here — tokens are managed by TokenVault (OS keychain).
- * Uses a temp file SQLite database so connections share state.
+ * Tests de la persistance de session de SQLiteDatabase (fonctionnalité de connexion hors ligne).
+ * Seul l'e-mail est persisté ici — les jetons sont gérés par TokenVault (trousseau de l'OS).
+ * Utilise une base SQLite sur fichier temporaire pour que les connexions partagent leur état.
  */
 class SQLiteSessionTest {
 

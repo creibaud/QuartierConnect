@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Built-in plugin — exports local incidents to CSV.
- * When active, injects an Export button into the incidents table header via PluginRegistry.incidentSlot.
+ * Plugin intégré — exporte les incidents locaux au format CSV.
+ * Lorsqu'il est actif, injecte un bouton Exporter dans l'en-tête du tableau des incidents via PluginRegistry.incidentSlot.
  */
 public class ExportPlugin implements QuartierConnectPlugin, PluginRegistry.ContextAwarePlugin, ViewablePlugin {
 
@@ -33,7 +33,7 @@ public class ExportPlugin implements QuartierConnectPlugin, PluginRegistry.Conte
     @Override
     public void setContext(AppContext ctx) { this.context = ctx; }
 
-    /** Exposes the application context so views can drive registry operations (e.g. plugin rescan). */
+    /** Expose le contexte applicatif pour que les vues pilotent les opérations du registre (par exemple un rescan des plugins). */
     public AppContext getAppContext() { return context; }
 
     @Override public String getId()      { return "fr.quartierconnect.plugin.export"; }

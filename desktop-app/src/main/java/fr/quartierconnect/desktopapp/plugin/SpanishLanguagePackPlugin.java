@@ -5,8 +5,8 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
- * Built-in example language pack — adds Spanish, demonstrating that a plugin can
- * extend the app's languages. Untranslated keys fall back to English.
+ * Pack de langue espagnol intégré — un pack d'exemple qui ajoute l'espagnol aux langues
+ * disponibles de l'application. Les clés non traduites retombent sur l'anglais.
  */
 public class SpanishLanguagePackPlugin extends AbstractLanguagePackPlugin {
 

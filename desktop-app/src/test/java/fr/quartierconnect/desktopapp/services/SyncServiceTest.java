@@ -25,7 +25,7 @@ class SyncServiceTest {
     @BeforeEach
     void setUp() {
         syncService = new SyncService();
-        // Run status notifications on the calling thread (no JavaFX toolkit needed)
+        // Exécuter les notifications de statut sur le thread appelant (pas besoin de la boîte à outils JavaFX)
         syncService.setStatusDispatcher(Runnable::run);
     }
 
@@ -50,7 +50,7 @@ class SyncServiceTest {
     @Test
     void start_calledTwice_isIdempotent() {
         syncService.start();
-        // Second call should be a no-op — no exception, no extra task
+        // Le second appel doit être sans effet — pas d'exception, pas de tâche supplémentaire
         assertDoesNotThrow(() -> syncService.start());
     }
 

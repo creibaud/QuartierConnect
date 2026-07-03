@@ -222,9 +222,9 @@ public class PluginsView {
     }
 
     private VBox buildEmptyState() {
-        Label icon = new Label("🧩");
-        icon.setStyle("-fx-font-size: 28px; -fx-opacity: 0.25;");
-        icon.setAlignment(Pos.CENTER);
+        FontIcon icon = new FontIcon(FontAwesomeSolid.PUZZLE_PIECE);
+        icon.setIconSize(28);
+        icon.setStyle("-fx-icon-color: -color-fg-muted; -fx-opacity: 0.25;");
 
         Label title = new Label(I18n.get("plugins.empty.title"));
         title.setStyle("-fx-font-size: 13.5px; -fx-font-weight: bold; -fx-text-fill: -color-fg-muted;");
@@ -265,7 +265,7 @@ public class PluginsView {
         return new VBox(row);
     }
 
-    // ── Rescan ──────────────────────────────────────────────────────────────
+    // ── Réanalyse ───────────────────────────────────────────────────────────
 
     private void rescanPluginsDirectory() {
         PluginRegistry registry = PluginRegistry.getInstance();
@@ -312,7 +312,7 @@ public class PluginsView {
                 .count();
     }
 
-    /** Built-ins share the application class loader; JAR plugins live in their own URLClassLoader. */
+    /** Les plugins intégrés partagent le class loader de l'application ; les plugins JAR vivent dans leur propre URLClassLoader. */
     private static boolean isExternal(QuartierConnectPlugin plugin) {
         return plugin.getClass().getClassLoader() != PluginsView.class.getClassLoader();
     }

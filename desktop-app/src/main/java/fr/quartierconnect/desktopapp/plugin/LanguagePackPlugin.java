@@ -4,17 +4,17 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
- * A plugin that contributes a new UI language at runtime. The provided bundle is
- * merged on top of the built-in strings, so a pack only needs to translate the
- * keys it wants; untranslated keys fall back to English.
+ * Plugin qui ajoute une nouvelle langue d'interface à l'exécution. Le bundle fourni
+ * est fusionné par-dessus les chaînes intégrées : un pack n'a donc besoin de traduire
+ * que les clés qu'il souhaite ; les clés non traduites retombent sur l'anglais.
  *
- * @see AbstractLanguagePackPlugin for a ready-made base class
+ * @see AbstractLanguagePackPlugin pour une classe de base prête à l'emploi
  */
 public interface LanguagePackPlugin extends QuartierConnectPlugin {
 
-    /** The language this pack provides. */
+    /** La langue fournie par ce pack. */
     Locale locale();
 
-    /** The translated strings, keyed exactly like {@code messages_*.properties}. */
+    /** Les chaînes traduites, avec les mêmes clés que {@code messages_*.properties}. */
     ResourceBundle bundle();
 }

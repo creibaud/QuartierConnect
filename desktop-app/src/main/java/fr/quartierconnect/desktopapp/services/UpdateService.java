@@ -22,9 +22,9 @@ import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 /**
- * Checks GitHub Releases for newer versions of the desktop app and, on demand,
- * downloads the native installer for the current platform and launches it so the
- * app updates itself in place.
+ * Interroge les Releases GitHub à la recherche de versions plus récentes de l'application
+ * desktop et, à la demande, télécharge l'installateur natif pour la plateforme courante et le
+ * lance afin que l'application se mette à jour sur place.
  */
 public class UpdateService {
 
@@ -69,7 +69,7 @@ public class UpdateService {
         return CURRENT_VERSION;
     }
 
-    /** Latest newer version discovered by any check so far, if one exists. */
+    /** Dernière version plus récente découverte par les vérifications jusqu'ici, s'il en existe une. */
     public static Optional<String> knownAvailableUpdate() {
         return Optional.ofNullable(KNOWN_AVAILABLE_UPDATE.get());
     }
@@ -78,7 +78,7 @@ public class UpdateService {
         this.onUpdateAvailable = callback;
     }
 
-    /** Start background update checks. Fires immediately then every 24 hours. */
+    /** Démarre les vérifications de mise à jour en arrière-plan. Se déclenche immédiatement puis toutes les 24 heures. */
     public void checkInBackground() {
         scheduler.scheduleAtFixedRate(this::performCheck, 0, CHECK_INTERVAL_HOURS, TimeUnit.HOURS);
     }
@@ -100,10 +100,10 @@ public class UpdateService {
     }
 
     /**
-     * Compares the latest published version against the running one.
+     * Compare la dernière version publiée à celle en cours d'exécution.
      *
-     * @return the newer version when an update exists, empty when up to date
-     * @throws IOException when the version information cannot be retrieved
+     * @return la version plus récente lorsqu'une mise à jour existe, vide si déjà à jour
+     * @throws IOException lorsque les informations de version ne peuvent pas être récupérées
      */
     public Optional<String> findAvailableUpdate() throws IOException {
         String response;
@@ -128,8 +128,8 @@ public class UpdateService {
     }
 
     /**
-     * Download the latest installer for this platform and launch it. The caller
-     * should exit the app once this returns so the installer can replace it.
+     * Télécharge le dernier installateur pour cette plateforme et le lance. L'appelant
+     * doit quitter l'application dès le retour de cette méthode pour que l'installateur puisse la remplacer.
      */
     public void downloadAndInstallLatest(Consumer<String> onStatus) throws IOException, InterruptedException {
         HostOs os = HostOs.detect();
@@ -233,6 +233,6 @@ public class UpdateService {
         return result;
     }
 
-    /** A downloadable artifact attached to a GitHub release. */
+    /** Artefact téléchargeable attaché à une release GitHub. */
     record ReleaseAsset(String name, String url) {}
 }

@@ -35,6 +35,7 @@ import javafx.util.Duration;
 
 import java.util.Locale;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ProfileView {
@@ -213,7 +214,7 @@ public class ProfileView {
 
         Label vaultLbl = new Label(I18n.get("profile.tokenVault"));
         vaultLbl.getStyleClass().add("detail-row-lbl");
-        Label vaultVal = new Label("java-keyring · OS keychain");
+        Label vaultVal = new Label(I18n.get("profile.tokenVault.value"));
         vaultVal.getStyleClass().add("detail-row-val-mono");
         HBox vaultRow = UiHelper.detailRow(vaultLbl, vaultVal);
 
@@ -247,7 +248,7 @@ public class ProfileView {
 
         Label pathLbl = new Label(I18n.get("profile.sqlitePath"));
         pathLbl.getStyleClass().add("detail-row-lbl");
-        Label pathVal = new Label("quartierconnect.db");
+        Label pathVal = new Label(I18n.get("db.localName"));
         pathVal.getStyleClass().add("detail-row-val-mono");
         HBox pathRow = UiHelper.detailRow(pathLbl, pathVal);
 
@@ -566,7 +567,9 @@ public class ProfileView {
                     incidentsLbl.setText(String.valueOf(all.size()));
                     conflictsLbl.setText(String.valueOf(conflicts));
                 });
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                LOG.log(Level.FINE, "Local DB stats unavailable", e);
+            }
         }, "profile-db-stats").start();
     }
 

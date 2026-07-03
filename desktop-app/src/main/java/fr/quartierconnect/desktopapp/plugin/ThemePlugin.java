@@ -22,9 +22,9 @@ import java.util.List;
 import java.util.prefs.Preferences;
 
 /**
- * Built-in plugin — switches between the default "Voisinage" theme
- * (warm light, aligned with the web client) and Primer Dark.
- * The selection is persisted via {@link Preferences} and survives re-login.
+ * Plugin intégré — bascule entre le thème « Voisinage » par défaut
+ * (clair et chaleureux, aligné sur le client web) et Primer Dark.
+ * Le choix est persisté via {@link Preferences} et survit à une reconnexion.
  */
 public class ThemePlugin implements QuartierConnectPlugin, PluginRegistry.ContextAwarePlugin, ViewablePlugin {
 
@@ -38,7 +38,7 @@ public class ThemePlugin implements QuartierConnectPlugin, PluginRegistry.Contex
     private static final String VOISINAGE_ACCENT = "#a1512b";
     private static final String DARK_ACCENT = "#444c56";
 
-    /** Overrides applied on top of Primer Dark, targeting the current shell selectors. */
+    /** Surcharges appliquées par-dessus Primer Dark, ciblant les sélecteurs actuels du shell. */
     private static final String DARK_OVERRIDE_CSS =
         ".app-sidebar{-fx-background-color:derive(-color-bg-default,-18%);}" +
         ".app-topbar{-fx-background-color:derive(-color-bg-default,-18%);}" +
@@ -60,12 +60,12 @@ public class ThemePlugin implements QuartierConnectPlugin, PluginRegistry.Contex
     @Override public void onLoad()   { applyTheme(loadPersistedThemeId(), false); }
     @Override public void onUnload() { applyTheme(DEFAULT_THEME_ID, false); }
 
-    /** True while a dark base theme is active — lets views adapt assets such as the logo. */
+    /** Vrai tant qu'un thème de base sombre est actif — permet aux vues d'adapter des éléments comme le logo. */
     public static ReadOnlyBooleanProperty darkThemeActiveProperty() {
         return DARK_THEME_ACTIVE.getReadOnlyProperty();
     }
 
-    /** Restores the persisted theme (or the Voisinage default) on the given scene at startup. */
+    /** Restaure le thème persisté (ou le thème Voisinage par défaut) sur la scène donnée au démarrage. */
     public static void applyPersistedTheme(Scene scene) {
         applyThemeToScene(loadPersistedThemeId(), scene);
     }
@@ -74,7 +74,7 @@ public class ThemePlugin implements QuartierConnectPlugin, PluginRegistry.Contex
         return sanitizeThemeId(preferences().get(PREF_THEME_KEY, DEFAULT_THEME_ID));
     }
 
-    /** Maps unknown or legacy persisted ids (e.g. "nord-dark") back to the default theme. */
+    /** Ramène les identifiants persistés inconnus ou hérités (par exemple « nord-dark ») au thème par défaut. */
     static String sanitizeThemeId(String storedThemeId) {
         return storedThemeId != null && KNOWN_THEME_IDS.contains(storedThemeId)
                 ? storedThemeId

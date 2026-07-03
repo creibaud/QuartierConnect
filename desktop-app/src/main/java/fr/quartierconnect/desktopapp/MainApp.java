@@ -1,11 +1,15 @@
 package fr.quartierconnect.desktopapp;
 
 import fr.quartierconnect.desktopapp.database.SQLiteDatabase;
+import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.plugin.ThemePlugin;
 import fr.quartierconnect.desktopapp.services.UpdateService;
+import fr.quartierconnect.desktopapp.ui.components.ToastManager;
 import fr.quartierconnect.desktopapp.views.LoginView;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
@@ -18,8 +22,11 @@ public class MainApp extends Application {
 
     private final UpdateService updateService = new UpdateService();
 
+    private Stage primaryStage;
+
     @Override
     public void start(Stage primaryStage) throws Exception {
+        this.primaryStage = primaryStage;
         loadBrandFonts();
         SQLiteDatabase.initialize();
 
@@ -56,9 +63,21 @@ public class MainApp extends Application {
     }
 
     private void startBackgroundUpdateChecks() {
-        updateService.setOnUpdateAvailable(version ->
-                LOG.info("A newer version is available: v" + version));
+        updateService.setOnUpdateAvailable(this::announceUpdateAvailable);
         updateService.checkInBackground();
+    }
+
+    private void announceUpdateAvailable(String version) {
+        LOG.info("A newer version is available: v" + version);
+        Platform.runLater(() -> showUpdateToast(version));
+    }
+
+    private void showUpdateToast(String version) {
+        if (primaryStage == null || primaryStage.getScene() == null
+                || !(primaryStage.getScene().getRoot() instanceof StackPane root)) {
+            return;
+        }
+        new ToastManager(root).showInfo(I18n.get("update.toast.available", version));
     }
 
     public static void main(String[] args) {

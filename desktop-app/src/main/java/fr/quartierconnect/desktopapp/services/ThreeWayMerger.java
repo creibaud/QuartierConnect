@@ -5,17 +5,17 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Three-way merge for incident fields, mirroring Git's conflict resolution strategy.
+ * Fusion à trois voies des champs d'un incident, calquée sur la stratégie de résolution de conflits de Git.
  *
- * Merge rules for each field F:
+ * Règles de fusion pour chaque champ F :
  *
- *   base == null (never synced)           → LWW fallback: take remote
- *   local == base  AND  remote == base    → no change (idempotent)
- *   local == base  AND  remote != base    → take remote  (only remote changed)
- *   local != base  AND  remote == base    → take local   (only local changed)
- *   local == remote                       → take either  (same edit, safe)
- *   local != base  AND  remote != base
- *              AND  local != remote       → CONFLICT
+ *   base == null (jamais synchronisé)     → repli LWW : prendre le distant
+ *   local == base  ET  distant == base    → aucun changement (idempotent)
+ *   local == base  ET  distant != base    → prendre le distant  (seul le distant a changé)
+ *   local != base  ET  distant == base    → prendre le local    (seul le local a changé)
+ *   local == distant                      → prendre l'un ou l'autre  (même modification, sans risque)
+ *   local != base  ET  distant != base
+ *              ET  local != distant       → CONFLIT
  */
 public class ThreeWayMerger {
 

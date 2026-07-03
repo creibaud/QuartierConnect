@@ -5,14 +5,14 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for ApiService.isReachable() — the network connectivity check used
- * to decide whether to attempt online login or fall back to offline mode.
+ * Tests de ApiService.isReachable() — la vérification de connectivité réseau utilisée
+ * pour décider s'il faut tenter une connexion en ligne ou se rabattre sur le mode hors ligne.
  */
 class ApiServiceOfflineTest {
 
     @Test
     void isReachable_returnsFalse_whenApiDoesNotExist() {
-        // Point to a port nothing is listening on
+        // Pointer vers un port sur lequel rien n'écoute
         System.setProperty("api.url", "http://localhost:19999");
         try {
             boolean result = ApiService.isReachable();

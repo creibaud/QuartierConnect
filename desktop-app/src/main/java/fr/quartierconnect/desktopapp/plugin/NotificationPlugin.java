@@ -12,12 +12,16 @@ import javafx.scene.layout.VBox;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * Built-in plugin — monitors conflicts via the EventBus (INCIDENTS_CHANGED)
- * and shows an in-app toast when new conflicts are detected.
+ * Plugin intégré — surveille les conflits via l'EventBus (INCIDENTS_CHANGED)
+ * et affiche un toast dans l'application lorsque de nouveaux conflits sont détectés.
  */
 public class NotificationPlugin implements QuartierConnectPlugin, PluginRegistry.ContextAwarePlugin, ViewablePlugin {
+
+    private static final Logger LOG = Logger.getLogger(NotificationPlugin.class.getName());
 
     private AppContext context;
     private Consumer<PluginEventBus.EventData> eventListener;
@@ -99,7 +103,9 @@ public class NotificationPlugin implements QuartierConnectPlugin, PluginRegistry
             if (conflicts > previous && conflicts > 0) {
                 notifyNewConflicts(conflicts - previous);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            LOG.log(Level.FINE, "Conflict check failed", e);
+        }
     }
 
     private void notifyNewConflicts(long newConflicts) {

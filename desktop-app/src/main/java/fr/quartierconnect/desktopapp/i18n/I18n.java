@@ -11,17 +11,17 @@ import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 
 /**
- * Central access point for localized UI strings.
+ * Point d'accès central aux chaînes d'interface localisées.
  *
- * <p>Built-in strings live in {@code i18n/messages_<lang>.properties} resource
- * bundles (English, French). Plugins can contribute additional languages at
- * runtime by registering a {@link ResourceBundle} via
- * {@link #registerLanguagePack(Locale, ResourceBundle)}; the pack's strings take
- * precedence and any missing key falls back to the built-in English bundle.</p>
+ * <p>Les chaînes intégrées résident dans les bundles de ressources
+ * {@code i18n/messages_<lang>.properties} (anglais, français). Les plugins peuvent
+ * ajouter des langues supplémentaires à l'exécution en enregistrant un {@link ResourceBundle}
+ * via {@link #registerLanguagePack(Locale, ResourceBundle)} ; les chaînes du pack sont
+ * prioritaires et toute clé manquante se rabat sur le bundle anglais intégré.</p>
  *
- * <p>The active language is persisted across restarts via {@link Preferences};
- * English is the default. Changing the locale at runtime does not re-bind
- * already-built views — callers should prompt the user to restart.</p>
+ * <p>La langue active est persistée d'un redémarrage à l'autre via {@link Preferences} ;
+ * l'anglais est la langue par défaut. Changer de locale à l'exécution ne réassocie pas
+ * les vues déjà construites — les appelants devraient inviter l'utilisateur à redémarrer.</p>
  */
 public final class I18n {
 
@@ -56,7 +56,7 @@ public final class I18n {
         PREFERENCES.put(PREF_LOCALE_KEY, locale.getLanguage());
     }
 
-    /** Add a plugin-provided language. Its strings override the built-in bundle. */
+    /** Ajoute une langue fournie par un plugin. Ses chaînes surchargent le bundle intégré. */
     public static synchronized void registerLanguagePack(Locale locale, ResourceBundle packBundle) {
         languagePacks.put(locale.getLanguage(), packBundle);
         if (currentLocale.getLanguage().equals(locale.getLanguage())) {
@@ -64,7 +64,7 @@ public final class I18n {
         }
     }
 
-    /** Remove a plugin language; reverts to the default locale if it was active. */
+    /** Retire une langue de plugin ; revient à la locale par défaut si elle était active. */
     public static synchronized void unregisterLanguagePack(Locale locale) {
         languagePacks.remove(locale.getLanguage());
         if (currentLocale.getLanguage().equals(locale.getLanguage())) {
@@ -72,7 +72,7 @@ public final class I18n {
         }
     }
 
-    /** Built-in languages plus every registered plugin language. */
+    /** Langues intégrées plus chaque langue de plugin enregistrée. */
     public static List<Locale> availableLocales() {
         List<Locale> locales = new ArrayList<>(BUILT_IN_LOCALES);
         for (String language : languagePacks.keySet()) {
@@ -89,7 +89,7 @@ public final class I18n {
             try {
                 return pack.getString(key);
             } catch (MissingResourceException ignored) {
-                // fall back to the built-in bundle below
+                // repli sur le bundle intégré ci-dessous
             }
         }
         try {

@@ -1,42 +1,42 @@
 package fr.quartierconnect.desktopapp.plugin;
 
 /**
- * Plugin interface for QuartierConnect Desktop.
- * A plugin can contribute views, sync workers, and menu items.
+ * Interface de plugin pour QuartierConnect Desktop.
+ * Un plugin peut apporter des vues, des workers de synchronisation et des entrées de menu.
  *
- * Implement this interface and register via {@link PluginRegistry}.
+ * Implémentez cette interface et enregistrez le plugin via {@link PluginRegistry}.
  */
 public interface QuartierConnectPlugin {
 
     /**
-     * Unique plugin identifier (e.g. "fr.quartierconnect.plugin.weather").
+     * Identifiant unique du plugin (par exemple « fr.quartierconnect.plugin.weather »).
      */
     String getId();
 
     /**
-     * Human-readable plugin name (shown in the plugin manager).
+     * Nom lisible du plugin (affiché dans le gestionnaire de plugins).
      */
     String getName();
 
     /**
-     * Plugin version string (semver recommended).
+     * Chaîne de version du plugin (semver recommandé).
      */
     String getVersion();
 
     /**
-     * Called once when the plugin is loaded.
-     * Perform initialisation here (e.g. register services, schedule tasks).
+     * Appelée une seule fois lors du chargement du plugin.
+     * Effectuez ici l'initialisation (enregistrement de services, planification de tâches).
      */
     void onLoad();
 
     /**
-     * Called once when the plugin is unloaded or the application exits.
-     * Clean up resources here (e.g. cancel scheduled tasks, close connections).
+     * Appelée une seule fois lors du déchargement du plugin ou à la fermeture de l'application.
+     * Libérez ici les ressources (annulation des tâches planifiées, fermeture des connexions).
      */
     void onUnload();
 
     /**
-     * Short description of what the plugin does (shown in the plugin manager).
+     * Brève description de ce que fait le plugin (affichée dans le gestionnaire de plugins).
      */
     default String getDescription() { return ""; }
 }

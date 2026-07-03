@@ -18,9 +18,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
- * Central registry for QuartierConnect plugins.
- * Plugins are registered at startup and unloaded on shutdown.
- * External plugins can be loaded from JAR files via {@link #loadFromJar(Path, AppContext)}.
+ * Registre central des plugins QuartierConnect.
+ * Les plugins sont enregistrés au démarrage et déchargés à l'arrêt.
+ * Des plugins externes peuvent être chargés depuis des fichiers JAR via {@link #loadFromJar(Path, AppContext)}.
  */
 public class PluginRegistry {
 
@@ -31,9 +31,9 @@ public class PluginRegistry {
     private final Map<QuartierConnectPlugin, URLClassLoader> classLoaders = new IdentityHashMap<>();
     private final Map<String, Boolean> enabledState = new ConcurrentHashMap<>();
 
-    /** UI slot — buttons injected into the incidents table header by plugins. */
+    /** Emplacement UI — boutons injectés par les plugins dans l'en-tête du tableau des incidents. */
     private final ObservableList<Node> incidentSlot = FXCollections.observableArrayList();
-    /** UI slot — buttons/icons injected into the top bar by plugins. */
+    /** Emplacement UI — boutons/icônes injectés par les plugins dans la barre supérieure. */
     private final ObservableList<Node> topBarSlot = FXCollections.observableArrayList();
 
     public ObservableList<Node> getIncidentSlot() { return incidentSlot; }
@@ -46,11 +46,11 @@ public class PluginRegistry {
     }
 
     /**
-     * Register a plugin and call {@link QuartierConnectPlugin#onLoad()}.
+     * Enregistre un plugin et appelle {@link QuartierConnectPlugin#onLoad()}.
      */
     public void register(QuartierConnectPlugin plugin) {
         plugins.add(plugin);
-        LOG.info("Plugin registered: " + plugin.getId() + " v" + plugin.getVersion());
+        LOG.fine("Plugin registered: " + plugin.getId() + " v" + plugin.getVersion());
         try {
             plugin.onLoad();
         } catch (Exception e) {
@@ -59,12 +59,12 @@ public class PluginRegistry {
     }
 
     /**
-     * Register a plugin with application context access.
-     * Calls {@link QuartierConnectPlugin#onLoad()} after setting context.
+     * Enregistre un plugin avec accès au contexte applicatif.
+     * Appelle {@link QuartierConnectPlugin#onLoad()} après avoir défini le contexte.
      */
     public void register(QuartierConnectPlugin plugin, AppContext context) {
         plugins.add(plugin);
-        LOG.info("Plugin registered: " + plugin.getId() + " v" + plugin.getVersion());
+        LOG.fine("Plugin registered: " + plugin.getId() + " v" + plugin.getVersion());
         try {
             if (plugin instanceof ContextAwarePlugin) {
                 ((ContextAwarePlugin) plugin).setContext(context);
@@ -76,9 +76,9 @@ public class PluginRegistry {
     }
 
     /**
-     * Unload and remove a single plugin by its id.
+     * Décharge et retire un plugin identifié par son id.
      *
-     * @return true if the plugin was found and removed
+     * @return true si le plugin a été trouvé et retiré
      */
     public boolean unregister(String pluginId) {
         QuartierConnectPlugin target = plugins.stream()
@@ -105,11 +105,11 @@ public class PluginRegistry {
     }
 
     /**
-     * Load all plugins from a single JAR file using {@link ServiceLoader}.
-     * The JAR must declare implementations via {@code META-INF/services/fr.quartierconnect.desktopapp.plugin.QuartierConnectPlugin}.
+     * Charge tous les plugins d'un même fichier JAR via {@link ServiceLoader}.
+     * Le JAR doit déclarer ses implémentations dans {@code META-INF/services/fr.quartierconnect.desktopapp.plugin.QuartierConnectPlugin}.
      *
-     * @param jar     path to the JAR file
-     * @param context application context passed to each loaded plugin
+     * @param jar     chemin du fichier JAR
+     * @param context contexte applicatif transmis à chaque plugin chargé
      */
     public void loadFromJar(Path jar, AppContext context) {
         if (!Files.isRegularFile(jar)) {
@@ -137,20 +137,20 @@ public class PluginRegistry {
         } catch (IOException e) {
             LOG.severe("Failed to load plugin JAR " + jar + ": " + e.getMessage());
             if (loader != null) {
-                try { loader.close(); } catch (IOException ex) { /* best-effort */ }
+                try { loader.close(); } catch (IOException ex) { /* au mieux */ }
             }
         }
     }
 
     /**
-     * Load all plugins from every JAR file in a directory.
+     * Charge tous les plugins de chaque fichier JAR présent dans un répertoire.
      *
-     * @param directory path to the plugins directory
-     * @param context   application context passed to each loaded plugin
+     * @param directory chemin du répertoire des plugins
+     * @param context   contexte applicatif transmis à chaque plugin chargé
      */
     public void loadFromDirectory(Path directory, AppContext context) {
         if (!Files.isDirectory(directory)) {
-            LOG.info("Plugins directory does not exist, skipping: " + directory);
+            LOG.fine("Plugins directory does not exist, skipping: " + directory);
             return;
         }
         try (var stream = Files.list(directory)) {
@@ -166,7 +166,7 @@ public class PluginRegistry {
         for (QuartierConnectPlugin plugin : plugins) {
             try {
                 plugin.onUnload();
-                LOG.info("Plugin unloaded: " + plugin.getId());
+                LOG.fine("Plugin unloaded: " + plugin.getId());
             } catch (Exception e) {
                 LOG.warning("Plugin " + plugin.getId() + " failed to unload cleanly: " + e.getMessage());
             }
@@ -220,7 +220,7 @@ public class PluginRegistry {
     }
 
     /**
-     * Optional interface for plugins that need application context.
+     * Interface facultative pour les plugins qui ont besoin du contexte applicatif.
      */
     public interface ContextAwarePlugin {
         void setContext(AppContext context);

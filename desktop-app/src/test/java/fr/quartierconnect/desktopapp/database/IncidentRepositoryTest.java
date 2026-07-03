@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class IncidentRepositoryTest {
 
-    // Held open so the named in-memory database survives between connections.
+    // Maintenue ouverte pour que la base en mémoire nommée survive entre les connexions.
     @SuppressWarnings("unused")
     private static Connection keepAlive;
 
@@ -23,8 +23,8 @@ class IncidentRepositoryTest {
         SQLiteDatabase.initialize();
     }
 
-    // Each test uses a globally unique remote ID to avoid cross-test interference
-    // without relying on DELETE (which would require cross-class DB lifecycle management).
+    // Chaque test utilise un remote ID globalement unique pour éviter les interférences entre tests
+    // sans recourir à DELETE (qui exigerait une gestion du cycle de vie de la base entre classes).
 
     @Test
     void updateBase_storesAncestorSnapshot() throws SQLException {
@@ -166,21 +166,6 @@ class IncidentRepositoryTest {
 
         int conflictsBefore = repo.countConflicts();
         assertEquals(conflictsBefore, repo.countConflicts());
-    }
-
-    @Test
-    void insertDemoConflicts_insertsConflictRows() throws SQLException {
-        IncidentRepository repo = new IncidentRepository();
-        int conflictsBefore = repo.countConflicts();
-
-        SQLiteDatabase.insertDemoConflicts();
-
-        int conflictsAfter = repo.countConflicts();
-        assertEquals(conflictsBefore + 2, conflictsAfter);
-
-        List<IncidentRepository.Incident> conflicts = repo.listConflicts();
-        assertTrue(conflicts.stream().anyMatch(i -> i.remoteTitle() != null));
-        assertTrue(conflicts.stream().anyMatch(IncidentRepository.Incident::isConflict));
     }
 
     @Test

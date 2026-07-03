@@ -17,7 +17,7 @@ class ThreeWayMergerTest {
     @BeforeEach
     void setUp() { merger = new ThreeWayMerger(); }
 
-    // ── LWW fallback (null base = first sync) ─────────────────────────────────
+    // ── Repli LWW (base null = première synchro) ──────────────────────────────
 
     @Nested
     class LwwFallback {
@@ -48,7 +48,7 @@ class ThreeWayMergerTest {
         }
     }
 
-    // ── No changes ────────────────────────────────────────────────────────────
+    // ── Aucun changement ──────────────────────────────────────────────────────
 
     @Nested
     class NoChanges {
@@ -77,7 +77,7 @@ class ThreeWayMergerTest {
         }
     }
 
-    // ── Only local changed ────────────────────────────────────────────────────
+    // ── Seul le local a changé ────────────────────────────────────────────────
 
     @Nested
     class OnlyLocalChanged {
@@ -133,7 +133,7 @@ class ThreeWayMergerTest {
         }
     }
 
-    // ── Only remote changed ───────────────────────────────────────────────────
+    // ── Seul le distant a changé ──────────────────────────────────────────────
 
     @Nested
     class OnlyRemoteChanged {
@@ -188,7 +188,7 @@ class ThreeWayMergerTest {
         }
     }
 
-    // ── Both sides same change ────────────────────────────────────────────────
+    // ── Même changement des deux côtés ────────────────────────────────────────
 
     @Nested
     class BothSideSameChange {
@@ -232,7 +232,7 @@ class ThreeWayMergerTest {
         }
     }
 
-    // ── True conflicts ────────────────────────────────────────────────────────
+    // ── Vrais conflits ────────────────────────────────────────────────────────
 
     @Nested
     class TrueConflicts {
@@ -331,7 +331,7 @@ class ThreeWayMergerTest {
         }
     }
 
-    // ── Null field handling ───────────────────────────────────────────────────
+    // ── Gestion des champs null ───────────────────────────────────────────────
 
     @Nested
     class NullFields {
@@ -385,7 +385,7 @@ class ThreeWayMergerTest {
         }
     }
 
-    // ── MergeResult record ────────────────────────────────────────────────────
+    // ── Record MergeResult ────────────────────────────────────────────────────
 
     @Nested
     class MergeResultRecord {

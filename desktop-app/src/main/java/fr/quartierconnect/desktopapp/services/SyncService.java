@@ -18,8 +18,12 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class SyncService {
+
+    private static final Logger LOG = Logger.getLogger(SyncService.class.getName());
 
     private static final int POLL_INTERVAL_SECONDS = 30;
     private static final ObjectMapper JSON = new ObjectMapper();
@@ -50,9 +54,9 @@ public class SyncService {
     }
 
     /**
-     * Registers a listener invoked (on the status dispatcher thread) after a
-     * sync that changed local data; receives the number of incidents pulled
-     * from the server since the previous sync.
+     * Enregistre un écouteur invoqué (sur le thread répartiteur de statut) après une
+     * synchronisation ayant modifié les données locales ; reçoit le nombre d'incidents récupérés
+     * depuis le serveur depuis la synchronisation précédente.
      */
     public void setOnIncidentsChanged(IntConsumer listener) {
         this.onIncidentsChanged = listener;
@@ -77,8 +81,8 @@ public class SyncService {
     }
 
     /**
-     * Submits a poll to the scheduler and blocks until it completes.
-     * Safe to call from a background thread (e.g. manual sync button).
+     * Soumet un sondage à l'ordonnanceur et bloque jusqu'à sa fin.
+     * Peut être appelée sans risque depuis un thread d'arrière-plan (par exemple le bouton de synchronisation manuelle).
      */
     public void syncNowAndWait() throws Exception {
         java.util.concurrent.CompletableFuture<Void> future = new java.util.concurrent.CompletableFuture<>();
@@ -135,10 +139,10 @@ public class SyncService {
     }
 
     /**
-     * Pushes all dirty incidents to the server and returns the set of remote IDs
-     * the server actually upserted, so the subsequent pull can skip them (avoids
-     * the pull overwriting values the server may not have stored correctly yet).
-     * Incidents the server reports as skipped stay dirty and are retried later.
+     * Envoie au serveur tous les incidents modifiés et retourne l'ensemble des identifiants distants
+     * que le serveur a réellement upsertés, afin que le pull suivant puisse les ignorer (évite que le
+     * pull n'écrase des valeurs que le serveur n'a peut-être pas encore stockées correctement).
+     * Les incidents que le serveur signale comme ignorés restent modifiés et sont réessayés plus tard.
      */
     private Set<String> pushDirtyIncidents(String token) throws Exception {
         List<IncidentRepository.Incident> dirty = incidentRepo.listDirty();
@@ -189,10 +193,10 @@ public class SyncService {
     }
 
     /**
-     * Extracts the {@code skippedIds} array from the {@code POST /incidents/sync}
-     * response ({@code {upserted, skipped, skippedIds}}). Returns an empty set on
-     * missing field or unparsable body (older servers), preserving the previous
-     * mark-everything-synced behaviour.
+     * Extrait le tableau {@code skippedIds} de la réponse à {@code POST /incidents/sync}
+     * ({@code {upserted, skipped, skippedIds}}). Retourne un ensemble vide si le champ est
+     * absent ou le corps illisible (serveurs plus anciens), préservant l'ancien comportement
+     * consistant à tout marquer comme synchronisé.
      */
     static Set<String> parseSkippedIds(String syncResponseBody) {
         if (syncResponseBody == null || syncResponseBody.isBlank()) return Set.of();
@@ -213,15 +217,16 @@ public class SyncService {
         try {
             incidentRepo.updateBase(inc.localId(), inc.title(), inc.description(),
                     inc.status(), inc.updatedAt());
-        } catch (Exception ignored) {
-            // Non-critical: LWW fallback applies on next pull if base update fails
+        } catch (Exception e) {
+            // Non critique : le repli LWW s'applique au prochain pull si la mise à jour de la base échoue
+            LOG.log(Level.FINE, "Base snapshot update failed after push", e);
         }
     }
 
     /**
-     * Pulls incidents from the server and returns how many of them are new to
-     * this client (updated since the previous pull and not pushed by us),
-     * so the UI can announce "N incidents received".
+     * Récupère les incidents depuis le serveur et retourne combien d'entre eux sont nouveaux pour
+     * ce client (mis à jour depuis le pull précédent et non envoyés par nous),
+     * afin que l'UI puisse annoncer « N incidents reçus ».
      */
     private int pullIncidents(String token, Set<String> justPushed) throws Exception {
         boolean isFullPull = lastPullTimestamp == null;

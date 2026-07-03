@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class LoginView {
@@ -53,32 +54,30 @@ public class LoginView {
         return root;
     }
 
-    // ── Layout ───────────────────────────────────────────────────────────────
+    // ── Mise en page ─────────────────────────────────────────────────────────
 
     private StackPane buildLayout() {
-        // Logo
         ImageView logoImg = new ImageView();
         try {
             Image img = new Image(Objects.requireNonNull(
                 getClass().getResourceAsStream("/images/logo.png")));
             logoImg.setImage(img);
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            log.log(Level.FINE, "Logo image unavailable", e);
+        }
         logoImg.setFitWidth(52);
         logoImg.setFitHeight(52);
         logoImg.setPreserveRatio(true);
         logoImg.setSmooth(true);
         bindLogoTintToTheme(logoImg);
 
-        // App name
         Label appName = new Label(I18n.get("app.name"));
         appName.getStyleClass().add("login-app-name");
 
-        // Tagline
         Label tagline = new Label(I18n.get("login.tagline"));
         tagline.getStyleClass().add("login-tagline");
         tagline.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
 
-        // SSO button
         FontIcon ssoIcon = new FontIcon(FontAwesomeSolid.SIGN_IN_ALT);
         ssoIcon.setIconSize(13);
         ssoButton.setGraphic(ssoIcon);
@@ -87,25 +86,21 @@ public class LoginView {
         ssoButton.setMaxWidth(Double.MAX_VALUE);
         ssoButton.setOnAction(e -> startSsoPkceFlow());
 
-        // Error label
         errorLabel.getStyleClass().add("login-error");
         errorLabel.setWrapText(true);
         errorLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
         errorLabel.setVisible(false);
         errorLabel.setManaged(false);
 
-        // Offline button
         offlineButton.getStyleClass().add("login-btn-ghost");
         offlineButton.setMaxWidth(Double.MAX_VALUE);
         offlineButton.setVisible(false);
         offlineButton.setManaged(false);
         offlineButton.setOnAction(e -> continueOffline());
 
-        // Footer
         Label footer = new Label(I18n.get("login.footer"));
         footer.getStyleClass().add("login-footer");
 
-        // Card
         VBox card = new VBox(logoImg, appName, tagline, ssoButton, errorLabel, offlineButton, footer);
         card.setAlignment(Pos.CENTER);
         card.getStyleClass().add("login-card");
@@ -122,7 +117,7 @@ public class LoginView {
         return bg;
     }
 
-    /** The logo is black on transparent — whiten it only while a dark theme is active. */
+    /** Le logo est noir sur fond transparent — le blanchir uniquement lorsqu'un thème sombre est actif. */
     private static void bindLogoTintToTheme(ImageView logo) {
         ColorAdjust whiten = new ColorAdjust();
         whiten.setBrightness(1.0);
@@ -132,7 +127,7 @@ public class LoginView {
                     .otherwise((Effect) null));
     }
 
-    // ── Business logic (unchanged) ───────────────────────────────────────────
+    // ── Logique métier ───────────────────────────────────────────────────────
 
     private void checkStartupSession() {
         new Thread(() -> {

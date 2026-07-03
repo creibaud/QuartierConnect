@@ -96,8 +96,8 @@ public class IncidentRepository {
     }
 
     /**
-     * Stores the ancestor snapshot for a local incident.
-     * Called after a successful push so future pulls can compute a 3-way merge.
+     * Enregistre l'instantané ancêtre d'un incident local.
+     * Appelée après un push réussi afin que les prochains pulls puissent calculer une fusion à trois voies.
      */
     public void updateBase(int localId, String title, String description,
                            String status, String updatedAt) throws SQLException {
@@ -118,8 +118,8 @@ public class IncidentRepository {
     }
 
     /**
-     * Accepts either the local or the remote version of a conflicted incident,
-     * clears the conflict flag, and resets the base to the accepted values.
+     * Accepte la version locale ou distante d'un incident en conflit,
+     * efface le marqueur de conflit et réinitialise la base sur les valeurs acceptées.
      */
     public void resolveConflict(int localId, boolean acceptRemote) throws SQLException {
         String selectSql = """
@@ -163,14 +163,14 @@ public class IncidentRepository {
     }
 
     /**
-     * Upserts a server incident using Three-Way Merge when an ancestor snapshot exists,
-     * falling back to Last-Write-Wins when no base is available (first sync).
+     * Applique un upsert d'un incident serveur via une fusion à trois voies lorsqu'un instantané ancêtre existe,
+     * en repliant sur le Last-Write-Wins quand aucune base n'est disponible (première synchronisation).
      *
-     * Merge rules:
-     *   - base == null         → LWW: server wins if serverUpdatedAt > localUpdatedAt
-     *   - is_dirty == 1        → local has pending changes: 3WM runs to detect conflicts
-     *   - clean 3WM result     → apply merged values, update base, clear dirty flag
-     *   - conflict 3WM result  → set is_conflict=1, store pending remote values for UI
+     * Règles de fusion :
+     *   - base == null              → LWW : le serveur l'emporte si serverUpdatedAt > localUpdatedAt
+     *   - is_dirty == 1             → des modifications locales sont en attente : la fusion à trois voies détecte les conflits
+     *   - fusion à trois voies OK   → applique les valeurs fusionnées, met à jour la base, efface le marqueur dirty
+     *   - fusion en conflit         → positionne is_conflict=1, stocke les valeurs distantes en attente pour l'UI
      */
     public void upsertFromServer(String remoteId, String remoteTitle, String remoteDescription,
                                  String remoteStatus, String serverUpdatedAt) throws SQLException {
@@ -185,7 +185,7 @@ public class IncidentRepository {
             select.setString(1, remoteId);
             try (ResultSet rs = select.executeQuery()) {
                 if (rs.next()) {
-                    if (rs.getString("deleted_at") != null) return; // tombstoned locally — never revive
+                    if (rs.getString("deleted_at") != null) return; // supprimé localement — ne jamais le ressusciter
                     applyMerge(conn, rs, remoteTitle, remoteDescription, remoteStatus, serverUpdatedAt);
                 } else {
                     insertFromServer(conn, remoteId, remoteTitle, remoteDescription, remoteStatus, serverUpdatedAt);
@@ -377,9 +377,9 @@ public class IncidentRepository {
     }
 
     /**
-     * Deletes an incident. If the incident has a remote_id (already synced to server),
-     * uses a soft-delete tombstone so the pull cycle never re-creates it locally.
-     * Local-only incidents (no remote_id) are hard-deleted.
+     * Supprime un incident. Si l'incident possède un remote_id (déjà synchronisé avec le serveur),
+     * utilise un marqueur de suppression logique pour que le cycle de pull ne le recrée jamais localement.
+     * Les incidents purement locaux (sans remote_id) sont supprimés définitivement.
      */
     public void deleteByLocalId(int localId) throws SQLException {
         String checkSql = "SELECT remote_id FROM incidents WHERE id = ?";
@@ -411,8 +411,8 @@ public class IncidentRepository {
     }
 
     /**
-     * Tombstones local incidents whose remote_id is no longer returned by the server.
-     * Called after a full pull (no since= parameter) to clean up server-side soft-deletes.
+     * Marque comme supprimés les incidents locaux dont le remote_id n'est plus renvoyé par le serveur.
+     * Appelée après un pull complet (sans paramètre since=) pour répercuter les suppressions logiques côté serveur.
      */
     public void tombstoneOrphans(Set<String> activeRemoteIds) throws SQLException {
         if (activeRemoteIds.isEmpty()) return;

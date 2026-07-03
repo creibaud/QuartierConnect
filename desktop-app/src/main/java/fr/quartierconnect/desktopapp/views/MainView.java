@@ -69,11 +69,8 @@ public class MainView {
         topBar.attachEventBus(eventBus);
 
         AppContext appContext = new AppContext(
-                null,
-                AuthService.getInstance(),
                 stage.getScene(),
                 new IncidentRepository(),
-                syncService,
                 toast,
                 eventBus
         );
@@ -186,7 +183,7 @@ public class MainView {
         }
     }
 
-    // ── Logout ──────────────────────────────────────────────────────────────
+    // ── Déconnexion ─────────────────────────────────────────────────────────
 
     private void logout() {
         topBar.shutdown();
@@ -202,7 +199,7 @@ public class MainView {
         });
     }
 
-    // ── Helpers ─────────────────────────────────────────────────────────────
+    // ── Utilitaires ─────────────────────────────────────────────────────────
 
     private static String extractInitials(String email) {
         if (email == null || email.isBlank()) return "?";

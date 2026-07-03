@@ -28,8 +28,12 @@ import org.kordamp.ikonli.javafx.FontIcon;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class AppSidebar extends VBox {
+
+    private static final Logger LOG = Logger.getLogger(AppSidebar.class.getName());
 
     private static final double EXPANDED  = 220;
     private static final double COLLAPSED = 56;
@@ -49,7 +53,7 @@ public class AppSidebar extends VBox {
         setMinWidth(EXPANDED);
         setMaxWidth(EXPANDED);
 
-        // ── Logo image ──────────────────────────────────────────────────────
+        // ── Image du logo ───────────────────────────────────────────────────
         ImageView logoImg = new ImageView();
         try {
             Image img = new Image(
@@ -58,7 +62,9 @@ public class AppSidebar extends VBox {
                 )
             );
             logoImg.setImage(img);
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            LOG.log(Level.FINE, "Sidebar logo image unavailable", e);
+        }
         logoImg.setFitWidth(24);
         logoImg.setFitHeight(24);
         logoImg.setPreserveRatio(true);
@@ -68,12 +74,12 @@ public class AppSidebar extends VBox {
         Label appName = new Label("QuartierConnect");
         appName.getStyleClass().add("sidebar-app-name");
 
-        // logoArea hidden when collapsed
+        // logoArea masqué en mode réduit
         logoArea = new HBox(10, logoImg, appName);
         logoArea.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(logoArea, Priority.ALWAYS);
 
-        // ── Toggle button (always visible) ─────────────────────────────────
+        // ── Bouton de bascule (toujours visible) ────────────────────────────
         toggleIcon = new FontIcon(FontAwesomeSolid.ANGLE_LEFT);
         toggleIcon.setIconSize(12);
 
@@ -82,19 +88,19 @@ public class AppSidebar extends VBox {
         toggleBtn.getStyleClass().add("sidebar-toggle-btn");
         toggleBtn.setOnAction(e -> toggleCollapse());
 
-        // ── Header row ──────────────────────────────────────────────────────
+        // ── Ligne d'en-tête ─────────────────────────────────────────────────
         header = new HBox(logoArea, toggleBtn);
         header.setAlignment(Pos.CENTER_LEFT);
         header.getStyleClass().add("sidebar-header");
 
-        // ── Nav list ────────────────────────────────────────────────────────
+        // ── Liste de navigation ─────────────────────────────────────────────
         navList.getStyleClass().add("sidebar-nav-list");
         VBox.setVgrow(navList, Priority.ALWAYS);
 
         getChildren().addAll(header, navList);
     }
 
-    /** The logo is black on transparent — whiten it only while a dark theme is active. */
+    /** Le logo est noir sur fond transparent — le blanchir uniquement lorsqu'un thème sombre est actif. */
     private static void bindLogoTintToTheme(ImageView logo) {
         ColorAdjust whiten = new ColorAdjust();
         whiten.setBrightness(1.0);
@@ -104,7 +110,7 @@ public class AppSidebar extends VBox {
                     .otherwise((Effect) null));
     }
 
-    // ── Public API ──────────────────────────────────────────────────────────
+    // ── API publique ────────────────────────────────────────────────────────
 
     public NavItem addNavItem(Ikon icon, String label) {
         NavItem item = new NavItem(icon, label, false);
@@ -139,7 +145,7 @@ public class AppSidebar extends VBox {
         if (item != null) item.setActive(true);
     }
 
-    // ── Collapse / expand ───────────────────────────────────────────────────
+    // ── Réduire / déployer ──────────────────────────────────────────────────
 
     private void toggleCollapse() {
         isCollapsed = !isCollapsed;
@@ -179,7 +185,7 @@ public class AppSidebar extends VBox {
         tl.play();
     }
 
-    // ── NavItem ──────────────────────────────────────────────────────────────
+    // ── NavItem ─────────────────────────────────────────────────────────────
 
     public static class NavItem extends HBox {
 
@@ -198,7 +204,7 @@ public class AppSidebar extends VBox {
             setPadding(new Insets(0, 10, 0, 10));
             setCursor(Cursor.HAND);
 
-            // Fixed-size icon wrapper — ensures every glyph occupies the same space
+            // Conteneur d'icône à taille fixe — garantit que chaque glyphe occupe le même espace
             FontIcon fi = new FontIcon(icon);
             fi.setIconSize(14);
             fi.getStyleClass().add(logout ? "nav-icon-logout" : "nav-icon");
@@ -228,7 +234,7 @@ public class AppSidebar extends VBox {
         }
 
         void setLabelVisible(boolean visible) {
-            // children[0] = iconWrap, children[1] = label
+            // children[0] = iconWrap, children[1] = label (libellé)
             getChildren().get(1).setVisible(visible);
             getChildren().get(1).setManaged(visible);
         }

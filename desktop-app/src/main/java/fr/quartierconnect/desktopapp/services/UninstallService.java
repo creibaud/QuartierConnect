@@ -5,13 +5,13 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Triggers removal of the app through the native package manager installed by
- * jpackage. The command is resolved per platform; launching it is delegated to a
- * {@link ProcessRunner} so the resolution logic stays testable.
+ * Déclenche la suppression de l'application via le gestionnaire de paquets natif installé
+ * par jpackage. La commande est résolue selon la plateforme ; son lancement est délégué à un
+ * {@link ProcessRunner} afin que la logique de résolution reste testable.
  */
 public class UninstallService {
 
-    /** Linux package name declared to jpackage via {@code --linux-package-name}. */
+    /** Nom du paquet Linux déclaré à jpackage via {@code --linux-package-name}. */
     static final String LINUX_PACKAGE_NAME = "quartierconnect";
 
     @FunctionalInterface
@@ -31,7 +31,7 @@ public class UninstallService {
         this.runner = runner;
     }
 
-    /** The system command that removes the installed application. */
+    /** Commande système qui supprime l'application installée. */
     public List<String> uninstallCommand() {
         return switch (os) {
             case LINUX -> List.of("pkexec", "apt-get", "remove", "-y", LINUX_PACKAGE_NAME);
@@ -41,7 +41,7 @@ public class UninstallService {
         };
     }
 
-    /** Launch the native uninstaller. The caller should exit the app afterwards. */
+    /** Lance le désinstallateur natif. L'appelant doit quitter l'application ensuite. */
     public void uninstall() throws IOException {
         runner.run(uninstallCommand());
     }

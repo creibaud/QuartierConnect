@@ -15,9 +15,9 @@ import org.kordamp.ikonli.javafx.FontIcon;
 import atlantafx.base.theme.Styles;
 
 /**
- * Built-in plugin — adds a toggle to the top bar that forces offline mode.
- * When active, all API calls are blocked; SyncService will stop pushing/pulling.
- * Useful for testing the offline-first SQLite behaviour without killing the network.
+ * Plugin intégré — ajoute dans la barre supérieure un interrupteur qui force le mode hors ligne.
+ * Lorsqu'il est actif, tous les appels API sont bloqués ; SyncService cesse d'envoyer et de récupérer.
+ * Pratique pour tester le comportement offline-first de SQLite sans couper le réseau.
  */
 public class OfflineModePlugin implements QuartierConnectPlugin, PluginRegistry.ContextAwarePlugin, ViewablePlugin {
 
@@ -70,9 +70,9 @@ public class OfflineModePlugin implements QuartierConnectPlugin, PluginRegistry.
     }
 
     /**
-     * Notifies the top bar badge instantly instead of waiting for its poll.
-     * Going offline is authoritative; going back online is verified against
-     * the API off the FX thread before being announced.
+     * Notifie immédiatement le badge de la barre supérieure au lieu d'attendre son sondage.
+     * Le passage hors ligne fait autorité ; le retour en ligne est vérifié auprès de l'API,
+     * hors du thread FX, avant d'être annoncé.
      */
     private void publishOnlineStatus(boolean claimsOnline) {
         if (context == null || context.getEventBus() == null) return;

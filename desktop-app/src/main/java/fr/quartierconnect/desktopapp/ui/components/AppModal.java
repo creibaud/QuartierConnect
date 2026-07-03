@@ -9,10 +9,12 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 /**
- * Wrapper around AtlantaFX ModalPane that provides clean, styled overlay dialogs.
- * The modal is anchored to the root StackPane — no separate Stage, no OS chrome.
+ * Enveloppe autour du ModalPane d'AtlantaFX offrant des boîtes de dialogue en surimpression, épurées et stylées.
+ * La modale est ancrée au StackPane racine — pas de Stage séparé, pas d'habillage de l'OS.
  */
 public class AppModal {
 
@@ -35,7 +37,10 @@ public class AppModal {
         Label titleLabel = new Label(title);
         titleLabel.getStyleClass().add("modal-title");
 
-        Button closeBtn = new Button("✕");
+        FontIcon closeIcon = new FontIcon(FontAwesomeSolid.TIMES);
+        closeIcon.setIconSize(14);
+        Button closeBtn = new Button();
+        closeBtn.setGraphic(closeIcon);
         closeBtn.getStyleClass().addAll("button", "flat", "modal-close-btn");
         closeBtn.setOnAction(e -> hide());
 

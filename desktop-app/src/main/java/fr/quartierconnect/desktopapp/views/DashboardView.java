@@ -33,8 +33,12 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DashboardView {
+
+    private static final Logger LOG = Logger.getLogger(DashboardView.class.getName());
 
     private static final DateTimeFormatter TIME_FMT =
             DateTimeFormatter.ofPattern("dd/MM HH:mm").withZone(ZoneId.systemDefault());
@@ -62,7 +66,7 @@ public class DashboardView {
     private final Label lastSyncLabel   = new Label(I18n.get("time.never"));
     private final Label dirtyLabel      = new Label("—");
 
-    // Breakdown bar — proportions bound to actual container width
+    // Barre de répartition — proportions liées à la largeur réelle du conteneur
     private final HBox barContainer = new HBox(0);
     private final Region openBar       = new Region();
     private final Region inProgressBar = new Region();
@@ -88,7 +92,7 @@ public class DashboardView {
         return root;
     }
 
-    /** Reloads the stat cards, breakdown bar and recent list from local storage. */
+    /** Recharge les cartes de statistiques, la barre de répartition et la liste récente depuis le stockage local. */
     public void refresh() {
         loadAsync();
     }
@@ -105,7 +109,7 @@ public class DashboardView {
         lastSyncLabel.setText(TimeFormatter.formatElapsed(syncService.getLastSyncEpoch()));
     }
 
-    // ── Layout ───────────────────────────────────────────────────────────────
+    // ── Mise en page ─────────────────────────────────────────────────────────
 
     private VBox buildLayout() {
         VBox scrollContent = new VBox(0,
@@ -190,7 +194,9 @@ public class DashboardView {
             try {
                 syncService.syncNowAndWait();
                 success = true;
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                LOG.log(Level.FINE, "Manual dashboard sync failed", e);
+            }
 
             final boolean ok = success;
             Platform.runLater(() -> {
@@ -238,8 +244,8 @@ public class DashboardView {
         conflictBar.setStyle("-fx-background-color: -color-danger-emphasis; -fx-background-radius: 0 4 4 0;");
         conflictBar.setPrefHeight(6);
 
-        // Bind each segment's width to the container's actual width × its ratio
-        // This ensures correct proportions regardless of when layout runs
+        // Lier la largeur de chaque segment à la largeur réelle du conteneur × son ratio
+        // garantit des proportions correctes quel que soit le moment où la mise en page s'exécute
         openBar.prefWidthProperty().bind(barContainer.widthProperty().multiply(openRatio));
         inProgressBar.prefWidthProperty().bind(barContainer.widthProperty().multiply(inProgressRatio));
         resolvedBar.prefWidthProperty().bind(barContainer.widthProperty().multiply(resolvedRatio));
@@ -322,7 +328,7 @@ public class DashboardView {
         return section;
     }
 
-    // ── Data loading ─────────────────────────────────────────────────────────
+    // ── Chargement des données ───────────────────────────────────────────────
 
     private void loadAsync() {
         new Thread(() -> {

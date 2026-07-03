@@ -7,16 +7,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
-import java.util.UUID;
 
 public class SQLiteDatabase {
 
-    /** Read fresh each call so a test-set sqlite.url is always honored, regardless of class-load order. */
+    /** Relu à chaque appel afin qu'une sqlite.url définie par un test soit toujours respectée, quel que soit l'ordre de chargement des classes. */
     private static String dbUrl() {
         return System.getProperty("sqlite.url", "jdbc:sqlite:quartierconnect.db");
     }
 
-    /** Cached session for offline-resume. Stores email only — tokens are in the OS keychain via TokenVault. */
+    /** Session mise en cache pour la reprise hors ligne. Ne stocke que l'e-mail — les jetons résident dans le trousseau de l'OS via TokenVault. */
     public record SessionRecord(String email, String savedAt) {}
 
     public static void initialize() {
@@ -60,7 +59,7 @@ public class SQLiteDatabase {
 
             seedIfEmpty(conn);
 
-            // Migration: drop plaintext token columns from pre-keychain databases
+            // Migration : suppression des colonnes de jetons en clair des bases antérieures au trousseau
             try {
                 stmt.executeUpdate("ALTER TABLE session DROP COLUMN access_token");
             } catch (SQLException ignored) {}
@@ -68,7 +67,7 @@ public class SQLiteDatabase {
                 stmt.executeUpdate("ALTER TABLE session DROP COLUMN refresh_token");
             } catch (SQLException ignored) {}
 
-            // Migration: soft-delete tombstone for local incidents
+            // Migration : marqueur de suppression logique pour les incidents locaux
             try {
                 stmt.executeUpdate("ALTER TABLE incidents ADD COLUMN deleted_at TEXT");
             } catch (SQLException ignored) {}
@@ -94,12 +93,12 @@ public class SQLiteDatabase {
             """;
 
         Object[][] demos = {
-            {null, "Broken streetlight on Peace Street", "Streetlight no. 47 has been out for 3 days, a hazard for pedestrians.", "open", twoDays, twoDays},
-            {null, "Pothole on Voltaire Avenue", "A 30cm pothole, dangerous for cyclists.", "in_progress", yesterday, yesterday},
-            {null, "Graffiti at Rousseau primary school", "Obscene tags on the east wall, to be removed before the new term.", "open", yesterday, yesterday},
-            {null, "Overflowing bin on Mill Street", "Garbage not collected for 5 days.", "resolved", twoDays, now},
-            {null, "Water leak on north sidewalk", "Persistent puddle for 48h, risk of black ice.", "open", now, now},
-            {null, "Broken bench in central park", "Damaged wooden bench, risk of injury to children.", "in_progress", yesterday, now},
+            {null, "Lampadaire cassé rue de la Paix", "Le lampadaire n° 47 est éteint depuis 3 jours, un danger pour les piétons.", "open", twoDays, twoDays},
+            {null, "Nid-de-poule avenue Voltaire", "Un nid-de-poule de 30 cm, dangereux pour les cyclistes.", "in_progress", yesterday, yesterday},
+            {null, "Graffiti à l'école primaire Rousseau", "Tags obscènes sur le mur est, à nettoyer avant la rentrée.", "open", yesterday, yesterday},
+            {null, "Poubelle qui déborde rue du Moulin", "Ordures non ramassées depuis 5 jours.", "resolved", twoDays, now},
+            {null, "Fuite d'eau sur le trottoir nord", "Flaque persistante depuis 48 h, risque de verglas.", "open", now, now},
+            {null, "Banc cassé au square du quartier", "Banc en bois endommagé, risque de blessure pour les enfants.", "in_progress", yesterday, now},
         };
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -130,30 +129,30 @@ public class SQLiteDatabase {
         Object[][] conflicts = {
             {
                 "demo-conflict-001",
-                "Faulty lighting at Republic Square",             // local title (edited)
-                "Residents report several outages this month.",   // local desc
+                "Éclairage défaillant place de la République",    // titre local (modifié)
+                "Les habitants signalent plusieurs coupures ce mois-ci.", // description locale
                 "open",
                 yesterday, yesterday,
-                "Faulty lighting at Republic Square",             // base title (original)
-                "Problem reported by the town hall.",             // base desc
+                "Éclairage défaillant place de la République",    // titre de base (original)
+                "Problème signalé par la mairie.",                // description de base
                 "open",
                 yesterday,
-                "Lighting issue - handled by the technical services", // remote title
-                "Intervention scheduled for the 15th of the month.",  // remote desc
-                "in_progress"                                     // remote status
+                "Panne d'éclairage - prise en charge par les services techniques", // titre distant
+                "Intervention prévue le 15 du mois.",             // description distante
+                "in_progress"                                     // statut distant
             },
             {
                 "demo-conflict-002",
-                "Damaged sidewalk on Lilac Lane",
-                "The surface is uneven, a fall risk for elderly people.",
+                "Trottoir dégradé rue des Lilas",
+                "Le revêtement est irrégulier, risque de chute pour les personnes âgées.",
                 "in_progress",
                 yesterday, now,
-                "Damaged sidewalk on Lilac Lane",
-                "Damaged surface reported.",
+                "Trottoir dégradé rue des Lilas",
+                "Revêtement dégradé signalé.",
                 "open",
                 yesterday,
-                "Damaged sidewalk on Lilac Lane",
-                "Repair carried out by the teams this morning.",
+                "Trottoir dégradé rue des Lilas",
+                "Réparation effectuée par les équipes ce matin.",
                 "resolved"
             }
         };
@@ -179,66 +178,7 @@ public class SQLiteDatabase {
         }
     }
 
-    /**
-     * Insert two fresh conflict incidents for Three-Way Merge demo/testing.
-     * Uses a timestamp suffix on remote_id to avoid collisions with previous calls.
-     * Safe to call multiple times — each call creates distinct rows.
-     */
-    public static void insertDemoConflicts() {
-        String now = Instant.now().toString();
-        String yesterday = Instant.now().minusSeconds(86400).toString();
-
-        String sql = """
-            INSERT INTO incidents
-                (remote_id, title, description, status, is_dirty, created_at, updated_at,
-                 base_title, base_description, base_status, base_updated_at,
-                 is_conflict, remote_title, remote_description, remote_status)
-            VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
-            """;
-
-        Object[][] conflicts = {
-            {
-                UUID.randomUUID().toString(),
-                "Water leak at North junction [local edited]",
-                "The leak has worsened, urgent report to the town hall.",
-                "in_progress",
-                yesterday, yesterday,
-                "Water leak at North junction",
-                "Minor leak reported by a resident.",
-                "open",
-                yesterday,
-                "Water leak at North junction [server]",
-                "Technical team intervention scheduled for tomorrow.",
-                "resolved"
-            },
-            {
-                UUID.randomUUID().toString(),
-                "Lighting at Saint-Jean parking lot",
-                "4 of 6 streetlights faulty since Monday.",
-                "open",
-                yesterday, now,
-                "Lighting at Saint-Jean parking lot",
-                "1 faulty streetlight reported.",
-                "open",
-                yesterday,
-                "Lighting at Saint-Jean parking lot",
-                "Technician on site, repair in progress.",
-                "in_progress"
-            }
-        };
-
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            for (Object[] row : conflicts) {
-                for (int i = 0; i < row.length; i++) ps.setString(i + 1, (String) row[i]);
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to insert demo conflicts", e);
-        }
-    }
-
-    /** Persist the user's email for offline display (upsert on id=1). Tokens are stored separately via TokenVault. */
+    /** Persiste l'e-mail de l'utilisateur pour l'affichage hors ligne (upsert sur id=1). Les jetons sont stockés séparément via TokenVault. */
     public static void saveSession(String email) {
         String sql = """
             INSERT INTO session (id, email, saved_at)
@@ -252,11 +192,11 @@ public class SQLiteDatabase {
             stmt.setString(2, Instant.now().toString());
             stmt.executeUpdate();
         } catch (SQLException e) {
-            // Non-critical — silently fail, email just won't show offline
+            // Non critique — échoue silencieusement, l'e-mail ne s'affichera simplement pas hors ligne
         }
     }
 
-    /** Load the persisted session email, or null if none. */
+    /** Charge l'e-mail de session persisté, ou null s'il n'y en a pas. */
     public static SessionRecord loadSession() {
         String sql = "SELECT email, saved_at FROM session WHERE id = 1";
         try (Connection conn = getConnection();
@@ -266,18 +206,18 @@ public class SQLiteDatabase {
                 return new SessionRecord(rs.getString("email"), rs.getString("saved_at"));
             }
         } catch (SQLException e) {
-            // Table may not exist yet in older DBs — safe to return null
+            // La table peut ne pas encore exister dans les anciennes bases — retourner null sans risque
         }
         return null;
     }
 
-    /** Delete the persisted session email (called on logout). */
+    /** Supprime l'e-mail de session persisté (appelé à la déconnexion). */
     public static void clearSession() {
         String sql = "DELETE FROM session WHERE id = 1";
         try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.executeUpdate();
         } catch (SQLException e) {
-            // Non-critical
+            // Non critique
         }
     }
 
@@ -288,7 +228,7 @@ public class SQLiteDatabase {
             stmt.setInt(2, success ? 1 : 0);
             stmt.executeUpdate();
         } catch (SQLException e) {
-            // Non-critical — silently fail rather than crashing the sync worker
+            // Non critique — échoue silencieusement plutôt que de faire planter le worker de synchronisation
         }
     }
 
