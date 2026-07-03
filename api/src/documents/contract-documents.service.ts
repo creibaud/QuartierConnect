@@ -7,6 +7,7 @@ import {
     ContractAuditEntry,
     ContractPdfDocument,
     ContractPdfDocumentDoc,
+    ContractPdfStoreAction,
 } from "./schemas/document.schema";
 
 @Injectable()
@@ -54,7 +55,7 @@ export class ContractDocumentsService {
     async storePdf(
         contractId: string,
         buffer: Buffer,
-        action: "generated" | "signed",
+        action: ContractPdfStoreAction,
         userId: string,
     ): Promise<{ fileId: string; sha256: string }> {
         const fileId = await this.writeToGridFs(contractId, buffer);

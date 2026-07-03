@@ -137,6 +137,7 @@ export default {
         audit: {
             action: {
                 generated: "Contract generated",
+                imported: "Contract imported",
                 signed: "Signed",
                 viewed: "Viewed",
             },
@@ -662,6 +663,45 @@ export default {
             signing: "Signing…",
             signSuccess: "Contract signed",
             signError: "Invalid TOTP code or already signed",
+            importedBadge: "Imported",
+            import: {
+                cta: "Import a PDF",
+                title: "Import a PDF contract",
+                step: {
+                    upload: "Choose the document and the signatories.",
+                    placement:
+                        "Drop the signature zones onto the document pages.",
+                },
+                fileLabel: "PDF document *",
+                dropLabel: "Drag your PDF here or click to browse",
+                dropHint: "PDF only · 10 MB max",
+                fileNotPdf: "Only PDF files are accepted.",
+                fileTooLarge: "The file exceeds 10 MB.",
+                fileSize: "{{size}} MB",
+                removeFile: "Remove the file",
+                titlePlaceholder: "E.g. Neighborhood agreement",
+                signatoriesHint:
+                    "You are a signatory by default. Add up to 3 neighbors; each will sign with their TOTP code.",
+                you: "you",
+                kind: {
+                    signature: "Signature",
+                    initials: "Initials",
+                },
+                paletteHint:
+                    "Drag a chip onto the page to place a zone. Move it, resize it from the corner or delete it.",
+                pageIndicator: "Page {{current}} / {{total}}",
+                prevPage: "Previous page",
+                nextPage: "Next page",
+                missingZones:
+                    "Every signatory needs at least one zone: {{names}}",
+                zonesReady: "All zones are placed.",
+                removeZone: "Delete the zone",
+                submit: "Import the contract",
+                submitting: "Importing…",
+                success: "Contract imported",
+                error: "Unable to import the contract",
+                pdfPreviewError: "Unable to display the PDF.",
+            },
         },
         contractDetail: {
             description: "Service contract",

@@ -6,10 +6,15 @@ import {
     Post,
     Request,
     Res,
+    UploadedFile,
     UseGuards,
+    UseInterceptors,
 } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import {
     ApiBearerAuth,
+    ApiBody,
+    ApiConsumes,
     ApiOperation,
     ApiParam,
     ApiResponse,
@@ -20,7 +25,9 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { ContractsService } from "./contracts.service";
 import { ContractDto } from "./dto/contract-response.dto";
 import { CreateContractDto } from "./dto/create-contract.dto";
+import { ImportContractBodyDto } from "./dto/import-contract.dto";
 import { SignContractDto } from "./dto/sign-contract.dto";
+import { MAX_IMPORT_PDF_BYTES } from "./lib/import-contract-fields";
 
 interface AuthRequest {
     user: { sub: string };
@@ -92,6 +99,36 @@ export class ContractsController {
     @ApiResponse({ status: 201, type: ContractDto })
     create(@Body() dto: CreateContractDto, @Request() req: AuthRequest) {
         return this.contractsService.create(dto, req.user.sub);
+    }
+
+    @Post("import")
+    @ApiOperation({
+        summary: "Import a PDF contract with signature/initial zones",
+        description:
+            "Uploads an existing PDF (max 10 MB) and places signature or " +
+            "initial zones on its pages. Zone coordinates are normalized " +
+            "(0..1) relative to each page with a top-left origin. Every " +
+            "signatory (1 to 4, caller included) needs at least one zone. " +
+            "The uploaded file is archived as the immutable initial version " +
+            "and follows the standard signing workflow.",
+    })
+    @ApiConsumes("multipart/form-data")
+    @ApiBody({ type: ImportContractBodyDto })
+    @ApiResponse({ status: 201, type: ContractDto })
+    @ApiResponse({
+        status: 400,
+        description: "Invalid PDF file, signatories or zones",
+    })
+    @ApiResponse({ status: 413, description: "PDF larger than 10 MB" })
+    @UseInterceptors(
+        FileInterceptor("file", { limits: { fileSize: MAX_IMPORT_PDF_BYTES } }),
+    )
+    importPdf(
+        @UploadedFile() file: Express.Multer.File,
+        @Body() dto: ImportContractBodyDto,
+        @Request() req: AuthRequest,
+    ) {
+        return this.contractsService.importContract(file, dto, req.user.sub);
     }
 
     @Post(":id/sign")

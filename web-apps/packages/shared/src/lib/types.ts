@@ -125,6 +125,22 @@ export interface Recommendation {
     reason: RecommendationReason;
 }
 
+export type SignatureZoneKind = "signature" | "initials";
+
+/**
+ * A signature/initials slot on an imported PDF page. Coordinates are
+ * normalized to 0..1, relative to the page, with a top-left origin.
+ */
+export interface SignatureZone {
+    page: number;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    signerId: string;
+    kind: SignatureZoneKind;
+}
+
 export interface Contract {
     _id: string;
     title: string;
@@ -139,6 +155,8 @@ export interface Contract {
     bookingId?: string | null;
     pointsAmount?: number | null;
     pdfFileId?: string | null;
+    source?: "generated" | "imported";
+    zones?: SignatureZone[];
     createdAt: string;
     updatedAt: string;
 }
@@ -220,7 +238,7 @@ export interface Booking {
 }
 
 export interface ContractAuditEntry {
-    action: "generated" | "signed" | "viewed";
+    action: "generated" | "imported" | "signed" | "viewed";
     userId: string;
     at: string;
     sha256?: string;

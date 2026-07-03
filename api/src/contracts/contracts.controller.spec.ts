@@ -24,6 +24,7 @@ const mockService = {
     findOne: jest.fn(),
     create: jest.fn(),
     sign: jest.fn(),
+    importContract: jest.fn(),
 };
 
 describe("ContractsController", () => {
@@ -87,6 +88,43 @@ describe("ContractsController", () => {
             controller.sign(
                 "contract-1",
                 { totpCode: "000000" },
+                authReq as any,
+            ),
+        ).rejects.toThrow(BadRequestException);
+    });
+
+    it("importPdf forwards the file, fields and caller to the service", async () => {
+        const imported = { ...mockContract, source: "imported" };
+        mockService.importContract.mockResolvedValue(imported);
+        const file = {
+            mimetype: "application/pdf",
+            buffer: Buffer.from("%PDF-"),
+        } as any;
+        const dto = {
+            title: "Import",
+            signatories: '["user-1"]',
+            zones: "[]",
+            file: "",
+        };
+
+        const result = await controller.importPdf(file, dto, authReq as any);
+
+        expect(result).toBe(imported);
+        expect(mockService.importContract).toHaveBeenCalledWith(
+            file,
+            dto,
+            "user-1",
+        );
+    });
+
+    it("importPdf propagates validation failures", async () => {
+        mockService.importContract.mockRejectedValue(
+            new BadRequestException("File is not a valid PDF"),
+        );
+        await expect(
+            controller.importPdf(
+                undefined as any,
+                { title: "x", signatories: "[]", zones: "[]", file: "" },
                 authReq as any,
             ),
         ).rejects.toThrow(BadRequestException);
