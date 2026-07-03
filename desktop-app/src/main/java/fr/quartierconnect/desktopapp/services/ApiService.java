@@ -33,7 +33,7 @@ public class ApiService {
     }
 
     private static String getBaseUrl() {
-        return System.getProperty("api.url", "http://localhost:5000");
+        return ServerConfig.apiUrl();
     }
     private static final HttpClient CLIENT = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))

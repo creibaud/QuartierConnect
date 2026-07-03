@@ -4,6 +4,7 @@ import fr.quartierconnect.desktopapp.i18n.I18n;
 import fr.quartierconnect.desktopapp.plugin.ThemePlugin;
 import fr.quartierconnect.desktopapp.services.ApiService;
 import fr.quartierconnect.desktopapp.services.AuthService;
+import fr.quartierconnect.desktopapp.services.ServerConfig;
 import fr.quartierconnect.desktopapp.services.SsoCallbackServer;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -221,7 +222,7 @@ public class LoginView {
     }
 
     private static String webBaseUrl() {
-        return System.getProperty("web.url", "http://localhost:3001");
+        return ServerConfig.webUrl();
     }
 
     private void continueOffline() {
