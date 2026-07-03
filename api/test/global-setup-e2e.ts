@@ -36,6 +36,9 @@ export default async function globalSetup() {
             CREATE INDEX IF NOT EXISTS revoked_tokens_expires_at_idx
             ON revoked_tokens USING btree (expires_at)
         `;
+        await sql`
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS phone text
+        `;
     } finally {
         await sql.end();
     }

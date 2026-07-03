@@ -1,9 +1,11 @@
 import {
     Body,
+    ConflictException,
     Controller,
     Delete,
     Get,
     Inject,
+    Logger,
     Patch,
     Request,
     UnauthorizedException,
@@ -24,19 +26,31 @@ import { Model } from "mongoose";
 import { Driver } from "neo4j-driver";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { User, UserDocument } from "../auth/schemas/user.schema";
+import { TokenService } from "../auth/token.service";
 import { TotpService } from "../auth/totp.service";
+import { normalizePhone } from "../common/phone.util";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { NEO4J_DRIVER } from "../social/neo4j/neo4j.provider";
 import {
+    ChangeEmailDto,
     ChangePasswordDto,
+    ChangePhoneDto,
     DeleteAccountBodyDto,
     GdprExportDto,
     UpdateProfileDto,
 } from "./dto/user-responses.dto";
+import { GdprExportService } from "./gdpr-export.service";
 
 interface AuthRequest {
-    user: { sub: string };
+    user: { sub: string; jti?: string; exp?: number };
+}
+
+const PROPAGATION_MAX_ATTEMPTS = 3;
+
+function isUniqueViolation(error: unknown): boolean {
+    const pg = error as { code?: string; cause?: { code?: string } };
+    return (pg.code ?? pg.cause?.code) === "23505";
 }
 
 @ApiTags("Users (me)")
@@ -44,6 +58,8 @@ interface AuthRequest {
 @UseGuards(JwtAuthGuard)
 @Controller("users/me")
 export class MeController {
+    private readonly logger = new Logger(MeController.name);
+
     constructor(
         @Inject(DRIZZLE_TOKEN)
         private readonly db: PostgresJsDatabase<typeof schema>,
@@ -52,68 +68,19 @@ export class MeController {
         @Inject(NEO4J_DRIVER)
         private readonly neo4jDriver: Driver,
         private readonly totpService: TotpService,
+        private readonly tokenService: TokenService,
+        private readonly gdprExportService: GdprExportService,
     ) {}
 
     @Get("export")
     @ApiOperation({
         summary: "Export my personal data (GDPR Art. 20)",
         description:
-            "Returns all data associated with the current account: profile, incidents, points balance, transactions.",
+            "Returns all data associated with the current account: profile, consent, incidents, points, messages sent, contracts, bookings, votes, services.",
     })
     @ApiResponse({ status: 200, type: GdprExportDto })
     async export(@Request() req: AuthRequest) {
-        const userId = req.user.sub;
-
-        const [profile] = await this.db
-            .select({
-                id: schema.users.id,
-                email: schema.users.email,
-                role: schema.users.role,
-                createdAt: schema.users.createdAt,
-            })
-            .from(schema.users)
-            .where(eq(schema.users.id, userId));
-
-        const incidents = await this.db
-            .select()
-            .from(schema.incidents)
-            .where(eq(schema.incidents.createdBy, userId));
-
-        const [pointsBalance] = await this.db
-            .select()
-            .from(schema.pointsBalances)
-            .where(eq(schema.pointsBalances.userId, userId));
-
-        const transactions = await this.db
-            .select()
-            .from(schema.pointsTransactions)
-            .where(eq(schema.pointsTransactions.senderId, userId));
-
-        const neo4jSession = this.neo4jDriver.session();
-        let socialData: { relationship: string; targetId: string }[] = [];
-        try {
-            const neo4jResult = await neo4jSession.run(
-                `MATCH (u:User {id: $userId})-[r]->(t)
-         RETURN type(r) AS relationship, t.id AS targetId`,
-                { userId },
-            );
-            socialData = neo4jResult.records.map((rec) => ({
-                relationship: rec.get("relationship") as string,
-                targetId: rec.get("targetId") as string,
-            }));
-        } catch {
-            // Neo4j unavailable — export continues without social data
-        } finally {
-            await neo4jSession.close();
-        }
-
-        return {
-            profile: profile ?? null,
-            incidents,
-            pointsBalance: pointsBalance ?? null,
-            transactions,
-            socialData,
-        };
+        return this.gdprExportService.exportUserData(req.user.sub);
     }
 
     @Get("profile")
@@ -127,6 +94,7 @@ export class MeController {
                 firstName: schema.users.firstName,
                 lastName: schema.users.lastName,
                 avatarUrl: schema.users.avatarUrl,
+                phone: schema.users.phone,
             })
             .from(schema.users)
             .where(eq(schema.users.id, req.user.sub));
@@ -167,18 +135,24 @@ export class MeController {
     @ApiOperation({
         summary: "Change my password",
         description:
-            "Verifies the current password, then stores the new password hash.",
+            "Verifies the current password and a TOTP code, then stores the new password hash.",
     })
     @ApiBody({ type: ChangePasswordDto })
     @ApiResponse({ status: 200, schema: { example: { success: true } } })
-    @ApiResponse({ status: 401, description: "Current password is incorrect" })
+    @ApiResponse({
+        status: 401,
+        description: "Current password or TOTP code is incorrect",
+    })
     async changePassword(
         @Request() req: AuthRequest,
         @Body() body: ChangePasswordDto,
     ) {
         const userId = req.user.sub;
         const [user] = await this.db
-            .select({ passwordHash: schema.users.passwordHash })
+            .select({
+                passwordHash: schema.users.passwordHash,
+                totpSecret: schema.users.totpSecret,
+            })
             .from(schema.users)
             .where(eq(schema.users.id, userId));
 
@@ -188,6 +162,7 @@ export class MeController {
         ) {
             throw new UnauthorizedException("Current password is incorrect");
         }
+        this.assertValidTotp(user.totpSecret, body.totpCode);
 
         const passwordHash = await argon2.hash(body.newPassword);
         await this.db
@@ -196,6 +171,83 @@ export class MeController {
             .where(eq(schema.users.id, userId));
 
         return { success: true };
+    }
+
+    @Patch("email")
+    @ApiOperation({
+        summary: "Change my email",
+        description:
+            "Verifies the password and a TOTP code, updates the email everywhere it is stored (PostgreSQL, MongoDB, Neo4j) and revokes existing tokens. The user must log in again with the new email.",
+    })
+    @ApiBody({ type: ChangeEmailDto })
+    @ApiResponse({
+        status: 200,
+        schema: { example: { requiresReauth: true } },
+    })
+    @ApiResponse({
+        status: 401,
+        description: "Password or TOTP code is incorrect",
+    })
+    @ApiResponse({ status: 409, description: "EMAIL_ALREADY_EXISTS" })
+    async changeEmail(
+        @Request() req: AuthRequest,
+        @Body() body: ChangeEmailDto,
+    ) {
+        const userId = req.user.sub;
+        const newEmail = body.newEmail.toLowerCase();
+
+        const [user] = await this.db
+            .select({
+                email: schema.users.email,
+                passwordHash: schema.users.passwordHash,
+                totpSecret: schema.users.totpSecret,
+            })
+            .from(schema.users)
+            .where(eq(schema.users.id, userId));
+
+        if (!user || !(await argon2.verify(user.passwordHash, body.password))) {
+            throw new UnauthorizedException("Password is incorrect");
+        }
+        this.assertValidTotp(user.totpSecret, body.totpCode);
+        await this.assertEmailAvailable(newEmail, userId);
+
+        await this.applyEmailChangeInPostgres(userId, newEmail, req.user);
+        await this.propagateEmailToMongo(user.email, newEmail);
+        await this.propagateEmailToNeo4j(userId, newEmail);
+
+        return { requiresReauth: true };
+    }
+
+    @Patch("phone")
+    @ApiOperation({
+        summary: "Change my phone number",
+        description:
+            "Verifies a TOTP code, then stores the phone number (loose E.164). Omit the phone field or send null to erase it.",
+    })
+    @ApiBody({ type: ChangePhoneDto })
+    @ApiResponse({
+        status: 200,
+        schema: { example: { success: true, phone: "+33612345678" } },
+    })
+    @ApiResponse({ status: 401, description: "TOTP code invalid or expired" })
+    async changePhone(
+        @Request() req: AuthRequest,
+        @Body() body: ChangePhoneDto,
+    ) {
+        const userId = req.user.sub;
+        const [user] = await this.db
+            .select({ totpSecret: schema.users.totpSecret })
+            .from(schema.users)
+            .where(eq(schema.users.id, userId));
+        this.assertValidTotp(user?.totpSecret ?? null, body.totpCode);
+
+        const phone = normalizePhone(body.phone);
+        await this.db
+            .update(schema.users)
+            .set({ phone, updatedAt: new Date() })
+            .where(eq(schema.users.id, userId));
+
+        return { success: true, phone };
     }
 
     @Delete()
@@ -228,13 +280,7 @@ export class MeController {
             })
             .from(schema.users)
             .where(eq(schema.users.id, userId));
-
-        if (
-            !pgUser?.totpSecret ||
-            !this.totpService.verify(pgUser.totpSecret, body.totpCode)
-        ) {
-            throw new UnauthorizedException("Invalid TOTP code");
-        }
+        this.assertValidTotp(pgUser?.totpSecret ?? null, body.totpCode);
 
         const anonymizedEmail = `deleted_${userId}@anonymized.invalid`;
 
@@ -246,6 +292,7 @@ export class MeController {
                 totpSecret: "",
                 role: "deleted",
                 refreshTokenHash: null,
+                phone: null,
                 updatedAt: new Date(),
             })
             .where(eq(schema.users.id, userId));
@@ -278,5 +325,124 @@ export class MeController {
         }
 
         return { success: true };
+    }
+
+    private assertValidTotp(totpSecret: string | null, totpCode: string): void {
+        if (!totpSecret || !this.totpService.verify(totpSecret, totpCode)) {
+            throw new UnauthorizedException("Invalid TOTP code");
+        }
+    }
+
+    private async assertEmailAvailable(
+        email: string,
+        userId: string,
+    ): Promise<void> {
+        const [owner] = await this.db
+            .select({ id: schema.users.id })
+            .from(schema.users)
+            .where(eq(schema.users.email, email));
+        if (owner && owner.id !== userId) {
+            throw new ConflictException({
+                code: "EMAIL_ALREADY_EXISTS",
+                message: "Email already registered",
+            });
+        }
+    }
+
+    private async applyEmailChangeInPostgres(
+        userId: string,
+        newEmail: string,
+        session: { jti?: string; exp?: number },
+    ): Promise<void> {
+        try {
+            await this.db.transaction(async (tx) => {
+                await tx
+                    .update(schema.users)
+                    .set({
+                        email: newEmail,
+                        refreshTokenHash: null,
+                        updatedAt: new Date(),
+                    })
+                    .where(eq(schema.users.id, userId));
+            });
+        } catch (error) {
+            if (isUniqueViolation(error)) {
+                throw new ConflictException({
+                    code: "EMAIL_ALREADY_EXISTS",
+                    message: "Email already registered",
+                });
+            }
+            throw error;
+        }
+
+        if (session.jti && session.exp) {
+            await this.tokenService.revokeAccessToken(
+                session.jti,
+                new Date(session.exp * 1000),
+            );
+        }
+    }
+
+    private async propagateEmailToMongo(
+        oldEmail: string,
+        newEmail: string,
+    ): Promise<void> {
+        try {
+            await this.withRetry(() =>
+                this.userModel
+                    .findOneAndUpdate(
+                        { email: oldEmail },
+                        { $set: { email: newEmail } },
+                    )
+                    .exec(),
+            );
+        } catch (error) {
+            this.logger.warn(
+                `Mongo email propagation failed after retries: ${error}`,
+            );
+        }
+    }
+
+    private async propagateEmailToNeo4j(
+        userId: string,
+        newEmail: string,
+    ): Promise<void> {
+        try {
+            await this.withRetry(async () => {
+                const session = this.neo4jDriver.session();
+                try {
+                    await session.run(
+                        `MATCH (u:User {id: $userId}) SET u.email = $newEmail`,
+                        { userId, newEmail },
+                    );
+                } finally {
+                    await session.close();
+                }
+            });
+        } catch (error) {
+            this.logger.warn(
+                `Neo4j email propagation failed after retries: ${error}`,
+            );
+        }
+    }
+
+    private async withRetry<T>(
+        operation: () => Promise<T>,
+        maxAttempts = PROPAGATION_MAX_ATTEMPTS,
+    ): Promise<T> {
+        let lastError: unknown;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                return await operation();
+            } catch (error) {
+                lastError = error;
+                if (attempt < maxAttempts) {
+                    await new Promise((resolve) =>
+                        setTimeout(resolve, 100 * 2 ** (attempt - 1)),
+                    );
+                }
+            }
+        }
+        throw lastError;
     }
 }
