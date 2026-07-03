@@ -67,6 +67,7 @@ export default {
         coverage: "Pending addresses",
         bookings: "Bookings",
         administration: "Administration",
+        downloadDesktop: "Download desktop client",
         groups: {
             home: "Home",
             neighborhood: "Neighborhood",

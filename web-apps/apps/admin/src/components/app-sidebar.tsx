@@ -1,6 +1,8 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
+import { Download01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { BrandLogo } from "@workspace/ui/components/brand-logo";
 import {
     Sidebar,
@@ -46,6 +48,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <NavMain groups={adminNavGroups} />
             </SidebarContent>
             <SidebarFooter>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
+                            asChild
+                            tooltip={t("nav.downloadDesktop")}
+                        >
+                            <a
+                                href="/telechargements/quartierconnect-desktop.jar"
+                                download
+                            >
+                                <HugeiconsIcon icon={Download01Icon} />
+                                <span>{t("nav.downloadDesktop")}</span>
+                            </a>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
                 <NavUser />
             </SidebarFooter>
             <SidebarRail />

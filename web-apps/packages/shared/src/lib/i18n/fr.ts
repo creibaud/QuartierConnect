@@ -68,6 +68,7 @@ export default {
         coverage: "Adresses en attente",
         bookings: "Réservations",
         administration: "Administration",
+        downloadDesktop: "Télécharger le client lourd",
         groups: {
             home: "Accueil",
             neighborhood: "Quartier",
