@@ -6,6 +6,7 @@ import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import { SocialService } from "../social/social.service";
 import { AuthService } from "./auth.service";
 import { SsoSurface, SsoToken } from "./schemas/sso-token.schema";
+import { User } from "./schemas/user.schema";
 import { TokenService } from "./token.service";
 import { TotpService } from "./totp.service";
 
@@ -32,6 +33,7 @@ describe("AuthService", () => {
     let service: AuthService;
     let mockDb: any;
     let ssoTokenModel: any;
+    let userModel: any;
     let totpService: TotpService;
 
     beforeEach(async () => {
@@ -50,6 +52,12 @@ describe("AuthService", () => {
             findOneAndUpdate: jest.fn(),
         };
 
+        userModel = {
+            findOneAndUpdate: jest
+                .fn()
+                .mockReturnValue({ exec: jest.fn().mockResolvedValue(null) }),
+        };
+
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 AuthService,
@@ -57,6 +65,10 @@ describe("AuthService", () => {
                 {
                     provide: getModelToken(SsoToken.name),
                     useValue: ssoTokenModel,
+                },
+                {
+                    provide: getModelToken(User.name),
+                    useValue: userModel,
                 },
                 {
                     provide: TotpService,
@@ -110,9 +122,45 @@ describe("AuthService", () => {
             const result = await service.register({
                 email: "alice@demo.fr",
                 password: "Demo1234!",
+                consent: true,
             });
             expect(result).toHaveProperty("otpauthUrl");
             expect(JSON.stringify(result)).not.toContain("totpSecret");
+        });
+
+        it("persists consentTimestamp in Mongo and normalized phone in PG", async () => {
+            await service.register({
+                email: "Alice@Demo.fr",
+                password: "Demo1234!",
+                consent: true,
+                phone: "+33 6 12 34 56 78",
+            });
+
+            expect(mockDb.values).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    email: "alice@demo.fr",
+                    phone: "+33612345678",
+                }),
+            );
+            expect(userModel.findOneAndUpdate).toHaveBeenCalledWith(
+                { email: "alice@demo.fr" },
+                expect.objectContaining({
+                    $set: { consentTimestamp: expect.any(Date) },
+                }),
+                { upsert: true },
+            );
+        });
+
+        it("inserts a null phone when none is provided", async () => {
+            await service.register({
+                email: "alice@demo.fr",
+                password: "Demo1234!",
+                consent: true,
+            });
+
+            expect(mockDb.values).toHaveBeenCalledWith(
+                expect.objectContaining({ phone: null }),
+            );
         });
 
         it("throws ConflictException on duplicate email (pg code 23505)", async () => {
@@ -123,8 +171,23 @@ describe("AuthService", () => {
                 service.register({
                     email: "alice@demo.fr",
                     password: "Demo1234!",
+                    consent: true,
                 }),
             ).rejects.toThrow(ConflictException);
+        });
+
+        it("does not record consent when the insert fails", async () => {
+            mockDb.values.mockReturnValue({
+                returning: jest.fn().mockRejectedValue({ code: "23505" }),
+            });
+            await expect(
+                service.register({
+                    email: "alice@demo.fr",
+                    password: "Demo1234!",
+                    consent: true,
+                }),
+            ).rejects.toThrow(ConflictException);
+            expect(userModel.findOneAndUpdate).not.toHaveBeenCalled();
         });
     });
 

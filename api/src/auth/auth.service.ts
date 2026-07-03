@@ -10,6 +10,7 @@ import * as argon2 from "argon2";
 import { eq } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Model } from "mongoose";
+import { normalizePhone } from "../common/phone.util";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { SocialService } from "../social/social.service";
@@ -20,6 +21,7 @@ import {
     SsoToken,
     SsoTokenDocument,
 } from "./schemas/sso-token.schema";
+import { User, UserDocument } from "./schemas/user.schema";
 import { TokenPair, TokenService } from "./token.service";
 import { TotpService } from "./totp.service";
 
@@ -32,6 +34,8 @@ export class AuthService {
         private readonly db: PostgresJsDatabase<typeof schema>,
         @InjectModel(SsoToken.name)
         private readonly ssoTokenModel: Model<SsoTokenDocument>,
+        @InjectModel(User.name)
+        private readonly userModel: Model<UserDocument>,
         private readonly totpService: TotpService,
         private readonly tokenService: TokenService,
         private readonly socialService: SocialService,
@@ -42,17 +46,19 @@ export class AuthService {
         const { secret, otpauthUrl } = this.totpService.generateSecret(
             dto.email,
         );
+        const email = dto.email.toLowerCase();
 
         let insertedId: string | undefined;
         try {
             const [inserted] = await this.db
                 .insert(schema.users)
                 .values({
-                    email: dto.email.toLowerCase(),
+                    email,
                     passwordHash,
                     totpSecret: secret,
                     firstName: dto.firstName,
                     lastName: dto.lastName,
+                    phone: normalizePhone(dto.phone),
                 })
                 .returning({ id: schema.users.id });
             insertedId = inserted?.id;
@@ -68,11 +74,30 @@ export class AuthService {
             throw error;
         }
 
+        await this.recordConsent(email, passwordHash, secret);
+
         if (insertedId) {
             void this.socialService.syncUser(insertedId);
         }
 
         return { otpauthUrl };
+    }
+
+    private async recordConsent(
+        email: string,
+        passwordHash: string,
+        totpSecret: string,
+    ): Promise<void> {
+        await this.userModel
+            .findOneAndUpdate(
+                { email },
+                {
+                    $set: { consentTimestamp: new Date() },
+                    $setOnInsert: { passwordHash, totpSecret },
+                },
+                { upsert: true },
+            )
+            .exec();
     }
 
     async login(dto: LoginDto): Promise<TokenPair & { user: object }> {

@@ -37,7 +37,11 @@ describe("AuthController", () => {
 
     describe("register", () => {
         it("delegates to authService.register and returns result", async () => {
-            const dto = { email: "alice@demo.fr", password: "Demo1234!" };
+            const dto = {
+                email: "alice@demo.fr",
+                password: "Demo1234!",
+                consent: true,
+            };
             const expected = { otpauthUrl: "otpauth://totp/..." };
             mockAuthService.register.mockResolvedValue(expected);
 

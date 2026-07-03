@@ -9,6 +9,7 @@ import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { RolesGuard } from "./guards/roles.guard";
 import { SsoToken, SsoTokenSchema } from "./schemas/sso-token.schema";
+import { User, UserSchema } from "./schemas/user.schema";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { TokenService } from "./token.service";
 import { TotpService } from "./totp.service";
@@ -27,6 +28,7 @@ import { TotpService } from "./totp.service";
         }),
         MongooseModule.forFeature([
             { name: SsoToken.name, schema: SsoTokenSchema },
+            { name: User.name, schema: UserSchema },
         ]),
     ],
     controllers: [AuthController],

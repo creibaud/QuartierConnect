@@ -26,7 +26,7 @@ async function registerAndLogin(
 ): Promise<{ accessToken: string; refreshToken: string; totpSecret: string }> {
     const regRes = await request(app.getHttpServer())
         .post("/auth/register")
-        .send({ email, password: DEMO_PASSWORD })
+        .send({ email, password: DEMO_PASSWORD, consent: true })
         .expect(201);
 
     const urlParams = new URL(
@@ -95,7 +95,11 @@ describe("Auth (e2e)", () => {
         loginTestEmail = `e2e-login-${ts}@test.fr`;
         const loginReg = await request(app.getHttpServer())
             .post("/auth/register")
-            .send({ email: loginTestEmail, password: DEMO_PASSWORD })
+            .send({
+                email: loginTestEmail,
+                password: DEMO_PASSWORD,
+                consent: true,
+            })
             .expect(201);
         loginTestTotpSecret = new URL(
             loginReg.body.otpauthUrl.replace("otpauth://", "http://"),
@@ -157,6 +161,7 @@ describe("Auth (e2e)", () => {
                 .send({
                     email: `new-${Date.now()}@test.fr`,
                     password: DEMO_PASSWORD,
+                    consent: true,
                 })
                 .expect(201);
 
@@ -167,10 +172,35 @@ describe("Auth (e2e)", () => {
         it("returns 409 on duplicate email", async () => {
             const res = await request(app.getHttpServer())
                 .post("/auth/register")
-                .send({ email: registeredEmail, password: DEMO_PASSWORD })
+                .send({
+                    email: registeredEmail,
+                    password: DEMO_PASSWORD,
+                    consent: true,
+                })
                 .expect(409);
 
             expect(res.body.code).toBe("EMAIL_ALREADY_EXISTS");
+        });
+
+        it("returns 400 when consent is missing", async () => {
+            await request(app.getHttpServer())
+                .post("/auth/register")
+                .send({
+                    email: `no-consent-${Date.now()}@test.fr`,
+                    password: DEMO_PASSWORD,
+                })
+                .expect(400);
+        });
+
+        it("returns 400 when consent is false", async () => {
+            await request(app.getHttpServer())
+                .post("/auth/register")
+                .send({
+                    email: `refused-consent-${Date.now()}@test.fr`,
+                    password: DEMO_PASSWORD,
+                    consent: false,
+                })
+                .expect(400);
         });
     });
 

@@ -30,6 +30,7 @@ export const users = pgTable("users", {
     lastName: varchar("last_name", { length: 100 }),
     avatarUrl: text("avatar_url"),
     neighborhoodId: varchar("neighborhood_id", { length: 255 }),
+    phone: text("phone"),
     address: text("address"),
     addressLat: real("address_lat"),
     addressLng: real("address_lng"),
