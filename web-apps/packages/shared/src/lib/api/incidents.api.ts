@@ -33,7 +33,7 @@ export function updateIncidentStatus(
     id: string,
     status: "open" | "in_progress" | "resolved",
 ): Promise<Incident> {
-    return apiPatch<Incident>(`/incidents/${id}`, { status });
+    return apiPatch<Incident>(`/incidents/${id}/status`, { status });
 }
 
 export function deleteIncident(id: string): Promise<void> {

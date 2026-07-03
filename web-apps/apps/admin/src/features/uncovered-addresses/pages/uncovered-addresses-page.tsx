@@ -1,8 +1,6 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-    ListViewIcon,
-    MapsLocation01Icon,
-} from "@hugeicons/core-free-icons";
+import { ListViewIcon, MapsLocation01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@workspace/ui/components/button";
@@ -16,12 +14,13 @@ import {
 } from "@workspace/ui/components/empty";
 import { Map, Marker } from "@workspace/ui/components/map";
 import { PageHeader } from "@workspace/ui/components/page-header";
+import { DataPagination } from "@workspace/ui/components/pagination";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { SortableHead } from "@workspace/ui/components/sortable-head";
 import {
     Table,
     TableBody,
     TableCell,
-    TableHead,
     TableHeader,
     TableRow,
 } from "@workspace/ui/components/table";
@@ -31,104 +30,133 @@ import {
     TabsList,
     TabsTrigger,
 } from "@workspace/ui/components/tabs";
+import { useTableSort } from "@workspace/ui/hooks/use-table-sort";
 import {
     useUncoveredAddresses,
     type UncoveredResident,
 } from "../hooks/uncovered-addresses.hooks";
+
+const PAGE_SIZE = 10;
 
 export function UncoveredAddressesPage() {
     const { t } = useTranslation();
     const { data, isLoading, isError, refetch } = useUncoveredAddresses();
     const residents = data ?? [];
 
+    const { sorted, toggle, getSortDirection } = useTableSort(residents, {
+        initial: { key: "firstName", direction: "asc" },
+    });
+    const [page, setPage] = useState(1);
+    const pageCount = Math.ceil(sorted.length / PAGE_SIZE);
+    const pageRows = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+    function handleSort(key: string) {
+        toggle(key);
+        setPage(1);
+    }
+
     return (
-        <div className="p-6">
-            <div className="mx-auto flex max-w-6xl flex-col gap-6">
-                <PageHeader
-                    title={t("adminPages.coverage.title")}
-                    description={t("adminPages.coverage.description")}
-                    actions={
-                        <Button asChild variant="outline">
-                            <Link to="/neighborhoods">
-                                {t("adminPages.coverage.drawNeighborhood")}
-                            </Link>
-                        </Button>
-                    }
-                />
+        <div className="space-y-6 p-6">
+            <PageHeader
+                title={t("adminPages.coverage.title")}
+                description={t("adminPages.coverage.description")}
+                actions={
+                    <Button asChild variant="outline">
+                        <Link to="/neighborhoods">
+                            {t("adminPages.coverage.drawNeighborhood")}
+                        </Link>
+                    </Button>
+                }
+            />
 
-                <Tabs defaultValue="list" className="gap-4">
-                    <TabsList>
-                        <TabsTrigger value="list">
-                            <HugeiconsIcon icon={ListViewIcon} />
-                            {t("adminPages.common.listTab")}
-                        </TabsTrigger>
-                        <TabsTrigger value="map">
-                            <HugeiconsIcon icon={MapsLocation01Icon} />
-                            {t("adminPages.common.mapTab")}
-                        </TabsTrigger>
-                    </TabsList>
+            <Tabs defaultValue="list" className="gap-4">
+                <TabsList>
+                    <TabsTrigger value="list">
+                        <HugeiconsIcon icon={ListViewIcon} />
+                        {t("adminPages.common.listTab")}
+                    </TabsTrigger>
+                    <TabsTrigger value="map">
+                        <HugeiconsIcon icon={MapsLocation01Icon} />
+                        {t("adminPages.common.mapTab")}
+                    </TabsTrigger>
+                </TabsList>
 
-                    <TabsContent value="list">
-                        <DataState
-                            loading={isLoading}
-                            error={isError ? true : undefined}
-                            isEmpty={residents.length === 0}
-                            onRetry={() => refetch()}
-                            errorTitle={t("adminPages.coverage.loadError")}
-                            skeleton={
-                                <div className="flex flex-col gap-2">
-                                    {Array.from({ length: 5 }).map((_, i) => (
-                                        <Skeleton
-                                            key={i}
-                                            className="h-12 w-full rounded"
+                <TabsContent value="list">
+                    <DataState
+                        loading={isLoading}
+                        error={isError ? true : undefined}
+                        isEmpty={residents.length === 0}
+                        onRetry={() => refetch()}
+                        errorTitle={t("adminPages.coverage.loadError")}
+                        skeleton={
+                            <div className="flex flex-col gap-2">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <Skeleton
+                                        key={i}
+                                        className="h-12 w-full rounded"
+                                    />
+                                ))}
+                            </div>
+                        }
+                        empty={
+                            <Empty>
+                                <EmptyHeader>
+                                    <EmptyMedia variant="icon">
+                                        <HugeiconsIcon
+                                            icon={MapsLocation01Icon}
                                         />
-                                    ))}
-                                </div>
-                            }
-                            empty={
-                                <Empty>
-                                    <EmptyHeader>
-                                        <EmptyMedia variant="icon">
-                                            <HugeiconsIcon
-                                                icon={MapsLocation01Icon}
-                                            />
-                                        </EmptyMedia>
-                                        <EmptyTitle>
-                                            {t("adminPages.coverage.emptyTitle")}
-                                        </EmptyTitle>
-                                        <EmptyDescription>
-                                            {t(
-                                                "adminPages.coverage.emptyDescription",
-                                            )}
-                                        </EmptyDescription>
-                                    </EmptyHeader>
-                                </Empty>
-                            }
-                        >
+                                    </EmptyMedia>
+                                    <EmptyTitle>
+                                        {t("adminPages.coverage.emptyTitle")}
+                                    </EmptyTitle>
+                                    <EmptyDescription>
+                                        {t(
+                                            "adminPages.coverage.emptyDescription",
+                                        )}
+                                    </EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
+                        }
+                    >
+                        <div className="space-y-4">
                             <div className="bg-card rounded-lg border">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>
+                                            <SortableHead
+                                                direction={getSortDirection(
+                                                    "firstName",
+                                                )}
+                                                onSort={() =>
+                                                    handleSort("firstName")
+                                                }
+                                            >
                                                 {t(
                                                     "adminPages.coverage.residentColumn",
                                                 )}
-                                            </TableHead>
-                                            <TableHead>
+                                            </SortableHead>
+                                            <SortableHead
+                                                direction={getSortDirection(
+                                                    "address",
+                                                )}
+                                                onSort={() =>
+                                                    handleSort("address")
+                                                }
+                                            >
                                                 {t(
                                                     "adminPages.coverage.addressColumn",
                                                 )}
-                                            </TableHead>
+                                            </SortableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {residents.map(
+                                        {pageRows.map(
                                             (r: UncoveredResident) => (
                                                 <TableRow key={r.userId}>
-                                                    <TableCell className="font-medium">
+                                                    <TableCell className="py-2 font-medium">
                                                         {r.firstName}
                                                     </TableCell>
-                                                    <TableCell className="text-muted-foreground">
+                                                    <TableCell className="text-muted-foreground py-2">
                                                         {r.address}
                                                     </TableCell>
                                                 </TableRow>
@@ -137,14 +165,23 @@ export function UncoveredAddressesPage() {
                                     </TableBody>
                                 </Table>
                             </div>
-                        </DataState>
-                    </TabsContent>
+                            <DataPagination
+                                page={page}
+                                pageCount={pageCount}
+                                onPageChange={setPage}
+                                previousLabel={t(
+                                    "adminPages.common.previousPage",
+                                )}
+                                nextLabel={t("adminPages.common.nextPage")}
+                            />
+                        </div>
+                    </DataState>
+                </TabsContent>
 
-                    <TabsContent value="map">
-                        <UncoveredAddressesMap residents={residents} />
-                    </TabsContent>
-                </Tabs>
-            </div>
+                <TabsContent value="map">
+                    <UncoveredAddressesMap residents={residents} />
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

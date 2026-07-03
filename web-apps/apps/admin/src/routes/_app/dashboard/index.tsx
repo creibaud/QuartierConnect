@@ -52,7 +52,7 @@ function AdminDashboardPage() {
 
     return (
         <div className="p-6">
-            <div className="mx-auto max-w-6xl space-y-6">
+            <div className="space-y-6">
                 <PageHeader
                     title={t("adminPages.dashboard.title")}
                     description={user?.email}

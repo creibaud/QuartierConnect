@@ -129,7 +129,93 @@ function PaginationEllipsis({
     );
 }
 
+function buildPageRange(page: number, pageCount: number): (number | "gap")[] {
+    const range: (number | "gap")[] = [1];
+    const start = Math.max(2, page - 1);
+    const end = Math.min(pageCount - 1, page + 1);
+
+    if (start > 2) range.push("gap");
+    for (let candidate = start; candidate <= end; candidate++) {
+        range.push(candidate);
+    }
+    if (end < pageCount - 1) range.push("gap");
+    if (pageCount > 1) range.push(pageCount);
+
+    return range;
+}
+
+function DataPagination({
+    page,
+    pageCount,
+    onPageChange,
+    previousLabel = "Go to previous page",
+    nextLabel = "Go to next page",
+    className,
+    ...props
+}: React.ComponentProps<typeof Pagination> & {
+    page: number;
+    pageCount: number;
+    onPageChange: (page: number) => void;
+    previousLabel?: string;
+    nextLabel?: string;
+}) {
+    if (pageCount <= 1) return null;
+
+    return (
+        <Pagination className={className} {...props}>
+            <PaginationContent>
+                <PaginationItem>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={previousLabel}
+                        disabled={page <= 1}
+                        onClick={() => onPageChange(page - 1)}
+                    >
+                        <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+                    </Button>
+                </PaginationItem>
+                {buildPageRange(page, pageCount).map((entry, index) =>
+                    entry === "gap" ? (
+                        <PaginationItem key={`gap-${index}`}>
+                            <PaginationEllipsis />
+                        </PaginationItem>
+                    ) : (
+                        <PaginationItem key={entry}>
+                            <Button
+                                variant={entry === page ? "outline" : "ghost"}
+                                size="icon"
+                                aria-current={
+                                    entry === page ? "page" : undefined
+                                }
+                                onClick={() => onPageChange(entry)}
+                            >
+                                {entry}
+                            </Button>
+                        </PaginationItem>
+                    ),
+                )}
+                <PaginationItem>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={nextLabel}
+                        disabled={page >= pageCount}
+                        onClick={() => onPageChange(page + 1)}
+                    >
+                        <HugeiconsIcon
+                            icon={ArrowRight01Icon}
+                            strokeWidth={2}
+                        />
+                    </Button>
+                </PaginationItem>
+            </PaginationContent>
+        </Pagination>
+    );
+}
+
 export {
+    DataPagination,
     Pagination,
     PaginationContent,
     PaginationEllipsis,

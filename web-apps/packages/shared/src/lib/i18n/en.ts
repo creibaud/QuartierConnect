@@ -71,6 +71,10 @@ export default {
             home: "Home",
             neighborhood: "Neighborhood",
             mySpace: "My space",
+            overview: "Overview",
+            community: "Community life",
+            management: "Management",
+            tools: "Tools",
         },
     },
     address: {
@@ -840,12 +844,30 @@ export default {
             chooseNeighborhood: "Choose a neighborhood",
             deleteError: "Unable to delete",
             saveError: "Error while saving",
+            nextPage: "Go to next page",
+            previousPage: "Go to previous page",
         },
         roles: {
             resident: "Resident",
             moderator: "Moderator",
             admin: "Administrator",
             banned: "Banned",
+            deleted: "Deleted",
+        },
+        serviceCategories: {
+            gardening: "Gardening",
+            handyman: "Handyman",
+            transport: "Transport",
+            shopping: "Shopping",
+            childcare: "Childcare",
+            "it-support": "IT support",
+            other: "Other",
+        },
+        theme: {
+            label: "Theme",
+            light: "Light",
+            dark: "Dark",
+            system: "System",
         },
         meta: {
             description:
@@ -954,6 +976,9 @@ export default {
             created: "Neighborhood created",
             updateError: "Error while updating",
             createError: "Error while creating",
+            deleteConfirmTitle: "Delete this neighborhood?",
+            deleteConfirmDescription:
+                '"{{name}}" will be permanently deleted.',
             editTitle: "Edit neighborhood",
             createTitle: "Add a neighborhood",
             nameLabel: "Name *",
@@ -970,6 +995,7 @@ export default {
         services: {
             title: "Services",
             description: "Neighborhood services directory.",
+            searchPlaceholder: "Search by name",
             allCategories: "All categories",
             emptyTitle: "No services yet",
             emptyDescription:
@@ -1002,6 +1028,7 @@ export default {
         events: {
             title: "Events",
             description: "Neighborhood community calendar",
+            searchPlaceholder: "Search by title",
             loadError: "Unable to load events",
             emptyTitle: "No events",
             emptyDescription:
@@ -1012,6 +1039,9 @@ export default {
             deleted: "Event deleted",
             updated: "Event updated",
             created: "Event created",
+            deleteConfirmTitle: "Delete this event?",
+            deleteConfirmDescription:
+                '"{{title}}" will be permanently deleted.',
             editTitle: "Edit event",
             createTitle: "Create an event",
             titleLabel: "Title *",
@@ -1058,6 +1088,9 @@ export default {
             optionsLabel: "Options *",
             addOption: "+ Add",
             optionPlaceholder: "Option {{number}}",
+            optionNo: "No",
+            optionYes: "Yes",
+            removeOption: "Remove option",
             endDateLabel: "End date *",
             viewResults: "View results",
             resultsTitle: "Vote results",

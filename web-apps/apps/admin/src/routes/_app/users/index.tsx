@@ -1,11 +1,13 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Search01Icon,
+    UserBlock01Icon,
+    UserCheck01Icon,
     UserMultipleIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
 import {
     useInfiniteUsers,
     useUpdateUserRole,
@@ -42,6 +44,7 @@ import {
     SelectValue,
 } from "@workspace/ui/components/select";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { SortableHead } from "@workspace/ui/components/sortable-head";
 import {
     Table,
     TableBody,
@@ -50,6 +53,7 @@ import {
     TableHeader,
     TableRow,
 } from "@workspace/ui/components/table";
+import { useTableSort } from "@workspace/ui/hooks/use-table-sort";
 import { toast } from "sonner";
 
 const ROLE_VARIANTS: Record<
@@ -81,13 +85,15 @@ function UsersPage() {
         moderator: t("adminPages.roles.moderator"),
         admin: t("adminPages.roles.admin"),
         banned: t("adminPages.roles.banned"),
+        deleted: t("adminPages.roles.deleted"),
     };
 
     function handleRoleChange(userId: string, role: User["role"]) {
         updateRole.mutate(
             { id: userId, role },
             {
-                onSuccess: () => toast.success(t("adminPages.users.roleUpdated")),
+                onSuccess: () =>
+                    toast.success(t("adminPages.users.roleUpdated")),
                 onError: () =>
                     toast.error(t("adminPages.users.roleUpdateError")),
             },
@@ -107,9 +113,16 @@ function UsersPage() {
         return matchesSearch && matchesRole;
     });
 
+    const { sorted, toggle, getSortDirection } = useTableSort(filteredUsers, {
+        accessors: {
+            role: (user) => roleLabels[user.role] ?? user.role,
+            createdAt: (user) => new Date(user.createdAt),
+        },
+    });
+
     return (
         <div className="p-6">
-            <div className="mx-auto max-w-6xl space-y-6">
+            <div className="space-y-6">
                 <PageHeader
                     title={t("adminPages.users.title")}
                     description={t("adminPages.users.description")}
@@ -124,7 +137,9 @@ function UsersPage() {
                         <Input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder={t("adminPages.users.searchPlaceholder")}
+                            placeholder={t(
+                                "adminPages.users.searchPlaceholder",
+                            )}
                             className="pl-9"
                         />
                     </div>
@@ -186,20 +201,33 @@ function UsersPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>{t("auth.email")}</TableHead>
-                                    <TableHead>
+                                    <SortableHead
+                                        direction={getSortDirection("email")}
+                                        onSort={() => toggle("email")}
+                                    >
+                                        {t("auth.email")}
+                                    </SortableHead>
+                                    <SortableHead
+                                        direction={getSortDirection("role")}
+                                        onSort={() => toggle("role")}
+                                    >
                                         {t("adminPages.users.role")}
-                                    </TableHead>
-                                    <TableHead>
+                                    </SortableHead>
+                                    <SortableHead
+                                        direction={getSortDirection(
+                                            "createdAt",
+                                        )}
+                                        onSort={() => toggle("createdAt")}
+                                    >
                                         {t("adminPages.users.registeredAt")}
-                                    </TableHead>
+                                    </SortableHead>
                                     <TableHead className="text-right">
                                         {t("adminPages.common.actions")}
                                     </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredUsers.map((user) => (
+                                {sorted.map((user) => (
                                     <TableRow key={user.id}>
                                         <TableCell className="py-2 font-medium">
                                             {user.email}
@@ -272,6 +300,14 @@ function UsersPage() {
                                                                 updateRole.isPending
                                                             }
                                                         >
+                                                            <HugeiconsIcon
+                                                                icon={
+                                                                    user.role ===
+                                                                    "banned"
+                                                                        ? UserCheck01Icon
+                                                                        : UserBlock01Icon
+                                                                }
+                                                            />
                                                             {user.role ===
                                                             "banned"
                                                                 ? t(
@@ -332,8 +368,12 @@ function UsersPage() {
                                                             >
                                                                 {user.role ===
                                                                 "banned"
-                                                                    ? t("adminPages.users.reactivate")
-                                                                    : t("adminPages.users.ban")}
+                                                                    ? t(
+                                                                          "adminPages.users.reactivate",
+                                                                      )
+                                                                    : t(
+                                                                          "adminPages.users.ban",
+                                                                      )}
                                                             </AlertDialogAction>
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>

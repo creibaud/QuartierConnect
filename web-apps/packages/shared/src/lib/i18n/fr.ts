@@ -72,6 +72,10 @@ export default {
             home: "Accueil",
             neighborhood: "Quartier",
             mySpace: "Mon espace",
+            overview: "Vue d'ensemble",
+            community: "Vie du quartier",
+            management: "Gestion",
+            tools: "Outils",
         },
     },
     address: {
@@ -853,12 +857,30 @@ export default {
             chooseNeighborhood: "Choisir un quartier",
             deleteError: "Impossible de supprimer",
             saveError: "Erreur lors de l'enregistrement",
+            nextPage: "Aller à la page suivante",
+            previousPage: "Aller à la page précédente",
         },
         roles: {
             resident: "Résident",
             moderator: "Modérateur",
             admin: "Administrateur",
             banned: "Banni",
+            deleted: "Supprimé",
+        },
+        serviceCategories: {
+            gardening: "Jardinage",
+            handyman: "Bricolage",
+            transport: "Transport",
+            shopping: "Courses",
+            childcare: "Garde d'enfants",
+            "it-support": "Aide informatique",
+            other: "Autre",
+        },
+        theme: {
+            label: "Thème",
+            light: "Clair",
+            dark: "Sombre",
+            system: "Système",
         },
         meta: {
             description:
@@ -967,6 +989,9 @@ export default {
             created: "Quartier créé",
             updateError: "Erreur lors de la modification",
             createError: "Erreur lors de la création",
+            deleteConfirmTitle: "Supprimer ce quartier ?",
+            deleteConfirmDescription:
+                "« {{name}} » sera définitivement supprimé.",
             editTitle: "Modifier le quartier",
             createTitle: "Ajouter un quartier",
             nameLabel: "Nom *",
@@ -983,6 +1008,7 @@ export default {
         services: {
             title: "Services",
             description: "Annuaire des services de quartier.",
+            searchPlaceholder: "Rechercher par nom",
             allCategories: "Toutes les catégories",
             emptyTitle: "Aucun service pour l'instant",
             emptyDescription:
@@ -1015,6 +1041,7 @@ export default {
         events: {
             title: "Événements",
             description: "Calendrier communautaire du quartier",
+            searchPlaceholder: "Rechercher par titre",
             loadError: "Impossible de charger les événements",
             emptyTitle: "Aucun événement",
             emptyDescription:
@@ -1025,6 +1052,9 @@ export default {
             deleted: "Événement supprimé",
             updated: "Événement modifié",
             created: "Événement créé",
+            deleteConfirmTitle: "Supprimer cet événement ?",
+            deleteConfirmDescription:
+                "« {{title}} » sera définitivement supprimé.",
             editTitle: "Modifier l'événement",
             createTitle: "Créer un événement",
             titleLabel: "Titre *",
@@ -1071,6 +1101,9 @@ export default {
             optionsLabel: "Options *",
             addOption: "+ Ajouter",
             optionPlaceholder: "Option {{number}}",
+            optionNo: "Non",
+            optionYes: "Oui",
+            removeOption: "Supprimer l'option",
             endDateLabel: "Date de fin *",
             viewResults: "Voir les résultats",
             resultsTitle: "Résultats du vote",

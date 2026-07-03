@@ -13,7 +13,7 @@ import {
     SidebarRail,
 } from "@workspace/ui/components/sidebar";
 
-import { adminNavItems } from "@/components/nav-items";
+import { adminNavGroups } from "@/components/nav-items";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 
@@ -43,7 +43,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </SidebarMenu>
             </SidebarHeader>
             <SidebarContent>
-                <NavMain items={adminNavItems} />
+                <NavMain groups={adminNavGroups} />
             </SidebarContent>
             <SidebarFooter>
                 <NavUser />

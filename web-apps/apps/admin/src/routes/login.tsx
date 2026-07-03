@@ -21,17 +21,6 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { i18n } from "@workspace/shared/lib/i18n/index";
-
-const credentialsSchema = z.object({
-    email: z.string().email(i18n.t("adminPages.auth.invalidEmail")),
-    password: z.string().min(1, i18n.t("adminPages.auth.passwordRequired")),
-});
-
-const totpSchema = z.object({
-    totpCode: z.string().length(6, i18n.t("adminPages.auth.totpLength")),
-});
-
 export const Route = createFileRoute("/login")({
     validateSearch: (search: Record<string, unknown>) => ({
         forbidden: search.forbidden === true,
@@ -44,6 +33,16 @@ function AdminLoginPage() {
     useHead({ title: t("adminPages.auth.loginTitle") });
     const navigate = useNavigate();
     const { forbidden } = useSearch({ from: "/login" });
+
+    const credentialsSchema = z.object({
+        email: z.string().email(t("adminPages.auth.invalidEmail")),
+        password: z.string().min(1, t("adminPages.auth.passwordRequired")),
+    });
+
+    const totpSchema = z.object({
+        totpCode: z.string().length(6, t("adminPages.auth.totpLength")),
+    });
+
     const [step, setStep] = useState<"credentials" | "totp">("credentials");
     const [credentials, setCredentials] = useState({ email: "", password: "" });
     const [serverError, setServerError] = useState<string | null>(
@@ -149,20 +148,29 @@ function AdminLoginPage() {
                                 e.preventDefault();
                                 totpForm.handleSubmit();
                             }}
-                            className="space-y-4"
+                            className="space-y-6"
                         >
-                            <p className="text-muted-foreground text-sm">
-                                {t("adminPages.auth.totpForLabel")}{" "}
-                                <span className="text-foreground font-medium">
+                            <div className="space-y-1 text-center">
+                                <p className="text-muted-foreground text-sm">
+                                    {t("adminPages.auth.totpForLabel")}
+                                </p>
+                                <p className="text-foreground text-sm font-medium">
                                     {credentials.email}
-                                </span>
-                                .
-                            </p>
-                            <totpForm.AppField name="totpCode">
-                                {(field) => (
-                                    <field.OtpField label={t("auth.totpCode")} />
-                                )}
-                            </totpForm.AppField>
+                                </p>
+                            </div>
+                            <div className="flex flex-col items-center gap-2">
+                                <totpForm.AppField name="totpCode">
+                                    {(field) => (
+                                        <field.OtpField
+                                            label={t("auth.totpCode")}
+                                            autoFocus
+                                            onComplete={() =>
+                                                totpForm.handleSubmit()
+                                            }
+                                        />
+                                    )}
+                                </totpForm.AppField>
+                            </div>
                             <totpForm.Subscribe
                                 selector={(s) => s.isSubmitting}
                             >

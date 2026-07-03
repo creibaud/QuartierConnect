@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Add01Icon, Agreement01Icon } from "@hugeicons/core-free-icons";
+import {
+    Add01Icon,
+    Agreement01Icon,
+    Cancel01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -42,6 +46,7 @@ import {
     SelectValue,
 } from "@workspace/ui/components/select";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { Spinner } from "@workspace/ui/components/spinner";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/community-votes/")({
@@ -101,7 +106,7 @@ function CommunityVotesPage() {
 
     return (
         <div className="p-6">
-            <div className="mx-auto max-w-6xl space-y-6">
+            <div className="space-y-6">
                 <PageHeader
                     title={t("adminPages.communityVotes.title")}
                     description={t("adminPages.communityVotes.description")}
@@ -285,8 +290,30 @@ function ResultsDialog({
     const { t } = useTranslation();
     const { data, isLoading, isError, refetch } = useQuery<VoteResults>({
         queryKey: ["community-vote-results", vote._id],
-        queryFn: () =>
-            apiGet<VoteResults>(`/community-votes/${vote._id}/results`),
+        queryFn: async () => {
+            const raw = await apiGet<{
+                totals: Record<string, number>;
+                totalParticipants: number;
+                quorumReached: boolean;
+                status: "open" | "closed";
+                options: { id: string; label: string }[];
+            }>(`/community-votes/${vote._id}/results`);
+            const total = raw.totalParticipants;
+            return {
+                totalVotes: total,
+                quorumReached: raw.quorumReached,
+                status: raw.status,
+                results: raw.options.map((option) => {
+                    const count = raw.totals[option.id] ?? 0;
+                    return {
+                        optionId: option.id,
+                        label: option.label,
+                        count,
+                        percentage: total > 0 ? (count / total) * 100 : 0,
+                    };
+                }),
+            };
+        },
     });
 
     return (
@@ -339,7 +366,7 @@ function ResultsDialog({
                             </StatusBadge>
                         </div>
                         <ul className="space-y-3">
-                            {data?.results.map((option) => (
+                            {(data?.results ?? []).map((option) => (
                                 <li key={option.optionId} className="space-y-1">
                                     <div className="flex items-center justify-between text-sm">
                                         <span className="font-medium">
@@ -383,8 +410,8 @@ function CreateVoteDialog({
     const [voteType, setVoteType] = useState<VoteType>("binary");
     const [endsAt, setEndsAt] = useState("");
     const [options, setOptions] = useState<VoteOption[]>([
-        { id: "yes", label: "Yes" },
-        { id: "no", label: "No" },
+        { id: "yes", label: t("adminPages.communityVotes.optionYes") },
+        { id: "no", label: t("adminPages.communityVotes.optionNo") },
     ]);
 
     const create = useMutation({
@@ -400,8 +427,8 @@ function CreateVoteDialog({
         setVoteType(type);
         if (type === "binary") {
             setOptions([
-                { id: "yes", label: "Yes" },
-                { id: "no", label: "No" },
+                { id: "yes", label: t("adminPages.communityVotes.optionYes") },
+                { id: "no", label: t("adminPages.communityVotes.optionNo") },
             ]);
         } else if (options.length < 2) {
             setOptions([
@@ -501,13 +528,15 @@ function CreateVoteDialog({
                                 {t("adminPages.communityVotes.optionsLabel")}
                             </Label>
                             {voteType !== "binary" && (
-                                <button
+                                <Button
                                     type="button"
-                                    className="text-primary text-xs hover:underline"
+                                    variant="ghost"
+                                    size="sm"
                                     onClick={addOption}
                                 >
-                                    {t("adminPages.communityVotes.addOption")}
-                                </button>
+                                    <HugeiconsIcon icon={Add01Icon} />
+                                    {t("adminPages.common.add")}
+                                </Button>
                             )}
                         </div>
                         <div className="space-y-2">
@@ -530,10 +559,15 @@ function CreateVoteDialog({
                                             <Button
                                                 type="button"
                                                 variant="ghost"
-                                                size="sm"
+                                                size="icon"
+                                                aria-label={t(
+                                                    "adminPages.communityVotes.removeOption",
+                                                )}
                                                 onClick={() => removeOption(i)}
                                             >
-                                                ×
+                                                <HugeiconsIcon
+                                                    icon={Cancel01Icon}
+                                                />
                                             </Button>
                                         )}
                                 </div>
@@ -562,9 +596,10 @@ function CreateVoteDialog({
                             {t("common.cancel")}
                         </Button>
                         <Button type="submit" disabled={create.isPending}>
-                            {create.isPending
-                                ? t("adminPages.communityVotes.creating")
-                                : t("adminPages.common.create")}
+                            {create.isPending ? (
+                                <Spinner className="mr-2" />
+                            ) : null}
+                            {t("adminPages.common.create")}
                         </Button>
                     </div>
                 </form>

@@ -15,33 +15,42 @@ export interface NavItem {
     icon: IconSvgElement;
 }
 
+export interface NavGroup {
+    label: string;
+    items: NavItem[];
+}
+
 function isItemActive(pathname: string, to: string): boolean {
     return pathname === to || pathname.startsWith(`${to}/`);
 }
 
-export function NavMain({ items }: { items: NavItem[] }) {
+export function NavMain({ groups }: { groups: NavGroup[] }) {
     const { pathname } = useLocation();
     const { t } = useTranslation();
 
     return (
-        <SidebarGroup>
-            <SidebarGroupLabel>{t("nav.administration")}</SidebarGroupLabel>
-            <SidebarMenu>
-                {items.map((item) => (
-                    <SidebarMenuItem key={item.to}>
-                        <SidebarMenuButton
-                            asChild
-                            isActive={isItemActive(pathname, item.to)}
-                            tooltip={t(item.title)}
-                        >
-                            <Link to={item.to}>
-                                <HugeiconsIcon icon={item.icon} />
-                                <span>{t(item.title)}</span>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                ))}
-            </SidebarMenu>
-        </SidebarGroup>
+        <>
+            {groups.map((group) => (
+                <SidebarGroup key={group.label}>
+                    <SidebarGroupLabel>{t(group.label)}</SidebarGroupLabel>
+                    <SidebarMenu>
+                        {group.items.map((item) => (
+                            <SidebarMenuItem key={item.to}>
+                                <SidebarMenuButton
+                                    asChild
+                                    isActive={isItemActive(pathname, item.to)}
+                                    tooltip={t(item.title)}
+                                >
+                                    <Link to={item.to}>
+                                        <HugeiconsIcon icon={item.icon} />
+                                        <span>{t(item.title)}</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        ))}
+                    </SidebarMenu>
+                </SidebarGroup>
+            ))}
+        </>
     );
 }

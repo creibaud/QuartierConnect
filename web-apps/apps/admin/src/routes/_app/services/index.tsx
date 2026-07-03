@@ -5,6 +5,7 @@ import {
     CustomerServiceIcon,
     Delete01Icon,
     Edit01Icon,
+    Search01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -59,6 +60,7 @@ import {
     NeighborhoodPolygon,
 } from "@workspace/ui/components/map";
 import { PageHeader } from "@workspace/ui/components/page-header";
+import { DataPagination } from "@workspace/ui/components/pagination";
 import {
     Select,
     SelectContent,
@@ -67,6 +69,8 @@ import {
     SelectValue,
 } from "@workspace/ui/components/select";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { SortableHead } from "@workspace/ui/components/sortable-head";
+import { Spinner } from "@workspace/ui/components/spinner";
 import {
     Table,
     TableBody,
@@ -82,11 +86,14 @@ import {
     TabsTrigger,
 } from "@workspace/ui/components/tabs";
 import { Textarea } from "@workspace/ui/components/textarea";
+import { useTableSort } from "@workspace/ui/hooks/use-table-sort";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/services/")({
     component: AdminServicesPage,
 });
+
+const PAGE_SIZE = 10;
 
 function AdminServicesPage() {
     const { t } = useTranslation();
@@ -108,11 +115,36 @@ function AdminServicesPage() {
     );
 
     const [categoryFilter, setCategoryFilter] = useState("all");
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+
     const categories = Array.from(
         new Set(services.map((svc) => svc.category)),
     ).sort();
-    const filteredServices = services.filter(
-        (svc) => categoryFilter === "all" || svc.category === categoryFilter,
+    const query = search.trim().toLowerCase();
+    const filteredServices = services.filter((svc) => {
+        const matchesCategory =
+            categoryFilter === "all" || svc.category === categoryFilter;
+        const matchesSearch =
+            query.length === 0 || svc.title.toLowerCase().includes(query);
+        return matchesCategory && matchesSearch;
+    });
+
+    const { sorted, toggle, getSortDirection } = useTableSort(
+        filteredServices,
+        {
+            initial: { key: "title", direction: "asc" },
+            accessors: {
+                neighborhood: (svc) => nbhMap[svc.neighborhoodId ?? ""] ?? null,
+            },
+        },
+    );
+
+    const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+    const currentPage = Math.min(page, pageCount);
+    const pageRows = sorted.slice(
+        (currentPage - 1) * PAGE_SIZE,
+        currentPage * PAGE_SIZE,
     );
 
     function handleDelete(id: string) {
@@ -124,7 +156,7 @@ function AdminServicesPage() {
 
     return (
         <div className="p-6">
-            <div className="mx-auto max-w-6xl space-y-6">
+            <div className="space-y-6">
                 <PageHeader
                     title={t("adminPages.services.title")}
                     description={t("adminPages.services.description")}
@@ -146,28 +178,55 @@ function AdminServicesPage() {
                                 {t("adminPages.common.mapTab")}
                             </TabsTrigger>
                         </TabsList>
-                        {categories.length > 0 && (
-                            <Select
-                                value={categoryFilter}
-                                onValueChange={setCategoryFilter}
-                            >
-                                <SelectTrigger className="w-full sm:w-56">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        {t("adminPages.services.allCategories")}
-                                    </SelectItem>
-                                    {categories.map((category) => (
-                                        <SelectItem
-                                            key={category}
-                                            value={category}
-                                        >
-                                            {category}
+                        {services.length > 0 && (
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                <div className="relative w-full sm:w-64">
+                                    <HugeiconsIcon
+                                        icon={Search01Icon}
+                                        className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+                                    />
+                                    <Input
+                                        value={search}
+                                        onChange={(e) => {
+                                            setSearch(e.target.value);
+                                            setPage(1);
+                                        }}
+                                        placeholder={t(
+                                            "adminPages.services.searchPlaceholder",
+                                        )}
+                                        className="pl-9"
+                                    />
+                                </div>
+                                <Select
+                                    value={categoryFilter}
+                                    onValueChange={(value) => {
+                                        setCategoryFilter(value);
+                                        setPage(1);
+                                    }}
+                                >
+                                    <SelectTrigger className="w-full sm:w-56">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            {t(
+                                                "adminPages.services.allCategories",
+                                            )}
                                         </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                        {categories.map((category) => (
+                                            <SelectItem
+                                                key={category}
+                                                value={category}
+                                            >
+                                                {t(
+                                                    `adminPages.serviceCategories.${category}`,
+                                                    { defaultValue: category },
+                                                )}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         )}
                     </div>
                     <TabsContent value="list">
@@ -219,33 +278,58 @@ function AdminServicesPage() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>
+                                            <SortableHead
+                                                direction={getSortDirection(
+                                                    "title",
+                                                )}
+                                                onSort={() => toggle("title")}
+                                            >
                                                 {t("adminPages.common.name")}
-                                            </TableHead>
-                                            <TableHead>
+                                            </SortableHead>
+                                            <SortableHead
+                                                direction={getSortDirection(
+                                                    "category",
+                                                )}
+                                                onSort={() =>
+                                                    toggle("category")
+                                                }
+                                            >
                                                 {t(
                                                     "adminPages.services.category",
                                                 )}
-                                            </TableHead>
-                                            <TableHead>
+                                            </SortableHead>
+                                            <SortableHead
+                                                direction={getSortDirection(
+                                                    "neighborhood",
+                                                )}
+                                                onSort={() =>
+                                                    toggle("neighborhood")
+                                                }
+                                            >
                                                 {t(
                                                     "incidents.fields.neighborhood",
                                                 )}
-                                            </TableHead>
+                                            </SortableHead>
                                             <TableHead className="text-right">
                                                 {t("adminPages.common.actions")}
                                             </TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {filteredServices.map((svc) => (
+                                        {pageRows.map((svc) => (
                                             <TableRow key={svc._id}>
                                                 <TableCell className="py-2 font-medium">
                                                     {svc.title}
                                                 </TableCell>
                                                 <TableCell className="py-2">
                                                     <Badge variant="secondary">
-                                                        {svc.category}
+                                                        {t(
+                                                            `adminPages.serviceCategories.${svc.category}`,
+                                                            {
+                                                                defaultValue:
+                                                                    svc.category,
+                                                            },
+                                                        )}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-muted-foreground py-2 text-sm">
@@ -342,6 +426,16 @@ function AdminServicesPage() {
                                     </TableBody>
                                 </Table>
                             </div>
+                            <DataPagination
+                                page={currentPage}
+                                pageCount={pageCount}
+                                onPageChange={setPage}
+                                previousLabel={t(
+                                    "adminPages.common.previousPage",
+                                )}
+                                nextLabel={t("adminPages.common.nextPage")}
+                                className="mt-4"
+                            />
                         </DataState>
                     </TabsContent>
                     <TabsContent value="map">
@@ -408,7 +502,12 @@ function ServicesMap({
                         popup={
                             <div className="space-y-1">
                                 <p className="font-medium">{s.title}</p>
-                                <p className="text-xs">{s.category}</p>
+                                <p className="text-xs">
+                                    {t(
+                                        `adminPages.serviceCategories.${s.category}`,
+                                        { defaultValue: s.category },
+                                    )}
+                                </p>
                             </div>
                         }
                     />
@@ -755,11 +854,10 @@ function ServiceDialog({
                                 !isDurationValid
                             }
                         >
-                            {isPending
-                                ? "…"
-                                : initial
-                                  ? t("common.save")
-                                  : t("adminPages.common.create")}
+                            {isPending ? <Spinner className="mr-2" /> : null}
+                            {initial
+                                ? t("common.save")
+                                : t("adminPages.common.create")}
                         </Button>
                     </div>
                 </form>

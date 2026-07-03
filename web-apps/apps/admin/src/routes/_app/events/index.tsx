@@ -1,8 +1,14 @@
 import { useState } from "react";
-import { Add01Icon, Calendar01Icon } from "@hugeicons/core-free-icons";
+import { useTranslation } from "react-i18next";
+import {
+    Add01Icon,
+    Calendar01Icon,
+    Delete01Icon,
+    Edit01Icon,
+    Search01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
 import {
     useCreateEvent,
     useDeleteEvent,
@@ -11,6 +17,17 @@ import {
 } from "@workspace/shared/lib/hooks/events.hooks";
 import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
 import type { Event, Neighborhood } from "@workspace/shared/lib/types";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@workspace/ui/components/alert-dialog";
 import { Button } from "@workspace/ui/components/button";
 import { DataState } from "@workspace/ui/components/data-state";
 import {
@@ -30,6 +47,7 @@ import {
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { PageHeader } from "@workspace/ui/components/page-header";
+import { DataPagination } from "@workspace/ui/components/pagination";
 import {
     Select,
     SelectContent,
@@ -38,6 +56,8 @@ import {
     SelectValue,
 } from "@workspace/ui/components/select";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { SortableHead } from "@workspace/ui/components/sortable-head";
+import { Spinner } from "@workspace/ui/components/spinner";
 import {
     Table,
     TableBody,
@@ -47,16 +67,21 @@ import {
     TableRow,
 } from "@workspace/ui/components/table";
 import { Textarea } from "@workspace/ui/components/textarea";
+import { useTableSort } from "@workspace/ui/hooks/use-table-sort";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/events/")({
     component: AdminEventsPage,
 });
 
+const PAGE_SIZE = 10;
+
 function AdminEventsPage() {
     const { t, i18n } = useTranslation();
     const [createOpen, setCreateOpen] = useState(false);
     const [editTarget, setEditTarget] = useState<Event | null>(null);
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
 
     const { data: eventsData, isLoading, isError, refetch } = useEvents(100);
     const { data: neighborhoodsData } = useNeighborhoods(100);
@@ -68,6 +93,26 @@ function AdminEventsPage() {
         neighborhoods.map((n) => [n._id, n.name]),
     );
 
+    const query = search.trim().toLowerCase();
+    const filteredEvents = events.filter(
+        (evt) => query.length === 0 || evt.title.toLowerCase().includes(query),
+    );
+
+    const { sorted, toggle, getSortDirection } = useTableSort(filteredEvents, {
+        initial: { key: "date", direction: "desc" },
+        accessors: {
+            date: (evt) => new Date(evt.date),
+            neighborhood: (evt) => nbhMap[evt.neighborhoodId] ?? "",
+        },
+    });
+
+    const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+    const currentPage = Math.min(page, pageCount);
+    const pageRows = sorted.slice(
+        (currentPage - 1) * PAGE_SIZE,
+        currentPage * PAGE_SIZE,
+    );
+
     function handleDelete(id: string) {
         deleteEvent.mutate(id, {
             onSuccess: () => toast.success(t("adminPages.events.deleted")),
@@ -75,9 +120,14 @@ function AdminEventsPage() {
         });
     }
 
+    function handleSort(key: string) {
+        toggle(key);
+        setPage(1);
+    }
+
     return (
         <div className="p-6">
-            <div className="mx-auto max-w-6xl space-y-6">
+            <div className="space-y-6">
                 <PageHeader
                     title={t("adminPages.events.title")}
                     description={t("adminPages.events.description")}
@@ -89,10 +139,26 @@ function AdminEventsPage() {
                     }
                 />
 
+                <div className="relative">
+                    <HugeiconsIcon
+                        icon={Search01Icon}
+                        className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+                    />
+                    <Input
+                        value={search}
+                        onChange={(e) => {
+                            setSearch(e.target.value);
+                            setPage(1);
+                        }}
+                        placeholder={t("adminPages.events.searchPlaceholder")}
+                        className="pl-9"
+                    />
+                </div>
+
                 <DataState
                     loading={isLoading}
                     error={isError ? true : undefined}
-                    isEmpty={events.length === 0}
+                    isEmpty={sorted.length === 0}
                     onRetry={() => void refetch()}
                     errorTitle={t("adminPages.events.loadError")}
                     skeleton={
@@ -127,81 +193,163 @@ function AdminEventsPage() {
                         </Empty>
                     }
                 >
-                    <div className="bg-card rounded-lg border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>
-                                        {t("adminPages.events.titleColumn")}
-                                    </TableHead>
-                                    <TableHead>
-                                        {t("adminPages.events.dateColumn")}
-                                    </TableHead>
-                                    <TableHead>
-                                        {t("adminPages.events.placeColumn")}
-                                    </TableHead>
-                                    <TableHead>
-                                        {t("incidents.fields.neighborhood")}
-                                    </TableHead>
-                                    <TableHead className="text-right">
-                                        {t("adminPages.common.actions")}
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {events.map((evt) => (
-                                    <TableRow key={evt._id}>
-                                        <TableCell className="font-medium">
-                                            {evt.title}
-                                        </TableCell>
-                                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap tabular-nums">
-                                            {new Date(
-                                                evt.date,
-                                            ).toLocaleDateString(i18n.language, {
-                                                day: "numeric",
-                                                month: "short",
-                                                year: "numeric",
-                                            })}
-                                        </TableCell>
-                                        <TableCell className="text-muted-foreground text-sm">
-                                            {evt.address || "—"}
-                                        </TableCell>
-                                        <TableCell className="text-muted-foreground text-sm">
-                                            {nbhMap[evt.neighborhoodId] ?? "—"}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="h-8 text-xs"
-                                                    onClick={() =>
-                                                        setEditTarget(evt)
-                                                    }
-                                                >
-                                                    {t("adminPages.common.edit")}
-                                                </Button>
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    className="h-8 text-xs"
-                                                    disabled={
-                                                        deleteEvent.isPending
-                                                    }
-                                                    onClick={() =>
-                                                        handleDelete(evt._id)
-                                                    }
-                                                >
-                                                    {deleteEvent.isPending
-                                                        ? "…"
-                                                        : t("common.delete")}
-                                                </Button>
-                                            </div>
-                                        </TableCell>
+                    <div className="space-y-4">
+                        <div className="bg-card rounded-lg border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <SortableHead
+                                            direction={getSortDirection(
+                                                "title",
+                                            )}
+                                            onSort={() => handleSort("title")}
+                                        >
+                                            {t("adminPages.events.titleColumn")}
+                                        </SortableHead>
+                                        <SortableHead
+                                            direction={getSortDirection("date")}
+                                            onSort={() => handleSort("date")}
+                                        >
+                                            {t("adminPages.events.dateColumn")}
+                                        </SortableHead>
+                                        <SortableHead
+                                            direction={getSortDirection(
+                                                "address",
+                                            )}
+                                            onSort={() => handleSort("address")}
+                                        >
+                                            {t("adminPages.events.placeColumn")}
+                                        </SortableHead>
+                                        <SortableHead
+                                            direction={getSortDirection(
+                                                "neighborhood",
+                                            )}
+                                            onSort={() =>
+                                                handleSort("neighborhood")
+                                            }
+                                        >
+                                            {t("incidents.fields.neighborhood")}
+                                        </SortableHead>
+                                        <TableHead className="text-right">
+                                            {t("adminPages.common.actions")}
+                                        </TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {pageRows.map((evt) => (
+                                        <TableRow key={evt._id}>
+                                            <TableCell className="py-2 font-medium">
+                                                {evt.title}
+                                            </TableCell>
+                                            <TableCell className="text-muted-foreground py-2 text-sm whitespace-nowrap tabular-nums">
+                                                {new Date(
+                                                    evt.date,
+                                                ).toLocaleDateString(
+                                                    i18n.language,
+                                                    {
+                                                        day: "numeric",
+                                                        month: "short",
+                                                        year: "numeric",
+                                                    },
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-muted-foreground py-2 text-sm">
+                                                {evt.address || "—"}
+                                            </TableCell>
+                                            <TableCell className="text-muted-foreground py-2 text-sm">
+                                                {nbhMap[evt.neighborhoodId] ??
+                                                    "—"}
+                                            </TableCell>
+                                            <TableCell className="py-2 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="h-8 text-xs"
+                                                        onClick={() =>
+                                                            setEditTarget(evt)
+                                                        }
+                                                    >
+                                                        <HugeiconsIcon
+                                                            icon={Edit01Icon}
+                                                        />
+                                                        {t(
+                                                            "adminPages.common.edit",
+                                                        )}
+                                                    </Button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger
+                                                            asChild
+                                                        >
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="text-destructive hover:text-destructive h-8 text-xs"
+                                                                disabled={
+                                                                    deleteEvent.isPending
+                                                                }
+                                                            >
+                                                                <HugeiconsIcon
+                                                                    icon={
+                                                                        Delete01Icon
+                                                                    }
+                                                                />
+                                                                {t(
+                                                                    "common.delete",
+                                                                )}
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>
+                                                                    {t(
+                                                                        "adminPages.events.deleteConfirmTitle",
+                                                                    )}
+                                                                </AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    {t(
+                                                                        "adminPages.events.deleteConfirmDescription",
+                                                                        {
+                                                                            title: evt.title,
+                                                                        },
+                                                                    )}
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>
+                                                                    {t(
+                                                                        "common.cancel",
+                                                                    )}
+                                                                </AlertDialogCancel>
+                                                                <AlertDialogAction
+                                                                    variant="destructive"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            evt._id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    {t(
+                                                                        "common.delete",
+                                                                    )}
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                        <DataPagination
+                            page={currentPage}
+                            pageCount={pageCount}
+                            onPageChange={setPage}
+                            previousLabel={t("adminPages.common.previousPage")}
+                            nextLabel={t("adminPages.common.nextPage")}
+                        />
                     </div>
                 </DataState>
 
@@ -243,8 +391,13 @@ function EventDialog({
     onSuccess: () => void;
 }) {
     const { t } = useTranslation();
-    const toLocalDatetime = (iso?: string) =>
-        iso ? new Date(iso).toISOString().slice(0, 16) : "";
+    const toLocalDatetime = (iso?: string) => {
+        if (!iso) return "";
+        const d = new Date(iso);
+        return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+            .toISOString()
+            .slice(0, 16);
+    };
 
     const [title, setTitle] = useState(initial?.title ?? "");
     const [date, setDate] = useState(toLocalDatetime(initial?.date));
@@ -264,7 +417,7 @@ function EventDialog({
         if (!title.trim() || !date || !category) return;
         const payload = {
             title: title.trim(),
-            date,
+            date: new Date(date).toISOString(),
             category,
             address: address.trim() || undefined,
             description: description.trim() || undefined,
@@ -366,10 +519,14 @@ function EventDialog({
                                     {t("adminPages.events.categories.sport")}
                                 </SelectItem>
                                 <SelectItem value="community">
-                                    {t("adminPages.events.categories.community")}
+                                    {t(
+                                        "adminPages.events.categories.community",
+                                    )}
                                 </SelectItem>
                                 <SelectItem value="education">
-                                    {t("adminPages.events.categories.education")}
+                                    {t(
+                                        "adminPages.events.categories.education",
+                                    )}
                                 </SelectItem>
                                 <SelectItem value="other">
                                     {t("adminPages.events.categories.other")}
@@ -426,11 +583,10 @@ function EventDialog({
                                 isPending || !title.trim() || !date || !category
                             }
                         >
-                            {isPending
-                                ? "…"
-                                : initial
-                                  ? t("common.save")
-                                  : t("adminPages.common.create")}
+                            {isPending && <Spinner className="mr-2" />}
+                            {initial
+                                ? t("common.save")
+                                : t("adminPages.common.create")}
                         </Button>
                     </div>
                 </form>

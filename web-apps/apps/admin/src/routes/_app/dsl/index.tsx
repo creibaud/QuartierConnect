@@ -141,16 +141,17 @@ function DslPage() {
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {EXAMPLES.map((ex) => (
-                                    <button
+                                    <Button
                                         key={ex}
-                                        type="button"
+                                        variant="outline"
+                                        size="sm"
                                         onClick={() => setQuery(ex)}
-                                        className="border-muted-foreground/40 hover:border-muted-foreground text-muted-foreground hover:text-foreground rounded border border-dashed px-2 py-1 font-mono text-xs transition-colors"
+                                        className="font-mono text-xs"
                                     >
                                         {ex.length > 40
                                             ? `${ex.slice(0, 40)}…`
                                             : ex}
-                                    </button>
+                                    </Button>
                                 ))}
                             </div>
                         </CardContent>

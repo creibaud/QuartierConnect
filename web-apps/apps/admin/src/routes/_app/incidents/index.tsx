@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
     Alert01Icon,
+    ArrowRight01Icon,
     Delete01Icon,
     ListViewIcon,
     MapsLocation01Icon,
@@ -46,10 +47,9 @@ import {
     SelectValue,
 } from "@workspace/ui/components/select";
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import {
-    StatusBadge,
-    statusTone,
-} from "@workspace/ui/components/status-badge";
+import { SortableHead } from "@workspace/ui/components/sortable-head";
+import { Spinner } from "@workspace/ui/components/spinner";
+import { StatusBadge, statusTone } from "@workspace/ui/components/status-badge";
 import {
     Table,
     TableBody,
@@ -64,6 +64,7 @@ import {
     TabsList,
     TabsTrigger,
 } from "@workspace/ui/components/tabs";
+import { useTableSort } from "@workspace/ui/hooks/use-table-sort";
 import { toast } from "sonner";
 
 type TranslateFn = ReturnType<typeof useTranslation>["t"];
@@ -99,6 +100,12 @@ function AdminIncidentsPage() {
     const deleteIncident = useDeleteIncident();
     const incidents = data?.pages.flat() ?? [];
     const { data: neighborhoods } = useNeighborhoods();
+    const { sorted, toggle, getSortDirection } = useTableSort(incidents, {
+        accessors: {
+            status: (incident) => statusLabel(t, incident.status),
+            reportedAt: (incident) => new Date(incident.createdAt),
+        },
+    });
 
     function handleDelete(incident: Incident) {
         deleteIncident.mutate(incident.id, {
@@ -109,7 +116,7 @@ function AdminIncidentsPage() {
 
     return (
         <div className="p-6">
-            <div className="mx-auto flex max-w-6xl flex-col gap-6">
+            <div className="space-y-6">
                 <PageHeader
                     title={t("incidents.title")}
                     description={t("adminPages.incidents.description")}
@@ -196,31 +203,48 @@ function AdminIncidentsPage() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>
+                                            <SortableHead
+                                                direction={getSortDirection(
+                                                    "title",
+                                                )}
+                                                onSort={() => toggle("title")}
+                                            >
                                                 {t("incidents.fields.title")}
-                                            </TableHead>
-                                            <TableHead>
+                                            </SortableHead>
+                                            <SortableHead
+                                                direction={getSortDirection(
+                                                    "status",
+                                                )}
+                                                onSort={() => toggle("status")}
+                                            >
                                                 {t(
                                                     "adminPages.incidents.statusColumn",
                                                 )}
-                                            </TableHead>
-                                            <TableHead>
+                                            </SortableHead>
+                                            <SortableHead
+                                                direction={getSortDirection(
+                                                    "reportedAt",
+                                                )}
+                                                onSort={() =>
+                                                    toggle("reportedAt")
+                                                }
+                                            >
                                                 {t(
                                                     "adminPages.incidents.reportedAt",
                                                 )}
-                                            </TableHead>
+                                            </SortableHead>
                                             <TableHead className="text-right">
                                                 {t("adminPages.common.action")}
                                             </TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {incidents.map((incident: Incident) => (
+                                        {sorted.map((incident) => (
                                             <TableRow key={incident.id}>
-                                                <TableCell className="max-w-xs truncate font-medium">
+                                                <TableCell className="max-w-xs truncate py-2 font-medium">
                                                     {incident.title}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="py-2">
                                                     <StatusBadge
                                                         tone={statusTone(
                                                             incident.status,
@@ -232,14 +256,14 @@ function AdminIncidentsPage() {
                                                         )}
                                                     </StatusBadge>
                                                 </TableCell>
-                                                <TableCell className="text-muted-foreground text-sm tabular-nums">
+                                                <TableCell className="text-muted-foreground py-2 text-sm tabular-nums">
                                                     {new Date(
                                                         incident.createdAt,
                                                     ).toLocaleDateString(
                                                         i18n.language,
                                                     )}
                                                 </TableCell>
-                                                <TableCell className="text-right">
+                                                <TableCell className="py-2 text-right">
                                                     <div className="flex items-center justify-end gap-2">
                                                         {NEXT_STATUSES[
                                                             incident.status
@@ -278,9 +302,23 @@ function AdminIncidentsPage() {
                                                                     )
                                                                 }
                                                             >
-                                                                {updateStatus.isPending
-                                                                    ? "…"
-                                                                    : `→ ${statusLabel(t, NEXT_STATUSES[incident.status][0])}`}
+                                                                {updateStatus.isPending ? (
+                                                                    <Spinner className="mr-2" />
+                                                                ) : (
+                                                                    <HugeiconsIcon
+                                                                        icon={
+                                                                            ArrowRight01Icon
+                                                                        }
+                                                                        className="mr-1.5 size-3.5"
+                                                                    />
+                                                                )}
+                                                                {statusLabel(
+                                                                    t,
+                                                                    NEXT_STATUSES[
+                                                                        incident
+                                                                            .status
+                                                                    ][0],
+                                                                )}
                                                             </Button>
                                                         ) : (
                                                             <span className="text-muted-foreground text-xs">

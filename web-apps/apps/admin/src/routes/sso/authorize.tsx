@@ -6,16 +6,10 @@ import {
     setTokens,
     type LoginResponse,
 } from "@workspace/shared/lib/auth";
-import { i18n } from "@workspace/shared/lib/i18n/index";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
+import { AuthLayout } from "@workspace/ui/components/auth-layout";
 import { Button } from "@workspace/ui/components/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent } from "@workspace/ui/components/card";
 import { Spinner } from "@workspace/ui/components/spinner";
 import { useAppForm } from "@workspace/ui/lib/form";
 import { useTranslation } from "react-i18next";
@@ -27,15 +21,6 @@ interface SsoTokenResponse {
     expiresAt: string;
     expiresIn: number;
 }
-
-const credentialsSchema = z.object({
-    email: z.string().email(i18n.t("adminPages.auth.invalidEmail")),
-    password: z.string().min(1, i18n.t("adminPages.auth.passwordRequired")),
-});
-
-const totpSchema = z.object({
-    totpCode: z.string().length(6, i18n.t("adminPages.auth.totpLength")),
-});
 
 function isValidRedirect(url: string): boolean {
     try {
@@ -74,6 +59,15 @@ function SsoAuthorizePage() {
     const [serverError, setServerError] = useState<string | null>(null);
     const [approving, setApproving] = useState(false);
     const approveCalledRef = useRef(false);
+
+    const credentialsSchema = z.object({
+        email: z.string().email(t("adminPages.auth.invalidEmail")),
+        password: z.string().min(1, t("adminPages.auth.passwordRequired")),
+    });
+
+    const totpSchema = z.object({
+        totpCode: z.string().length(6, t("adminPages.auth.totpLength")),
+    });
 
     const handleApprove = useCallback(async () => {
         if (approveCalledRef.current) return;
@@ -143,13 +137,8 @@ function SsoAuthorizePage() {
 
     if (!isValidRedirect(redirect) || !ssoState) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 dark:bg-zinc-950">
-                <Card className="w-full max-w-sm">
-                    <CardHeader className="text-center">
-                        <CardTitle className="text-2xl">
-                            {t("adminPages.sso.errorTitle")}
-                        </CardTitle>
-                    </CardHeader>
+            <AuthLayout subtitle={t("adminPages.sso.errorTitle")}>
+                <Card className="border-border/60 shadow-foreground/5 shadow-lg">
                     <CardContent>
                         <Alert variant="destructive">
                             <AlertDescription>
@@ -158,27 +147,25 @@ function SsoAuthorizePage() {
                         </Alert>
                     </CardContent>
                 </Card>
-            </div>
+            </AuthLayout>
         );
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 dark:bg-zinc-950">
-            <Card className="w-full max-w-sm">
-                <CardHeader className="text-center">
-                    <CardTitle className="text-2xl">QuartierConnect</CardTitle>
-                    <CardDescription>
-                        {isAuthenticated && !isAdminUser
-                            ? t("adminPages.sso.accessDenied")
-                            : isAuthenticated && approving
-                              ? t("adminPages.sso.redirecting")
-                              : isAuthenticated
-                                ? t("adminPages.sso.authorizeDesktop")
-                                : loginStep === "credentials"
-                                  ? t("adminPages.sso.loginRequired")
-                                  : t("adminPages.auth.twoStepVerification")}
-                    </CardDescription>
-                </CardHeader>
+        <AuthLayout
+            subtitle={
+                isAuthenticated && !isAdminUser
+                    ? t("adminPages.sso.accessDenied")
+                    : isAuthenticated && approving
+                      ? t("adminPages.sso.redirecting")
+                      : isAuthenticated
+                        ? t("adminPages.sso.authorizeDesktop")
+                        : loginStep === "credentials"
+                          ? t("adminPages.sso.loginRequired")
+                          : t("adminPages.auth.twoStepVerification")
+            }
+        >
+            <Card className="border-border/60 shadow-foreground/5 shadow-lg">
                 <CardContent className="space-y-4">
                     {serverError && (
                         <Alert variant="destructive">
@@ -257,20 +244,29 @@ function SsoAuthorizePage() {
                                 e.preventDefault();
                                 totpForm.handleSubmit();
                             }}
-                            className="space-y-4"
+                            className="space-y-6"
                         >
-                            <p className="text-muted-foreground text-sm">
-                                {t("adminPages.auth.totpForLabel")}{" "}
-                                <span className="text-foreground font-medium">
+                            <div className="space-y-1 text-center">
+                                <p className="text-muted-foreground text-sm">
+                                    {t("adminPages.auth.totpForLabel")}
+                                </p>
+                                <p className="text-foreground text-sm font-medium">
                                     {credentials.email}
-                                </span>
-                                .
-                            </p>
-                            <totpForm.AppField name="totpCode">
-                                {(field) => (
-                                    <field.OtpField label={t("auth.totpCode")} />
-                                )}
-                            </totpForm.AppField>
+                                </p>
+                            </div>
+                            <div className="flex flex-col items-center gap-2">
+                                <totpForm.AppField name="totpCode">
+                                    {(field) => (
+                                        <field.OtpField
+                                            label={t("auth.totpCode")}
+                                            autoFocus
+                                            onComplete={() =>
+                                                totpForm.handleSubmit()
+                                            }
+                                        />
+                                    )}
+                                </totpForm.AppField>
+                            </div>
                             <totpForm.Subscribe
                                 selector={(s) => s.isSubmitting}
                             >
@@ -302,6 +298,6 @@ function SsoAuthorizePage() {
                     )}
                 </CardContent>
             </Card>
-        </div>
+        </AuthLayout>
     );
 }
