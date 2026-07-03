@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "previous_role" varchar(50);

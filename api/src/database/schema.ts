@@ -26,6 +26,7 @@ export const users = pgTable("users", {
     passwordHash: varchar("password_hash", { length: 255 }).notNull(),
     totpSecret: varchar("totp_secret", { length: 255 }).notNull(),
     role: varchar("role", { length: 50 }).notNull().default("resident"),
+    previousRole: varchar("previous_role", { length: 50 }),
     firstName: varchar("first_name", { length: 100 }),
     lastName: varchar("last_name", { length: 100 }),
     avatarUrl: text("avatar_url"),

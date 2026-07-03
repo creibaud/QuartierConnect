@@ -198,9 +198,30 @@ export class UsersController {
     })
     @ApiResponse({ status: 404, description: "User not found" })
     async updateRole(@Param("id") id: string, @Body() dto: UpdateRoleDto) {
+        const [current] = await this.db
+            .select({
+                role: schema.users.role,
+                previousRole: schema.users.previousRole,
+            })
+            .from(schema.users)
+            .where(eq(schema.users.id, id));
+
+        if (!current) throw new NotFoundException("User not found");
+
+        let role = dto.role;
+        let previousRole = current.previousRole;
+        if (dto.role === "banned" && current.role !== "banned") {
+            // Bannissement : mémoriser le rôle courant pour le restaurer plus tard
+            previousRole = current.role;
+        } else if (current.role === "banned" && dto.role !== "banned") {
+            // Réactivation : restaurer le rôle d'origine, pas le rôle par défaut demandé
+            role = current.previousRole ?? dto.role;
+            previousRole = null;
+        }
+
         const [updated] = await this.db
             .update(schema.users)
-            .set({ role: dto.role, updatedAt: new Date() })
+            .set({ role, previousRole, updatedAt: new Date() })
             .where(eq(schema.users.id, id))
             .returning({
                 id: schema.users.id,
@@ -208,7 +229,6 @@ export class UsersController {
                 role: schema.users.role,
             });
 
-        if (!updated) throw new NotFoundException("User not found");
         return updated;
     }
 }

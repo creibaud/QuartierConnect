@@ -16,14 +16,14 @@ export class CreateEventDto {
     @IsNotEmpty()
     title: string;
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         description: "Description of the event",
         example:
             "Large annual garage sale, from 9am to 6pm, at the market square.",
     })
     @IsString()
-    @IsNotEmpty()
-    description: string;
+    @IsOptional()
+    description?: string;
 
     @ApiProperty({
         description: "Category of the event",
