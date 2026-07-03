@@ -17,3 +17,5 @@ dsl/parser.out
 # IDE / build artifacts
 desktop-app/.idea/
 desktop-app/dependency-reduced-pom.xml
+# Archive de rendu (make dist)
+/dist/

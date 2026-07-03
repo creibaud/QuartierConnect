@@ -1,4 +1,5 @@
 .PHONY: help \
+        setup dist \
         dev dev-api dev-client dev-admin dev-desktop \
         build build-api build-web build-desktop build-dsl package-desktop \
         test test-api test-web test-desktop test-dsl \
@@ -32,6 +33,10 @@ RUN  := $(CYAN)▶$(RESET)
 help: ## Afficher cette aide
 	@echo ""
 	@echo "$(BOLD)  QuartierConnect — Commandes disponibles$(RESET)"
+	@echo ""
+	@echo "  $(BOLD)INSTALLATION / RENDU$(RESET)"
+	@grep -E '^(setup|dist):.*?## .*$$' $(MAKEFILE_LIST) \
+		| awk 'BEGIN {FS = ":.*?## "}; {printf "    $(BOLD)%-24s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "  $(BOLD)$(CYAN)DÉVELOPPEMENT$(RESET)"
 	@grep -E '^dev[a-zA-Z_-]*:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -86,6 +91,34 @@ status: ## Vérifier l'état des services Docker
 		&& echo "  $(OK) API : tous les tests passent" \
 		|| echo "  $(FAIL) API : des tests échouent"
 	@echo ""
+
+# ─── Installation automatique & rendu ──────────────────────────────────────────
+setup: ## Installation complète en une commande (prérequis + .env + Docker + démo)
+	@SETUP_FORCE="$(SETUP_FORCE)" ./scripts/setup.sh
+
+dist: ## Archive de rendu dans dist/ (sources zip + JAR desktop + jeux d'essai)
+	@echo "$(RUN) $(BOLD)Construction de l'archive de rendu...$(RESET)"
+	@mkdir -p dist
+	@VERSION=$$(git describe --always | tr '/' '-'); \
+	ZIP="dist/quartierconnect-sources-$$VERSION.zip"; \
+	git archive --format=zip --output "$$ZIP" HEAD; \
+	echo "$(OK) Sources : $$ZIP"; \
+	if [ -f desktop-app/target/quartierconnect-desktop.jar ]; then \
+		cp desktop-app/target/quartierconnect-desktop.jar dist/; \
+		echo "$(OK) Exécutable desktop : dist/quartierconnect-desktop.jar"; \
+	else \
+		echo "$(YELLOW)⚠  JAR desktop absent — lancer make build-desktop puis make dist pour l'inclure$(RESET)"; \
+	fi; \
+	if [ -d livrables/jeux-essais ]; then \
+		rm -rf dist/jeux-essais; \
+		cp -r livrables/jeux-essais dist/jeux-essais; \
+		echo "$(OK) Jeux d'essai : dist/jeux-essais/"; \
+	fi
+	@echo ""
+	@echo "$(BOLD)  Structure de dist/ :$(RESET)"
+	@echo "    quartierconnect-sources-<version>.zip   Intégralité des sources (git archive)"
+	@echo "    quartierconnect-desktop.jar             Client lourd exécutable (si buildé)"
+	@echo "    jeux-essais/                            Jeux de données à importer (si présents)"
 
 # ─── Développement ─────────────────────────────────────────────────────────────
 dev: ## Lancer bases Docker (mongo/postgres/neo4j) + API + client + admin (hot reload)

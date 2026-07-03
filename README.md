@@ -18,6 +18,44 @@ It ships four surfaces from one monorepo:
 
 ---
 
+## Installation en une commande
+
+Depuis un poste avec Docker, Docker Compose v2 et Git, tout s'installe et se
+lance automatiquement :
+
+```bash
+git clone <url-du-depot> QuartierConnect
+cd QuartierConnect
+make setup
+```
+
+`make setup` :
+
+1. vérifie les prérequis (Docker, démon actif, Docker Compose v2, Git) avec des
+   messages d'erreur explicites ;
+2. génère `.env` depuis `.env.example` avec des secrets aléatoires
+   (`openssl rand -hex 32`) — un `.env` existant est conservé
+   (`make setup SETUP_FORCE=1` pour le régénérer) ;
+3. construit et démarre les 7 services Docker (`docker compose up -d --build`) ;
+4. attend que les bases et l'API soient saines (healthchecks + `/health`,
+   5 minutes maximum) ;
+5. importe le jeu de démonstration (`livrables/jeux-essais/import-dataset.sh`
+   s'il est présent, sinon `make seed`).
+
+À la fin, un récapitulatif affiche les URLs (client http://localhost, admin
+http://localhost/admin, docs API http://localhost/api/docs), les comptes démo
+(mot de passe `Demo1234!`, code TOTP via `make totp`) et la commande du client
+lourd :
+
+```bash
+java -jar desktop-app/target/quartierconnect-desktop.jar
+```
+
+Pour produire l'archive de rendu (sources complètes + exécutable desktop +
+jeux d'essai) : `make dist` → tout est déposé dans `dist/`.
+
+---
+
 ## Prerequisites
 
 Install these once. The Docker quick start needs the first four; the rest are for
