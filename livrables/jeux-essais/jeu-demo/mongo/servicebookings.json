@@ -1,0 +1,96 @@
+[{
+	"_id": {
+		"$oid": "6a459509586efbb7cf0889fa"
+	},
+	"serviceId": "6a44346ed6ad48111c1abcad",
+	"initiatorId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
+	"payerId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
+	"payeeId": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+	"pointsAmount": 1,
+	"status": "completed",
+	"contractId": "6a459509586efbb7cf0889fb",
+	"createdAt": {
+		"$date": "2026-07-01T22:30:33.83Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-01T22:30:34.196Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a464eb2b9f349091fda07da"
+	},
+	"serviceId": "6a44346ed6ad48111c1abcad",
+	"initiatorId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
+	"payerId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
+	"payeeId": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+	"pointsAmount": 1,
+	"status": "pending",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-02T11:42:42.116Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-02T11:42:42.116Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a46cc2831b9e8b1eac99712"
+	},
+	"serviceId": "6a46c6c0f0d7122d4dc9c973",
+	"initiatorId": "ea7894ed-97f8-45ef-b955-35cd773830e5",
+	"payerId": "ea7894ed-97f8-45ef-b955-35cd773830e5",
+	"payeeId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
+	"pointsAmount": 2,
+	"status": "cancelled",
+	"contractId": "6a46cc2831b9e8b1eac99713",
+	"createdAt": {
+		"$date": "2026-07-02T20:38:00.031Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-02T23:33:53.615Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a46f561cc59f9b84636dfaf"
+	},
+	"serviceId": "6a46c6c0f0d7122d4dc9c973",
+	"initiatorId": "ea7894ed-97f8-45ef-b955-35cd773830e5",
+	"payerId": "ea7894ed-97f8-45ef-b955-35cd773830e5",
+	"payeeId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
+	"pointsAmount": 2,
+	"status": "completed",
+	"contractId": "6a46f561cc59f9b84636dfb0",
+	"createdAt": {
+		"$date": "2026-07-02T23:33:53.658Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-02T23:33:53.871Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a46f580cc59f9b84636dfb8"
+	},
+	"serviceId": "6a46f580cc59f9b84636dfb7",
+	"initiatorId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
+	"payerId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
+	"payeeId": "ea7894ed-97f8-45ef-b955-35cd773830e5",
+	"pointsAmount": 2,
+	"status": "completed",
+	"contractId": "6a46f580cc59f9b84636dfb9",
+	"createdAt": {
+		"$date": "2026-07-02T23:34:24.363Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-02T23:35:30.252Z"
+	},
+	"__v": 0
+}]
+

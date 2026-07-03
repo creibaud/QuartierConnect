@@ -1,0 +1,108 @@
+[{
+	"_id": {
+		"$oid": "6a44346ed6ad48111c1abca9"
+	},
+	"title": "Vide-grenier du quartier",
+	"description": "Grand vide-grenier annuel, de 9h à 18h sur la place du marché.",
+	"category": "community",
+	"date": {
+		"$date": "2026-07-06T21:26:06.219Z"
+	},
+	"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+	"neighborhoodId": "6a42833f5980b9e26ff1a71c",
+	"interestedUserIds": [],
+	"location": {
+		"type": "Point",
+		"coordinates": [
+			2.3682312208095015,
+			48.88176468194858
+		]
+	},
+	"createdAt": {
+		"$date": "2026-06-30T21:26:06.242Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-02T23:38:37.506Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a44346ed6ad48111c1abcaa"
+	},
+	"title": "Concert en plein air",
+	"description": "Soirée musicale avec les artistes du quartier.",
+	"category": "culture",
+	"date": {
+		"$date": "2026-07-12T21:26:06.22Z"
+	},
+	"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+	"neighborhoodId": "6a42833f5980b9e26ff1a71c",
+	"interestedUserIds": [],
+	"location": {
+		"type": "Point",
+		"coordinates": [
+			2.3612312208095014,
+			48.88076468194858
+		]
+	},
+	"createdAt": {
+		"$date": "2026-06-30T21:26:06.268Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-02T23:38:37.526Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a44346ed6ad48111c1abcab"
+	},
+	"title": "Tournoi de pétanque",
+	"description": "Inscriptions sur place, ouvert à tous les habitants.",
+	"category": "sport",
+	"date": {
+		"$date": "2026-07-20T21:26:06.22Z"
+	},
+	"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+	"neighborhoodId": "6a42833f5980b9e26ff1a71c",
+	"interestedUserIds": [],
+	"location": {
+		"type": "Point",
+		"coordinates": [
+			2.367231220809501,
+			48.87676468194858
+		]
+	},
+	"createdAt": {
+		"$date": "2026-06-30T21:26:06.279Z"
+	},
+	"updatedAt": {
+		"$date": "2026-06-30T21:26:06.279Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a46f5c2cc59f9b84636dfc0"
+	},
+	"title": "Atelier réparation vélo",
+	"description": "Apprenez à entretenir votre vélo avec vos voisins.",
+	"category": "workshop",
+	"date": {
+		"$date": "2026-07-07T23:35:30.27Z"
+	},
+	"createdBy": "ea7894ed-97f8-45ef-b955-35cd773830e5",
+	"neighborhoodId": "6a42833f5980b9e26ff1a71c",
+	"interestedUserIds": [
+		"ea7894ed-97f8-45ef-b955-35cd773830e5"
+	],
+	"createdAt": {
+		"$date": "2026-07-02T23:35:30.277Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-02T23:35:30.289Z"
+	},
+	"__v": 0
+}]
+

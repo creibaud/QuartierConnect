@@ -1,0 +1,45 @@
+[{
+	"_id": {
+		"$oid": "6a43d564e4b13110b26ecb94"
+	},
+	"participants": [
+		"f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
+		"40170148-cd96-4279-b62a-03d63dfb9d2a"
+	],
+	"neighborhoodId": null,
+	"isGroup": false,
+	"groupName": null,
+	"lastMessageAt": {
+		"$date": "2026-07-01T12:19:08.747Z"
+	},
+	"createdAt": {
+		"$date": "2026-06-30T14:40:36.318Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-01T12:19:08.749Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a4629251e5092ea4fbe57ce"
+	},
+	"participants": [
+		"f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
+		"ea7894ed-97f8-45ef-b955-35cd773830e5"
+	],
+	"neighborhoodId": null,
+	"isGroup": false,
+	"groupName": null,
+	"lastMessageAt": {
+		"$date": "2026-07-02T21:06:59.214Z"
+	},
+	"createdAt": {
+		"$date": "2026-07-02T09:02:29.919Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-02T21:06:59.214Z"
+	},
+	"__v": 0
+}]
+
