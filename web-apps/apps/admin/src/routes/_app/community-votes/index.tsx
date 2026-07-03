@@ -105,8 +105,8 @@ function CommunityVotesPage() {
     const votes = data ?? [];
 
     return (
-        <div className="p-6">
-            <div className="space-y-6">
+        <div className="p-6 md:p-8">
+            <div className="mx-auto flex max-w-7xl flex-col gap-6">
                 <PageHeader
                     title={t("adminPages.communityVotes.title")}
                     description={t("adminPages.communityVotes.description")}
@@ -595,7 +595,12 @@ function CreateVoteDialog({
                         >
                             {t("common.cancel")}
                         </Button>
-                        <Button type="submit" disabled={create.isPending}>
+                        <Button
+                            type="submit"
+                            disabled={
+                                create.isPending || !title.trim() || !endsAt
+                            }
+                        >
                             {create.isPending ? (
                                 <Spinner className="mr-2" />
                             ) : null}

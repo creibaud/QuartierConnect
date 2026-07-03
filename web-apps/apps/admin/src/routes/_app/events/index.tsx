@@ -126,8 +126,8 @@ function AdminEventsPage() {
     }
 
     return (
-        <div className="p-6">
-            <div className="space-y-6">
+        <div className="p-6 md:p-8">
+            <div className="mx-auto flex max-w-7xl flex-col gap-6">
                 <PageHeader
                     title={t("adminPages.events.title")}
                     description={t("adminPages.events.description")}

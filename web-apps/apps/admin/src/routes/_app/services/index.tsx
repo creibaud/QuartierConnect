@@ -95,6 +95,16 @@ export const Route = createFileRoute("/_app/services/")({
 
 const PAGE_SIZE = 10;
 
+const SERVICE_CATEGORIES = [
+    "gardening",
+    "handyman",
+    "transport",
+    "shopping",
+    "childcare",
+    "it-support",
+    "other",
+];
+
 function AdminServicesPage() {
     const { t } = useTranslation();
     const [createOpen, setCreateOpen] = useState(false);
@@ -155,8 +165,8 @@ function AdminServicesPage() {
     }
 
     return (
-        <div className="p-6">
-            <div className="space-y-6">
+        <div className="p-6 md:p-8">
+            <div className="mx-auto flex max-w-7xl flex-col gap-6">
                 <PageHeader
                     title={t("adminPages.services.title")}
                     description={t("adminPages.services.description")}
@@ -645,16 +655,28 @@ function ServiceDialog({
                             <Label htmlFor="svc-category">
                                 {t("adminPages.services.categoryLabel")}
                             </Label>
-                            <Input
-                                id="svc-category"
+                            <Select
                                 value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                                placeholder={t(
-                                    "adminPages.services.categoryPlaceholder",
-                                )}
-                                maxLength={100}
-                                required
-                            />
+                                onValueChange={setCategory}
+                            >
+                                <SelectTrigger id="svc-category">
+                                    <SelectValue
+                                        placeholder={t(
+                                            "adminPages.services.categoryPlaceholder",
+                                        )}
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {SERVICE_CATEGORIES.map((c) => (
+                                        <SelectItem key={c} value={c}>
+                                            {t(
+                                                `adminPages.serviceCategories.${c}`,
+                                                { defaultValue: c },
+                                            )}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
                             <Label>{t("adminPages.services.typeLabel")}</Label>

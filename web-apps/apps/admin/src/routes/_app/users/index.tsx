@@ -101,8 +101,20 @@ function UsersPage() {
     }
 
     function handleBanToggle(user: User) {
-        const newRole = user.role === "banned" ? "resident" : "banned";
-        handleRoleChange(user.id, newRole);
+        const isBanning = user.role !== "banned";
+        updateRole.mutate(
+            { id: user.id, role: isBanning ? "banned" : "resident" },
+            {
+                onSuccess: () =>
+                    toast.success(
+                        isBanning
+                            ? t("adminPages.users.userBanned")
+                            : t("adminPages.users.userReactivated"),
+                    ),
+                onError: () =>
+                    toast.error(t("adminPages.users.roleUpdateError")),
+            },
+        );
     }
 
     const query = search.trim().toLowerCase();
@@ -121,8 +133,8 @@ function UsersPage() {
     });
 
     return (
-        <div className="p-6">
-            <div className="space-y-6">
+        <div className="p-6 md:p-8">
+            <div className="mx-auto flex max-w-7xl flex-col gap-6">
                 <PageHeader
                     title={t("adminPages.users.title")}
                     description={t("adminPages.users.description")}

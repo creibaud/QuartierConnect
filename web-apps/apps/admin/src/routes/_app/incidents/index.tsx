@@ -115,8 +115,8 @@ function AdminIncidentsPage() {
     }
 
     return (
-        <div className="p-6">
-            <div className="space-y-6">
+        <div className="p-6 md:p-8">
+            <div className="mx-auto flex max-w-7xl flex-col gap-6">
                 <PageHeader
                     title={t("incidents.title")}
                     description={t("adminPages.incidents.description")}

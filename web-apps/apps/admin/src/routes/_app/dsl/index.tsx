@@ -29,7 +29,8 @@ import {
     EmptyTitle,
 } from "@workspace/ui/components/empty";
 import { PageHeader } from "@workspace/ui/components/page-header";
-import { Textarea } from "@workspace/ui/components/textarea";
+
+import { QueryEditor, ResultView } from "./dsl-view";
 
 export const Route = createFileRoute("/_app/dsl/")({
     component: DslPage,
@@ -84,8 +85,8 @@ function DslPage() {
     const resultCount = Array.isArray(result) ? result.length : null;
 
     return (
-        <div className="p-6">
-            <div className="space-y-6">
+        <div className="p-6 md:p-8">
+            <div className="mx-auto flex max-w-7xl flex-col gap-6">
                 <PageHeader
                     title={t("adminPages.dsl.title")}
                     description={t("adminPages.dsl.description")}
@@ -115,14 +116,11 @@ function DslPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="flex flex-1 flex-col gap-4">
-                            <Textarea
+                            <QueryEditor
                                 value={query}
-                                onChange={(e) => setQuery(e.target.value)}
+                                onChange={setQuery}
                                 onKeyDown={handleKeyDown}
                                 placeholder='FIND incidents WHERE status = "open" LIMIT 10'
-                                className="min-h-48 flex-1 resize-y font-mono text-sm"
-                                maxLength={500}
-                                spellCheck={false}
                             />
                             <div className="flex flex-wrap items-center gap-2">
                                 <Button
@@ -193,9 +191,7 @@ function DslPage() {
                                     </AlertDescription>
                                 </Alert>
                             ) : result !== null ? (
-                                <pre className="bg-muted max-h-[28rem] flex-1 overflow-auto rounded-lg p-4 font-mono text-xs break-all whitespace-pre-wrap">
-                                    {JSON.stringify(result, null, 2)}
-                                </pre>
+                                <ResultView result={result} />
                             ) : (
                                 <Empty className="flex-1 border">
                                     <EmptyHeader>
