@@ -5,11 +5,18 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import * as api from "../../api";
 import * as auth from "../../auth";
-import { useDeleteMyAccount, useMyDataExport } from "../useMe";
+import {
+    useChangeEmail,
+    useChangePassword,
+    useChangePhone,
+    useDeleteMyAccount,
+    useMyDataExport,
+} from "../useMe";
 
 vi.mock("../../api", () => ({
     apiGet: vi.fn(),
     apiDelete: vi.fn(),
+    apiPatch: vi.fn(),
 }));
 vi.mock("../../auth", () => ({
     clearTokens: vi.fn(),
@@ -87,5 +94,91 @@ describe("useDeleteMyAccount", () => {
             await result.current.mutateAsync("123456");
         });
         expect(window.location.href).toBe("/login");
+    });
+});
+
+describe("useChangePassword", () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it("sends the current password, new password and TOTP code", async () => {
+        vi.mocked(api.apiPatch).mockResolvedValue({ success: true });
+        const { result } = renderHook(() => useChangePassword(), {
+            wrapper: createWrapper(),
+        });
+        await act(async () => {
+            await result.current.mutateAsync({
+                currentPassword: "OldPass1!",
+                newPassword: "NewPass1!",
+                totpCode: "123456",
+            });
+        });
+        expect(api.apiPatch).toHaveBeenCalledWith("/users/me/password", {
+            currentPassword: "OldPass1!",
+            newPassword: "NewPass1!",
+            totpCode: "123456",
+        });
+    });
+});
+
+describe("useChangeEmail", () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it("sends the new email, password and TOTP code", async () => {
+        vi.mocked(api.apiPatch).mockResolvedValue({ requiresReauth: true });
+        const { result } = renderHook(() => useChangeEmail(), {
+            wrapper: createWrapper(),
+        });
+        let response: { requiresReauth: boolean } | undefined;
+        await act(async () => {
+            response = await result.current.mutateAsync({
+                newEmail: "new@test.fr",
+                password: "Demo1234!",
+                totpCode: "123456",
+            });
+        });
+        expect(api.apiPatch).toHaveBeenCalledWith("/users/me/email", {
+            newEmail: "new@test.fr",
+            password: "Demo1234!",
+            totpCode: "123456",
+        });
+        expect(response).toEqual({ requiresReauth: true });
+    });
+});
+
+describe("useChangePhone", () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it("sends the phone number with the TOTP code", async () => {
+        vi.mocked(api.apiPatch).mockResolvedValue({ success: true });
+        const { result } = renderHook(() => useChangePhone(), {
+            wrapper: createWrapper(),
+        });
+        await act(async () => {
+            await result.current.mutateAsync({
+                phone: "+33612345678",
+                totpCode: "123456",
+            });
+        });
+        expect(api.apiPatch).toHaveBeenCalledWith("/users/me/phone", {
+            phone: "+33612345678",
+            totpCode: "123456",
+        });
+    });
+
+    it("sends null to clear the phone number", async () => {
+        vi.mocked(api.apiPatch).mockResolvedValue({ success: true });
+        const { result } = renderHook(() => useChangePhone(), {
+            wrapper: createWrapper(),
+        });
+        await act(async () => {
+            await result.current.mutateAsync({
+                phone: null,
+                totpCode: "123456",
+            });
+        });
+        expect(api.apiPatch).toHaveBeenCalledWith("/users/me/phone", {
+            phone: null,
+            totpCode: "123456",
+        });
     });
 });

@@ -5,9 +5,20 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { apiPost } from "@workspace/shared/lib/api";
 import { setTokens, type LoginResponse } from "@workspace/shared/lib/auth";
+import { isValidPhone, normalizePhone } from "@workspace/shared/lib/phone";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent } from "@workspace/ui/components/card";
+import { Checkbox } from "@workspace/ui/components/checkbox";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@workspace/ui/components/dialog";
+import { Label } from "@workspace/ui/components/label";
 import { Spinner } from "@workspace/ui/components/spinner";
 import { useAppForm } from "@workspace/ui/lib/form";
 import { toast } from "sonner";
@@ -16,6 +27,32 @@ import { AuthLayout } from "@workspace/ui/components/auth-layout";
 
 interface RegisterResponse {
     otpauthUrl: string;
+}
+
+function ConsentNoticeDialog() {
+    const { t } = useTranslation();
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <button
+                    type="button"
+                    className="text-primary pl-7 text-sm font-medium underline-offset-4 hover:underline"
+                >
+                    {t("pages.register.consentNoticeLink")}
+                </button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>
+                        {t("pages.register.consentNoticeTitle")}
+                    </DialogTitle>
+                    <DialogDescription className="text-left">
+                        {t("pages.register.consentNoticeBody")}
+                    </DialogDescription>
+                </DialogHeader>
+            </DialogContent>
+        </Dialog>
+    );
 }
 
 export const Route = createFileRoute("/register")({
@@ -32,8 +69,16 @@ function RegisterPage() {
             firstName: z.string().min(1, t("auth.validation.required")),
             lastName: z.string().min(1, t("auth.validation.required")),
             email: z.string().email(t("auth.validation.invalidEmail")),
+            phone: z
+                .string()
+                .refine((value) => !value.trim() || isValidPhone(value), {
+                    message: t("auth.validation.phoneInvalid"),
+                }),
             password: z.string().min(8, t("auth.validation.passwordMin")),
             confirmPassword: z.string(),
+            consent: z.boolean().refine((value) => value, {
+                message: t("auth.validation.consentRequired"),
+            }),
         })
         .refine((data) => data.password === data.confirmPassword, {
             message: t("auth.validation.passwordMismatch"),
@@ -56,8 +101,10 @@ function RegisterPage() {
             firstName: "",
             lastName: "",
             email: "",
+            phone: "",
             password: "",
             confirmPassword: "",
+            consent: false,
         },
         validators: { onSubmit: registerSchema },
         onSubmit: async ({ value }) => {
@@ -67,6 +114,10 @@ function RegisterPage() {
                     password: value.password,
                     firstName: value.firstName,
                     lastName: value.lastName,
+                    phone: value.phone.trim()
+                        ? normalizePhone(value.phone)
+                        : undefined,
+                    consent: value.consent,
                 });
                 setOtpauthUrl(data.otpauthUrl);
                 setLoginCredentials({
@@ -158,6 +209,17 @@ function RegisterPage() {
                                     />
                                 )}
                             </registerForm.AppField>
+                            <registerForm.AppField name="phone">
+                                {(field) => (
+                                    <field.TextField
+                                        label={t(
+                                            "pages.register.phoneOptional",
+                                        )}
+                                        type="tel"
+                                        placeholder="+33612345678"
+                                    />
+                                )}
+                            </registerForm.AppField>
                             <registerForm.AppField name="password">
                                 {(field) => (
                                     <field.TextField
@@ -179,14 +241,50 @@ function RegisterPage() {
                                     />
                                 )}
                             </registerForm.AppField>
+                            <registerForm.AppField name="consent">
+                                {(field) => (
+                                    <div className="space-y-2">
+                                        <div className="flex items-start gap-3">
+                                            <Checkbox
+                                                id="register-consent"
+                                                checked={field.state.value}
+                                                onCheckedChange={(checked) =>
+                                                    field.handleChange(
+                                                        checked === true,
+                                                    )
+                                                }
+                                                aria-invalid={
+                                                    field.state.meta.errors
+                                                        .length > 0
+                                                }
+                                                className="mt-0.5"
+                                            />
+                                            <Label
+                                                htmlFor="register-consent"
+                                                className="text-muted-foreground text-sm leading-snug font-normal"
+                                            >
+                                                {t(
+                                                    "pages.register.consentLabel",
+                                                )}
+                                            </Label>
+                                        </div>
+                                        <ConsentNoticeDialog />
+                                    </div>
+                                )}
+                            </registerForm.AppField>
                             <registerForm.Subscribe
-                                selector={(s) => s.isSubmitting}
+                                selector={(s) =>
+                                    [
+                                        s.isSubmitting,
+                                        s.values.consent,
+                                    ] as const
+                                }
                             >
-                                {(isSubmitting) => (
+                                {([isSubmitting, consent]) => (
                                     <Button
                                         type="submit"
                                         className="w-full"
-                                        disabled={isSubmitting}
+                                        disabled={isSubmitting || !consent}
                                     >
                                         {isSubmitting ? (
                                             <Spinner className="mr-2" />
