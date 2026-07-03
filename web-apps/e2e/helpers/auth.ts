@@ -75,7 +75,7 @@ export async function apiRegister(email: string): Promise<string> {
     const res = await fetch(`${API}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password: DEMO_PASSWORD }),
+        body: JSON.stringify({ email, password: DEMO_PASSWORD, consent: true }),
     });
     if (!res.ok) {
         const err = (await res.json()) as object;
