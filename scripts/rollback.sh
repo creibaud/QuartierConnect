@@ -14,7 +14,7 @@ echo "↩ Rollback vers ${TARGET_SHA}"
 git fetch --all --tags --prune
 git checkout --force "$TARGET_SHA"
 
-docker compose \
+docker compose --env-file .env \
   -f docker/docker-compose.yml \
   -f docker/docker-compose.prod.yml \
   up -d --build --remove-orphans
