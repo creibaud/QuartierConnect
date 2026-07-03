@@ -4,7 +4,7 @@
 		X-Frame-Options "DENY"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
-		Permissions-Policy "geolocation=(), camera=(), microphone=()"
+		Permissions-Policy "geolocation=(self), camera=(), microphone=()"
 	}
 }
 
@@ -50,11 +50,11 @@
 		file_server
 	}
 	handle /admin* {
-		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.cartocdn.com; media-src 'self' blob:; connect-src 'self' ws: wss: https://*.cartocdn.com; font-src 'self'; frame-ancestors 'none'"
+		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.cartocdn.com; media-src 'self' blob:; connect-src 'self' ws: wss: https://*.cartocdn.com; font-src 'self'; worker-src blob:; frame-ancestors 'none'"
 		reverse_proxy admin:3001
 	}
 	handle {
-		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.cartocdn.com; media-src 'self' blob:; connect-src 'self' ws: wss: https://*.cartocdn.com; font-src 'self'; frame-ancestors 'none'"
+		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.cartocdn.com; media-src 'self' blob:; connect-src 'self' ws: wss: https://*.cartocdn.com; font-src 'self'; worker-src blob:; frame-ancestors 'none'"
 		reverse_proxy client:3000
 	}
 }
