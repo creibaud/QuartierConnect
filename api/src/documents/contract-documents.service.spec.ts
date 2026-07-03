@@ -41,6 +41,19 @@ describe("ContractDocumentsService.storePdf", () => {
         );
         expect(opts).toEqual({ upsert: true });
     });
+
+    it("records an imported audit entry for uploaded source PDFs", async () => {
+        const { svc, updateOne } = makeService();
+        await svc.storePdf("c2", Buffer.from("%PDF-1.7 up"), "imported", "u2");
+        const [, update] = updateOne.mock.calls[0];
+        expect(update.$push.auditLog).toEqual(
+            expect.objectContaining({
+                action: "imported",
+                userId: "u2",
+                sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+            }),
+        );
+    });
 });
 
 describe("ContractDocumentsService.getCurrentPdf", () => {

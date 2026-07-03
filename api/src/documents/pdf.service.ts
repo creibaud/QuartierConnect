@@ -9,6 +9,10 @@ import {
     StandardFonts,
 } from "pdf-lib";
 import { formatPointsAmount } from "../contracts/lib/format";
+import {
+    SignatureZone,
+    SignatureZoneKind,
+} from "../contracts/schemas/contract.schema";
 
 export interface ContractPdfData {
     title: string;
@@ -24,6 +28,39 @@ export interface SignatureStamp {
     date: string;
     hash: string;
     image?: string;
+}
+
+export interface PdfBox {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+// Zones are normalized (0..1) with a TOP-LEFT origin; pdf-lib draws from the
+// BOTTOM-LEFT corner, hence y_pdf = pageHeight * (1 - y - h).
+export function normalizedZoneToPdfBox(
+    zone: Pick<SignatureZone, "x" | "y" | "w" | "h">,
+    pageWidth: number,
+    pageHeight: number,
+): PdfBox {
+    return {
+        x: zone.x * pageWidth,
+        y: pageHeight * (1 - zone.y - zone.h),
+        width: zone.w * pageWidth,
+        height: zone.h * pageHeight,
+    };
+}
+
+export function deriveInitials(name: string): string {
+    const parts = name.split(/[\s-]+/).filter(Boolean);
+    if (parts.length === 0) return "?";
+    return (
+        parts
+            .slice(0, 3)
+            .map((part) => part[0].toUpperCase())
+            .join(".") + "."
+    );
 }
 
 // A4 = 595.28 x 841.89 pt. Zones are the baseline of each signatory block.
@@ -63,10 +100,11 @@ function fitTextSize(
     text: string,
     preferredSize: number,
     maxWidth: number,
+    minSize = 9,
 ): number {
     const width = font.widthOfTextAtSize(text, preferredSize);
     if (width <= maxWidth) return preferredSize;
-    return Math.max(9, (preferredSize * maxWidth) / width);
+    return Math.max(minSize, (preferredSize * maxWidth) / width);
 }
 
 @Injectable()
@@ -169,6 +207,148 @@ export class PdfService {
         });
 
         return Buffer.from(await doc.save());
+    }
+
+    // Stamps every zone of the current signer (multi-page, several zones per
+    // signer). `signature` zones get the full mark plus a dated caption;
+    // `initials` zones get a reduced mark (scaled image or cursive initials).
+    async stampSignatureAtZones(
+        pdf: Buffer,
+        zones: SignatureZone[],
+        stamp: SignatureStamp,
+    ): Promise<Buffer> {
+        if (zones.length === 0) {
+            throw new RangeError("No signature zones to stamp");
+        }
+        const doc = await PDFDocument.load(pdf);
+        const pages = doc.getPages();
+        for (const zone of zones) {
+            const page = pages[zone.page - 1];
+            if (!page) throw new RangeError(`No page ${zone.page} in the PDF`);
+            const size = page.getSize();
+            const box = normalizedZoneToPdfBox(zone, size.width, size.height);
+            if (zone.kind === SignatureZoneKind.INITIALS) {
+                await this.stampInitialsInBox(doc, page, box, stamp);
+            } else {
+                await this.stampSignatureInBox(doc, page, box, stamp);
+            }
+        }
+        return Buffer.from(await doc.save());
+    }
+
+    private async stampSignatureInBox(
+        doc: PDFDocument,
+        page: PDFPage,
+        box: PdfBox,
+        stamp: SignatureStamp,
+    ): Promise<void> {
+        const captionHeight = box.height >= 30 ? 10 : 0;
+        const markBox: PdfBox = {
+            ...box,
+            y: box.y + captionHeight,
+            height: box.height - captionHeight,
+        };
+        const drewImage = stamp.image
+            ? await this.tryDrawImageInBox(doc, page, markBox, stamp.image)
+            : false;
+        if (!drewImage) {
+            await this.drawCursiveTextInBox(doc, page, markBox, stamp.name);
+        }
+        if (captionHeight > 0) {
+            await this.drawStampCaption(doc, page, box, stamp);
+        }
+    }
+
+    private async stampInitialsInBox(
+        doc: PDFDocument,
+        page: PDFPage,
+        box: PdfBox,
+        stamp: SignatureStamp,
+    ): Promise<void> {
+        const drewImage = stamp.image
+            ? await this.tryDrawImageInBox(doc, page, box, stamp.image)
+            : false;
+        if (!drewImage) {
+            await this.drawCursiveTextInBox(
+                doc,
+                page,
+                box,
+                deriveInitials(stamp.name),
+            );
+        }
+    }
+
+    private async drawStampCaption(
+        doc: PDFDocument,
+        page: PDFPage,
+        box: PdfBox,
+        stamp: SignatureStamp,
+    ): Promise<void> {
+        const font = await doc.embedFont(StandardFonts.Helvetica);
+        const caption = `Signé le ${stamp.date} — #${stamp.hash}`;
+        const size = fitTextSize(font, caption, 7, box.width - 4, 4);
+        page.drawText(caption, {
+            x: box.x + 2,
+            y: box.y + 2,
+            size,
+            font,
+            color: rgb(0.35, 0.35, 0.35),
+        });
+    }
+
+    private async tryDrawImageInBox(
+        doc: PDFDocument,
+        page: PDFPage,
+        box: PdfBox,
+        image: string,
+    ): Promise<boolean> {
+        let png: PDFImage;
+        try {
+            const base64 = image.replace(/^data:image\/png;base64,/, "");
+            png = await doc.embedPng(Buffer.from(base64, "base64"));
+        } catch {
+            return false;
+        }
+        if (
+            png.width < MIN_STAMP_IMAGE_WIDTH ||
+            png.height < MIN_STAMP_IMAGE_HEIGHT
+        ) {
+            return false;
+        }
+        const scale = Math.min(
+            box.width / png.width,
+            box.height / png.height,
+            1,
+        );
+        const width = png.width * scale;
+        const height = png.height * scale;
+        page.drawImage(png, {
+            x: box.x + (box.width - width) / 2,
+            y: box.y + (box.height - height) / 2,
+            width,
+            height,
+        });
+        return true;
+    }
+
+    private async drawCursiveTextInBox(
+        doc: PDFDocument,
+        page: PDFPage,
+        box: PdfBox,
+        text: string,
+    ): Promise<void> {
+        const italic = await doc.embedFont(StandardFonts.TimesRomanItalic);
+        const size = Math.min(
+            fitTextSize(italic, text, box.height * 0.65, box.width - 4, 4),
+            box.height * 0.9,
+        );
+        page.drawText(text, {
+            x: box.x + 2,
+            y: box.y + (box.height - size) / 2,
+            size,
+            font: italic,
+            color: INK_BLUE,
+        });
     }
 
     // Draws the hand-drawn signature PNG above the signing line, preserving

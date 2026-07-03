@@ -1,5 +1,11 @@
 import { PDFDocument } from "pdf-lib";
 import {
+    SignatureZone,
+    SignatureZoneKind,
+} from "../contracts/schemas/contract.schema";
+import {
+    deriveInitials,
+    normalizedZoneToPdfBox,
     PdfService,
     SIGNATURE_ZONES,
     type ContractPdfData,
@@ -130,5 +136,164 @@ describe("PdfService.stampSignature", () => {
             hash: "abcd1234",
         });
         expect(stamped.subarray(0, 5).toString()).toBe("%PDF-");
+    });
+});
+
+describe("normalizedZoneToPdfBox", () => {
+    it("scales the zone and flips the top-left origin to pdf-lib's bottom-left", () => {
+        const box = normalizedZoneToPdfBox(
+            { x: 0.25, y: 0.5, w: 0.4, h: 0.1 },
+            600,
+            800,
+        );
+        expect(box).toEqual({ x: 150, y: 320, width: 240, height: 80 });
+    });
+
+    it("maps a zone at the top of the page to the top in pdf coordinates", () => {
+        const box = normalizedZoneToPdfBox(
+            { x: 0, y: 0, w: 0.5, h: 0.1 },
+            595.28,
+            841.89,
+        );
+        expect(box.y).toBeCloseTo(841.89 * 0.9, 5);
+    });
+
+    it("maps a zone at the bottom of the page to y = 0", () => {
+        const box = normalizedZoneToPdfBox(
+            { x: 0.5, y: 0.9, w: 0.5, h: 0.1 },
+            595.28,
+            841.89,
+        );
+        expect(box.y).toBeCloseTo(0, 5);
+    });
+});
+
+describe("deriveInitials", () => {
+    it.each([
+        ["Alice Martin", "A.M."],
+        ["alice@demo.fr", "A."],
+        ["Anne-Charlotte Dupont", "A.C.D."],
+        ["Jean Marie Le Pennec", "J.M.L."],
+    ])("derives %s to %s", (name, expected) => {
+        expect(deriveInitials(name)).toBe(expected);
+    });
+});
+
+async function buildPlainPdf(pageCount: number): Promise<Buffer> {
+    const doc = await PDFDocument.create();
+    for (let index = 0; index < pageCount; index += 1) {
+        doc.addPage([595.28, 841.89]).drawText(`Page ${index + 1}`, {
+            x: 60,
+            y: 780,
+            size: 12,
+        });
+    }
+    return Buffer.from(await doc.save());
+}
+
+function zone(overrides: Partial<SignatureZone> = {}): SignatureZone {
+    return {
+        page: 1,
+        x: 0.1,
+        y: 0.75,
+        w: 0.3,
+        h: 0.1,
+        signerId: "user-1",
+        kind: SignatureZoneKind.SIGNATURE,
+        ...overrides,
+    };
+}
+
+describe("PdfService.stampSignatureAtZones", () => {
+    const service = new PdfService();
+    const stamp = { name: "Alice Martin", date: "2026-07-02", hash: "cafe01" };
+
+    it("stamps several zones across pages and keeps the PDF valid", async () => {
+        const base = await buildPlainPdf(3);
+        const stamped = await service.stampSignatureAtZones(
+            base,
+            [
+                zone(),
+                zone({
+                    page: 3,
+                    x: 0.85,
+                    y: 0.9,
+                    w: 0.1,
+                    h: 0.05,
+                    kind: SignatureZoneKind.INITIALS,
+                }),
+            ],
+            stamp,
+        );
+        expect(stamped.subarray(0, 5).toString()).toBe("%PDF-");
+        expect(stamped.length).not.toBe(base.length);
+        const doc = await PDFDocument.load(stamped);
+        expect(doc.getPageCount()).toBe(3);
+    });
+
+    it("embeds the drawn PNG scaled into the zone box", async () => {
+        const base = await buildPlainPdf(1);
+        const textOnly = await service.stampSignatureAtZones(
+            base,
+            [zone()],
+            stamp,
+        );
+        const withImage = await service.stampSignatureAtZones(base, [zone()], {
+            ...stamp,
+            image: PNG_DATA_URL,
+        });
+        expect(withImage.length).toBeGreaterThan(textOnly.length);
+    });
+
+    it("scales the PNG down for a small initials zone", async () => {
+        const base = await buildPlainPdf(1);
+        const stamped = await service.stampSignatureAtZones(
+            base,
+            [
+                zone({
+                    x: 0.9,
+                    y: 0.95,
+                    w: 0.06,
+                    h: 0.03,
+                    kind: SignatureZoneKind.INITIALS,
+                }),
+            ],
+            { ...stamp, image: PNG_DATA_URL },
+        );
+        await expect(PDFDocument.load(stamped)).resolves.toBeDefined();
+    });
+
+    it("falls back to cursive initials when the image is degenerate", async () => {
+        const base = await buildPlainPdf(1);
+        const stamped = await service.stampSignatureAtZones(
+            base,
+            [zone({ kind: SignatureZoneKind.INITIALS })],
+            { ...stamp, image: DEGENERATE_PNG_DATA_URL },
+        );
+        await expect(PDFDocument.load(stamped)).resolves.toBeDefined();
+    });
+
+    it("skips the caption in a zone too small to hold it", async () => {
+        const base = await buildPlainPdf(1);
+        const stamped = await service.stampSignatureAtZones(
+            base,
+            [zone({ h: 0.02 })],
+            stamp,
+        );
+        await expect(PDFDocument.load(stamped)).resolves.toBeDefined();
+    });
+
+    it("rejects a zone pointing past the last page", async () => {
+        const base = await buildPlainPdf(1);
+        await expect(
+            service.stampSignatureAtZones(base, [zone({ page: 2 })], stamp),
+        ).rejects.toBeInstanceOf(RangeError);
+    });
+
+    it("rejects an empty zones list", async () => {
+        const base = await buildPlainPdf(1);
+        await expect(
+            service.stampSignatureAtZones(base, [], stamp),
+        ).rejects.toBeInstanceOf(RangeError);
     });
 });

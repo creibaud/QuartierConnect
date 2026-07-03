@@ -1,7 +1,9 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument } from "mongoose";
 
-export type ContractPdfAction = "generated" | "signed" | "viewed";
+export type ContractPdfAction = "generated" | "imported" | "signed" | "viewed";
+
+export type ContractPdfStoreAction = Exclude<ContractPdfAction, "viewed">;
 
 export interface ContractAuditEntry {
     action: ContractPdfAction;

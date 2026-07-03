@@ -6,13 +6,19 @@ import {
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
+import { PDFDocument } from "pdf-lib";
 import { TotpService } from "../auth/totp.service";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import { ContractDocumentsService } from "../documents/contract-documents.service";
 import { PdfService } from "../documents/pdf.service";
 import { PointsService } from "../points/points.service";
 import { ContractsService } from "./contracts.service";
-import { Contract, ContractStatus } from "./schemas/contract.schema";
+import {
+    Contract,
+    ContractSource,
+    ContractStatus,
+    SignatureZoneKind,
+} from "./schemas/contract.schema";
 
 const mockContractDoc = {
     _id: "ct-1",
@@ -29,6 +35,9 @@ const mockContractDoc = {
 const mockContractModel = {
     find: jest.fn(),
     findById: jest.fn(),
+    deleteOne: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue({}),
+    }),
 };
 
 const mockDb = {
@@ -51,6 +60,7 @@ const mockEventEmitter = {
 const mockPdf = {
     generateBaseContractPdf: jest.fn(),
     stampSignature: jest.fn(),
+    stampSignatureAtZones: jest.fn(),
     sha256: jest.fn(),
 };
 
@@ -64,6 +74,13 @@ const mockDocs = {
 const NAME_RESOLUTION_ROWS = [
     { id: "payer", firstName: "P", lastName: "One", email: "p@x" },
     { id: "payee", firstName: "Q", lastName: "Two", email: "q@x" },
+];
+
+const IMPORT_IDS = ["user-1", "user-2"];
+
+const IMPORT_USER_ROWS = [
+    { id: "user-1", firstName: "Alice", lastName: "Martin", email: "a@x" },
+    { id: "user-2", firstName: "Bob", lastName: "Dupont", email: "b@x" },
 ];
 
 describe("ContractsService", () => {
@@ -702,6 +719,107 @@ describe("ContractsService", () => {
                 }),
             );
         });
+
+        it("stamps every zone of the signer when the contract has placement zones", async () => {
+            const signerZones = [
+                {
+                    page: 1,
+                    x: 0.1,
+                    y: 0.7,
+                    w: 0.3,
+                    h: 0.1,
+                    signerId: "user-1",
+                    kind: SignatureZoneKind.SIGNATURE,
+                },
+                {
+                    page: 2,
+                    x: 0.85,
+                    y: 0.9,
+                    w: 0.1,
+                    h: 0.05,
+                    signerId: "user-1",
+                    kind: SignatureZoneKind.INITIALS,
+                },
+            ];
+            const otherZone = {
+                page: 2,
+                x: 0.1,
+                y: 0.7,
+                w: 0.3,
+                h: 0.1,
+                signerId: "user-2",
+                kind: SignatureZoneKind.SIGNATURE,
+            };
+            const contract = {
+                ...mockContractDoc,
+                source: ContractSource.IMPORTED,
+                zones: [...signerZones, otherZone],
+                signatories: ["user-1", "user-2"],
+                signatures: [],
+                bookingId: null,
+                save: jest.fn().mockResolvedValue({}),
+            };
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(contract),
+            });
+            mockTotpService.verify.mockReturnValue(true);
+            mockDocs.getCurrentPdf.mockResolvedValue(Buffer.from("%PDF-"));
+            mockPdf.stampSignatureAtZones.mockResolvedValue(
+                Buffer.from("%PDF-zones"),
+            );
+            mockDocs.storePdf.mockResolvedValue({ fileId: "f9", sha256: "h" });
+
+            await service.sign("ct-1", "user-1", "123456");
+
+            expect(mockPdf.stampSignatureAtZones).toHaveBeenCalledWith(
+                expect.any(Buffer),
+                signerZones,
+                expect.objectContaining({ hash: expect.any(String) }),
+            );
+            expect(mockPdf.stampSignature).not.toHaveBeenCalled();
+            expect(mockDocs.storePdf).toHaveBeenCalledWith(
+                "ct-1",
+                expect.any(Buffer),
+                "signed",
+                "user-1",
+            );
+        });
+
+        it("still completes the signature when zone stamping fails (best-effort)", async () => {
+            const contract = {
+                ...mockContractDoc,
+                source: ContractSource.IMPORTED,
+                zones: [
+                    {
+                        page: 1,
+                        x: 0.1,
+                        y: 0.7,
+                        w: 0.3,
+                        h: 0.1,
+                        signerId: "user-1",
+                        kind: SignatureZoneKind.SIGNATURE,
+                    },
+                ],
+                signatories: ["user-1"],
+                signatures: [],
+                bookingId: null,
+                save: jest
+                    .fn()
+                    .mockImplementation(() => Promise.resolve(contract)),
+            };
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(contract),
+            });
+            mockTotpService.verify.mockReturnValue(true);
+            mockDocs.getCurrentPdf.mockResolvedValue(Buffer.from("%PDF-"));
+            mockPdf.stampSignatureAtZones.mockRejectedValue(
+                new Error("zone stamp boom"),
+            );
+
+            const res = await service.sign("ct-1", "user-1", "123456");
+
+            expect(res.status).toBe(ContractStatus.FULLY_SIGNED);
+        });
     });
 
     describe("createServiceContract", () => {
@@ -851,6 +969,281 @@ describe("ContractsService", () => {
                 expect(contract).toBeDefined();
                 expect(contract.status).toBe(ContractStatus.DRAFT);
             });
+        });
+    });
+
+    describe("importContract", () => {
+        let importedContract: Record<string, unknown> & { save: jest.Mock };
+        let importService: ContractsService;
+        let CtorModel: jest.Mock;
+        let pdfBuffer: Buffer;
+
+        const importDto = (zones: unknown[], signatories = IMPORT_IDS) => ({
+            title: "Accord importé",
+            signatories: JSON.stringify(signatories),
+            zones: JSON.stringify(zones),
+            file: "",
+        });
+
+        const signatureZone = (signerId: string, page = 1) => ({
+            page,
+            x: 0.1,
+            y: 0.75,
+            w: 0.3,
+            h: 0.08,
+            signerId,
+            kind: "signature",
+        });
+
+        function pdfFile(
+            overrides: Partial<Express.Multer.File> = {},
+        ): Express.Multer.File {
+            return {
+                fieldname: "file",
+                originalname: "accord.pdf",
+                encoding: "7bit",
+                mimetype: "application/pdf",
+                size: pdfBuffer.length,
+                buffer: pdfBuffer,
+                ...overrides,
+            } as Express.Multer.File;
+        }
+
+        beforeAll(async () => {
+            const doc = await PDFDocument.create();
+            doc.addPage([595.28, 841.89]);
+            pdfBuffer = Buffer.from(await doc.save());
+        });
+
+        beforeEach(async () => {
+            CtorModel = jest
+                .fn()
+                .mockImplementation((data: Record<string, unknown>) => {
+                    importedContract = {
+                        ...data,
+                        _id: "ct-import-1",
+                        save: jest
+                            .fn()
+                            .mockImplementation(() =>
+                                Promise.resolve(importedContract),
+                            ),
+                    };
+                    return importedContract;
+                });
+            Object.assign(CtorModel, mockContractModel);
+
+            mockDb.select.mockReturnValue({
+                from: jest.fn().mockReturnValue({
+                    where: jest.fn().mockReturnValue({
+                        then: (resolve: (value: unknown) => void) =>
+                            resolve(IMPORT_USER_ROWS),
+                    }),
+                }),
+            });
+            mockPdf.sha256.mockReturnValue("a".repeat(64));
+            mockDocs.storePdf.mockResolvedValue({
+                fileId: "f-import",
+                sha256: "a".repeat(64),
+            });
+
+            const module6: TestingModule = await Test.createTestingModule({
+                providers: [
+                    ContractsService,
+                    {
+                        provide: getModelToken(Contract.name),
+                        useValue: CtorModel,
+                    },
+                    { provide: DRIZZLE_TOKEN, useValue: mockDb },
+                    { provide: TotpService, useValue: mockTotpService },
+                    { provide: PointsService, useValue: mockPointsService },
+                    { provide: EventEmitter2, useValue: mockEventEmitter },
+                    { provide: PdfService, useValue: mockPdf },
+                    { provide: ContractDocumentsService, useValue: mockDocs },
+                ],
+            }).compile();
+            importService = module6.get<ContractsService>(ContractsService);
+        });
+
+        it("creates an imported DRAFT contract and archives the original PDF", async () => {
+            const zones = [signatureZone("user-1"), signatureZone("user-2")];
+
+            const result = await importService.importContract(
+                pdfFile(),
+                importDto(zones),
+                "user-1",
+            );
+
+            expect(CtorModel).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    title: "Accord importé",
+                    signatories: IMPORT_IDS,
+                    status: ContractStatus.DRAFT,
+                    source: ContractSource.IMPORTED,
+                    contentHash: "a".repeat(64),
+                    zones: expect.arrayContaining([
+                        expect.objectContaining({ signerId: "user-1" }),
+                        expect.objectContaining({ signerId: "user-2" }),
+                    ]),
+                }),
+            );
+            expect(mockDocs.storePdf).toHaveBeenCalledWith(
+                "ct-import-1",
+                pdfBuffer,
+                "imported",
+                "user-1",
+            );
+            expect(result.pdfFileId).toBe("f-import");
+        });
+
+        it("rejects a missing file", async () => {
+            await expect(
+                importService.importContract(
+                    undefined,
+                    importDto([signatureZone("user-1")], ["user-1"]),
+                    "user-1",
+                ),
+            ).rejects.toThrow(BadRequestException);
+        });
+
+        it("rejects a non-PDF MIME type", async () => {
+            await expect(
+                importService.importContract(
+                    pdfFile({ mimetype: "text/plain" }),
+                    importDto([signatureZone("user-1")], ["user-1"]),
+                    "user-1",
+                ),
+            ).rejects.toThrow(/application\/pdf/);
+        });
+
+        it("rejects a file above the 10 MB limit", async () => {
+            await expect(
+                importService.importContract(
+                    pdfFile({ size: 11 * 1024 * 1024 }),
+                    importDto([signatureZone("user-1")], ["user-1"]),
+                    "user-1",
+                ),
+            ).rejects.toThrow(/10 MB/);
+        });
+
+        it("rejects a file without the %PDF- magic bytes", async () => {
+            const fake = Buffer.from("PK\x03\x04 not a pdf");
+            await expect(
+                importService.importContract(
+                    pdfFile({ buffer: fake, size: fake.length }),
+                    importDto([signatureZone("user-1")], ["user-1"]),
+                    "user-1",
+                ),
+            ).rejects.toThrow(/not a valid PDF/);
+        });
+
+        it("rejects unknown signatories", async () => {
+            await expect(
+                importService.importContract(
+                    pdfFile(),
+                    importDto(
+                        [signatureZone("user-1"), signatureZone("ghost")],
+                        ["user-1", "ghost"],
+                    ),
+                    "user-1",
+                ),
+            ).rejects.toThrow(/Unknown signatories: ghost/);
+        });
+
+        it("rejects a zone pointing past the last page", async () => {
+            await expect(
+                importService.importContract(
+                    pdfFile(),
+                    importDto([signatureZone("user-1", 2)], ["user-1"]),
+                    "user-1",
+                ),
+            ).rejects.toThrow(/page count/);
+        });
+
+        it("rejects a PDF that pdf-lib cannot read", async () => {
+            const corrupt = Buffer.from("%PDF-1.4 corrupted body");
+            await expect(
+                importService.importContract(
+                    pdfFile({ buffer: corrupt, size: corrupt.length }),
+                    importDto([signatureZone("user-1")], ["user-1"]),
+                    "user-1",
+                ),
+            ).rejects.toThrow(/Unreadable PDF/);
+        });
+
+        it("deletes the contract when archiving the PDF fails", async () => {
+            mockDocs.storePdf.mockRejectedValue(new Error("gridfs down"));
+
+            await expect(
+                importService.importContract(
+                    pdfFile(),
+                    importDto([signatureZone("user-1")], ["user-1"]),
+                    "user-1",
+                ),
+            ).rejects.toThrow("gridfs down");
+
+            expect(mockContractModel.deleteOne).toHaveBeenCalledWith({
+                _id: "ct-import-1",
+            });
+        });
+    });
+
+    describe("getContractPdf", () => {
+        it("returns the stored stream when available", async () => {
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockContractDoc),
+            });
+            const stored = { stream: {}, fileName: "contract-ct-1.pdf" };
+            mockDocs.getPdfStream.mockResolvedValue(stored);
+
+            await expect(
+                service.getContractPdf("ct-1", "user-1"),
+            ).resolves.toBe(stored);
+        });
+
+        it("never rebuilds an imported contract from the template", async () => {
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({
+                    ...mockContractDoc,
+                    source: ContractSource.IMPORTED,
+                }),
+            });
+            mockDocs.getPdfStream.mockResolvedValue(null);
+
+            await expect(
+                service.getContractPdf("ct-1", "user-1"),
+            ).rejects.toThrow(NotFoundException);
+
+            expect(mockPdf.generateBaseContractPdf).not.toHaveBeenCalled();
+            expect(mockDocs.storePdf).not.toHaveBeenCalled();
+        });
+
+        it("lazily regenerates a generated contract when the PDF is missing", async () => {
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({
+                    ...mockContractDoc,
+                    source: ContractSource.GENERATED,
+                    pointsAmount: 5,
+                }),
+            });
+            const regenerated = { stream: {}, fileName: "contract-ct-1.pdf" };
+            mockDocs.getPdfStream
+                .mockResolvedValueOnce(null)
+                .mockResolvedValueOnce(regenerated);
+            mockPdf.generateBaseContractPdf.mockResolvedValue(
+                Buffer.from("%PDF-"),
+            );
+            mockDocs.storePdf.mockResolvedValue({ fileId: "f1", sha256: "h" });
+
+            await expect(
+                service.getContractPdf("ct-1", "user-1"),
+            ).resolves.toBe(regenerated);
+
+            expect(mockDocs.storePdf).toHaveBeenCalledWith(
+                "ct-1",
+                expect.any(Buffer),
+                "generated",
+                "user-1",
+            );
         });
     });
 
