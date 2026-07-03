@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPost } from "../api";
-import type { Contract, ContractAuditEntry } from "../types";
+import { apiGet, apiPost, apiUpload } from "../api";
+import type {
+    Contract,
+    ContractAuditEntry,
+    SignatureZone,
+} from "../types";
 
 export function useContracts() {
     return useQuery<Contract[]>({
@@ -33,6 +37,38 @@ export function useCreateContract() {
             content: string;
             signatories?: string[];
         }) => apiPost<Contract>("/contracts", data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["contracts"] });
+        },
+    });
+}
+
+export interface ImportContractInput {
+    file: File;
+    title: string;
+    signatories: string[];
+    zones: SignatureZone[];
+}
+
+export function buildImportContractFormData(
+    input: ImportContractInput,
+): FormData {
+    const formData = new FormData();
+    formData.append("file", input.file);
+    formData.append("title", input.title);
+    formData.append("signatories", JSON.stringify(input.signatories));
+    formData.append("zones", JSON.stringify(input.zones));
+    return formData;
+}
+
+export function useImportContract() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (input: ImportContractInput) =>
+            apiUpload<Contract>(
+                "/contracts/import",
+                buildImportContractFormData(input),
+            ),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["contracts"] });
         },
