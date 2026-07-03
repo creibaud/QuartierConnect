@@ -12,6 +12,7 @@ import { InjectModel } from "@nestjs/mongoose";
 import { eq, inArray } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Model } from "mongoose";
+import { PDFDocument } from "pdf-lib";
 import { TotpService } from "../auth/totp.service";
 import {
     CONTRACT_FULLY_SIGNED_EVENT,
@@ -22,15 +23,29 @@ import {
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { ContractDocumentsService } from "../documents/contract-documents.service";
-import { ContractPdfData, PdfService } from "../documents/pdf.service";
+import {
+    ContractPdfData,
+    PdfService,
+    SignatureStamp,
+} from "../documents/pdf.service";
 import { PointsService } from "../points/points.service";
 import { CreateContractDto } from "./dto/create-contract.dto";
+import { ImportContractBodyDto } from "./dto/import-contract.dto";
 import { formatFrenchDate } from "./lib/format";
+import {
+    MAX_IMPORT_PDF_BYTES,
+    parseSignatories,
+    parseSignatureZones,
+} from "./lib/import-contract-fields";
 import {
     Contract,
     ContractDocument,
+    ContractSource,
     ContractStatus,
+    SignatureZone,
 } from "./schemas/contract.schema";
+
+const PDF_MAGIC_BYTES = "%PDF-";
 
 @Injectable()
 export class ContractsService {
@@ -100,6 +115,97 @@ export class ContractsService {
             contentHash: hash,
         });
         return contract.save();
+    }
+
+    async importContract(
+        file: Express.Multer.File | undefined,
+        dto: ImportContractBodyDto,
+        userId: string,
+    ): Promise<ContractDocument> {
+        const pdf = this.assertPdfUpload(file);
+        const signatories = parseSignatories(dto.signatories, userId);
+        const zones = parseSignatureZones(dto.zones, signatories);
+        await this.assertSignatoriesExist(signatories);
+        await this.assertZonesFitDocument(pdf.buffer, zones);
+
+        const contract = new this.contractModel({
+            title: dto.title,
+            content: `Document importé : ${pdf.originalname}`,
+            createdBy: userId,
+            signatories,
+            status: ContractStatus.DRAFT,
+            contentHash: this.pdfService.sha256(pdf.buffer),
+            source: ContractSource.IMPORTED,
+            zones,
+        });
+        await contract.save();
+
+        try {
+            const { fileId } = await this.contractDocs.storePdf(
+                String(contract._id),
+                pdf.buffer,
+                "imported",
+                userId,
+            );
+            contract.pdfFileId = fileId;
+            return await contract.save();
+        } catch (err) {
+            await this.contractModel
+                .deleteOne({ _id: contract._id })
+                .exec()
+                .catch(() => undefined);
+            throw err;
+        }
+    }
+
+    private assertPdfUpload(
+        file: Express.Multer.File | undefined,
+    ): Express.Multer.File {
+        if (!file) throw new BadRequestException("No file provided");
+        if (file.mimetype !== "application/pdf") {
+            throw new BadRequestException(
+                "Only application/pdf files are accepted",
+            );
+        }
+        if (file.size > MAX_IMPORT_PDF_BYTES) {
+            throw new BadRequestException("PDF exceeds the 10 MB limit");
+        }
+        const magic = file.buffer
+            .subarray(0, PDF_MAGIC_BYTES.length)
+            .toString();
+        if (magic !== PDF_MAGIC_BYTES) {
+            throw new BadRequestException("File is not a valid PDF");
+        }
+        return file;
+    }
+
+    private async assertSignatoriesExist(ids: string[]): Promise<void> {
+        const names = await this.resolveNames(ids);
+        const unknown = ids.filter((id) => !names[id]);
+        if (unknown.length > 0) {
+            throw new BadRequestException(
+                `Unknown signatories: ${unknown.join(", ")}`,
+            );
+        }
+    }
+
+    private async assertZonesFitDocument(
+        pdf: Buffer,
+        zones: SignatureZone[],
+    ): Promise<void> {
+        let pageCount: number;
+        try {
+            const doc = await PDFDocument.load(pdf);
+            pageCount = doc.getPageCount();
+        } catch {
+            throw new BadRequestException("Unreadable PDF file");
+        }
+        const maxZonePage = Math.max(...zones.map((zone) => zone.page));
+        if (maxZonePage > pageCount) {
+            throw new BadRequestException(
+                `Zone page ${maxZonePage} exceeds the document page count (${pageCount})`,
+            );
+        }
     }
 
     async createServiceContract(p: {
@@ -202,6 +308,11 @@ export class ContractsService {
         const contract = await this.findOne(id, userId); // enforces party access
         let res = await this.contractDocs.getPdfStream(id, userId);
         if (!res) {
+            if (contract.source === ContractSource.IMPORTED) {
+                // The uploaded file is the single source of truth: an
+                // imported contract is never rebuilt from the template.
+                throw new NotFoundException("PDF unavailable");
+            }
             // lazy (re)generation when the PDF is missing
             try {
                 const data = await this.buildPdfData(contract);
@@ -296,38 +407,7 @@ export class ContractsService {
             actorName: signerName,
         } satisfies ContractSignedEvent);
 
-        // Best-effort PDF stamp — must never affect settlement/signature/status.
-        if (contract.bookingId) {
-            try {
-                const zoneIndex = contract.signatories.indexOf(userId);
-                const base = await this.contractDocs.getCurrentPdf(contractId);
-                if (zoneIndex >= 0 && base) {
-                    const names = await this.resolveNames([userId]);
-                    const stamped = await this.pdfService.stampSignature(
-                        base,
-                        zoneIndex,
-                        {
-                            name: names[userId] ?? userId,
-                            date: formatFrenchDate(new Date()),
-                            hash: hash.slice(0, 8),
-                            image: signatureImage,
-                        },
-                    );
-                    const { fileId } = await this.contractDocs.storePdf(
-                        contractId,
-                        stamped,
-                        "signed",
-                        userId,
-                    );
-                    contract.pdfFileId = fileId;
-                    await contract.save();
-                }
-            } catch (err) {
-                this.logger.warn(
-                    `PDF stamp failed for contract ${contractId}: ${String(err)}`,
-                );
-            }
-        }
+        await this.stampSignedPdf(contract, userId, hash, signatureImage);
 
         if (willBeFullySigned && contract.bookingId) {
             const [payerId, payeeId] = contract.signatories;
@@ -343,5 +423,57 @@ export class ContractsService {
             } satisfies ContractFullySignedEvent);
         }
         return saved;
+    }
+
+    // Best-effort PDF stamp — must never affect settlement/signature/status.
+    // Contracts with placement zones (imported PDFs) are stamped at every
+    // zone of the signer; legacy service contracts keep the fixed zones.
+    private async stampSignedPdf(
+        contract: ContractDocument,
+        userId: string,
+        signatureHash: string,
+        signatureImage?: string,
+    ): Promise<void> {
+        const contractId = String(contract._id);
+        const signerZones = (contract.zones ?? []).filter(
+            (zone) => zone.signerId === userId,
+        );
+        if (signerZones.length === 0 && !contract.bookingId) return;
+
+        try {
+            const base = await this.contractDocs.getCurrentPdf(contractId);
+            if (!base) return;
+            const names = await this.resolveNames([userId]);
+            const stamp: SignatureStamp = {
+                name: names[userId] ?? userId,
+                date: formatFrenchDate(new Date()),
+                hash: signatureHash.slice(0, 8),
+                image: signatureImage,
+            };
+            const stamped =
+                signerZones.length > 0
+                    ? await this.pdfService.stampSignatureAtZones(
+                          base,
+                          signerZones,
+                          stamp,
+                      )
+                    : await this.pdfService.stampSignature(
+                          base,
+                          contract.signatories.indexOf(userId),
+                          stamp,
+                      );
+            const { fileId } = await this.contractDocs.storePdf(
+                contractId,
+                stamped,
+                "signed",
+                userId,
+            );
+            contract.pdfFileId = fileId;
+            await contract.save();
+        } catch (err) {
+            this.logger.warn(
+                `PDF stamp failed for contract ${contractId}: ${String(err)}`,
+            );
+        }
     }
 }

@@ -1,5 +1,41 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { ContractStatus } from "../schemas/contract.schema";
+import {
+    ContractSource,
+    ContractStatus,
+    SignatureZoneKind,
+} from "../schemas/contract.schema";
+
+export class SignatureZoneDto {
+    @ApiProperty({ example: 1, description: "1-based page number" })
+    page: number;
+
+    @ApiProperty({
+        example: 0.1,
+        description: "Normalized left edge (0..1, from the page's left)",
+    })
+    x: number;
+
+    @ApiProperty({
+        example: 0.75,
+        description: "Normalized top edge (0..1, from the page's TOP)",
+    })
+    y: number;
+
+    @ApiProperty({ example: 0.3, description: "Normalized width (0..1)" })
+    w: number;
+
+    @ApiProperty({ example: 0.08, description: "Normalized height (0..1)" })
+    h: number;
+
+    @ApiProperty({ example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890" })
+    signerId: string;
+
+    @ApiProperty({
+        enum: SignatureZoneKind,
+        example: SignatureZoneKind.SIGNATURE,
+    })
+    kind: SignatureZoneKind;
+}
 
 export class SignatureDto {
     @ApiProperty({ example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890" })
@@ -78,6 +114,23 @@ export class ContractDto {
         description: "Points settled when the contract is fully signed",
     })
     pointsAmount?: number | null;
+
+    @ApiProperty({
+        enum: ContractSource,
+        example: ContractSource.GENERATED,
+        description:
+            "generated: built from the internal template — " +
+            "imported: uploaded PDF, the stored file is the source of truth",
+    })
+    source: ContractSource;
+
+    @ApiPropertyOptional({
+        type: [SignatureZoneDto],
+        description:
+            "Signature/initial placement zones (imported contracts). " +
+            "Contracts without zones use the legacy fixed zones.",
+    })
+    zones?: SignatureZoneDto[];
 
     @ApiProperty({ example: "2026-04-05T10:00:00.000Z" })
     createdAt: string;

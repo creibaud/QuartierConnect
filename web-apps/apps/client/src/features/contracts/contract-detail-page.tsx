@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import { useContract } from "@workspace/shared/lib/hooks/useContracts";
+import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
     Card,
@@ -49,6 +50,13 @@ export function ContractDetailPage({ id }: { id: string }) {
                             description={t("pages.contractDetail.description")}
                             actions={
                                 <div className="flex items-center gap-2">
+                                    {contract.source === "imported" && (
+                                        <Badge variant="outline">
+                                            {t(
+                                                "pages.contracts.importedBadge",
+                                            )}
+                                        </Badge>
+                                    )}
                                     <StatusBadge
                                         tone={statusTone(contract.status)}
                                     >
