@@ -20,6 +20,15 @@ Remove-Item -Recurse -Force $Dist, $Dest -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Dist | Out-Null
 Copy-Item "target/$MainJar" $Dist
 
+# Cible une instance déployée : l'app installée pointe vers ce serveur sans
+# configuration (ServerConfig lit ces propriétés en priorité). Sinon, localhost.
+$JavaOptions = @()
+if ($env:QC_SERVER_URL) {
+  $Url = $env:QC_SERVER_URL.TrimEnd('/')
+  $JavaOptions = @("--java-options", "-Dapi.url=$Url/api", "--java-options", "-Dweb.url=$Url/admin")
+  Write-Host "==> Serveur ciblé : $Url"
+}
+
 Write-Host "==> jpackage --type msi"
 jpackage `
   --type msi `
@@ -31,9 +40,11 @@ jpackage `
   --main-class $MainClass `
   --dest $Dest `
   --add-modules $Modules `
+  --icon packaging/logo.ico `
   --win-menu `
   --win-shortcut `
-  --win-dir-chooser
+  --win-dir-chooser `
+  @JavaOptions
 
 Write-Host "==> Installer ready in $Dest"
 Get-ChildItem $Dest

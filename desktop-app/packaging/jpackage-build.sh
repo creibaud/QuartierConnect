@@ -59,6 +59,14 @@ if [ "$OS" = "Linux" ]; then
   fi
 fi
 
+# Cible une instance déployée : l'app installée pointe vers ce serveur sans
+# configuration (ServerConfig lit ces propriétés en priorité). Sinon, localhost.
+if [ -n "${QC_SERVER_URL:-}" ]; then
+  URL="${QC_SERVER_URL%/}"
+  ARGS+=(--java-options "-Dapi.url=${URL}/api" --java-options "-Dweb.url=${URL}/admin")
+  echo "==> Serveur ciblé : ${URL}"
+fi
+
 echo "==> jpackage --type ${TYPE}"
 jpackage "${ARGS[@]}"
 

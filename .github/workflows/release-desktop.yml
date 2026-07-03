@@ -116,6 +116,7 @@ jobs:
         shell: bash
         env:
           APP_VERSION: ${{ steps.ver.outputs.version }}
+          QC_SERVER_URL: ${{ vars.QC_SERVER_URL }}
         run: ${{ matrix.script }}
 
       - name: Build installateur (Windows)
@@ -123,6 +124,7 @@ jobs:
         shell: pwsh
         env:
           APP_VERSION: ${{ steps.ver.outputs.version }}
+          QC_SERVER_URL: ${{ vars.QC_SERVER_URL }}
         run: ${{ matrix.script }}
 
       - name: Attacher l'installateur à la release
