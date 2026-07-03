@@ -83,7 +83,7 @@ import_mongo() {
   local file collection
   for file in "$DATASET_DIR"/mongo/*.json; do
     collection="$(basename "$file" .json)"
-    if [ "$(tr -d '[:space:]' < "$file")" = "[]" ]; then
+    if [ ! -s "$file" ] || [ "$(tr -d '[:space:]' < "$file")" = "[]" ]; then
       echo "→ Import MongoDB : $collection (collection vide, ignorée)"
       continue
     fi
