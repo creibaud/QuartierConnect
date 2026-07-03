@@ -137,6 +137,7 @@ export default {
         audit: {
             action: {
                 generated: "Contrat généré",
+                imported: "Contrat importé",
                 signed: "Signé",
                 viewed: "Consulté",
             },
@@ -669,6 +670,45 @@ export default {
             signing: "Signature…",
             signSuccess: "Contrat signé",
             signError: "Code TOTP invalide ou déjà signé",
+            importedBadge: "Importé",
+            import: {
+                cta: "Importer un PDF",
+                title: "Importer un contrat PDF",
+                step: {
+                    upload: "Choisissez le document et les signataires.",
+                    placement:
+                        "Déposez les zones de signature sur les pages du document.",
+                },
+                fileLabel: "Document PDF *",
+                dropLabel: "Glissez votre PDF ici ou cliquez pour parcourir",
+                dropHint: "PDF uniquement · 10 Mo max",
+                fileNotPdf: "Seuls les fichiers PDF sont acceptés.",
+                fileTooLarge: "Le fichier dépasse 10 Mo.",
+                fileSize: "{{size}} Mo",
+                removeFile: "Retirer le fichier",
+                titlePlaceholder: "Ex : Convention de voisinage",
+                signatoriesHint:
+                    "Vous êtes signataire d'office. Ajoutez jusqu'à 3 voisins ; chacun signera avec son code TOTP.",
+                you: "vous",
+                kind: {
+                    signature: "Signature",
+                    initials: "Initiales",
+                },
+                paletteHint:
+                    "Glissez une étiquette sur la page pour placer une zone. Déplacez-la, redimensionnez-la par le coin ou supprimez-la.",
+                pageIndicator: "Page {{current}} / {{total}}",
+                prevPage: "Page précédente",
+                nextPage: "Page suivante",
+                missingZones:
+                    "Chaque signataire doit avoir au moins une zone : {{names}}",
+                zonesReady: "Toutes les zones sont placées.",
+                removeZone: "Supprimer la zone",
+                submit: "Importer le contrat",
+                submitting: "Import…",
+                success: "Contrat importé",
+                error: "Impossible d'importer le contrat",
+                pdfPreviewError: "Impossible d'afficher le PDF.",
+            },
         },
         contractDetail: {
             description: "Contrat de prestation de service",
