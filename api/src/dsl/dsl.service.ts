@@ -85,11 +85,18 @@ export class DslService {
                 message.includes("SyntaxError") ||
                 message.includes("ValueError")
             ) {
+                const detail = message
+                    .replace(/.*(?:SyntaxError|ValueError):\s*/, "")
+                    .trim();
                 throw new BadRequestException(
-                    message.replace(/.*(?:SyntaxError|ValueError):\s*/, ""),
+                    detail || "Requête DSL invalide",
                 );
             }
-            throw new BadRequestException(`DSL execution failed: ${message}`);
+            throw new BadRequestException(
+                message.trim()
+                    ? `DSL execution failed: ${message.trim()}`
+                    : "Requête DSL invalide",
+            );
         }
 
         return this.runCompiledQuery(compiled);
