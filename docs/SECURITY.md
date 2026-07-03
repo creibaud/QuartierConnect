@@ -1,59 +1,59 @@
-# Security — QuartierConnect
+# Sécurité — QuartierConnect
 
-> **Version** 0.2.0 · **Date** 16 April 2026
-
----
-
-## Table of contents
-
-1. [Threat model](#1-threat-model)
-2. [Password hashing — Argon2id](#2-password-hashing--argon2id)
-3. [Multi-factor authentication — TOTP RFC 6238](#3-multi-factor-authentication--totp-rfc-6238)
-4. [JWT — Access and refresh](#4-jwt--access-and-refresh)
-5. [SSO — Cross-surface Single Sign-On](#5-sso--cross-surface-single-sign-on)
-6. [Contract integrity — SHA-256](#6-contract-integrity--sha-256)
-7. [Rate limiting](#7-rate-limiting)
-8. [HTTP security headers](#8-http-security-headers)
-9. [Role-based authorization](#9-role-based-authorization)
-10. [GDPR — Data protection](#10-gdpr--data-protection)
-11. [Token storage — Java desktop application](#11-token-storage--java-desktop-application)
-12. [Data integrity — Three-Way Merge](#12-data-integrity--three-way-merge)
-13. [Input validation — Desktop application](#13-input-validation--desktop-application)
-14. [API error sanitization](#14-api-error-sanitization)
-15. [Proactive token auto-refresh](#15-proactive-token-auto-refresh)
+> **Version** 0.2.0 · **Date** 16 avril 2026
 
 ---
 
-## 1. Threat model
+## Table des matières
+
+1. [Modèle de menaces](#1-modèle-de-menaces)
+2. [Hachage des mots de passe — Argon2id](#2-hachage-des-mots-de-passe--argon2id)
+3. [Authentification multifacteur — TOTP RFC 6238](#3-authentification-multifacteur--totp-rfc-6238)
+4. [JWT — Access et refresh](#4-jwt--access-et-refresh)
+5. [SSO — Authentification unique inter-surfaces](#5-sso--authentification-unique-inter-surfaces)
+6. [Intégrité des contrats — SHA-256](#6-intégrité-des-contrats--sha-256)
+7. [Limitation de débit](#7-limitation-de-débit)
+8. [En-têtes de sécurité HTTP](#8-en-têtes-de-sécurité-http)
+9. [Autorisation basée sur les rôles](#9-autorisation-basée-sur-les-rôles)
+10. [RGPD — Protection des données](#10-rgpd--protection-des-données)
+11. [Stockage des jetons — Application de bureau Java](#11-stockage-des-jetons--application-de-bureau-java)
+12. [Intégrité des données — Three-Way Merge](#12-intégrité-des-données--three-way-merge)
+13. [Validation des entrées — Application de bureau](#13-validation-des-entrées--application-de-bureau)
+14. [Assainissement des erreurs de l'API](#14-assainissement-des-erreurs-de-lapi)
+15. [Renouvellement proactif automatique des jetons](#15-renouvellement-proactif-automatique-des-jetons)
+
+---
+
+## 1. Modèle de menaces
 
 ```mermaid
 flowchart TD
-    subgraph Attaques["Attack vectors"]
-        A1["Password brute-force"]
-        A2["TOTP code replay"]
-        A3["Session theft - XSS"]
+    subgraph Attaques["Vecteurs d'attaque"]
+        A1["Force brute sur mot de passe"]
+        A2["Rejeu de code TOTP"]
+        A3["Vol de session - XSS"]
         A4["CSRF"]
-        A5["SQL injection"]
-        A6["NoSQL injection"]
-        A7["SSO token replay"]
-        A8["Privilege escalation"]
-        A9["Unauthorized access"]
-        A10["Network interception"]
-        A11["DDoS attack - flood"]
+        A5["Injection SQL"]
+        A6["Injection NoSQL"]
+        A7["Rejeu de jeton SSO"]
+        A8["Elevation de privileges"]
+        A9["Acces non autorise"]
+        A10["Interception reseau"]
+        A11["Attaque DDoS - flood"]
     end
 
-    subgraph Mitigations["Implemented mitigations"]
-        M1["Argon2id - 64MB RAM - timeCost 3 + ThrottlerGuard 100req/15min"]
-        M2["TanStack Store in-memory TTL 90s - anti-replay by code+secret"]
-        M3["JWT access 15min + refresh httpOnly cookie SameSite=strict - JTI revocation table PG"]
-        M4["Refresh cookie httpOnly SameSite=strict + credentials:include - CSRF impossible"]
-        M5["Drizzle ORM parameterized - zero concatenated SQL"]
-        M6["Mongoose schema strict + ValidationPipe whitelist:true"]
-        M7["findOneAndUpdate atomic - usedAt non-null after exchange"]
-        M8["RolesGuard re-reads the role from the DB - no trust in JWT alone"]
-        M9["Ownership check createdBy === req.user.sub in every controller"]
-        M10["HTTPS TLS 1.3 Caddy - HSTS - strict CSP"]
-        M11["ThrottlerGuard global 100req/15min/IP + login 5 attempts/15min"]
+    subgraph Mitigations["Mitigations implementees"]
+        M1["Argon2id - 64Mo RAM - timeCost 3 + ThrottlerGuard 100req/15min"]
+        M2["TanStack Store en memoire TTL 90s - anti-rejeu par code+secret"]
+        M3["JWT access 15min + refresh cookie httpOnly SameSite=strict - table de revocation JTI PG"]
+        M4["Cookie refresh httpOnly SameSite=strict + credentials:include - CSRF impossible"]
+        M5["Drizzle ORM parametre - zero SQL concatene"]
+        M6["Schema Mongoose strict + ValidationPipe whitelist:true"]
+        M7["findOneAndUpdate atomique - usedAt non-null apres echange"]
+        M8["RolesGuard relit le role depuis la BDD - aucune confiance dans le JWT seul"]
+        M9["Verification de propriete createdBy === req.user.sub dans chaque controleur"]
+        M10["HTTPS TLS 1.3 Caddy - HSTS - CSP stricte"]
+        M11["ThrottlerGuard global 100req/15min/IP + login 5 tentatives/15min"]
     end
 
     A1 --> M1
@@ -69,23 +69,23 @@ flowchart TD
     A11 --> M11
 ```
 
-| Threat | Mitigation |
+| Menace | Mitigation |
 |--------|-----------|
-| Password brute-force | Argon2id CPU/memory cost + rate limiting 100req/15min |
-| Replay of a TOTP code | In-memory anti-replay TanStack Store TTL 90s |
-| XSS session theft | Refresh token in httpOnly cookie (inaccessible to JS); access token 15min; revocable JTI |
-| CSRF | Refresh cookie httpOnly SameSite=strict; access token in the Authorization header |
-| SQL injection | Parameterized Drizzle ORM — never concatenated SQL |
-| NoSQL injection | Strict Mongoose schema; ValidationPipe whitelist:true |
-| SSO token replay | Atomic findOneAndUpdate; usedAt non-null after use |
-| Privilege escalation | RolesGuard checks the role re-read from the DB |
-| Unauthorized access | Ownership check in every controller (createdBy === req.user.sub) |
+| Force brute sur mot de passe | Coût CPU/mémoire Argon2id + limitation de débit 100req/15min |
+| Rejeu d'un code TOTP | Anti-rejeu en mémoire TanStack Store TTL 90s |
+| Vol de session XSS | Jeton refresh dans un cookie httpOnly (inaccessible au JS) ; jeton access 15min ; JTI révocable |
+| CSRF | Cookie refresh httpOnly SameSite=strict ; jeton access dans l'en-tête Authorization |
+| Injection SQL | Drizzle ORM paramétré — jamais de SQL concaténé |
+| Injection NoSQL | Schéma Mongoose strict ; ValidationPipe whitelist:true |
+| Rejeu de jeton SSO | findOneAndUpdate atomique ; usedAt non-null après usage |
+| Élévation de privilèges | RolesGuard vérifie le rôle relu depuis la BDD |
+| Accès non autorisé | Vérification de propriété dans chaque contrôleur (createdBy === req.user.sub) |
 
 ---
 
-## 2. Password hashing — Argon2id
+## 2. Hachage des mots de passe — Argon2id
 
-Argon2id (winner of the 2015 Password Hashing Competition) combines GPU resistance (memory cost) with resistance to side-channel attacks. bcrypt is limited to 72 bytes and has no memory parameter.
+Argon2id (vainqueur de la Password Hashing Competition 2015) combine une résistance aux GPU (coût mémoire) et une résistance aux attaques par canaux auxiliaires. bcrypt est limité à 72 octets et ne dispose d'aucun paramètre de mémoire.
 
 ```typescript
 // auth.service.ts — registration
@@ -100,7 +100,7 @@ const passwordHash = await argon2.hash(dto.password);
 const valid = await argon2.verify(user.passwordHash, dto.password);
 ```
 
-The **JWT refresh token is also hashed** before storage:
+Le **jeton refresh JWT est lui aussi haché** avant stockage :
 
 ```typescript
 // token.service.ts
@@ -111,22 +111,22 @@ await db.update(users).set({ refreshTokenHash });
 const isValid = await argon2.verify(user.refreshTokenHash, refreshToken);
 ```
 
-Read access to the database is not enough to replay the refresh token.
+Un accès en lecture à la base de données ne suffit pas à rejouer le jeton refresh.
 
 ---
 
-## 3. Multi-factor authentication — TOTP RFC 6238
+## 3. Authentification multifacteur — TOTP RFC 6238
 
-### Algorithm
+### Algorithme
 
 ```
 code = HOTP(secret, floor(Unix_timestamp / 30))
 HOTP(K, C) = truncate(HMAC-SHA1(K, C_bytes))
 ```
 
-The code is valid for 30 seconds, with a tolerance of ±1 period (`window: 1`).
+Le code est valide pendant 30 secondes, avec une tolérance de ±1 période (`window: 1`).
 
-### Secret generation (registration)
+### Génération du secret (inscription)
 
 ```typescript
 // totp.service.ts
@@ -138,7 +138,7 @@ const generated = speakeasy.generateSecret({
 // otpauth_url → returned to the client → QR code with qrcode npm
 ```
 
-### Verification with anti-replay
+### Vérification avec anti-rejeu
 
 ```typescript
 verify(secret: string, token: string): boolean {
@@ -162,13 +162,13 @@ verify(secret: string, token: string): boolean {
 }
 ```
 
-Even if an attacker intercepts a valid code, a second use within 30s is refused.
+Même si un attaquant intercepte un code valide, une seconde utilisation dans les 30s est refusée.
 
 ---
 
-## 4. JWT — Access and refresh
+## 4. JWT — Access et refresh
 
-### Payload structure
+### Structure du payload
 
 ```json
 {
@@ -181,43 +181,43 @@ Even if an attacker intercepts a valid code, a second use within 30s is refused.
 }
 ```
 
-- **access token**: HS256, 15-minute lifetime — sent in the `Authorization: Bearer` header
-- **refresh token**: HS256, 7-day lifetime, Argon2-hashed in the database — stored in an **httpOnly cookie** (`qc_rt`, SameSite=strict)
+- **jeton access** : HS256, durée de vie 15 minutes — envoyé dans l'en-tête `Authorization: Bearer`
+- **jeton refresh** : HS256, durée de vie 7 jours, haché Argon2 en base de données — stocké dans un **cookie httpOnly** (`qc_rt`, SameSite=strict)
 
-The refresh token is inaccessible to JavaScript (httpOnly), which removes the main XSS vector. In production, the `secure` flag is enabled (HTTPS only).
+Le jeton refresh est inaccessible au JavaScript (httpOnly), ce qui élimine le principal vecteur XSS. En production, le flag `secure` est activé (HTTPS uniquement).
 
-### Client-side storage
+### Stockage côté client
 
-| Token | Storage | JS access |
+| Jeton | Stockage | Accès JS |
 |-------|---------|----------|
-| access token (15min) | `localStorage` | Yes — read for the `Authorization` header |
-| refresh token (7d) | httpOnly cookie `qc_rt` | No — transparent to JS |
+| jeton access (15min) | `localStorage` | Oui — lu pour l'en-tête `Authorization` |
+| jeton refresh (7j) | cookie httpOnly `qc_rt` | Non — transparent pour le JS |
 
-### Strict rotation with transactional locking
+### Rotation stricte avec verrouillage transactionnel
 
-Rotation is protected against race conditions (TOCTOU) by a `SELECT FOR UPDATE` within a PostgreSQL transaction. Two simultaneous refresh requests cannot use the same token.
+La rotation est protégée contre les conditions de course (TOCTOU) par un `SELECT FOR UPDATE` au sein d'une transaction PostgreSQL. Deux requêtes refresh simultanées ne peuvent pas utiliser le même jeton.
 
 ```mermaid
 flowchart TD
     A[POST /auth/refresh — cookie qc_rt] --> B[JWT.verify → payload]
     B --> C["BEGIN TRANSACTION<br/>SELECT refreshTokenHash FOR UPDATE"]
-    C --> D{Hash present?}
-    D -->|No| E[401 TOKEN_REVOKED — ROLLBACK]
-    D -->|Yes| F[argon2.verify hash token]
-    F --> G{Valid?}
-    G -->|No| H[401 TOKEN_REVOKED — ROLLBACK]
-    G -->|Yes| I[UPDATE SET refresh_token_hash = NULL — invalidate old]
-    I --> J[generatePair new tokens]
-    J --> K[argon2.hash new refresh]
-    K --> L[UPDATE SET refresh_token_hash = hash new — COMMIT]
-    L --> M[Set-Cookie qc_rt + return accessToken]
+    C --> D{Hash present ?}
+    D -->|Non| E[401 TOKEN_REVOKED — ROLLBACK]
+    D -->|Oui| F[argon2.verify hash token]
+    F --> G{Valide ?}
+    G -->|Non| H[401 TOKEN_REVOKED — ROLLBACK]
+    G -->|Oui| I[UPDATE SET refresh_token_hash = NULL — invalide l'ancien]
+    I --> J[generatePair nouveaux tokens]
+    J --> K[argon2.hash nouveau refresh]
+    K --> L[UPDATE SET refresh_token_hash = hash nouveau — COMMIT]
+    L --> M[Set-Cookie qc_rt + retourne accessToken]
 ```
 
-If an attacker steals a refresh token and uses it, the legitimate user's next refresh fails (mutual revocation). The transactional lock prevents two simultaneous exchanges of the same token.
+Si un attaquant vole un jeton refresh et l'utilise, le prochain refresh de l'utilisateur légitime échoue (révocation mutuelle). Le verrou transactionnel empêche deux échanges simultanés du même jeton.
 
-### Instant revocation — `revoked_tokens` table
+### Révocation instantanée — table `revoked_tokens`
 
-On logout (`POST /auth/logout`), the current access token is revoked immediately via its JTI, without waiting for its natural expiration.
+Lors de la déconnexion (`POST /auth/logout`), le jeton access courant est révoqué immédiatement via son JTI, sans attendre son expiration naturelle.
 
 ```sql
 -- api/drizzle/0001_revoked_tokens.sql
@@ -236,34 +236,34 @@ if (payload.jti) {
 }
 ```
 
-Expired entries are purged automatically on every `revokeAccessToken()` call, preventing unbounded growth of the table (no need for Redis or a cron job).
+Les entrées expirées sont purgées automatiquement à chaque appel de `revokeAccessToken()`, ce qui empêche la croissance illimitée de la table (aucun besoin de Redis ni de tâche cron).
 
-If an attacker steals a valid access token, the victim's logout revokes the token before its expiration (15 min max exposure instead of 15 min guaranteed).
+Si un attaquant vole un jeton access valide, la déconnexion de la victime révoque le jeton avant son expiration (exposition de 15 min max au lieu de 15 min garanties).
 
 ---
 
-## 5. SSO — Cross-surface Single Sign-On
+## 5. SSO — Authentification unique inter-surfaces
 
-| Property | Mechanism |
+| Propriété | Mécanisme |
 |-----------|----------|
-| Single use | Atomic findOneAndUpdate — usedAt non-null after exchange |
-| Expiration | expiresAt = now+300s; MongoDB TTL index removes it automatically |
-| PKCE state | UUID v4 on the web side, verified on the Java side — prevents CSRF |
-| Entropy | UUID v4 token (122 bits) — not brute-force guessable |
-| Transport | HTTPS mandatory in production; app:// deep link in dev |
+| Usage unique | findOneAndUpdate atomique — usedAt non-null après échange |
+| Expiration | expiresAt = now+300s ; l'index TTL de MongoDB le supprime automatiquement |
+| État PKCE | UUID v4 côté web, vérifié côté Java — empêche le CSRF |
+| Entropie | Jeton UUID v4 (122 bits) — non devinable par force brute |
+| Transport | HTTPS obligatoire en production ; deep link app:// en dev |
 
 ---
 
-## 6. Contract integrity — SHA-256
+## 6. Intégrité des contrats — SHA-256
 
-### Content hash
+### Hash du contenu
 
 ```typescript
 const hash = crypto.createHash('sha256').update(dto.content).digest('hex');
 // Stored as contentHash at creation time
 ```
 
-### Individual signature hash
+### Hash de signature individuel
 
 ```typescript
 const hash = crypto
@@ -273,11 +273,11 @@ const hash = crypto
 // Includes: content + identity + timestamp — non-repudiable proof
 ```
 
-The mandatory TOTP signature proves physical presence at the moment of signing (strong authentication).
+La signature TOTP obligatoire prouve la présence physique au moment de la signature (authentification forte).
 
 ---
 
-## 7. Rate limiting
+## 7. Limitation de débit
 
 ```typescript
 // app.module.ts
@@ -286,85 +286,85 @@ ThrottlerModule.forRoot([{ ttl: 900000, limit: 100 }])
 providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }]
 ```
 
-Routes with specific throttling:
+Routes avec limitation spécifique :
 
-| Route | Limit | Window | Reason |
+| Route | Limite | Fenêtre | Raison |
 |-------|--------|---------|--------|
-| `POST /auth/login` | 5 attempts | 15 min | Anti-brute-force (TOTP + password) |
-| `POST /auth/refresh` | 10 requests | 60 s | Limit abusive rotation |
+| `POST /auth/login` | 5 tentatives | 15 min | Anti-force brute (TOTP + mot de passe) |
+| `POST /auth/refresh` | 10 requêtes | 60 s | Limiter la rotation abusive |
 
 ---
 
-## 8. HTTP security headers
+## 8. En-têtes de sécurité HTTP
 
-Helmet.js applied to all responses, with per-route CSP (Caddy + NestJS):
+Helmet.js appliqué à toutes les réponses, avec une CSP par route (Caddy + NestJS) :
 
-| Header | Protection |
+| En-tête | Protection |
 |--------|-----------|
-| `Content-Security-Policy` | Restricts scripts/styles/images — XSS mitigation |
-| `X-Content-Type-Options: nosniff` | MIME sniffing |
+| `Content-Security-Policy` | Restreint scripts/styles/images — mitigation XSS |
+| `X-Content-Type-Options: nosniff` | Sniffing MIME |
 | `X-Frame-Options: DENY` | Clickjacking |
-| `Strict-Transport-Security` | HTTPS → HTTP downgrade |
-| `X-XSS-Protection: 1; mode=block` | XSS legacy browsers |
+| `Strict-Transport-Security` | Rétrogradation HTTPS → HTTP |
+| `X-XSS-Protection: 1; mode=block` | XSS navigateurs legacy |
 
-**Per-route CSP** — `'unsafe-inline'` removed from the client, admin, and API routes. Only the `/docs` and `/scalar` routes (Scalar UI) keep `'unsafe-inline'` in `script-src`, because this third-party UI requires it. The React apps use implicit nonces via Vite.
+**CSP par route** — `'unsafe-inline'` retiré des routes client, admin et API. Seules les routes `/docs` et `/scalar` (Scalar UI) conservent `'unsafe-inline'` dans `script-src`, car cette UI tierce l'exige. Les applications React utilisent des nonces implicites via Vite.
 
 ---
 
-## 9. Role-based authorization
+## 9. Autorisation basée sur les rôles
 
 ```
 resident → moderator → admin
-                              banned (terminal — login refused)
+                              banned (terminal — login refuse)
 ```
 
-| Role | Key permissions |
+| Rôle | Permissions clés |
 |------|-----------------|
-| `resident` | Create incidents/services/events, points, votes, messaging |
-| `moderator` | + Change incident status, moderate content |
-| `admin` | + Manage users, neighborhoods, stats, DSL |
-| `banned` | None — 401 at login |
+| `resident` | Créer des incidents/services/événements, points, votes, messagerie |
+| `moderator` | + Changer le statut des incidents, modérer le contenu |
+| `admin` | + Gérer les utilisateurs, quartiers, statistiques, DSL |
+| `banned` | Aucune — 401 à la connexion |
 
-The role is re-checked in the database on every refresh — a ban takes effect immediately.
+Le rôle est revérifié en base de données à chaque refresh — un bannissement prend effet immédiatement.
 
 ---
 
-## 10. GDPR — Data protection
+## 10. RGPD — Protection des données
 
-### Personal data export
+### Export des données personnelles
 
 ```
 GET /me/export → full JSON archive
 ```
 
-Includes: profile, incidents, services, events, contracts, points, conversations.
-Never includes: passwordHash, totpSecret, refreshTokenHash.
+Inclut : profil, incidents, services, événements, contrats, points, conversations.
+N'inclut jamais : passwordHash, totpSecret, refreshTokenHash.
 
-### Account deletion
+### Suppression de compte
 
-1. Soft delete incidents (moderation retention)
-2. Refresh token revocation (immediate logout)
-3. Neo4j node deletion `deleteNode('User', id)`
+1. Soft delete des incidents (rétention pour modération)
+2. Révocation du jeton refresh (déconnexion immédiate)
+3. Suppression du nœud Neo4j `deleteNode('User', id)`
 
 ---
 
-## 11. Token storage — Java desktop application
+## 11. Stockage des jetons — Application de bureau Java
 
-### Problem addressed
+### Problème traité
 
-Before v0.1.6, access and refresh tokens were stored in clear text in `quartierconnect.db` (SQLite) with `644` file permissions (readable by all users of the system). A local attacker could read the refresh token in a single command and hijack the session for 7 days without knowing the password or the TOTP code.
+Avant la v0.1.6, les jetons access et refresh étaient stockés en clair dans `quartierconnect.db` (SQLite) avec des permissions de fichier `644` (lisibles par tous les utilisateurs du système). Un attaquant local pouvait lire le jeton refresh en une seule commande et détourner la session pendant 7 jours sans connaître le mot de passe ni le code TOTP.
 
-### Solution — TokenVault (OS keychain)
+### Solution — TokenVault (trousseau de l'OS)
 
-The `TokenVault` service uses `java-keyring` to delegate token storage to the system keychain:
+Le service `TokenVault` utilise `java-keyring` pour déléguer le stockage des jetons au trousseau du système :
 
-| OS | Backend | Mechanism |
+| OS | Backend | Mécanisme |
 |----|---------|-----------|
 | Linux | SecretService (gnome-keyring / KWallet) | D-Bus `org.freedesktop.Secret` |
 | macOS | macOS Keychain | Security.framework |
 | Windows | Credential Manager | DPAPI |
 
-Tokens are encrypted by the OS, accessible only to the current user, and never pass through the disk in clear text.
+Les jetons sont chiffrés par l'OS, accessibles uniquement à l'utilisateur courant, et ne transitent jamais en clair sur le disque.
 
 ```java
 // Save after login/refresh
@@ -377,82 +377,82 @@ TokenVault.TokenPair pair = TokenVault.getInstance().loadTokens();
 TokenVault.getInstance().clearTokens();
 ```
 
-### Remaining data in SQLite
+### Données restantes dans SQLite
 
-The `session` table now keeps only the **email** (to display the identity in offline mode). No secret is stored on disk.
+La table `session` ne conserve désormais que l'**email** (pour afficher l'identité en mode hors ligne). Aucun secret n'est stocké sur le disque.
 
-| Column | Content | Sensitivity |
+| Colonne | Contenu | Sensibilité |
 |---------|---------|-------------|
-| `email` | Email address | Low |
-| `saved_at` | Timestamp of the last login | None |
+| `email` | Adresse email | Faible |
+| `saved_at` | Horodatage de la dernière connexion | Aucune |
 
-### Off-keychain fallback
+### Repli hors trousseau
 
-If no OS keychain is available (headless server, CI, test), `TokenVault` keeps the tokens **in memory only**. They do not survive a restart. The user will have to log in again, but no token is ever written in clear text.
+Si aucun trousseau OS n'est disponible (serveur headless, CI, test), `TokenVault` conserve les jetons **en mémoire uniquement**. Ils ne survivent pas à un redémarrage. L'utilisateur devra se reconnecter, mais aucun jeton n'est jamais écrit en clair.
 
-### Migration of existing databases
+### Migration des bases existantes
 
-`SQLiteDatabase.initialize()` automatically drops the `access_token` and `refresh_token` columns from pre-v0.1.6 databases via `ALTER TABLE session DROP COLUMN`. The migration is idempotent.
-
----
-
-## 12. Data integrity — Three-Way Merge
-
-### Problem addressed
-
-Bidirectional synchronization between SQLite (desktop) and PostgreSQL (API) exposed a risk of silent data loss. With the Last-Writer-Wins (LWW) mechanism, a local change could be overwritten by a server change without warning.
-
-### Solution — Three-Way Merge with conflict detection
-
-The `ThreeWayMerger` compares three versions of each field (title, description, status):
-
-- **Base** (common ancestor): last synchronized version, stored locally after each successful push/pull
-- **Local**: current version in SQLite
-- **Remote**: version received from the server
-
-When both sides have modified the same field differently (relative to the base), an **explicit conflict** is declared (`is_conflict=1`). The incident is excluded from `listDirty()` to avoid pushing inconsistent data. The user must resolve it manually via the merge modal (4-column GridPane with diff highlighting).
-
-LWW remains used as a fallback only when no ancestor is available (first sync of an incident).
-
-### Tombstone delete
-
-Server-side deletions are propagated via `tombstoneOrphans()`, which marks incidents absent from the server with `deleted_at`. This approach prevents deleted incidents from being resurrected on the next push.
+`SQLiteDatabase.initialize()` supprime automatiquement les colonnes `access_token` et `refresh_token` des bases antérieures à la v0.1.6 via `ALTER TABLE session DROP COLUMN`. La migration est idempotente.
 
 ---
 
-## 13. Input validation — Desktop application
+## 12. Intégrité des données — Three-Way Merge
 
-The input fields in the desktop application are validated client-side before being sent to the API:
+### Problème traité
 
-| Field | Limit | Reason |
+La synchronisation bidirectionnelle entre SQLite (bureau) et PostgreSQL (API) exposait un risque de perte de données silencieuse. Avec le mécanisme Last-Writer-Wins (LWW), une modification locale pouvait être écrasée par une modification serveur sans avertissement.
+
+### Solution — Three-Way Merge avec détection de conflits
+
+Le `ThreeWayMerger` compare trois versions de chaque champ (title, description, status) :
+
+- **Base** (ancêtre commun) : dernière version synchronisée, stockée localement après chaque push/pull réussi
+- **Local** : version courante dans SQLite
+- **Remote** : version reçue du serveur
+
+Lorsque les deux côtés ont modifié le même champ différemment (par rapport à la base), un **conflit explicite** est déclaré (`is_conflict=1`). L'incident est exclu de `listDirty()` pour éviter de pousser des données incohérentes. L'utilisateur doit le résoudre manuellement via la modale de fusion (GridPane à 4 colonnes avec mise en évidence des différences).
+
+Le LWW reste utilisé en repli uniquement lorsqu'aucun ancêtre n'est disponible (première synchronisation d'un incident).
+
+### Suppression par tombstone
+
+Les suppressions côté serveur sont propagées via `tombstoneOrphans()`, qui marque les incidents absents du serveur avec `deleted_at`. Cette approche empêche la résurrection des incidents supprimés au prochain push.
+
+---
+
+## 13. Validation des entrées — Application de bureau
+
+Les champs de saisie de l'application de bureau sont validés côté client avant d'être envoyés à l'API :
+
+| Champ | Limite | Raison |
 |-------|--------|--------|
-| Incident title | 200 characters max | Prevention of long injection / DoS payload |
-| Incident description | 2000 characters max | Consistency with the API limits |
+| Titre d'incident | 200 caractères max | Prévention des injections longues / payload DoS |
+| Description d'incident | 2000 caractères max | Cohérence avec les limites de l'API |
 
-Validation prevents the submission of malformed data that would be rejected by the API, improving the user experience and reducing unnecessary network traffic.
-
----
-
-## 14. API error sanitization
-
-### Problem addressed
-
-Before this version, the HTTP error messages in `ApiService` included the body of the server response. A poorly filtered error message could expose internal details (stack traces, table names, file paths) in the logs or in the UI.
-
-### Solution
-
-The `execute()` method of `ApiService` no longer surfaces the response body in exceptions. Only the HTTP code and a generic description are included in the error message. The response body is available only as the method's return value on success.
-
-The SSO logs are also sanitized: tokens and identifiers are no longer displayed in clear text in the log messages.
+La validation empêche la soumission de données malformées qui seraient rejetées par l'API, améliorant l'expérience utilisateur et réduisant le trafic réseau inutile.
 
 ---
 
-## 15. Proactive token auto-refresh
+## 14. Assainissement des erreurs de l'API
 
-### Problem addressed
+### Problème traité
 
-The access token renewal was triggered only after a 401 failure. During the gap between expiration and the retry, in-flight requests failed, causing transient errors in the UI.
+Avant cette version, les messages d'erreur HTTP de `ApiService` incluaient le corps de la réponse du serveur. Un message d'erreur mal filtré pouvait exposer des détails internes (traces de pile, noms de tables, chemins de fichiers) dans les logs ou dans l'UI.
 
 ### Solution
 
-`AuthService.parseJwtPayload()` extracts the `exp` field from the JWT token (Base64 decoding of the payload, without signature verification on the client side). When the token expires in less than 60 seconds, a proactive refresh is triggered before the next API request. This threshold is enough to cover network latency and server processing time.
+La méthode `execute()` de `ApiService` ne fait plus remonter le corps de la réponse dans les exceptions. Seuls le code HTTP et une description générique sont inclus dans le message d'erreur. Le corps de la réponse n'est disponible que comme valeur de retour de la méthode en cas de succès.
+
+Les logs SSO sont également assainis : les jetons et identifiants ne sont plus affichés en clair dans les messages de log.
+
+---
+
+## 15. Renouvellement proactif automatique des jetons
+
+### Problème traité
+
+Le renouvellement du jeton access n'était déclenché qu'après un échec 401. Pendant l'intervalle entre l'expiration et la nouvelle tentative, les requêtes en cours échouaient, provoquant des erreurs transitoires dans l'UI.
+
+### Solution
+
+`AuthService.parseJwtPayload()` extrait le champ `exp` du jeton JWT (décodage Base64 du payload, sans vérification de signature côté client). Lorsque le jeton expire dans moins de 60 secondes, un renouvellement proactif est déclenché avant la prochaine requête API. Ce seuil suffit à couvrir la latence réseau et le temps de traitement serveur.

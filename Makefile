@@ -96,6 +96,11 @@ status: ## Vérifier l'état des services Docker
 setup: ## Installation complète en une commande (prérequis + .env + Docker + démo)
 	@SETUP_FORCE="$(SETUP_FORCE)" ./scripts/setup.sh
 
+dossier: ## Assembler tous les documents du rendu en un seul Markdown (docs/DOSSIER-RENDU.md)
+	@echo "$(RUN) Assemblage du dossier de rendu..."
+	@bash scripts/build-dossier.sh
+	@echo "$(OK) Dossier assemblé. PDF : dist/DOSSIER-RENDU.pdf (déjà généré) ou reconvertir depuis docs/DOSSIER-RENDU.md"
+
 dist: ## Archive de rendu dans dist/ (sources zip + JAR desktop + jeux d'essai)
 	@echo "$(RUN) $(BOLD)Construction de l'archive de rendu...$(RESET)"
 	@mkdir -p dist
