@@ -1,5 +1,27 @@
 [{
 	"_id": {
+		"$oid": "6a46f580cc59f9b84636dfb7"
+	},
+	"title": "Coup de main bricolage par Bob",
+	"description": "Bob vous aide pour vos petits travaux : étagères, joints, ampoules.",
+	"category": "handyman",
+	"type": "paid",
+	"createdBy": "ea7894ed-97f8-45ef-b955-35cd773830e5",
+	"neighborhoodId": "6a42833f5980b9e26ff1a71c",
+	"pointsMultiplier": 1,
+	"direction": "offer",
+	"duration": 60,
+	"status": "active",
+	"createdAt": {
+		"$date": "2026-07-02T23:34:24.343Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-02T23:34:24.343Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
 		"$oid": "6a44346ed6ad48111c1abcac"
 	},
 	"title": "Aide au jardinage le week-end",
@@ -21,7 +43,7 @@
 		"$date": "2026-06-30T21:26:06.293Z"
 	},
 	"updatedAt": {
-		"$date": "2026-06-30T21:26:06.293Z"
+		"$date": "2026-07-03T09:09:50.398Z"
 	},
 	"__v": 0
 },
@@ -49,60 +71,6 @@
 	},
 	"updatedAt": {
 		"$date": "2026-06-30T21:26:06.312Z"
-	},
-	"__v": 0
-},
-{
-	"_id": {
-		"$oid": "6a44346ed6ad48111c1abcae"
-	},
-	"title": "Garde d'animaux",
-	"description": "Je garde vos animaux de compagnie pendant vos absences.",
-	"category": "childcare",
-	"type": "free",
-	"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-	"neighborhoodId": "6a42833f5980b9e26ff1a71c",
-	"pointsMultiplier": 1,
-	"location": {
-		"type": "Point",
-		"coordinates": [
-			2.367231220809501,
-			48.87676468194858
-		]
-	},
-	"direction": "offer",
-	"createdAt": {
-		"$date": "2026-06-30T21:26:06.323Z"
-	},
-	"updatedAt": {
-		"$date": "2026-06-30T21:26:06.323Z"
-	},
-	"__v": 0
-},
-{
-	"_id": {
-		"$oid": "6a44346ed6ad48111c1abcaf"
-	},
-	"title": "Recherche covoiturage pour le marché",
-	"description": "Je cherche un trajet partagé vers le marché le dimanche matin.",
-	"category": "transport",
-	"type": "free",
-	"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-	"neighborhoodId": "6a42833f5980b9e26ff1a71c",
-	"pointsMultiplier": 1,
-	"location": {
-		"type": "Point",
-		"coordinates": [
-			2.3632312208095017,
-			48.87776468194858
-		]
-	},
-	"direction": "request",
-	"createdAt": {
-		"$date": "2026-06-30T21:26:06.334Z"
-	},
-	"updatedAt": {
-		"$date": "2026-06-30T21:26:06.334Z"
 	},
 	"__v": 0
 },
@@ -164,23 +132,55 @@
 },
 {
 	"_id": {
-		"$oid": "6a46f580cc59f9b84636dfb7"
+		"$oid": "6a44346ed6ad48111c1abcae"
 	},
-	"title": "Coup de main bricolage par Bob",
-	"description": "Bob vous aide pour vos petits travaux : étagères, joints, ampoules.",
-	"category": "handyman",
-	"type": "paid",
-	"createdBy": "ea7894ed-97f8-45ef-b955-35cd773830e5",
+	"title": "Garde d'animaux",
+	"description": "Je garde vos animaux de compagnie pendant vos absences.",
+	"category": "childcare",
+	"type": "free",
+	"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
 	"neighborhoodId": "6a42833f5980b9e26ff1a71c",
 	"pointsMultiplier": 1,
+	"location": {
+		"type": "Point",
+		"coordinates": [
+			2.367231220809501,
+			48.87676468194858
+		]
+	},
 	"direction": "offer",
-	"duration": 60,
-	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-02T23:34:24.343Z"
+		"$date": "2026-06-30T21:26:06.323Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-02T23:34:24.343Z"
+		"$date": "2026-07-03T09:15:33.503Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a44346ed6ad48111c1abcaf"
+	},
+	"title": "Recherche covoiturage pour le marché",
+	"description": "Je cherche un trajet partagé vers le marché le dimanche matin.",
+	"category": "transport",
+	"type": "free",
+	"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+	"neighborhoodId": "6a42833f5980b9e26ff1a71c",
+	"pointsMultiplier": 1,
+	"location": {
+		"type": "Point",
+		"coordinates": [
+			2.3632312208095017,
+			48.87776468194858
+		]
+	},
+	"direction": "request",
+	"createdAt": {
+		"$date": "2026-06-30T21:26:06.334Z"
+	},
+	"updatedAt": {
+		"$date": "2026-06-30T21:26:06.334Z"
 	},
 	"__v": 0
 }]

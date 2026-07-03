@@ -51,15 +51,65 @@
 			"_id": {
 				"$oid": "6a4614e897e5d68ec6a0ea53"
 			}
+		},
+		{
+			"userId": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-03T06:27:22.814Z"
+			},
+			"_id": {
+				"$oid": "6a47564aef7bb82ab044d3dc"
+			}
 		}
 	],
-	"status": "open",
+	"status": "closed",
 	"createdAt": {
 		"$date": "2026-06-30T21:26:06.435Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-02T07:36:08.476Z"
+		"$date": "2026-07-03T08:31:38.669Z"
 	},
-	"__v": 2
+	"__v": 3
+},
+{
+	"_id": {
+		"$oid": "6a477f11a62122306ea32d90"
+	},
+	"title": "Vote Test QA Fermeture",
+	"voteType": "binary",
+	"options": [
+		{
+			"id": "yes",
+			"label": "Oui",
+			"_id": {
+				"$oid": "6a477f11a62122306ea32d91"
+			}
+		},
+		{
+			"id": "no",
+			"label": "Non",
+			"_id": {
+				"$oid": "6a477f11a62122306ea32d92"
+			}
+		}
+	],
+	"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+	"endsAt": {
+		"$date": "2026-12-15T21:30:00Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [],
+	"status": "closed",
+	"createdAt": {
+		"$date": "2026-07-03T09:21:21.71Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-03T09:21:55.646Z"
+	},
+	"__v": 0
 }]
 

@@ -1,20 +1,5 @@
 [{
 	"_id": {
-		"$oid": "6a4160f47447ec0083a61187"
-	},
-	"length": 70,
-	"chunkSize": 261120,
-	"uploadDate": {
-		"$date": "2026-06-28T17:59:16.46Z"
-	},
-	"filename": "avatar-447c25d0-cbac-4bc7-9cc7-337dd01e5cd4",
-	"metadata": {
-		"uploadedBy": "447c25d0-cbac-4bc7-9cc7-337dd01e5cd4",
-		"contentType": "image/png"
-	}
-},
-{
-	"_id": {
 		"$oid": "6a4166567447ec0083a61189"
 	},
 	"length": 70,
@@ -40,6 +25,21 @@
 	"filename": "avatar-ef24a91d-e585-4e77-8121-568cf7524e95",
 	"metadata": {
 		"uploadedBy": "ef24a91d-e585-4e77-8121-568cf7524e95",
+		"contentType": "image/png"
+	}
+},
+{
+	"_id": {
+		"$oid": "6a4160f47447ec0083a61187"
+	},
+	"length": 70,
+	"chunkSize": 261120,
+	"uploadDate": {
+		"$date": "2026-06-28T17:59:16.46Z"
+	},
+	"filename": "avatar-447c25d0-cbac-4bc7-9cc7-337dd01e5cd4",
+	"metadata": {
+		"uploadedBy": "447c25d0-cbac-4bc7-9cc7-337dd01e5cd4",
 		"contentType": "image/png"
 	}
 },

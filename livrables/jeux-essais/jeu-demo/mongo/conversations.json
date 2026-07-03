@@ -41,5 +41,27 @@
 		"$date": "2026-07-02T21:06:59.214Z"
 	},
 	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a475665ef7bb82ab044d3e4"
+	},
+	"participants": [
+		"41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+		"f3dad978-6792-4d0c-b2a5-fe3f3f08253f"
+	],
+	"neighborhoodId": null,
+	"isGroup": false,
+	"groupName": null,
+	"lastMessageAt": {
+		"$date": "2026-07-03T06:29:42.794Z"
+	},
+	"createdAt": {
+		"$date": "2026-07-03T06:27:49.617Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-03T06:29:42.794Z"
+	},
+	"__v": 0
 }]
 

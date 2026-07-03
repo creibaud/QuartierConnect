@@ -1,49 +1,5 @@
 [{
 	"_id": {
-		"$oid": "6a459509586efbb7cf0889fb"
-	},
-	"title": "Service contract — Cours de soutien scolaire",
-	"content": "Service contract for \"Cours de soutien scolaire\".\nDescription: Étudiant disponible pour aider collégiens et lycéens en maths..\nPayer: f3dad978-6792-4d0c-b2a5-fe3f3f08253f. Payee: 41d91ab9-b9a9-45ed-a5b8-9c2ae4819316.\nAmount: 1 points.\nDate: 2026-07-01T22:30:33.856Z.",
-	"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-	"signatories": [
-		"f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"41d91ab9-b9a9-45ed-a5b8-9c2ae4819316"
-	],
-	"status": "fully_signed",
-	"contentHash": "762e948081a15754f975859f5a01890c3671222355de94999b7519e6e5a46b61",
-	"signedAt": {
-		"$date": "2026-07-01T22:30:34.161Z"
-	},
-	"signatures": [
-		{
-			"userId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-			"signedAt": {
-				"$date": "2026-07-01T22:30:34.092Z"
-			},
-			"hash": "cdb42c3e95fc172dbc48d63f3627c5515b79e564558eb8ad7dd2093b8ae75d69"
-		},
-		{
-			"userId": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-			"signedAt": {
-				"$date": "2026-07-01T22:30:34.161Z"
-			},
-			"hash": "d683f575e44d4f991630e5f5a4b18ef75b97ff97d1af8ed751f6824441790b75"
-		}
-	],
-	"serviceId": "6a44346ed6ad48111c1abcad",
-	"bookingId": "6a459509586efbb7cf0889fa",
-	"pointsAmount": 1,
-	"pdfFileId": "6a45950a586efbb7cf088a00",
-	"createdAt": {
-		"$date": "2026-07-01T22:30:33.859Z"
-	},
-	"updatedAt": {
-		"$date": "2026-07-01T22:30:34.191Z"
-	},
-	"__v": 2
-},
-{
-	"_id": {
 		"$oid": "6a46cc2831b9e8b1eac99713"
 	},
 	"title": "Contrat de service — Réparation de vélo par Alice",
@@ -110,6 +66,50 @@
 	},
 	"updatedAt": {
 		"$date": "2026-07-02T23:33:53.864Z"
+	},
+	"__v": 2
+},
+{
+	"_id": {
+		"$oid": "6a459509586efbb7cf0889fb"
+	},
+	"title": "Service contract — Cours de soutien scolaire",
+	"content": "Service contract for \"Cours de soutien scolaire\".\nDescription: Étudiant disponible pour aider collégiens et lycéens en maths..\nPayer: f3dad978-6792-4d0c-b2a5-fe3f3f08253f. Payee: 41d91ab9-b9a9-45ed-a5b8-9c2ae4819316.\nAmount: 1 points.\nDate: 2026-07-01T22:30:33.856Z.",
+	"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+	"signatories": [
+		"f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
+		"41d91ab9-b9a9-45ed-a5b8-9c2ae4819316"
+	],
+	"status": "fully_signed",
+	"contentHash": "762e948081a15754f975859f5a01890c3671222355de94999b7519e6e5a46b61",
+	"signedAt": {
+		"$date": "2026-07-01T22:30:34.161Z"
+	},
+	"signatures": [
+		{
+			"userId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
+			"signedAt": {
+				"$date": "2026-07-01T22:30:34.092Z"
+			},
+			"hash": "cdb42c3e95fc172dbc48d63f3627c5515b79e564558eb8ad7dd2093b8ae75d69"
+		},
+		{
+			"userId": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+			"signedAt": {
+				"$date": "2026-07-01T22:30:34.161Z"
+			},
+			"hash": "d683f575e44d4f991630e5f5a4b18ef75b97ff97d1af8ed751f6824441790b75"
+		}
+	],
+	"serviceId": "6a44346ed6ad48111c1abcad",
+	"bookingId": "6a459509586efbb7cf0889fa",
+	"pointsAmount": 1,
+	"pdfFileId": "6a45950a586efbb7cf088a00",
+	"createdAt": {
+		"$date": "2026-07-01T22:30:33.859Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-01T22:30:34.191Z"
 	},
 	"__v": 2
 },
@@ -230,5 +230,41 @@
 		"$date": "2026-07-03T00:29:36.068Z"
 	},
 	"__v": 2
+},
+{
+	"_id": {
+		"$oid": "6a475670ef7bb82ab044d3e5"
+	},
+	"title": "Contrat de service — Cours de soutien scolaire",
+	"content": "Contrat de service pour « Cours de soutien scolaire ».\nDescription : Étudiant disponible pour aider collégiens et lycéens en maths.\nPayeur : Alice Martin. Bénéficiaire : Admin QuartierConnect.\nMontant : 1 point.\nFait le 3 juillet 2026.",
+	"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+	"signatories": [
+		"f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
+		"41d91ab9-b9a9-45ed-a5b8-9c2ae4819316"
+	],
+	"status": "partial",
+	"contentHash": "eb4d76a4fc0360039abcde4afd7d8e0018a34d90392366b3ff9e8e3f06952378",
+	"signedAt": null,
+	"signatures": [
+		{
+			"userId": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+			"signedAt": {
+				"$date": "2026-07-03T06:28:33.483Z"
+			},
+			"hash": "f9bae98967ed977f187acfcafa7b9c4826c2905b0519d195c53f9642ad6b7aba"
+		}
+	],
+	"serviceId": "6a44346ed6ad48111c1abcad",
+	"bookingId": "6a464eb2b9f349091fda07da",
+	"pointsAmount": 1,
+	"pdfFileId": "6a475691ef7bb82ab044d3e8",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-03T06:28:00.933Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-03T06:28:33.594Z"
+	},
+	"__v": 1
 }]
 
