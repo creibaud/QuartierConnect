@@ -148,6 +148,7 @@ async function seedAccount(
     password: DEMO_PASSWORD,
     firstName,
     lastName,
+    consent: true,
   });
 
   if (registerRes.status === 409) {
