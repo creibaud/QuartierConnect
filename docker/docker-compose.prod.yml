@@ -16,6 +16,8 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      LOGIN_RATE_LIMIT: ${LOGIN_RATE_LIMIT:-5}
     logging:
       driver: json-file
       options:
