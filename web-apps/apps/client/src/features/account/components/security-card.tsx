@@ -16,6 +16,10 @@ import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { Separator } from "@workspace/ui/components/separator";
 import { PasswordStrengthMeter } from "@/features/account/components/password-strength-meter";
+import {
+    TOTP_LENGTH,
+    TotpCodeField,
+} from "@/features/account/components/totp-code-field";
 
 export function SecurityCard() {
     const { t } = useTranslation();
@@ -23,6 +27,7 @@ export function SecurityCard() {
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [totpCode, setTotpCode] = useState("");
 
     function handleSubmit(event: FormEvent) {
         event.preventDefault();
@@ -31,16 +36,27 @@ export function SecurityCard() {
             return;
         }
         changePassword.mutate(
-            { currentPassword, newPassword },
+            { currentPassword, newPassword, totpCode },
             {
                 onSuccess: () => {
                     toast.success(t("pages.account.passwordUpdated"));
                     setCurrentPassword("");
                     setNewPassword("");
                     setConfirmPassword("");
+                    setTotpCode("");
                 },
-                onError: () =>
-                    toast.error(t("pages.account.currentPasswordWrong")),
+                onError: (err) => {
+                    const apiErr = err as { code?: string; message?: string };
+                    const totpRejected =
+                        apiErr.code === "INVALID_TOTP" ||
+                        /totp/i.test(apiErr.message ?? "");
+                    toast.error(
+                        totpRejected
+                            ? t("auth.errors.invalidTotpCheckApp")
+                            : t("pages.account.currentPasswordWrong"),
+                    );
+                    setTotpCode("");
+                },
             },
         );
     }
@@ -99,13 +115,19 @@ export function SecurityCard() {
                         </div>
                     </div>
                     <PasswordStrengthMeter password={newPassword} />
+                    <TotpCodeField
+                        label={t("pages.account.totpVerificationLabel")}
+                        value={totpCode}
+                        onChange={setTotpCode}
+                    />
                     <Button
                         type="submit"
                         disabled={
                             changePassword.isPending ||
                             !currentPassword ||
                             newPassword.length < 8 ||
-                            newPassword !== confirmPassword
+                            newPassword !== confirmPassword ||
+                            totpCode.length !== TOTP_LENGTH
                         }
                     >
                         {t("pages.account.updatePassword")}

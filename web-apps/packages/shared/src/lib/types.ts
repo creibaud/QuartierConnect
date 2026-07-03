@@ -203,6 +203,7 @@ export interface MyProfile {
     firstName: string | null;
     lastName: string | null;
     avatarUrl: string | null;
+    phone?: string | null;
 }
 
 export interface UserExport {
@@ -211,10 +212,17 @@ export interface UserExport {
         email: string;
         role: string;
         createdAt: string;
+        phone?: string | null;
+        consentTimestamp?: string | null;
     } | null;
     incidents: Incident[];
     pointsBalance: PointBalance | null;
     transactions: unknown[];
+    messages?: unknown[];
+    contracts?: unknown[];
+    bookings?: unknown[];
+    votes?: unknown[];
+    services?: unknown[];
 }
 
 export type BookingStatus =

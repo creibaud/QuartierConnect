@@ -54,8 +54,32 @@ export function useMyDataExport() {
 
 export function useChangePassword() {
     return useMutation({
-        mutationFn: (body: { currentPassword: string; newPassword: string }) =>
-            apiPatch<{ success: boolean }>("/users/me/password", body),
+        mutationFn: (body: {
+            currentPassword: string;
+            newPassword: string;
+            totpCode: string;
+        }) => apiPatch<{ success: boolean }>("/users/me/password", body),
+    });
+}
+
+export function useChangeEmail() {
+    return useMutation({
+        mutationFn: (body: {
+            newEmail: string;
+            password: string;
+            totpCode: string;
+        }) => apiPatch<{ requiresReauth: boolean }>("/users/me/email", body),
+    });
+}
+
+export function useChangePhone() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (body: { phone: string | null; totpCode: string }) =>
+            apiPatch<{ success: boolean }>("/users/me/phone", body),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["me", "profile"] });
+        },
     });
 }
 

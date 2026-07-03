@@ -36,6 +36,10 @@ export default {
             passwordMin: "8 caractères minimum",
             passwordMismatch: "Les mots de passe ne correspondent pas",
             totpLength: "Le code doit contenir 6 chiffres",
+            phoneInvalid:
+                "Numéro de téléphone invalide — format international recommandé (+33612345678)",
+            consentRequired:
+                "Vous devez accepter les conditions pour créer un compte",
         },
         errors: {
             invalidCredentials: "Email ou mot de passe incorrect",
@@ -313,6 +317,13 @@ export default {
             copySecret: "Copier",
             secretCopied: "Clé copiée !",
             copyFailed: "Impossible de copier — copie manuelle.",
+            phoneOptional: "Téléphone (optionnel)",
+            consentLabel:
+                "J'accepte les conditions d'utilisation et le traitement de mes données personnelles",
+            consentNoticeLink: "Lire la notice d'information",
+            consentNoticeTitle: "Notice d'information — données personnelles",
+            consentNoticeBody:
+                "QuartierConnect traite vos données (identité, adresse, téléphone, activité de quartier) uniquement pour fournir le service : mise en relation entre voisins, incidents, événements, services, messagerie et contrats. Elles ne sont jamais revendues. Vous pouvez à tout moment exporter vos données ou supprimer votre compte depuis la page « Mon compte » (RGPD).",
         },
         account: {
             pageTitle: "Mon compte",
@@ -329,7 +340,7 @@ export default {
             privacy: "Confidentialité (RGPD)",
             exportData: "Exporter mes données",
             exportDescription:
-                "Téléchargez une copie de vos données (profil, points, incidents).",
+                "Téléchargez une copie de vos données (profil, téléphone, consentement, messages, contrats, réservations, votes, services, points, incidents).",
             deleteAccount: "Supprimer mon compte",
             deleteDescription:
                 "Anonymise définitivement votre compte. Action irréversible.",
@@ -378,6 +389,27 @@ export default {
             locationError: "Erreur lors de la localisation",
             locationApproximate:
                 "Position approximative (~{{km}} km, basée sur le réseau). Sur mobile (GPS), elle sera précise.",
+            totpVerificationLabel: "Code de vérification (TOTP)",
+            emailCardTitle: "Adresse e-mail",
+            emailDescription:
+                "Adresse utilisée pour la connexion et les notifications.",
+            changeEmail: "Modifier l'adresse e-mail",
+            newEmailLabel: "Nouvelle adresse e-mail",
+            emailChangeDescription:
+                "Confirmez avec votre mot de passe et votre code de vérification. Vous devrez vous reconnecter avec la nouvelle adresse.",
+            emailUpdatedReconnect:
+                "Adresse e-mail mise à jour. Reconnectez-vous avec votre nouvelle adresse.",
+            emailUpdateRejected:
+                "Adresse, mot de passe ou code de vérification refusé.",
+            phoneCardTitle: "Téléphone",
+            phoneDescription:
+                "Numéro utilisé pour vous contacter (optionnel).",
+            phoneNotSet: "Aucun numéro renseigné",
+            changePhone: "Modifier le téléphone",
+            phoneLabel: "Numéro de téléphone",
+            phoneChangeDescription:
+                "Confirmez la modification avec votre code de vérification. Laissez le champ vide pour effacer le numéro.",
+            phoneUpdated: "Téléphone mis à jour.",
         },
         dashboard: {
             welcome: "Bonjour",
