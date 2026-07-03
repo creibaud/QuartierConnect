@@ -845,6 +845,11 @@ export default {
         },
     },
     adminPages: {
+        download: {
+            title: "Télécharger le client lourd",
+            description:
+                "Choisissez l'installateur adapté à votre système. L'installation est propre : entrée de menu et désinstallation gérées par le système.",
+        },
         common: {
             create: "Créer",
             add: "Ajouter",

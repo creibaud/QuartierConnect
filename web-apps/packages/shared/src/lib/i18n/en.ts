@@ -832,6 +832,11 @@ export default {
         },
     },
     adminPages: {
+        download: {
+            title: "Download desktop client",
+            description:
+                "Pick the installer for your system. Clean install: menu entry and uninstall handled by the OS.",
+        },
         common: {
             create: "Create",
             add: "Add",

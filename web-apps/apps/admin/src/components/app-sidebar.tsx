@@ -1,8 +1,6 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
-import { Download01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { BrandLogo } from "@workspace/ui/components/brand-logo";
 import {
     Sidebar,
@@ -15,6 +13,7 @@ import {
     SidebarRail,
 } from "@workspace/ui/components/sidebar";
 
+import { DownloadDesktopDialog } from "@/components/download-desktop-dialog";
 import { adminNavGroups } from "@/components/nav-items";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
@@ -50,19 +49,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarFooter>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton
-                            asChild
-                            tooltip={t("nav.downloadDesktop")}
-                        >
-                            <a
-                                href="https://github.com/creibaud/QuartierConnect/releases/latest"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                <HugeiconsIcon icon={Download01Icon} />
-                                <span>{t("nav.downloadDesktop")}</span>
-                            </a>
-                        </SidebarMenuButton>
+                        <DownloadDesktopDialog />
                     </SidebarMenuItem>
                 </SidebarMenu>
                 <NavUser />
