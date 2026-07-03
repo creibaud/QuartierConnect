@@ -142,7 +142,7 @@ All protected routes use a **JWT Bearer** (HS256, 15 min lifetime).
 
 1. Register via \`POST /auth/register\` → retrieve your **TOTP secret** from \`otpauthUrl\`
 2. Log in via \`POST /auth/login\` with email + password + 6-digit TOTP code
-3. Copy the returned \`accessToken\` and click **Authorize** (🔒) at the top of the page
+3. Copy the returned \`accessToken\` and click **Authorize** at the top of the page
 
 The token expires after 15 min. Use \`POST /auth/refresh\` to obtain a new one silently.
 
