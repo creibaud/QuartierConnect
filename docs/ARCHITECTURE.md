@@ -1,67 +1,68 @@
-# Technical Architecture — QuartierConnect
+# Architecture technique — QuartierConnect
 
-> **Version** 0.2.0 · **Date** 16 April 2026 · **Stage** 4 (95 %)
-
----
-
-## Table of contents
-
-1. [Overview](#1-overview)
-2. [Docker containers](#2-docker-containers)
-3. [NestJS modules diagram](#3-nestjs-modules-diagram)
-4. [Complete authentication flows](#4-complete-authentication-flows)
-5. [Cross-surface SSO](#5-cross-surface-sso)
-6. [Refresh token and rotation](#6-refresh-token-and-rotation)
-7. [Database architecture](#7-database-architecture)
-8. [Bidirectional Java ↔ API sync](#8-bidirectional-java--api-sync)
-9. [Real-time Neo4j sync](#9-real-time-neo4j-sync)
-10. [WebSocket — Real-time messaging](#10-websocket--real-time-messaging)
-11. [Voting system](#11-voting-system)
-12. [DSL — Compilation pipeline](#12-dsl--compilation-pipeline)
-13. [Java desktop offline mode](#13-java-desktop-offline-mode)
-14. [Java desktop plugin system](#14-java-desktop-plugin-system)
-15. [Auto-reconnect and token auto-refresh](#15-auto-reconnect-and-token-auto-refresh)
-16. [Layered security](#16-layered-security)
-17. [Request lifecycle](#17-request-lifecycle)
-18. [Shared mapping — `<Map>` component](#18-shared-mapping--map-component)
-19. [Production deployment architecture](#19-production-deployment-architecture)
+> **Version** 0.2.0 · **Date** 16 avril 2026 · **Étape** 4 (95 %)
 
 ---
 
-## 1. Overview
+## Sommaire
 
-QuartierConnect is a **multi-component** platform made up of 4 active applications and 3 databases, all orchestrated through Docker Compose.
+1. [Vue d'ensemble](#1-vue-densemble)
+2. [Conteneurs Docker](#2-conteneurs-docker)
+3. [Diagramme des modules NestJS](#3-diagramme-des-modules-nestjs)
+4. [Flux d'authentification complets](#4-flux-dauthentification-complets)
+5. [SSO inter-surfaces](#5-sso-inter-surfaces)
+6. [Refresh token et rotation](#6-refresh-token-et-rotation)
+7. [Architecture des bases de données](#7-architecture-des-bases-de-données)
+8. [Synchronisation bidirectionnelle Java ↔ API](#8-synchronisation-bidirectionnelle-java--api)
+9. [Synchronisation Neo4j en temps réel](#9-synchronisation-neo4j-en-temps-réel)
+10. [WebSocket — Messagerie temps réel](#10-websocket--messagerie-temps-réel)
+11. [Système de vote](#11-système-de-vote)
+12. [DSL — Pipeline de compilation](#12-dsl--pipeline-de-compilation)
+13. [Mode hors ligne du bureau Java](#13-mode-hors-ligne-du-bureau-java)
+14. [Système de plugins du bureau Java](#14-système-de-plugins-du-bureau-java)
+15. [Reconnexion automatique et rafraîchissement automatique du token](#15-reconnexion-automatique-et-rafraîchissement-automatique-du-token)
+16. [Sécurité en couches](#16-sécurité-en-couches)
+17. [Cycle de vie d'une requête](#17-cycle-de-vie-dune-requête)
+18. [Cartographie partagée — composant `<Map>`](#18-cartographie-partagée--composant-map)
+19. [Architecture de déploiement en production](#19-architecture-de-déploiement-en-production)
+
+---
+
+## 1. Vue d'ensemble
+
+QuartierConnect est une plateforme **multi-composants** constituée de 4 applications actives et de 3 bases de données, orchestrées via Docker Compose, plus une API HTTP externe (Nominatim / OpenStreetMap) utilisée pour le géocodage d'adresses.
 
 ```mermaid
 graph TB
     subgraph Internet
-        U1[Resident<br/>browser]
-        U2[Admin<br/>browser]
-        U3[Admin/Moderator<br/>JavaFX Desktop]
+        U1[Résident<br/>navigateur]
+        U2[Admin<br/>navigateur]
+        U3[Admin/Modérateur<br/>Bureau JavaFX]
+        NOM[Nominatim<br/>OpenStreetMap<br/>API de géocodage externe]
     end
 
-    subgraph Docker["Docker Compose Network"]
+    subgraph Docker["Réseau Docker Compose"]
         CADDY[Caddy<br/>Reverse Proxy<br/>:80/:443]
 
         subgraph Frontend
-            CLIENT[React Client<br/>:3000]
-            ADMIN[React Admin<br/>:3001]
+            CLIENT[Client React<br/>:3000]
+            ADMIN[Admin React<br/>:3001]
         end
 
         subgraph Backend
-            API[NestJS API<br/>:5000<br/>REST + WebSocket]
-            PYTHON[Python DSL<br/>PLY - internal port]
+            API[API NestJS<br/>:5000<br/>REST + WebSocket]
+            PYTHON[DSL Python<br/>PLY - port interne]
         end
 
         subgraph Storage
             MONGO[(MongoDB<br/>:27017<br/>Documents)]
-            PG[(PostgreSQL<br/>:5432<br/>Relational)]
-            NEO4J[(Neo4j<br/>:7474/:7687<br/>Graph)]
+            PG[(PostgreSQL<br/>:5432<br/>Relationnel)]
+            NEO4J[(Neo4j<br/>:7474/:7687<br/>Graphe)]
         end
     end
 
     subgraph Desktop
-        JAVA[JavaFX App<br/>Fat JAR]
+        JAVA[Application JavaFX<br/>Fat JAR]
         SQLITE[(SQLite<br/>Local)]
     end
 
@@ -74,25 +75,36 @@ graph TB
     API --> MONGO
     API --> PG
     API --> NEO4J
+    API -->|HTTPS<br/>recherche d'adresse| NOM
     JAVA -->|HTTP REST| API
     JAVA --- SQLITE
 ```
 
+L'API est le **seul** composant à établir des connexions sortantes vers Internet :
+le `GeocodingService` appelle le point d'accès public Nominatim (OpenStreetMap) pour
+transformer une adresse saisie en coordonnées et pour alimenter l'autocomplétion
+d'adresses.
+
 ---
 
-## 2. Docker containers
+## 2. Conteneurs Docker
 
-| # | Container | Image | Port(s) | Role |
+| # | Conteneur | Image | Port(s) | Rôle |
 |---|-----------|-------|---------|------|
-| 1 | `caddy` | `caddy:2-alpine` | 80, 443 | HTTPS reverse proxy + automatic Let's Encrypt |
-| 2 | `client` | Node 20 + Vite | 3000 | React SPA — resident interface |
-| 3 | `admin` | Node 20 + Vite | 3001 | React SPA — admin back office |
-| 4 | `api` | Node 20 | 5000 | NestJS REST + WebSocket + DSL bridge |
-| 5 | `mongodb` | `mongo:7` | 27017 | Flexible documents, GeoJSON, GridFS |
-| 6 | `postgres` | `postgres:16` | 5432 | ACID data — users, incidents, points |
-| 7 | `neo4j` | `neo4j:5` | 7474, 7687 | Social graph — Cypher recommendations |
+| 1 | `caddy` | `caddy:2-alpine` | 80, 443 | Reverse proxy HTTPS + Let's Encrypt automatique |
+| 2 | `client` | Node 20 + Vite | 3000 | SPA React — interface résident |
+| 3 | `admin` | Node 20 + Vite | 3001 | SPA React — back office admin |
+| 4 | `api` | Node 20 | 5000 | REST NestJS + WebSocket + passerelle DSL |
+| 5 | `mongodb` | `mongo:7` | 27017 | Documents flexibles, GeoJSON, GridFS |
+| 6 | `postgres` | `postgres:16` | 5432 | Données ACID — utilisateurs, incidents, points |
+| 7 | `neo4j` | `neo4j:5` | 7474, 7687 | Graphe social — recommandations Cypher |
 
-### Caddy routing
+La stack tourne sur **7 conteneurs** (`caddy`, `client`, `admin`, `api`, `mongodb`,
+`postgres`, `neo4j`). Le conteneur `api` embarque en outre la passerelle DSL Python
+PLY et il est le seul service à effectuer des appels sortants vers une API externe
+(Nominatim, voir ci-dessous).
+
+### Routage Caddy
 
 ```
 / → client:3000
@@ -101,52 +113,81 @@ graph TB
 /api/docs → api:5000/docs (Scalar)
 ```
 
+### API externe — Nominatim (OpenStreetMap)
+
+Le `GeocodingService` (`api/src/geocoding/geocoding.service.ts`) est la seule
+intégration sortante de la plateforme. Il appelle le point d'accès public Nominatim
+`https://nominatim.openstreetmap.org/search` (`format=jsonv2`) à deux fins :
+
+- **`geocode(address)`** — résoudre une adresse unique en `{ lat, lng }`.
+- **`search(query, { lang, viewbox })`** — retourner jusqu'à 8 suggestions d'adresses
+  pour l'autocomplétion, avec un biais géographique *souple* (sans `bounded`/`countrycodes`),
+  de sorte qu'une adresse en dehors de la zone de l'utilisateur reste trouvable.
+
+Garde-fous opérationnels, tous appliqués dans le service :
+
+| Enjeu | Traitement |
+|---------|----------|
+| Politique d'usage | Auto-limitation à ≤ 1 requête/seconde (`MIN_INTERVAL_MS = 1100`) |
+| Identification | En-tête `User-Agent` explicite (requis par Nominatim) |
+| Délai d'expiration | `AbortSignal.timeout(5000)` (5 s) |
+| Échec | Retourne `null` / `[]` et journalise un avertissement — ne lève jamais d'exception vers l'appelant |
+
+Consommateurs : le `GeocodingModule` est importé par les modules Users (adresse),
+Services et Events. Les résultats d'adresse alimentent `users.address_lat/lng` et le
+composant `<Map>` partagé. Le point d'entrée côté client est `GET /geocoding/search`.
+
 ---
 
-## 3. NestJS modules diagram
+## 3. Diagramme des modules NestJS
 
 ```mermaid
 graph TB
-    APP[AppModule<br/>global ThrottlerGuard<br/>I18n · ConfigModule]
+    APP[AppModule<br/>ThrottlerGuard global<br/>I18n · ConfigModule]
 
     APP --> AUTH[AuthModule<br/>register · login · SSO<br/>refresh · logout]
-    APP --> DB[DrizzleModule<br/>PostgreSQL ORM]
-    APP --> NEO[SocialModule<br/>Neo4j driver<br/>recommendations + sync]
+    APP --> DB[DrizzleModule<br/>ORM PostgreSQL]
+    APP --> NEO[SocialModule<br/>driver Neo4j<br/>recommandations + sync]
 
-    APP --> NBH[NeighborhoodsModule<br/>GeoJSON neighborhoods CRUD]
-    APP --> SVC[ServicesModule<br/>neighbor services CRUD]
-    APP --> EVT[EventsModule<br/>events CRUD]
-    APP --> INC[IncidentsModule<br/>state machine<br/>Java sync]
-    APP --> PTS[PointsModule<br/>ACID transactions]
-    APP --> USR[UsersModule<br/>account management + GDPR]
-    APP --> CTR[ContractsModule<br/>TOTP + SHA-256 signing]
-    APP --> MSG[MessagingModule<br/>REST + WebSocket Gateway]
+    APP --> NBH[NeighborhoodsModule<br/>CRUD quartiers GeoJSON]
+    APP --> SVC[ServicesModule<br/>CRUD services entre voisins]
+    APP --> EVT[EventsModule<br/>CRUD événements]
+    APP --> INC[IncidentsModule<br/>machine à états<br/>sync Java]
+    APP --> PTS[PointsModule<br/>transactions ACID]
+    APP --> USR[UsersModule<br/>gestion de compte + RGPD]
+    APP --> CTR[ContractsModule<br/>signature TOTP + SHA-256]
+    APP --> MSG[MessagingModule<br/>REST + Gateway WebSocket]
     APP --> VOT[VotesModule<br/>Strategy Pattern]
-    APP --> CVT[CommunityVotesModule<br/>community ballots]
-    APP --> DOC[DocumentsModule<br/>GridFS upload/download]
-    APP --> DSL[DslModule<br/>Python PLY bridge]
+    APP --> CVT[CommunityVotesModule<br/>scrutins communautaires]
+    APP --> DOC[DocumentsModule<br/>upload/download GridFS]
+    APP --> DSL[DslModule<br/>passerelle Python PLY]
+    APP --> GEO[GeocodingModule<br/>recherche d'adresse Nominatim]
 
     AUTH --> DB
     AUTH --> NEO
     INC --> DB
     PTS --> DB
     USR --> DB
+    USR --> GEO
     CTR --> DB
     NBH --> NEO
     SVC --> NEO
+    SVC --> GEO
     EVT --> NEO
+    EVT --> GEO
+    GEO --> NOM([Nominatim<br/>OpenStreetMap<br/>HTTPS externe])
 ```
 
 ---
 
-## 4. Complete authentication flows
+## 4. Flux d'authentification complets
 
-### 4.1 Registration
+### 4.1 Inscription
 
 ```mermaid
 sequenceDiagram
     participant C as Client React
-    participant API as NestJS API
+    participant API as API NestJS
     participant PG as PostgreSQL
     participant N4J as Neo4j
 
@@ -157,35 +198,35 @@ sequenceDiagram
     PG-->>API: {id: uuid}
     API-)N4J: MERGE (u:User {id}) [fire-and-forget]
     API-->>C: {otpauthUrl: "otpauth://totp/..."}
-    C->>C: QRCode.toDataURL(otpauthUrl) — render QR
-    C->>C: User scans with Google Authenticator
+    C->>C: QRCode.toDataURL(otpauthUrl) — affiche le QR
+    C->>C: L'utilisateur scanne avec Google Authenticator
 ```
 
-### 4.2 Login (3 sequential validations)
+### 4.2 Connexion (3 validations séquentielles)
 
 ```mermaid
 sequenceDiagram
     participant C as Client React
-    participant API as NestJS API
+    participant API as API NestJS
     participant PG as PostgreSQL
     participant TS as TotpService
 
     C->>API: POST /auth/login {email, password, totpCode}
     API->>PG: SELECT * FROM users WHERE email = ?
-    PG-->>API: user row
+    PG-->>API: ligne utilisateur
 
-    alt Banned account
+    alt Compte banni
         API-->>C: 401 ACCOUNT_BANNED
     end
 
     API->>API: argon2.verify(passwordHash, password)
-    alt Invalid password
+    alt Mot de passe invalide
         API-->>C: 401 INVALID_PASSWORD
     end
 
     API->>TS: totp.verify(totpSecret, totpCode)
-    Note over TS: window=1 (±30s tolerance)<br/>anti-replay TanStack Store 90s
-    alt Invalid or replayed TOTP
+    Note over TS: window=1 (tolérance ±30s)<br/>anti-rejeu TanStack Store 90s
+    alt TOTP invalide ou rejoué
         API-->>C: 401 INVALID_TOTP
     end
 
@@ -198,101 +239,101 @@ sequenceDiagram
 
 ---
 
-## 5. Cross-surface SSO
+## 5. SSO inter-surfaces
 
-SSO lets an administrator authenticate into the **Java desktop application** through the **web admin interface**, without re-entering their credentials.
+Le SSO permet à un administrateur de s'authentifier dans l'**application de bureau Java** via l'**interface admin web**, sans ressaisir ses identifiants.
 
 ```mermaid
 sequenceDiagram
-    participant Java as JavaFX App
-    participant Browser as System browser
-    participant Admin as React Admin (:3001)
-    participant API as NestJS API
+    participant Java as Application JavaFX
+    participant Browser as Navigateur système
+    participant Admin as Admin React (:3001)
+    participant API as API NestJS
     participant Mongo as MongoDB ssoTokens
 
     Java->>Java: state = UUID.randomUUID() — PKCE
-    Java->>Java: SsoCallbackServer.java — listens on a random OS port
+    Java->>Java: SsoCallbackServer.java — écoute sur un port OS aléatoire
     Java->>Browser: open("http://localhost:3001/sso/authorize?state=...&redirect=http://localhost:{port}/cb")
-    Browser->>Admin: GET /sso/authorize — admin login page
-    Admin->>Admin: Login (email + password + TOTP required, admin role)
+    Browser->>Admin: GET /sso/authorize — page de connexion admin
+    Admin->>Admin: Connexion (email + password + TOTP requis, rôle admin)
     Admin->>API: POST /auth/sso/generate {surface:"java-desktop", state}
     API->>Mongo: INSERT {token:UUID, userId, surface, state, expiresAt:now+300s, usedAt:null}
-    Note over Mongo: MongoDB TTL index — auto-expiry 5min
+    Note over Mongo: Index TTL MongoDB — expiration auto 5min
     API-->>Admin: {ssoToken, expiresAt, expiresIn:300}
-    Admin->>Browser: redirect → http://localhost:{port}/cb?token=xxx&state=yyy
-    Browser->>Java: SsoCallbackServer.java receives the HTTP callback
-    Java->>Java: Validates state == local state (PKCE)
+    Admin->>Browser: redirection → http://localhost:{port}/cb?token=xxx&state=yyy
+    Browser->>Java: SsoCallbackServer.java reçoit le callback HTTP
+    Java->>Java: Valide state == state local (PKCE)
     Java->>API: POST /auth/sso/exchange {ssoToken, state}
     API->>Mongo: findOneAndUpdate({token, usedAt:null, expiresAt:{gt:now}}, {usedAt:now})
-    Note over API,Mongo: Atomic — replay impossible
+    Note over API,Mongo: Atomique — rejeu impossible
     API->>API: generateTokenPair(user)
-    API-->>Java: Set-Cookie qc_rt (httpOnly) + {accessToken, user} (Java reads refreshToken from body via dto.refreshToken)
+    API-->>Java: Set-Cookie qc_rt (httpOnly) + {accessToken, user} (Java lit le refreshToken depuis le corps via dto.refreshToken)
     Java->>Java: applyTokens() → TokenVault.saveTokens() + SQLiteDatabase.saveSession(email)
 ```
 
 ---
 
-## 6. Refresh token and rotation
+## 6. Refresh token et rotation
 
 ```mermaid
 sequenceDiagram
     participant C as Client
-    participant API as NestJS API
+    participant API as API NestJS
     participant PG as PostgreSQL
 
-    Note over C: Access token expired (15 min)
-    C->>API: POST /auth/refresh (qc_rt cookie automatic — or body for Java desktop)
+    Note over C: Access token expiré (15 min)
+    C->>API: POST /auth/refresh (cookie qc_rt automatique — ou corps pour le bureau Java)
     API->>API: JWT.verify(refreshToken) → payload
 
-    Note over API,PG: Transactional lock — anti-TOCTOU
+    Note over API,PG: Verrou transactionnel — anti-TOCTOU
     API->>PG: BEGIN — SELECT refreshTokenHash WHERE id=sub FOR UPDATE
-    alt Null hash — already revoked
+    alt Hash null — déjà révoqué
         API-->>C: 401 TOKEN_REVOKED (ROLLBACK)
     end
-    alt Banned account
+    alt Compte banni
         API-->>C: 401 ACCOUNT_BANNED (ROLLBACK)
     end
     API->>API: argon2.verify(refreshTokenHash, refreshToken)
-    alt Hash does not match
+    alt Le hash ne correspond pas
         API-->>C: 401 TOKEN_REVOKED (ROLLBACK)
     end
 
-    Note over API,PG: Strict rotation — invalidate the old one
+    Note over API,PG: Rotation stricte — invalide l'ancien
     API->>PG: UPDATE users SET refresh_token_hash = NULL
     API->>API: generatePair(sub, email, role)
     API->>API: argon2.hash(newRefreshToken)
     API->>PG: UPDATE users SET refresh_token_hash = hash(new) — COMMIT
-    API-->>C: Set-Cookie qc_rt (new) + {accessToken (15m)}
+    API-->>C: Set-Cookie qc_rt (nouveau) + {accessToken (15m)}
 ```
 
 ---
 
-## 7. Database architecture
+## 7. Architecture des bases de données
 
-### 7.1 Data distribution
+### 7.1 Répartition des données
 
 ```mermaid
 graph LR
-    subgraph PG["PostgreSQL — strict ACID"]
-        U[users<br/>auth · roles · tokens]
-        I[incidents<br/>state machine]
-        PB[points_balances<br/>current balance]
-        PT[points_transactions<br/>history]
+    subgraph PG["PostgreSQL — ACID strict"]
+        U[users<br/>auth · rôles · tokens]
+        I[incidents<br/>machine à états]
+        PB[points_balances<br/>solde courant]
+        PT[points_transactions<br/>historique]
     end
 
-    subgraph MDB["MongoDB — Flexible documents"]
+    subgraph MDB["MongoDB — Documents flexibles"]
         N[neighborhoods<br/>GeoJSON 2dsphere]
-        S[services<br/>neighbor listings]
-        E[events<br/>events]
-        C[contracts<br/>SHA-256 hash]
+        S[services<br/>annonces entre voisins]
+        E[events<br/>événements]
+        C[contracts<br/>hash SHA-256]
         M[messages / conversations]
         V[votes Strategy Pattern]
-        CV[communityVotes<br/>multi-type ballots]
+        CV[communityVotes<br/>scrutins multi-types]
         D[documents GridFS]
         SSO[ssoTokens TTL 5min]
     end
 
-    subgraph N4J["Neo4j — Social graph"]
+    subgraph N4J["Neo4j — Graphe social"]
         NU[User]
         NN[Neighborhood]
         NS[Service]
@@ -305,115 +346,115 @@ graph LR
     end
 ```
 
-### 7.2 Rationale for the three-database design
+### 7.2 Justification de la conception à trois bases
 
-| Criterion | PostgreSQL | MongoDB | Neo4j |
+| Critère | PostgreSQL | MongoDB | Neo4j |
 |---------|-----------|---------|-------|
-| ACID transactions | Mandatory (points, auth) | Not critical | Not applicable |
-| Flexible schema | No | Yes (GeoJSON, subdocs) | Free-form properties |
-| Geolocation | No | Native `2dsphere` index | No |
-| Recommendations | No | No | Cypher traversals |
+| Transactions ACID | Obligatoires (points, auth) | Non critiques | Non applicable |
+| Schéma flexible | Non | Oui (GeoJSON, sous-documents) | Propriétés libres |
+| Géolocalisation | Non | Index `2dsphere` natif | Non |
+| Recommandations | Non | Non | Parcours Cypher |
 
 ---
 
-## 8. Bidirectional Java ↔ API sync
+## 8. Synchronisation bidirectionnelle Java ↔ API
 
-### 8.1 Synchronization flow
+### 8.1 Flux de synchronisation
 
 ```mermaid
 sequenceDiagram
-    participant Java as JavaFX Desktop
-    participant SQLite as local SQLite
-    participant API as NestJS API
+    participant Java as Bureau JavaFX
+    participant SQLite as SQLite local
+    participant API as API NestJS
     participant PG as PostgreSQL
 
-    Note over Java: Offline mode — create an incident
+    Note over Java: Mode hors ligne — créer un incident
     Java->>SQLite: INSERT incidents (is_dirty=1, updated_at=now)
-    Java->>Java: Shows the incident in the local list
+    Java->>Java: Affiche l'incident dans la liste locale
 
-    Note over Java,API: Network connection — SyncService every 30s
+    Note over Java,API: Connexion réseau — SyncService toutes les 30s
     Java->>API: GET /health
     API-->>Java: {status:"ok"}
 
     Java->>SQLite: SELECT * FROM incidents WHERE is_dirty = 1 AND is_conflict = 0
-    SQLite-->>Java: [modified incidents, conflicts excluded]
+    SQLite-->>Java: [incidents modifiés, conflits exclus]
 
-    loop For each dirty incident
+    loop Pour chaque incident dirty
         Java->>API: POST /sync/incidents [{remoteId?, title, status, updatedAt}]
         API->>PG: UPSERT incidents ON CONFLICT DO UPDATE
         API-->>Java: [{id, synced:true}]
         Java->>SQLite: UPDATE SET is_dirty=0, remote_id=?
-        Java->>SQLite: UPDATE SET base_title/desc/status/updated_at (3WM ancestor)
+        Java->>SQLite: UPDATE SET base_title/desc/status/updated_at (ancêtre 3WM)
     end
 
-    Note over Java: Push returns justPushed (set of IDs)
-    Note over Java,SQLite: Pull — Three-Way Merge resolution (skip justPushed IDs)
+    Note over Java: Le push retourne justPushed (ensemble d'IDs)
+    Note over Java,SQLite: Pull — résolution Three-Way Merge (ignore les IDs justPushed)
     Java->>API: GET /incidents?since=lastPull
-    API-->>Java: [updated incidents]
-    loop For each received incident (except justPushed)
-        alt base == null (never synced)
-            Java->>SQLite: LWW fallback — server wins if more recent
-        else local unchanged since base
-            Java->>SQLite: Auto-merge — applies the server version
-        else server unchanged since base
-            Java->>SQLite: Auto-merge — keeps the local version
-        else both changed the same field
+    API-->>Java: [incidents mis à jour]
+    loop Pour chaque incident reçu (sauf justPushed)
+        alt base == null (jamais synchronisé)
+            Java->>SQLite: repli LWW — le serveur gagne s'il est plus récent
+        else local inchangé depuis base
+            Java->>SQLite: Fusion auto — applique la version serveur
+        else serveur inchangé depuis base
+            Java->>SQLite: Fusion auto — conserve la version locale
+        else les deux ont changé le même champ
             Java->>SQLite: SET is_conflict=1, remote_title/desc/status
-            Note over Java: Conflict visible in the UI (⚠ badge + Resolve dialog)
+            Note over Java: Conflit visible dans l'UI (badge ⚠ + dialogue Résoudre)
         end
     end
 
-    Note over Java,SQLite: Orphan cleanup — tombstone server-deleted incidents
-    Java->>SQLite: tombstoneOrphans(remoteIds) — SET deleted_at for those absent from the server
+    Note over Java,SQLite: Nettoyage des orphelins — tombstone des incidents supprimés côté serveur
+    Java->>SQLite: tombstoneOrphans(remoteIds) — SET deleted_at pour ceux absents du serveur
     Java->>SQLite: INSERT sync_log (synced_at, success=1)
 ```
 
-### 8.2 Three-Way Merge — conflict resolution
+### 8.2 Three-Way Merge — résolution de conflits
 
-The Three-Way Merger compares three versions of each field (title, description, status):
+Le Three-Way Merger compare trois versions de chaque champ (title, description, status) :
 
-| Case | Base | Local | Remote | Result |
+| Cas | Base | Local | Distant | Résultat |
 |-----|------|-------|--------|----------|
-| No base (1st sync) | null | L | R | LWW — remote wins if more recent |
-| Local unchanged | B | B | R | Auto-merge — applies remote |
-| Remote unchanged | B | L | B | Auto-merge — keeps local |
-| Same change | B | X | X | Auto-merge — both converge |
-| True conflict | B | L | R | `is_conflict=1` — manual resolution required |
+| Pas de base (1ère sync) | null | L | R | LWW — le distant gagne s'il est plus récent |
+| Local inchangé | B | B | R | Fusion auto — applique le distant |
+| Distant inchangé | B | L | B | Fusion auto — conserve le local |
+| Même modification | B | X | X | Fusion auto — les deux convergent |
+| Vrai conflit | B | L | R | `is_conflict=1` — résolution manuelle requise |
 
-### 8.3 Conflict handling in the UI
+### 8.3 Gestion des conflits dans l'UI
 
-- **Banner**: an alert shown at the top of the incidents view when conflicts exist
-- **Filter**: a "Conflicts" button to display only the incidents in conflict
-- **Merge modal**: a double-click opens a 4-column GridPane (field / base / local / remote) with diff highlighting
-- **Resolution**: the user picks each field; resolving updates the ancestor and clears the conflict flag
+- **Bannière** : une alerte affichée en haut de la vue des incidents lorsqu'il existe des conflits
+- **Filtre** : un bouton « Conflits » pour n'afficher que les incidents en conflit
+- **Modale de fusion** : un double-clic ouvre un GridPane à 4 colonnes (champ / base / local / distant) avec mise en évidence des différences
+- **Résolution** : l'utilisateur choisit chaque champ ; la résolution met à jour l'ancêtre et efface l'indicateur de conflit
 
-### 8.4 Tombstone delete
+### 8.4 Suppression par tombstone
 
-Server-side deletions are propagated locally through a `deleted_at` column (soft delete). `tombstoneOrphans()` marks incidents missing from the server response during a full pull. Marked incidents are excluded from views but kept for auditing.
+Les suppressions côté serveur sont propagées localement via une colonne `deleted_at` (soft delete). `tombstoneOrphans()` marque les incidents absents de la réponse serveur lors d'un pull complet. Les incidents marqués sont exclus des vues mais conservés à des fins d'audit.
 
 ---
 
-## 9. Real-time Neo4j sync
+## 9. Synchronisation Neo4j en temps réel
 
-On every CRUD operation involving social entities, a **fire-and-forget** call synchronizes Neo4j. A Neo4j outage never blocks the main API. On a recoverable error (`ServiceUnavailable`, `SessionExpired`, `TransientError`), `withRetry` retries up to 3 times with exponential backoff (100 ms → 200 ms → 400 ms). Non-recoverable errors (e.g. Cypher syntax) fail immediately without retrying.
+À chaque opération CRUD impliquant des entités sociales, un appel **fire-and-forget** synchronise Neo4j. Une panne de Neo4j ne bloque jamais l'API principale. Sur une erreur récupérable (`ServiceUnavailable`, `SessionExpired`, `TransientError`), `withRetry` réessaie jusqu'à 3 fois avec un backoff exponentiel (100 ms → 200 ms → 400 ms). Les erreurs non récupérables (par ex. une syntaxe Cypher) échouent immédiatement sans réessai.
 
 ```mermaid
 flowchart TD
-    A["CRUD Endpoint<br/>neighborhoods / services / events / auth/register"] --> B["Main operation<br/>MongoDB or PostgreSQL"]
-    B --> C{Success?}
-    C -->|No| D[HTTP error returned to the client]
-    C -->|Yes| E[HTTP response sent to the client]
-    E --> F["void socialService.syncX()<br/>fire-and-forget — no await"]
-    F --> R["withRetry — 3 attempts<br/>backoff 100/200/400 ms"]
-    R --> G{Neo4j available?}
-    G -->|Yes| H["Neo4j session<br/>MERGE (n:Label {id}) ON CREATE/MATCH SET"]
-    G -->|No, attempt < 3| R
-    G -->|No, attempt = 3| I["Logger.warn<br/>silently ignored"]
+    A["Endpoint CRUD<br/>neighborhoods / services / events / auth/register"] --> B["Opération principale<br/>MongoDB ou PostgreSQL"]
+    B --> C{Succès ?}
+    C -->|Non| D[Erreur HTTP retournée au client]
+    C -->|Oui| E[Réponse HTTP envoyée au client]
+    E --> F["void socialService.syncX()<br/>fire-and-forget — sans await"]
+    F --> R["withRetry — 3 tentatives<br/>backoff 100/200/400 ms"]
+    R --> G{Neo4j disponible ?}
+    G -->|Oui| H["Session Neo4j<br/>MERGE (n:Label {id}) ON CREATE/MATCH SET"]
+    G -->|Non, tentative < 3| R
+    G -->|Non, tentative = 3| I["Logger.warn<br/>ignoré silencieusement"]
 ```
 
 ---
 
-## 10. WebSocket — Real-time messaging
+## 10. WebSocket — Messagerie temps réel
 
 ```mermaid
 sequenceDiagram
@@ -427,10 +468,10 @@ sequenceDiagram
     GW->>SVC: findConversations(userId)
     Mongo-->>SVC: [{_id, participants, ...}]
     GW->>GW: socket.join("conversation:convId") × N
-    Note over GW: Rooms rebuilt from MongoDB on each connection (restart-resilient)
+    Note over GW: Salons reconstruits depuis MongoDB à chaque connexion (résilient au redémarrage)
 
     A->>GW: emit("join_conversation", conversationId)
-    Note over A,GW: For new conversations created during the session
+    Note over A,GW: Pour les nouvelles conversations créées pendant la session
     GW->>SVC: isParticipant(conversationId, userId)
     Mongo-->>SVC: {participants:[...]}
     GW->>GW: socket.join("conversation:convId")
@@ -439,14 +480,14 @@ sequenceDiagram
     GW->>SVC: sendMessage(convId, userId, content, TEXT)
     SVC->>Mongo: INSERT message
     GW->>GW: server.to("conversation:convId").emit("new_message", message)
-    Note over GW: Broadcast to all connected participants
+    Note over GW: Diffusion à tous les participants connectés
 ```
 
 ---
 
-## 11. Voting system
+## 11. Système de vote
 
-### Strategy Pattern — two modes
+### Strategy Pattern — deux modes
 
 ```mermaid
 classDiagram
@@ -471,34 +512,34 @@ classDiagram
     VoteStrategyFactory --> VoteStrategy
 ```
 
-### Toggle logic
+### Logique de bascule
 
 ```mermaid
 flowchart TD
-    A["POST /votes {targetId, targetType, voteType}"] --> B[Look up existing vote]
-    B --> C{Existing vote?}
-    C -->|No| D["CREATE vote — action:'added'"]
-    C -->|Yes, same type| E["DELETE vote — action:'removed' toggle off"]
-    C -->|Yes, different type| F["UPDATE vote — action:'changed'"]
+    A["POST /votes {targetId, targetType, voteType}"] --> B[Recherche du vote existant]
+    B --> C{Vote existant ?}
+    C -->|Non| D["CREATE vote — action:'added'"]
+    C -->|Oui, même type| E["DELETE vote — action:'removed' bascule off"]
+    C -->|Oui, type différent| F["UPDATE vote — action:'changed'"]
 ```
 
 ---
 
-## 12. DSL — Compilation pipeline
+## 12. DSL — Pipeline de compilation
 
 ```mermaid
 flowchart LR
-    A["DSL text<br/>FIND incidents WHERE status='open' LIMIT 10"]
-    B["Lexer PLY<br/>tokens: FIND IDENTIFIER WHERE IDENTIFIER EQ STRING LIMIT NUMBER"]
+    A["Texte DSL<br/>FIND incidents WHERE status='open' LIMIT 10"]
+    B["Lexer PLY<br/>tokens : FIND IDENTIFIER WHERE IDENTIFIER EQ STRING LIMIT NUMBER"]
     C["Parser PLY LALR<br/>AST dict Python"]
-    D["Compiler<br/>collection whitelist validation"]
-    E["MongoDB query<br/>{type:'find', collection:'incidents', filter:{status:'open'}, limit:10}"]
-    F["Motor async<br/>execution + JSON result"]
+    D["Compilateur<br/>validation par liste blanche de collections"]
+    E["Requête MongoDB<br/>{type:'find', collection:'incidents', filter:{status:'open'}, limit:10}"]
+    F["Motor async<br/>exécution + résultat JSON"]
 
     A --> B --> C --> D --> E --> F
 ```
 
-### Simplified grammar
+### Grammaire simplifiée
 
 ```
 query : FIND IDENTIFIER
@@ -520,7 +561,7 @@ condition : IDENTIFIER EQ value         → {field: value}
 
 ---
 
-## 13. Java desktop offline mode
+## 13. Mode hors ligne du bureau Java
 
 ```mermaid
 stateDiagram-v2
@@ -528,32 +569,32 @@ stateDiagram-v2
 
     Startup --> CheckSession : tryResumeFromDatabase()
 
-    CheckSession --> NoSession : SQLite empty
-    CheckSession --> HasSession : Session found
+    CheckSession --> NoSession : SQLite vide
+    CheckSession --> HasSession : Session trouvée
 
-    NoSession --> WaitSSO : Shows SSO button
+    NoSession --> WaitSSO : Affiche le bouton SSO
 
     HasSession --> CheckNetwork : isReachable() — GET /health timeout 3s
 
-    CheckNetwork --> Refresh : Network available
-    CheckNetwork --> OfflineDirect : Network unavailable
+    CheckNetwork --> Refresh : Réseau disponible
+    CheckNetwork --> OfflineDirect : Réseau indisponible
 
     Refresh --> MainView : refreshAccessToken() OK
-    Refresh --> ShowOfflineOption : refresh fails
+    Refresh --> ShowOfflineOption : échec du refresh
 
-    OfflineDirect --> MainView : Token still valid
-    OfflineDirect --> ShowOfflineOption : Token expired
+    OfflineDirect --> MainView : Token encore valide
+    OfflineDirect --> ShowOfflineOption : Token expiré
 
-    ShowOfflineOption --> MainView : Continue offline
-    ShowOfflineOption --> WaitSSO : Reconnect
+    ShowOfflineOption --> MainView : Continuer hors ligne
+    ShowOfflineOption --> WaitSSO : Reconnexion
 
-    WaitSSO --> MainView : SSO exchanged + tokens saved to OS keychain (TokenVault)
+    WaitSSO --> MainView : SSO échangé + tokens sauvegardés dans le trousseau OS (TokenVault)
     MainView --> [*]
 ```
 
 ---
 
-## 14. Java desktop plugin system
+## 14. Système de plugins du bureau Java
 
 ### 14.1 Architecture
 
@@ -604,90 +645,90 @@ classDiagram
     AppContext --> PluginEventBus
 ```
 
-### 14.2 EventBus — inter-plugin communication
+### 14.2 EventBus — communication inter-plugins
 
-The `PluginEventBus` implements a thread-safe publish/subscribe pattern (`CopyOnWriteArrayList`) with 5 event types:
+Le `PluginEventBus` implémente un pattern publish/subscribe thread-safe (`CopyOnWriteArrayList`) avec 5 types d'événements :
 
-| Event | Emitter | Payload |
+| Événement | Émetteur | Payload |
 |-----------|----------|---------|
 | `INCIDENTS_CHANGED` | SyncService, IncidentsView | null |
 | `SYNC_STARTED` | SyncService | null |
 | `SYNC_COMPLETED` | SyncService | null |
-| `SYNC_FAILED` | SyncService | Exception message |
-| `ONLINE_STATUS_CHANGED` | SyncService | Boolean (online) |
+| `SYNC_FAILED` | SyncService | Message d'exception |
+| `ONLINE_STATUS_CHANGED` | SyncService | Boolean (en ligne) |
 
-### 14.3 Built-in plugins
+### 14.3 Plugins intégrés
 
-| Plugin | Type | Role |
+| Plugin | Type | Rôle |
 |--------|------|------|
-| ThemePlugin | ContextAware | CSS themes (Primer Dark by default), applied on `onLoad()` |
-| CompactModePlugin | ContextAware | Compact UI mode |
-| NotificationPlugin | ContextAware | Event-driven notifications via EventBus (no more polling) |
-| ExportPlugin | ContextAware | Incident data export via AppContext |
-| OfflineModePlugin | ContextAware | Offline toggle in AppTopBar.pluginSlot |
+| ThemePlugin | ContextAware | Thèmes CSS (Primer Dark par défaut), appliqués au `onLoad()` |
+| CompactModePlugin | ContextAware | Mode UI compact |
+| NotificationPlugin | ContextAware | Notifications pilotées par événements via EventBus (plus de polling) |
+| ExportPlugin | ContextAware | Export des données d'incidents via AppContext |
+| OfflineModePlugin | ContextAware | Bascule hors ligne dans AppTopBar.pluginSlot |
 
 ---
 
-## 15. Auto-reconnect and token auto-refresh
+## 15. Reconnexion automatique et rafraîchissement automatique du token
 
 ```mermaid
 stateDiagram-v2
-    [*] --> CheckSession : Application startup
+    [*] --> CheckSession : Démarrage de l'application
 
-    CheckSession --> AutoConnect : SQLite session found + valid token
-    CheckSession --> WaitSSO : No session
+    CheckSession --> AutoConnect : Session SQLite trouvée + token valide
+    CheckSession --> WaitSSO : Aucune session
 
-    AutoConnect --> Refresh : Access token < 60s remaining
-    AutoConnect --> MainView : Access token valid
+    AutoConnect --> Refresh : Access token < 60s restant
+    AutoConnect --> MainView : Access token valide
 
-    Refresh --> MainView : New access token obtained
-    Refresh --> OfflineMode : Network unavailable
+    Refresh --> MainView : Nouveau access token obtenu
+    Refresh --> OfflineMode : Réseau indisponible
 
-    OfflineMode --> BackgroundReconnect : Periodic timer
+    OfflineMode --> BackgroundReconnect : Minuteur périodique
     BackgroundReconnect --> MainView : isReachable() + refresh OK
-    BackgroundReconnect --> OfflineMode : Still offline
+    BackgroundReconnect --> OfflineMode : Toujours hors ligne
 
-    WaitSSO --> MainView : SSO exchanged
+    WaitSSO --> MainView : SSO échangé
 
     state MainView {
         [*] --> Active
         Active --> TokenRefresh : access token < 60s
-        TokenRefresh --> Active : New token
+        TokenRefresh --> Active : Nouveau token
     }
 ```
 
-The 60-second threshold for proactive token renewal prevents API request failures caused by expiry during processing.
+Le seuil de 60 secondes pour le renouvellement proactif du token évite les échecs de requêtes API causés par une expiration pendant le traitement.
 
 ---
 
-## 16. Layered security
+## 16. Sécurité en couches
 
 ```mermaid
 graph TD
-    subgraph L1["Layer 1 — Transport"]
+    subgraph L1["Couche 1 — Transport"]
         HTTPS[HTTPS TLS 1.3 Caddy + Let's Encrypt]
         HELMET[Helmet.js — CSP HSTS XSS]
-        CORS[strict CORS whitelisted origins]
+        CORS[CORS strict origines en liste blanche]
     end
-    subgraph L2["Layer 2 — Rate limiting"]
-        THROTTLE[global ThrottlerGuard — 100 req/15min/IP]
+    subgraph L2["Couche 2 — Limitation de débit"]
+        THROTTLE[ThrottlerGuard global — 100 req/15min/IP]
     end
-    subgraph L3["Layer 3 — Authentication"]
-        JWT[JWT HS256 — access 15min unique jti — revocable via revoked_tokens PG]
-        ARGON2[Argon2id — passwords + refresh token hashes]
-        TOTP[TOTP RFC 6238 — anti-replay 90s in-memory]
-        COOKIE[Refresh token httpOnly cookie qc_rt — SameSite=strict]
+    subgraph L3["Couche 3 — Authentification"]
+        JWT[JWT HS256 — access 15min jti unique — révocable via revoked_tokens PG]
+        ARGON2[Argon2id — mots de passe + hashes de refresh token]
+        TOTP[TOTP RFC 6238 — anti-rejeu 90s en mémoire]
+        COOKIE[Refresh token cookie httpOnly qc_rt — SameSite=strict]
     end
-    subgraph L4["Layer 4 — Authorization"]
+    subgraph L4["Couche 4 — Autorisation"]
         JWTG[JwtAuthGuard passport-jwt]
-        ROLESG[RolesGuard @Roles decorator]
+        ROLESG[RolesGuard décorateur @Roles]
     end
-    subgraph L5["Layer 5 — Validation"]
+    subgraph L5["Couche 5 — Validation"]
         PIPE[ValidationPipe whitelist:true class-validator]
     end
-    subgraph L6["Layer 6 — Integrity"]
-        SHA[SHA-256 contract content hash]
-        SSO2[SSO Token UUID v4 TTL 5min single use]
+    subgraph L6["Couche 6 — Intégrité"]
+        SHA[SHA-256 hash du contenu de contrat]
+        SSO2[SSO Token UUID v4 TTL 5min usage unique]
     end
 
     L1 --> L2 --> L3 --> L4 --> L5 --> L6
@@ -695,7 +736,7 @@ graph TD
 
 ---
 
-## 17. Request lifecycle
+## 17. Cycle de vie d'une requête
 
 ```mermaid
 sequenceDiagram
@@ -708,83 +749,83 @@ sequenceDiagram
     participant Service
     participant DB
 
-    Client->>Caddy: HTTPS Request
-    Caddy->>NestJS: Proxy (strip /api prefix)
-    NestJS->>NestJS: Helmet headers
-    NestJS->>NestJS: ThrottlerGuard — rate limit
-    NestJS->>Guard: verify JWT Bearer
-    Guard->>Guard: check JTI not in revoked_tokens
+    Client->>Caddy: Requête HTTPS
+    Caddy->>NestJS: Proxy (retire le préfixe /api)
+    NestJS->>NestJS: En-têtes Helmet
+    NestJS->>NestJS: ThrottlerGuard — limitation de débit
+    NestJS->>Guard: vérifie le JWT Bearer
+    Guard->>Guard: contrôle que le JTI n'est pas dans revoked_tokens
     Guard->>NestJS: req.user = {sub, email, role, jti, exp}
-    NestJS->>Pipe: validate DTO class-validator
+    NestJS->>Pipe: valide le DTO class-validator
     Pipe->>Controller: handler(dto, req)
-    Controller->>Service: business logic
-    Service->>DB: query
-    DB-->>Service: result
-    Service-->>Controller: data
+    Controller->>Service: logique métier
+    Service->>DB: requête
+    DB-->>Service: résultat
+    Service-->>Controller: données
     Controller-->>Client: 200/201/4xx JSON
 ```
 
 ---
 
-## 18. Shared mapping — `<Map>` component
+## 18. Cartographie partagée — composant `<Map>`
 
-`packages/ui/src/components/map.tsx` exposes a declarative React wrapper around
-`react-leaflet@5` used across 6 surfaces (4 client + 2 admin) plus the
-`admin/neighborhoods` refactor. Exports: `Map`, `Marker` (4 variants
-mapped onto the Civic Editorial palette), `NeighborhoodPolygon`,
-`MarkerCluster`, `DrawControl` (leaflet-draw), `UserLocation`, `useFitBounds`.
+`packages/ui/src/components/map.tsx` expose un wrapper React déclaratif autour de
+`react-leaflet@5`, utilisé sur 6 surfaces (4 client + 2 admin) plus le refactor
+`admin/neighborhoods`. Exports : `Map`, `Marker` (4 variantes mappées sur la palette
+Civic Editorial), `NeighborhoodPolygon`, `MarkerCluster`, `DrawControl` (leaflet-draw),
+`UserLocation`, `useFitBounds`.
 
 | Surface | Usage |
 |---|---|
-| `client/dashboard` | Neighborhood mini-map (h-48) with user geolocation |
-| `client/services` | Clustered service pins (MarkerCluster) + popup |
-| `client/events` | "Map" tab: event pins + date |
-| `client/incidents` | Click-to-place in the dialog + incident map |
-| `admin/services` | List/map tab + picker in the dialog |
-| `admin/incidents` | List/map tab with pins colored by status |
-| `admin/neighborhoods` | Polygon drawing via `<DrawControl>` (leaflet-draw) |
+| `client/dashboard` | Mini-carte du quartier (h-48) avec géolocalisation de l'utilisateur |
+| `client/services` | Pins de services regroupés (MarkerCluster) + popup |
+| `client/events` | Onglet « Carte » : pins d'événements + date |
+| `client/incidents` | Placement au clic dans le dialogue + carte des incidents |
+| `admin/services` | Onglet liste/carte + sélecteur dans le dialogue |
+| `admin/incidents` | Onglet liste/carte avec pins colorés par statut |
+| `admin/neighborhoods` | Dessin de polygones via `<DrawControl>` (leaflet-draw) |
 
-**Geo helpers**: `packages/shared/src/lib/geo.ts` exposes `centroidOf`,
-`pointToLatLng`, `latLngToPoint` (3 Vitest tests).
+**Helpers géo** : `packages/shared/src/lib/geo.ts` expose `centroidOf`,
+`pointToLatLng`, `latLngToPoint` (3 tests Vitest).
 
-**Backend schema**: reusable GeoJSON Point subdocument
-`api/src/common/schemas/geo-point.schema.ts`. Services and Events use
-this Mongoose subschema with a `2dsphere` (sparse) index; Postgres
-Incidents simply store `lat REAL` + `lng REAL` (migration
+**Schéma backend** : sous-document GeoJSON Point réutilisable
+`api/src/common/schemas/geo-point.schema.ts`. Services et Events utilisent ce
+sous-schéma Mongoose avec un index `2dsphere` (sparse) ; les Incidents Postgres
+stockent simplement `lat REAL` + `lng REAL` (migration
 `0002_incident_coords.sql`).
 
-## 19. Production deployment architecture
+## 19. Architecture de déploiement en production
 
-> Section added for the DevOps delivery. Describes the real production infrastructure on the VPS, distinct from the local development environment.
+> Section ajoutée pour la livraison DevOps. Décrit l'infrastructure de production réelle sur le VPS, distincte de l'environnement de développement local.
 
-### 19.1 Production network view
+### 19.1 Vue réseau de production
 
 ```mermaid
 graph TB
     subgraph Internet
-        U1[Resident<br/>HTTPS browser]
-        U2[Admin<br/>HTTPS browser]
-        U3[Admin/Moderator<br/>JavaFX Desktop]
+        U1[Résident<br/>navigateur HTTPS]
+        U2[Admin<br/>navigateur HTTPS]
+        U3[Admin/Modérateur<br/>Bureau JavaFX]
         LE[Let's Encrypt<br/>ACME]
         UR[UptimeRobot<br/>monitoring]
     end
 
-    subgraph VPS["Ubuntu VPS — UFW (22/80/443 only) + fail2ban"]
-        CADDY["Caddy 2<br/>:80 / :443 / :443/udp<br/>auto HTTPS + HSTS + CSP"]
+    subgraph VPS["VPS Ubuntu — UFW (22/80/443 uniquement) + fail2ban"]
+        CADDY["Caddy 2<br/>:80 / :443 / :443/udp<br/>HTTPS auto + HSTS + CSP"]
 
-        subgraph DockerNet["Internal Docker network — quartierconnect_prod"]
-            CLIENT["client<br/>:3000<br/>Caddy static"]
-            ADMIN["admin<br/>:3001<br/>Caddy static"]
+        subgraph DockerNet["Réseau Docker interne — quartierconnect_prod"]
+            CLIENT["client<br/>:3000<br/>Caddy statique"]
+            ADMIN["admin<br/>:3001<br/>Caddy statique"]
             API["api<br/>:5000<br/>NestJS + Python PLY"]
 
-            MONGO[("mongo<br/>:27017<br/>127.0.0.1 only")]
-            PG[("postgres<br/>:5432<br/>127.0.0.1 only")]
-            NEO[("neo4j<br/>:7474/:7687<br/>127.0.0.1 only")]
+            MONGO[("mongo<br/>:27017<br/>127.0.0.1 uniquement")]
+            PG[("postgres<br/>:5432<br/>127.0.0.1 uniquement")]
+            NEO[("neo4j<br/>:7474/:7687<br/>127.0.0.1 uniquement")]
         end
     end
 
-    subgraph Cloud["Remote storage"]
-        S3[("S3 / Backblaze<br/>encrypted backups")]
+    subgraph Cloud["Stockage distant"]
+        S3[("S3 / Backblaze<br/>sauvegardes chiffrées")]
     end
 
     U1 -->|HTTPS| CADDY
@@ -795,7 +836,7 @@ graph TB
 
     CADDY -->|"/"| CLIENT
     CADDY -->|"/admin"| ADMIN
-    CADDY -->|"/api → strip prefix"| API
+    CADDY -->|"/api → retire le préfixe"| API
     CADDY -->|"/docs Scalar"| API
     CADDY -->|"/api WSS → Socket.io"| API
 
@@ -812,38 +853,39 @@ graph TB
     style S3 fill:#16a34a,color:#fff
 ```
 
-**Network security key points:**
+**Points clés de sécurité réseau :**
 
-- Only ports **22, 80, 443** are exposed to the Internet (UFW)
-- The three databases are bound to `127.0.0.1` → reachable only through the internal Docker network, never from outside
-- Caddy is the **only** HTTP/HTTPS entry point — it terminates TLS and proxies internally
-- The WebSocket (Socket.io messaging) goes through the same `/api` with a `wss://` upgrade
+- Seuls les ports **22, 80, 443** sont exposés à Internet (UFW)
+- Les trois bases de données sont liées à `127.0.0.1` → accessibles uniquement via le réseau Docker interne, jamais depuis l'extérieur
+- Caddy est le **seul** point d'entrée HTTP/HTTPS — il termine le TLS et fait le proxy en interne
+- Le WebSocket (messagerie Socket.io) passe par le même `/api` avec une bascule `wss://`
+- La **seule** dépendance sortante est le conteneur `api` appelant le point d'accès HTTPS externe Nominatim (OpenStreetMap) pour le géocodage d'adresses ; toutes les bases de données restent internes
 
-### 19.2 CI/CD flow
+### 19.2 Flux CI/CD
 
 ```mermaid
 graph LR
-    DEV[Developer] -->|push PR| GH[GitHub]
-    GH -->|triggers| CI[CI workflow]
+    DEV[Développeur] -->|push PR| GH[GitHub]
+    GH -->|déclenche| CI[Workflow CI]
 
-    CI --> J1[api: lint+build+test]
-    CI --> J2[web: lint+typecheck+build]
-    CI --> J3[desktop: mvn test+package]
-    CI --> J4[dsl: ruff+pytest]
+    CI --> J1[api : lint+build+test]
+    CI --> J2[web : lint+typecheck+build]
+    CI --> J3[desktop : mvn test+package]
+    CI --> J4[dsl : ruff+pytest]
     CI --> J5[make validate-fast]
 
-    J1 & J2 & J3 & J4 & J5 --> OK{all green?}
-    OK -->|no| BLOCK[Merge blocked]
-    OK -->|yes| MERGE[Merge to master]
+    J1 & J2 & J3 & J4 & J5 --> OK{tout au vert ?}
+    OK -->|non| BLOCK[Merge bloqué]
+    OK -->|oui| MERGE[Merge sur master]
 
-    MERGE -->|tag v*.*.*| DEPLOY[deploy workflow]
-    MERGE -->|tag v*.*.*| REL[release-desktop:<br/>JAR on Releases]
+    MERGE -->|tag v*.*.*| DEPLOY[workflow deploy]
+    MERGE -->|tag v*.*.*| REL[release-desktop :<br/>JAR sur Releases]
 
-    DEPLOY -->|environment: production<br/>Claudio approval| SSH[SSH VPS]
+    DEPLOY -->|environment: production<br/>approbation Claudio| SSH[SSH VPS]
     SSH --> BUILD[docker compose up --build]
-    BUILD --> SMOKE{smoke-test?}
+    BUILD --> SMOKE{smoke-test ?}
     SMOKE -->|OK| DISCORD1[Discord ✅]
-    SMOKE -->|KO| RB[auto rollback]
+    SMOKE -->|KO| RB[rollback auto]
     RB --> DISCORD2[Discord 🔴]
 
     style CI fill:#1D4ED8,color:#fff
@@ -851,37 +893,37 @@ graph LR
     style SMOKE fill:#f59e0b,color:#fff
 ```
 
-### 19.3 Production vs development containers
+### 19.3 Conteneurs production vs développement
 
 | Aspect           | Dev (`docker-compose.yml`) | Prod (`+ docker-compose.prod.yml`)         |
 | ---------------- | -------------------------- | ------------------------------------------ |
-| Caddy            | HTTP `:80`, dev Caddyfile  | HTTPS `:443` Let's Encrypt, Caddyfile.prod |
-| `restart`        | no                         | `unless-stopped` everywhere                |
-| Healthchecks     | partial                    | api + mongo + postgres + neo4j + caddy     |
-| `depends_on`     | basic                      | `condition: service_healthy`               |
-| Resource limits  | none                       | memory + CPU capped                        |
-| Neo4j heap       | default (~4G)              | capped at 1G                               |
-| Login rate limit | 100 (dev)                  | 5 (prod)                                   |
-| CORS             | localhost                  | `https://quartierconnect.fr` only          |
-| Network          | default                    | named `quartierconnect_prod`               |
-| Caddy logs       | stdout                     | JSON file + rotation 100MB/10              |
+| Caddy            | HTTP `:80`, Caddyfile dev  | HTTPS `:443` Let's Encrypt, Caddyfile.prod |
+| `restart`        | non                        | `unless-stopped` partout                   |
+| Healthchecks     | partiels                   | api + mongo + postgres + neo4j + caddy     |
+| `depends_on`     | basique                    | `condition: service_healthy`               |
+| Limites de ressources | aucune                | mémoire + CPU plafonnées                   |
+| Heap Neo4j       | par défaut (~4G)           | plafonné à 1G                              |
+| Limite de débit login | 100 (dev)             | 5 (prod)                                   |
+| CORS             | localhost                  | `https://quartierconnect.fr` uniquement    |
+| Réseau           | par défaut                 | nommé `quartierconnect_prod`               |
+| Logs Caddy       | stdout                     | fichier JSON + rotation 100MB/10           |
 
-### 19.4 Backup strategy
+### 19.4 Stratégie de sauvegarde
 
 ```mermaid
 graph TB
-    CRON["VPS cron<br/>2am"] --> ALL[backup-all.sh]
+    CRON["cron VPS<br/>2h du matin"] --> ALL[backup-all.sh]
 
     ALL --> M[backup-mongo.sh<br/>mongodump --gzip]
     ALL --> P[backup-postgres.sh<br/>pg_dumpall gzip]
     ALL --> N[backup-neo4j.sh<br/>cold dump ~30s]
-    ALL --> C{Monday?}
-    C -->|yes| CD[Caddy certs tar.gz]
+    ALL --> C{Lundi ?}
+    C -->|oui| CD[Caddy certs tar.gz]
 
-    M & P & N & CD --> LOCAL["/var/backups<br/>7-day retention"]
-    LOCAL --> REMOTE["S3/Backblaze<br/>7d + 4 weeks + 12 months"]
+    M & P & N & CD --> LOCAL["/var/backups<br/>rétention 7 jours"]
+    LOCAL --> REMOTE["S3/Backblaze<br/>7j + 4 semaines + 12 mois"]
 
-    ALL -->|failure| DISC[Discord 🔴]
+    ALL -->|échec| DISC[Discord 🔴]
 
     style ALL fill:#16a34a,color:#fff
     style REMOTE fill:#1D4ED8,color:#fff

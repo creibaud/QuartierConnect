@@ -1,612 +1,317 @@
-# API Reference — QuartierConnect
+# Référence de l'API QuartierConnect
 
-Base URL (dev): `http://localhost:5000`
-Base URL (prod via Caddy): `http://localhost/api`
-Interactive docs: `GET /docs`
+API REST de la plateforme QuartierConnect, construite avec NestJS. Elle expose
+**86 routes** réparties en 16 modules fonctionnels. Ce document constitue la
+référence exhaustive des points d'accès ; une documentation interactive de type
+Swagger est également servie en direct par l'application (voir plus bas).
 
-All protected routes require: `Authorization: Bearer <accessToken>`
+- Version de l'API : `3.0`
+- Serveurs déclarés : `http://localhost:5000` (accès direct), `http://localhost/api` (via le reverse proxy Caddy)
+
+## Documentation interactive (Scalar)
+
+L'application génère une spécification OpenAPI à partir des décorateurs des
+contrôleurs (`@nestjs/swagger`) et l'expose via une interface interactive
+**Scalar** accessible sur :
+
+```
+GET /docs
+```
+
+Le bundle Scalar est auto-hébergé (`/scalar/standalone.js`), sans dépendance à
+un CDN externe. L'interface permet de parcourir chaque route, d'inspecter les
+schémas de requête et de réponse, de renseigner un jeton via le bouton
+**Authorize**, puis d'exécuter les appels directement depuis le navigateur.
+
+## Authentification
+
+Toutes les routes protégées reposent sur un **JWT Bearer** signé en **HS256**,
+d'une durée de vie de **15 minutes**.
+
+```
+Authorization: Bearer <accessToken>
+```
+
+Cycle d'authentification :
+
+1. Création de compte via `POST /auth/register` : le secret **TOTP** est renvoyé
+   dans le champ `otpauthUrl`.
+2. Connexion via `POST /auth/login` avec email + mot de passe + code TOTP à 6 chiffres.
+3. Le `accessToken` renvoyé est utilisé dans l'en-tête `Authorization`.
+
+Le jeton d'accès (15 min) est accompagné d'un **refresh token** de 7 jours,
+déposé dans un cookie `qc_rt` **httpOnly** (`SameSite=strict`, `Secure` en
+production). Le renouvellement se fait via `POST /auth/refresh` (rotation du
+refresh token : l'ancien est invalidé à chaque échange). À la déconnexion, le
+hash du refresh token est effacé en base et le jeton d'accès courant est
+révoqué via une liste de JTI bloqués.
+
+### MFA TOTP sur les actions sensibles
+
+Un code **TOTP** (30 s de validité, 6 chiffres) est exigé, en plus de la
+session, pour les opérations suivantes :
+
+| Action | Route |
+|--------|-------|
+| Connexion | `POST /auth/login` |
+| Signature d'un contrat | `POST /contracts/:id/sign` |
+| Changement de mot de passe | `PATCH /users/me/password` |
+| Changement d'email | `PATCH /users/me/email` |
+| Changement de téléphone | `PATCH /users/me/phone` |
+| Suppression du compte | `DELETE /users/me` |
+
+La connexion est limitée à **5 tentatives par 15 minutes** ; le renouvellement
+de jeton à **10 par minute**.
+
+## Rôles et autorisations
+
+Hiérarchie des rôles : `resident` → `moderator` → `admin`, plus l'état `banned`.
+
+| Rôle | Périmètre |
+|------|-----------|
+| Public | Aucune authentification requise |
+| Authentifié | Tout compte connecté (résident, modérateur ou administrateur) |
+| moderator / admin | Modération (statut d'incident, suppression, DSL) |
+| admin | Administration complète (utilisateurs, quartiers, statistiques) |
+
+La colonne « Rôle requis » des tableaux ci-dessous reflète les gardes
+(`JwtAuthGuard`, `RolesGuard`, décorateur `@Roles`) réellement appliqués sur
+chaque route.
+
+## Conventions
+
+- **Pagination** : les endpoints de liste acceptent `?page=1&limit=20`
+  (limite maximale : 100).
+- **Formats d'identifiants** : PostgreSQL utilise des UUID ; MongoDB utilise des
+  `ObjectId`.
+- **Réponses d'erreur** : codes HTTP standards, avec un code applicatif dans le
+  corps le cas échéant (par ex. `EMAIL_ALREADY_EXISTS`, `TOKEN_REVOKED`).
 
 ---
 
-## Auth
+## Module `auth` — Authentification (6 routes)
 
-### POST /auth/register
-Auth: Public
-Body: `{ email: string, password: string }`
-Response: `{ otpauthUrl: string }` — scan with an authenticator app to set up TOTP
-```bash
-curl -X POST http://localhost:5000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"alice@demo.fr","password":"Demo1234!"}'
-```
+| Méthode | Chemin | Rôle requis | Description |
+|---------|--------|-------------|-------------|
+| POST | `/auth/register` | Public | Création de compte et génération du secret TOTP |
+| POST | `/auth/login` | Public | Connexion (email + mot de passe + code TOTP à 6 chiffres) ; limité à 5 essais / 15 min |
+| POST | `/auth/sso/generate` | Authentifié | Étape 1/2 : génère un jeton SSO à usage unique (TTL 5 min) |
+| POST | `/auth/sso/exchange` | Public | Étape 2/2 : échange le jeton SSO contre une paire JWT |
+| POST | `/auth/refresh` | Public | Rotation du refresh token → nouvelle paire JWT (cookie `qc_rt` ou corps) |
+| POST | `/auth/logout` | Authentifié | Déconnexion : révocation serveur du refresh token et du JWT courant |
 
-### POST /auth/login
-Auth: Public — rate limited: 5 attempts / 15 min per IP (global throttler: 100 req / 15 min)
-Body: `{ email: string, password: string, totpCode: string }`
-Response: `{ accessToken: string, refreshToken: string, user: { id, email, role } }`
-```bash
-curl -X POST http://localhost:5000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"alice@demo.fr","password":"Demo1234!","totpCode":"123456"}'
-```
+Le SSO à jeton unique sert notamment à ouvrir une session sur le client lourd
+JavaFX (`surface: "java-desktop"`) sans re-saisir les identifiants. Le paramètre
+optionnel `state` (protection CSRF de type PKCE) est vérifié lors de l'échange.
 
-### POST /auth/refresh
-Auth: Public
-Body: `{ refreshToken: string }`
-Response: `{ accessToken: string, refreshToken: string }`
-```bash
-curl -X POST http://localhost:5000/auth/refresh \
-  -H "Content-Type: application/json" \
-  -d '{"refreshToken":"<refresh_token>"}'
-```
+## Module `users` — Utilisateurs et avatars (7 routes)
 
-### POST /auth/logout
-Auth: Bearer JWT
-Body: none
-Response: `{ success: true }`
-```bash
-curl -X POST http://localhost:5000/auth/logout \
-  -H "Authorization: Bearer <accessToken>"
-```
+| Méthode | Chemin | Rôle requis | Description |
+|---------|--------|-------------|-------------|
+| GET | `/users` | admin | Liste paginée des utilisateurs (champs sensibles exclus) |
+| PATCH | `/users/:id/role` | admin | Change le rôle d'un utilisateur (resident, moderator, admin, banned) |
+| GET | `/users/search` | Authentifié | Recherche d'utilisateurs par email (max 10, exclut l'appelant) |
+| GET | `/users/neighbors` | Authentifié | Liste des voisins du quartier de l'appelant (max 20, par nom) |
+| POST | `/users/me/avatar` | Authentifié | Téléverse mon avatar (GridFS, max 5 Mo, image uniquement) |
+| DELETE | `/users/me/avatar` | Authentifié | Supprime mon avatar |
+| GET | `/users/avatar/:fileId` | Public | Sert une image d'avatar (GridFS, en cache 24 h) |
 
-### POST /auth/sso/generate
-Auth: Bearer JWT
-Body: `{ surface: string, state?: string }`
-Response: `{ ssoToken: string, expiresIn: 300, expiresAt: string }`
-```bash
-curl -X POST http://localhost:5000/auth/sso/generate \
-  -H "Authorization: Bearer <accessToken>" \
-  -H "Content-Type: application/json" \
-  -d '{"surface":"java-desktop"}'
-```
+Le bannissement mémorise le rôle courant (`previousRole`) afin de le restaurer
+lors d'une réactivation.
 
-### POST /auth/sso/exchange
-Auth: Public
-Body: `{ ssoToken: string, state?: string }`
-Response: `{ accessToken: string, refreshToken: string, user: object }` — token invalidated after first use
-```bash
-curl -X POST http://localhost:5000/auth/sso/exchange \
-  -H "Content-Type: application/json" \
-  -d '{"ssoToken":"<uuid>"}'
-```
+## Module `users/me` — Profil de l'utilisateur courant (10 routes)
 
----
+| Méthode | Chemin | Rôle requis | Description |
+|---------|--------|-------------|-------------|
+| GET | `/users/me/profile` | Authentifié | Consulte mon profil |
+| PATCH | `/users/me/profile` | Authentifié | Met à jour mon profil (prénom, nom) |
+| PATCH | `/users/me/password` | Authentifié + TOTP | Change mon mot de passe (mot de passe actuel + code TOTP) |
+| PATCH | `/users/me/email` | Authentifié + TOTP | Change mon email (propagé PostgreSQL/MongoDB/Neo4j ; ré-authentification requise) |
+| PATCH | `/users/me/phone` | Authentifié + TOTP | Change mon numéro de téléphone (E.164) |
+| DELETE | `/users/me` | Authentifié + TOTP | Supprime/anonymise mon compte (RGPD art. 17) |
+| GET | `/users/me/export` | Authentifié | Exporte mes données personnelles (RGPD art. 20) |
+| POST | `/users/me/address` | Authentifié | Soumet mon adresse et déclenche l'affectation à un quartier |
+| GET | `/users/me/location` | Authentifié | Mes coordonnées et le détail de mon quartier |
+| GET | `/users/me/neighborhood-status` | Authentifié | Statut adresse/quartier (utilisé par le portail d'accès) |
 
-## Neighborhoods
+La suppression de compte remplace l'email par un hash irréversible et efface le
+`passwordHash`, le `totpSecret` et le refresh token dans les trois bases.
 
-### GET /neighborhoods
-Auth: Public
-Query: `?page=1&limit=20`
-Response: `Neighborhood[]`
-```bash
-curl http://localhost:5000/neighborhoods
-```
+## Module `bookings` — Réservations de services payants (6 routes)
 
-### GET /neighborhoods/:id
-Auth: Public
-Response: `Neighborhood` — 404 if not found
-```bash
-curl http://localhost:5000/neighborhoods/664f1a2b3c4d5e6f7a8b9c0d
-```
+| Méthode | Chemin | Rôle requis | Description |
+|---------|--------|-------------|-------------|
+| POST | `/bookings` | Authentifié | Demande une réservation sur un service payant |
+| GET | `/bookings` | Authentifié | Mes réservations (en tant qu'initiateur ou propriétaire du service) |
+| GET | `/bookings/:id` | Authentifié | Détail d'une réservation (parties prenantes uniquement) |
+| POST | `/bookings/:id/accept` | Authentifié | Le propriétaire accepte — génère le contrat |
+| POST | `/bookings/:id/decline` | Authentifié | Le propriétaire refuse une demande en attente |
+| POST | `/bookings/:id/cancel` | Authentifié | Annule une réservation |
 
-### POST /neighborhoods
-Auth: Bearer JWT — role: admin
-Body: `{ name: string, city: string, description?: string, coordinates?: [number, number] }`
-Response: `Neighborhood` (201)
-```bash
-curl -X POST http://localhost:5000/neighborhoods \
-  -H "Authorization: Bearer <adminToken>" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Belleville","city":"Paris","coordinates":[48.8714,2.3848]}'
-```
+## Module `community-votes` — Votes communautaires (6 routes)
 
-### PATCH /neighborhoods/:id
-Auth: Bearer JWT — role: admin
-Body: `{ name?: string, city?: string, description?: string, coordinates?: [number, number] }`
-Response: `Neighborhood`
-```bash
-curl -X PATCH http://localhost:5000/neighborhoods/664f1a2b3c4d5e6f7a8b9c0d \
-  -H "Authorization: Bearer <adminToken>" \
-  -H "Content-Type: application/json" \
-  -d '{"description":"Updated description"}'
-```
+| Méthode | Chemin | Rôle requis | Description |
+|---------|--------|-------------|-------------|
+| POST | `/community-votes` | Authentifié | Crée un vote (BINARY, SINGLE_CHOICE, MULTIPLE_CHOICE, WEIGHTED) |
+| GET | `/community-votes` | Authentifié | Liste paginée des votes communautaires |
+| GET | `/community-votes/:id` | Authentifié | Détail d'un vote |
+| POST | `/community-votes/:id/cast` | Authentifié | Enregistre un vote (choix + poids éventuels) |
+| GET | `/community-votes/:id/results` | Authentifié | Résultats agrégés du vote |
+| POST | `/community-votes/:id/close` | Authentifié (créateur ou admin) | Clôture le vote |
 
-### DELETE /neighborhoods/:id
-Auth: Bearer JWT — role: admin
-Response: `{ success: true }`
-```bash
-curl -X DELETE http://localhost:5000/neighborhoods/664f1a2b3c4d5e6f7a8b9c0d \
-  -H "Authorization: Bearer <adminToken>"
-```
+## Module `contracts` — Contrats et signature électronique (7 routes)
 
----
+| Méthode | Chemin | Rôle requis | Description |
+|---------|--------|-------------|-------------|
+| GET | `/contracts` | Authentifié | Liste mes contrats (créés ou à signer) |
+| GET | `/contracts/:id` | Authentifié | Détail d'un contrat (créateur ou signataire uniquement) |
+| GET | `/contracts/:id/pdf` | Authentifié | Télécharge le PDF du contrat (consultation auditée) |
+| GET | `/contracts/:id/audit` | Authentifié | Journal d'audit immuable du document |
+| POST | `/contracts` | Authentifié | Crée un contrat (hash SHA-256 calculé automatiquement) |
+| POST | `/contracts/import` | Authentifié | Importe un PDF avec zones de signature/paraphe (max 10 Mo) |
+| POST | `/contracts/:id/sign` | Authentifié + TOTP | Signe un contrat avec validation TOTP |
 
-## Services
+Un contrat importé (jusqu'à 4 signataires) est archivé comme version initiale
+immuable ; le statut passe à `fully_signed` lorsque tous les signataires ont
+signé.
 
-### GET /services
-Auth: Public
-Query: `?category=gardening&type=free&page=1&limit=20`
-Response: `Service[]`
-```bash
-curl "http://localhost:5000/services?category=childcare&type=paid"
-```
+## Module `dsl` — Langage de requête dédié (1 route)
 
-### GET /services/:id
-Auth: Public
-Response: `Service` — 404 if not found
-```bash
-curl http://localhost:5000/services/664f1a2b3c4d5e6f7a8b9c0d
-```
+| Méthode | Chemin | Rôle requis | Description |
+|---------|--------|-------------|-------------|
+| POST | `/dsl/query` | moderator / admin | Compile et exécute une requête DSL via le moteur Python (PLY, in-process via pythonia) |
 
-### POST /services
-Auth: Bearer JWT
-Body: `{ title: string, description: string, category: string, type: "free"|"paid"|"exchange", neighborhoodId?: string }`
-Response: `Service` (201)
-```bash
-curl -X POST http://localhost:5000/services \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Gardening help","description":"Weekends","category":"gardening","type":"free"}'
-```
+## Module `events` — Événements de quartier (6 routes)
 
-### PATCH /services/:id
-Auth: Bearer JWT — owner or admin
-Body: `{ title?: string, description?: string, category?: string, type?: string }`
-Response: `Service`
-```bash
-curl -X PATCH http://localhost:5000/services/664f1a2b3c4d5e6f7a8b9c0d \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"description":"Updated"}'
-```
+| Méthode | Chemin | Rôle requis | Description |
+|---------|--------|-------------|-------------|
+| GET | `/events` | Public | Liste des événements (filtrable par catégorie et date) |
+| GET | `/events/:id` | Public | Détail d'un événement |
+| POST | `/events` | Authentifié | Crée un événement (`createdBy` issu du JWT) |
+| POST | `/events/:id/interest` | Authentifié | Marque un intérêt/participation (mise à jour Mongo + relation Neo4j) |
+| PATCH | `/events/:id` | Authentifié | Met à jour un événement |
+| DELETE | `/events/:id` | Authentifié | Supprime un événement |
 
-### DELETE /services/:id
-Auth: Bearer JWT — role: admin
-Response: `{ success: true }`
-```bash
-curl -X DELETE http://localhost:5000/services/664f1a2b3c4d5e6f7a8b9c0d \
-  -H "Authorization: Bearer <adminToken>"
-```
+## Module `geocoding` — Géocodage d'adresses (1 route)
 
----
+| Méthode | Chemin | Rôle requis | Description |
+|---------|--------|-------------|-------------|
+| GET | `/geocoding/search` | Authentifié | Autocomplétion d'adresses (proxy Nominatim) |
 
-## Events
+Cette route sert de proxy vers l'**API externe Nominatim** (OpenStreetMap). Les
+résultats sont doucement biaisés vers le quartier de l'appelant (~5 km autour de
+son domicile) et sa langue préférée, sans jamais restreindre la recherche. La
+requête `q` doit contenir au moins 3 caractères.
 
-### GET /events
-Auth: Public
-Query: `?category=culture&date=2026-05-15&page=1&limit=20`
-Response: `Event[]`
-```bash
-curl "http://localhost:5000/events?category=community&date=2026-05-15"
-```
+## Module `incidents` — Signalements d'incidents (6 routes)
 
-### GET /events/:id
-Auth: Public
-Response: `Event` — 404 if not found
-```bash
-curl http://localhost:5000/events/664f1a2b3c4d5e6f7a8b9c0e
-```
+| Méthode | Chemin | Rôle requis | Description |
+|---------|--------|-------------|-------------|
+| GET | `/incidents` | Authentifié | Liste paginée des incidents non supprimés (résidents et modérateurs limités à leur quartier) |
+| GET | `/incidents/:id` | Authentifié | Détail d'un incident |
+| POST | `/incidents` | Authentifié | Crée un incident (statut initial `open`) |
+| PATCH | `/incidents/:id/status` | moderator / admin | Change le statut (machine à états stricte : open → in_progress → resolved) |
+| DELETE | `/incidents/:id` | moderator / admin | Suppression logique (`deleted_at = NOW()`) |
+| POST | `/incidents/sync` | Authentifié | Synchronisation en masse depuis le client lourd JavaFX (upsert) |
 
-### POST /events
-Auth: Bearer JWT
-Body: `{ title: string, description: string, category: string, date: string }`
-Response: `Event` (201)
-```bash
-curl -X POST http://localhost:5000/events \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Flea market","description":"Large community flea market","category":"community","date":"2026-05-15T09:00:00.000Z"}'
-```
+La synchronisation applique une règle de propriété : un résident ne peut
+remonter que ses propres incidents, un modérateur ou un administrateur ceux de
+n'importe qui. Les éléments non appliqués sont retournés dans `skippedIds`.
 
-### POST /events/:id/interest
-Auth: Bearer JWT
-Response: `{ interested: number }` (201) — idempotent via `$addToSet`
-```bash
-curl -X POST http://localhost:5000/events/664f1a2b3c4d5e6f7a8b9c0e/interest \
-  -H "Authorization: Bearer <token>"
-```
+## Module `messaging` — Messagerie (6 routes)
 
----
+| Méthode | Chemin | Rôle requis | Description |
+|---------|--------|-------------|-------------|
+| GET | `/messaging/conversations` | Authentifié | Liste mes conversations |
+| POST | `/messaging/conversations` | Authentifié | Crée une conversation (1-1 ou groupe) |
+| POST | `/messaging/conversations/with/:userId` | Authentifié | Trouve ou crée une conversation 1-1 avec un utilisateur (idempotent) |
+| GET | `/messaging/conversations/:id/messages` | Authentifié | Historique paginé des messages |
+| POST | `/messaging/conversations/:id/upload` | Authentifié | Envoie un fichier (GridFS, max 10 Mo ; audio max 5 Mo) |
+| GET | `/messaging/files/:fileId` | Authentifié | Télécharge un fichier de conversation (participants uniquement) |
 
-## Incidents
+## Module `neighborhoods` — Quartiers (6 routes)
 
-### GET /incidents
-Auth: Bearer JWT
-Query: `?status=open&page=1&limit=20` — status: `open|in_progress|resolved`
-Response: `Incident[]`
-```bash
-curl "http://localhost:5000/incidents?status=open" \
-  -H "Authorization: Bearer <token>"
-```
+| Méthode | Chemin | Rôle requis | Description |
+|---------|--------|-------------|-------------|
+| GET | `/neighborhoods` | Public | Liste paginée des quartiers |
+| GET | `/neighborhoods/uncovered-addresses` | admin | Résidents en attente non couverts par un quartier |
+| GET | `/neighborhoods/:id` | Public | Détail d'un quartier |
+| POST | `/neighborhoods` | admin | Crée un quartier (polygone GeoJSON ; contrôle de chevauchement `$geoIntersects`) |
+| PATCH | `/neighborhoods/:id` | admin | Met à jour un quartier |
+| DELETE | `/neighborhoods/:id` | admin | Supprime un quartier |
 
-### GET /incidents/:id
-Auth: Bearer JWT
-Response: `Incident` — 404 if not found or soft-deleted
-```bash
-curl http://localhost:5000/incidents/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
-  -H "Authorization: Bearer <token>"
-```
+La création d'un quartier réaffecte automatiquement les résidents en attente
+dont l'adresse tombe dans le nouveau polygone.
 
-### POST /incidents
-Auth: Bearer JWT
-Body: `{ title: string, description: string, neighborhoodId?: string }`
-Response: `Incident[]` (201) — initial status is `open`
-```bash
-curl -X POST http://localhost:5000/incidents \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Broken streetlight","description":"Rue Victor Hugo"}'
-```
+## Module `points` — Points d'entraide (3 routes)
 
-### PATCH /incidents/:id/status
-Auth: Bearer JWT — role: moderator or admin
-Body: `{ status: "open"|"in_progress"|"resolved" }`
-State machine: `open → in_progress → resolved` (other transitions return 400)
-Response: `Incident`
-```bash
-curl -X PATCH http://localhost:5000/incidents/a1b2c3d4-e5f6-7890-abcd-ef1234567890/status \
-  -H "Authorization: Bearer <modToken>" \
-  -H "Content-Type: application/json" \
-  -d '{"status":"in_progress"}'
-```
+| Méthode | Chemin | Rôle requis | Description |
+|---------|--------|-------------|-------------|
+| GET | `/points/balance` | Authentifié | Consulte mon solde de points (initialisation à 0 si absent) |
+| GET | `/points/history` | Authentifié | Historique paginé des transactions (envoyées et reçues) |
+| POST | `/points/transfer` | Authentifié | Transfère des points à un autre utilisateur (transaction ACID) |
 
-### DELETE /incidents/:id
-Auth: Bearer JWT — role: moderator or admin
-Response: `{ success: true }` — soft delete (sets `deletedAt`)
-```bash
-curl -X DELETE http://localhost:5000/incidents/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
-  -H "Authorization: Bearer <modToken>"
-```
+Le transfert est atomique (PostgreSQL) : débit de l'émetteur et crédit du
+destinataire dans la même transaction ; échec si le solde est insuffisant.
 
-### POST /incidents/sync
-Auth: Bearer JWT (Desktop client)
-Body: `{ incidents: [{ id: string, title: string, description: string, createdBy: string, neighborhoodId?: string }] }`
-Response: `{ upserted: number, skipped: number }` — only incidents owned by the JWT user are upserted
-```bash
-curl -X POST http://localhost:5000/incidents/sync \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"incidents":[{"id":"uuid","title":"Pothole","description":"Rue X","createdBy":"<userId>"}]}'
-```
+## Module `services` — Annonces de services entre voisins (9 routes)
+
+| Méthode | Chemin | Rôle requis | Description |
+|---------|--------|-------------|-------------|
+| GET | `/services` | Authentifié | Liste des annonces du quartier (filtrable par catégorie, type, direction) |
+| GET | `/services/mine` | Authentifié | Mes annonces enrichies de leurs répondants |
+| GET | `/services/responded` | Authentifié | Annonces auxquelles j'ai répondu |
+| GET | `/services/:id` | Public | Détail d'une annonce |
+| POST | `/services` | Authentifié | Crée une annonce de service |
+| PATCH | `/services/:id` | Authentifié (propriétaire ou admin) | Met à jour une annonce |
+| POST | `/services/:id/respond` | Authentifié | Répond à une annonce (idempotent) |
+| DELETE | `/services/:id/respond` | Authentifié | Retire ma réponse à une annonce |
+| DELETE | `/services/:id` | Authentifié (propriétaire ou admin) | Supprime une annonce |
+
+Les types de service sont `free`, `paid`, `exchange` ; les directions `offer`
+et `request`. Les résidents et modérateurs sont limités à leur propre quartier,
+seuls les administrateurs listent l'ensemble.
+
+## Module `votes` — Votes sur les contenus (2 routes)
+
+| Méthode | Chemin | Rôle requis | Description |
+|---------|--------|-------------|-------------|
+| POST | `/votes` | Authentifié | Vote (poser / basculer / changer) — LikeDislike pour services/événements, UpDown pour incidents/commentaires |
+| GET | `/votes/score` | Authentifié | Score agrégé d'une cible (`targetId`, `targetType`) |
+
+## Module `app` — Système et recommandations (4 routes)
+
+| Méthode | Chemin | Rôle requis | Description |
+|---------|--------|-------------|-------------|
+| GET | `/health` | Public | Contrôle de santé du serveur (interrogé toutes les 30 s par le service de synchronisation Java) |
+| GET | `/stats` | admin | Statistiques agrégées (PostgreSQL + MongoDB) |
+| GET | `/recommendations` | Authentifié | Recommandations personnalisées de services et d'événements (graphe Neo4j) |
+| POST | `/social/interest` | Authentifié | Enregistre un intérêt pour un événement (**déprécié** — utiliser `POST /events/:id/interest`) |
+
+Chaque compteur de `/stats` est isolé dans son propre `try/catch` : une valeur
+peut être `null` si une base est temporairement indisponible. De même, les
+recommandations renvoient un tableau vide si Neo4j est indisponible.
 
 ---
 
-## Contracts
+## Récapitulatif
 
-### GET /contracts
-Auth: Bearer JWT
-Response: `Contract[]` — contracts created by or assigned to the current user
-```bash
-curl http://localhost:5000/contracts \
-  -H "Authorization: Bearer <token>"
-```
-
-### GET /contracts/:id
-Auth: Bearer JWT — must be creator or signatory
-Response: `Contract` — 403 if access denied, 404 if not found
-```bash
-curl http://localhost:5000/contracts/664f1a2b3c4d5e6f7a8b9c0d \
-  -H "Authorization: Bearer <token>"
-```
-
-### POST /contracts
-Auth: Bearer JWT
-Body: `{ title: string, content: string, signatories: string[] }`
-Response: `Contract` (201) — SHA-256 hash of content auto-calculated
-```bash
-curl -X POST http://localhost:5000/contracts \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Gardening contract","content":"I undertake to...","signatories":["<userId2>"]}'
-```
-
-### POST /contracts/:id/sign
-Auth: Bearer JWT — must be a listed signatory
-Body: `{ totpCode: string }`
-Response: `Contract` (201) — status becomes `pending_signature` until all have signed, then `signed`
-```bash
-curl -X POST http://localhost:5000/contracts/664f1a2b3c4d5e6f7a8b9c0d/sign \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"totpCode":"123456"}'
-```
-
----
-
-## Messaging
-
-### GET /messaging/conversations
-Auth: Bearer JWT
-Response: `Conversation[]`
-```bash
-curl http://localhost:5000/messaging/conversations \
-  -H "Authorization: Bearer <token>"
-```
-
-### POST /messaging/conversations
-Auth: Bearer JWT
-Body: `{ participantIds: string[], title?: string }`
-Response: `Conversation` (201)
-```bash
-curl -X POST http://localhost:5000/messaging/conversations \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"participantIds":["<userId2>"],"title":"Gardening discussion"}'
-```
-
-### GET /messaging/conversations/:id/messages
-Auth: Bearer JWT
-Query: `?page=1&limit=50`
-Response: `Message[]`
-```bash
-curl "http://localhost:5000/messaging/conversations/664f1a2b3c4d5e6f7a8b9c0d/messages?page=1" \
-  -H "Authorization: Bearer <token>"
-```
-
-### POST /messaging/conversations/:id/upload
-Auth: Bearer JWT
-Content-Type: `multipart/form-data`
-Body: form field `file` (max 10 MB)
-Response: `Message` (201) — file stored in GridFS, type `image` or `file`
-```bash
-curl -X POST http://localhost:5000/messaging/conversations/664f.../upload \
-  -H "Authorization: Bearer <token>" \
-  -F "file=@/path/to/photo.jpg"
-```
-
-WebSocket: connect to `ws://localhost:5000/messaging` with `{ auth: { token: "<accessToken>" } }`.
-Namespace: `/messaging`. Rooms: `conversation:{id}`.
-Events emitted by server: `new_message`. Client emits: `join_conversation`, `send_message`.
-
----
-
-## Votes
-
-### POST /votes
-Auth: Bearer JWT
-Body: `{ targetId: string, targetType: "service"|"event"|"incident"|"comment", voteType: "like"|"dislike"|"up"|"down" }`
-Response: `{ action: "added"|"removed"|"changed", voteType: string }` (201)
-Strategy: LikeDislike for services/events, UpDown for incidents/comments. Voting same type toggles off.
-```bash
-curl -X POST http://localhost:5000/votes \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"targetId":"664f1a2b3c4d5e6f7a8b9c0d","targetType":"service","voteType":"like"}'
-```
-
-### GET /votes/score
-Auth: Bearer JWT
-Query: `?targetId=<id>&targetType=service`
-Response: `{ score: number, breakdown: { like: number, dislike: number } }`
-```bash
-curl "http://localhost:5000/votes/score?targetId=664f1a2b3c4d5e6f7a8b9c0d&targetType=service" \
-  -H "Authorization: Bearer <token>"
-```
-
----
-
-## Points
-
-### GET /points/balance
-Auth: Bearer JWT
-Response: `{ userId: string, balance: number }`
-```bash
-curl http://localhost:5000/points/balance \
-  -H "Authorization: Bearer <token>"
-```
-
-### GET /points/history
-Auth: Bearer JWT
-Query: `?page=1&limit=20`
-Response: `PointsTransaction[]` — sent and received transactions, most recent first
-```bash
-curl "http://localhost:5000/points/history?page=1&limit=20" \
-  -H "Authorization: Bearer <token>"
-```
-
-### POST /points/transfer
-Auth: Bearer JWT
-Body: `{ recipientId: string, amount: number, note?: string }`
-Response: `{ transaction: object, senderBalance: number, recipientBalance: number }` (201)
-Fails with 400 if balance would go below -10.
-```bash
-curl -X POST http://localhost:5000/points/transfer \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"recipientId":"<userId2>","amount":10,"note":"Thanks!"}'
-```
-
----
-
-## Recommendations (Social/Neo4j)
-
-### GET /recommendations
-Auth: Bearer JWT
-Response: `{ type: "service"|"event", id: string, name: string, score: number, reason: string }[]`
-Returns `[]` if Neo4j is unavailable.
-```bash
-curl http://localhost:5000/recommendations \
-  -H "Authorization: Bearer <token>"
-```
-
----
-
-## DSL
-
-### POST /dsl/query
-Auth: Bearer JWT — role: moderator or admin
-Body: `{ query: string }` — DSL query string (PLY Python engine)
-Response: `{ type: string, collection: string, filter: object, limit?: number }` (201)
-```bash
-curl -X POST http://localhost:5000/dsl/query \
-  -H "Authorization: Bearer <modToken>" \
-  -H "Content-Type: application/json" \
-  -d '{"query":"FIND incidents WHERE status = \"open\" LIMIT 10"}'
-```
-
----
-
-## Me (GDPR)
-
-### GET /users/me/export
-Auth: Bearer JWT
-Response: `{ profile: object, incidents: object[], pointsBalance: object|null, transactions: object[] }`
-GDPR Art. 20 — data portability. `passwordHash` and `totpSecret` are never included.
-```bash
-curl http://localhost:5000/users/me/export \
-  -H "Authorization: Bearer <token>"
-```
-
-### DELETE /users/me
-Auth: Bearer JWT
-Body: `{ totpCode: string }` — TOTP required to prevent deletion via a stolen token
-Response: `{ success: true }`
-GDPR Art. 17 — anonymises the account: email replaced with `deleted_<id>@anonymized.invalid`, passwordHash and totpSecret cleared, refreshToken revoked.
-```bash
-curl -X DELETE http://localhost:5000/users/me \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"totpCode":"123456"}'
-```
-
----
-
-## Users (Admin)
-
-### GET /users
-Auth: Bearer JWT — role: admin
-Response: `User[]`
-```bash
-curl http://localhost:5000/users \
-  -H "Authorization: Bearer <adminToken>"
-```
-
-### PATCH /users/:id/role
-Auth: Bearer JWT — role: admin
-Body: `{ role: "resident"|"moderator"|"admin" }`
-Response: `User`
-```bash
-curl -X PATCH http://localhost:5000/users/a1b2c3d4-e5f6-7890-abcd-ef1234567890/role \
-  -H "Authorization: Bearer <adminToken>" \
-  -H "Content-Type: application/json" \
-  -d '{"role":"moderator"}'
-```
-
----
-
-## Community Votes
-
-### POST /community-votes
-Auth: Bearer JWT
-Body: `{ title: string, description?: string, voteType: "binary"|"single_choice"|"multiple_choice"|"weighted", options: [{ id: string, label: string }], endsAt: string (ISO-8601), isAnonymous?: boolean, quorum?: number }`
-Response: `CommunityVote` (201)
-```bash
-curl -X POST http://localhost:5000/community-votes \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Should we install benches?","voteType":"binary","options":[{"id":"yes","label":"Yes"},{"id":"no","label":"No"}],"endsAt":"2026-07-01T00:00:00.000Z"}'
-```
-
-### GET /community-votes
-Auth: Bearer JWT
-Query: `?page=1&limit=20`
-Response: `CommunityVote[]`
-```bash
-curl http://localhost:5000/community-votes \
-  -H "Authorization: Bearer <token>"
-```
-
-### GET /community-votes/:id
-Auth: Bearer JWT
-Response: `CommunityVote` — 404 if not found
-```bash
-curl http://localhost:5000/community-votes/664f1a2b3c4d5e6f7a8b9c0d \
-  -H "Authorization: Bearer <token>"
-```
-
-### POST /community-votes/:id/cast
-Auth: Bearer JWT
-Body: `{ choices: string[], weights?: Record<string, number> }` — weights for `weighted` type only
-Response: `{ success: true }` (201) — 409 if already voted, 400 if vote closed or invalid choice
-```bash
-curl -X POST http://localhost:5000/community-votes/664f1a2b3c4d5e6f7a8b9c0d/cast \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"choices":["yes"]}'
-```
-
-### GET /community-votes/:id/results
-Auth: Bearer JWT
-Response: `{ totalVoters: number, options: [{ id, label, count, percentage }], quorumReached: boolean }`
-```bash
-curl http://localhost:5000/community-votes/664f1a2b3c4d5e6f7a8b9c0d/results \
-  -H "Authorization: Bearer <token>"
-```
-
-### POST /community-votes/:id/close
-Auth: Bearer JWT — must be creator or admin
-Response: `CommunityVote` (201) — sets `status: "closed"`, 403 if unauthorized
-```bash
-curl -X POST http://localhost:5000/community-votes/664f1a2b3c4d5e6f7a8b9c0d/close \
-  -H "Authorization: Bearer <token>"
-```
-
----
-
-## Documents (GridFS)
-
-### GET /documents/me
-Auth: Bearer JWT
-Response: `UploadedDocument[]` — documents uploaded by the current user
-```bash
-curl http://localhost:5000/documents/me \
-  -H "Authorization: Bearer <token>"
-```
-
-### POST /documents/upload
-Auth: Bearer JWT
-Content-Type: `multipart/form-data`
-Query: `?neighborhoodId=<id>` (optional)
-Body: form field `file` (max 20 MB)
-Response: `UploadedDocument` (201) — fileId, fileName, contentType, size, uploadedBy, uploadedAt
-```bash
-curl -X POST "http://localhost:5000/documents/upload?neighborhoodId=664f..." \
-  -H "Authorization: Bearer <token>" \
-  -F "file=@/path/to/document.pdf"
-```
-
-### GET /documents/:id/download
-Auth: Bearer JWT — must be the uploader
-Response: file stream with `Content-Disposition: attachment`
-```bash
-curl http://localhost:5000/documents/664f1a2b3c4d5e6f7a8b9c0d/download \
-  -H "Authorization: Bearer <token>" \
-  -o output.pdf
-```
-
-### DELETE /documents/:id
-Auth: Bearer JWT — owner or admin
-Response: `{ success: true }` — soft delete (audit log entry created)
-```bash
-curl -X DELETE http://localhost:5000/documents/664f1a2b3c4d5e6f7a8b9c0d \
-  -H "Authorization: Bearer <token>"
-```
-
-### GET /documents/:id/audit
-Auth: Bearer JWT — role: moderator or admin
-Response: `AuditEntry[]` — upload/download/delete history for this file
-```bash
-curl http://localhost:5000/documents/664f1a2b3c4d5e6f7a8b9c0d/audit \
-  -H "Authorization: Bearer <modToken>"
-```
-
----
-
-## Health
-
-### GET /health
-Auth: Public
-Response: `{ status: "ok", timestamp: string, version: string }`
-```bash
-curl http://localhost:5000/health
-```
+| Module | Routes |
+|--------|--------|
+| auth | 6 |
+| users | 7 |
+| users/me | 10 |
+| bookings | 6 |
+| community-votes | 6 |
+| contracts | 7 |
+| dsl | 1 |
+| events | 6 |
+| geocoding | 1 |
+| incidents | 6 |
+| messaging | 6 |
+| neighborhoods | 6 |
+| points | 3 |
+| services | 9 |
+| votes | 2 |
+| app (système + recommandations) | 4 |
+| **Total** | **86** |
