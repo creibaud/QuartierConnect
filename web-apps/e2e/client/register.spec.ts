@@ -32,6 +32,7 @@ test.describe("Client — Register parcours", () => {
             .getByLabel("Mot de passe", { exact: true })
             .fill(DEMO_PASSWORD);
         await page.getByLabel(/confirmer/i).fill("Different1!");
+        await page.getByRole("checkbox").check();
         await page.getByRole("button", { name: /créer/i }).click();
         await expect(page.getByRole("alert")).toContainText(
             /correspondent pas/i,
@@ -48,9 +49,28 @@ test.describe("Client — Register parcours", () => {
             .getByLabel("Mot de passe", { exact: true })
             .fill(DEMO_PASSWORD);
         await page.getByLabel(/confirmer/i).fill(DEMO_PASSWORD);
+        await page.getByRole("checkbox").check();
         await page.getByRole("button", { name: /créer/i }).click();
         await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 8000 });
         await expect(page.getByText(/scannez/i)).toBeVisible();
+    });
+
+    test("submit stays disabled until consent is given", async ({ page }) => {
+        await page.goto("/register");
+        await page.getByLabel("Prénom", { exact: true }).fill("Test");
+        await page.getByLabel("Nom", { exact: true }).fill("Resident");
+        await page.getByLabel("Email").fill(uniqueEmail());
+        await page
+            .getByLabel("Mot de passe", { exact: true })
+            .fill(DEMO_PASSWORD);
+        await page.getByLabel(/confirmer/i).fill(DEMO_PASSWORD);
+        await expect(
+            page.getByRole("button", { name: /créer/i }),
+        ).toBeDisabled();
+        await page.getByRole("checkbox").check();
+        await expect(
+            page.getByRole("button", { name: /créer/i }),
+        ).toBeEnabled();
     });
 
     test("shows error on duplicate email", async ({ page }) => {
@@ -65,6 +85,7 @@ test.describe("Client — Register parcours", () => {
             .getByLabel("Mot de passe", { exact: true })
             .fill(DEMO_PASSWORD);
         await page.getByLabel(/confirmer/i).fill(DEMO_PASSWORD);
+        await page.getByRole("checkbox").check();
         await page.getByRole("button", { name: /créer/i }).click();
         await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 8000 });
 
@@ -76,6 +97,7 @@ test.describe("Client — Register parcours", () => {
             .getByLabel("Mot de passe", { exact: true })
             .fill(DEMO_PASSWORD);
         await page.getByLabel(/confirmer/i).fill(DEMO_PASSWORD);
+        await page.getByRole("checkbox").check();
         await page.getByRole("button", { name: /créer/i }).click();
         await expect(page.getByRole("alert")).toContainText(/déjà utilisée/i);
     });
@@ -93,6 +115,7 @@ test.describe("Client — Register parcours", () => {
             .getByLabel("Mot de passe", { exact: true })
             .fill(DEMO_PASSWORD);
         await page.getByLabel(/confirmer/i).fill(DEMO_PASSWORD);
+        await page.getByRole("checkbox").check();
 
         let totpSecret: string | null = null;
         page.on("response", async (resp) => {

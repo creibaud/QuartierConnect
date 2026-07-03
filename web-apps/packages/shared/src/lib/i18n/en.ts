@@ -36,6 +36,9 @@ export default {
             passwordMin: "8 characters minimum",
             passwordMismatch: "Passwords do not match",
             totpLength: "The code must contain 6 digits",
+            phoneInvalid:
+                "Invalid phone number — international format recommended (+33612345678)",
+            consentRequired: "You must accept the terms to create an account",
         },
         errors: {
             invalidCredentials: "Incorrect email or password",
@@ -311,6 +314,13 @@ export default {
             copySecret: "Copy",
             secretCopied: "Key copied!",
             copyFailed: "Couldn't copy — copy it manually.",
+            phoneOptional: "Phone (optional)",
+            consentLabel:
+                "I accept the terms of use and the processing of my personal data",
+            consentNoticeLink: "Read the information notice",
+            consentNoticeTitle: "Information notice — personal data",
+            consentNoticeBody:
+                'QuartierConnect processes your data (identity, address, phone, neighborhood activity) solely to provide the service: connecting neighbors, incidents, events, services, messaging and contracts. It is never sold. You can export your data or delete your account at any time from the "My account" page (GDPR).',
         },
         account: {
             pageTitle: "My account",
@@ -327,7 +337,7 @@ export default {
             privacy: "Privacy (GDPR)",
             exportData: "Export my data",
             exportDescription:
-                "Download a copy of your data (profile, points, incidents).",
+                "Download a copy of your data (profile, phone, consent, messages, contracts, bookings, votes, services, points, incidents).",
             deleteAccount: "Delete my account",
             deleteDescription:
                 "Permanently anonymizes your account. This cannot be undone.",
@@ -374,6 +384,25 @@ export default {
             locationError: "Location error",
             locationApproximate:
                 "Approximate position (~{{km}} km, network-based). On mobile (GPS), it will be more precise.",
+            totpVerificationLabel: "Verification code (TOTP)",
+            emailCardTitle: "Email address",
+            emailDescription: "Address used for signing in and notifications.",
+            changeEmail: "Change email address",
+            newEmailLabel: "New email address",
+            emailChangeDescription:
+                "Confirm with your password and your verification code. You will need to sign in again with the new address.",
+            emailUpdatedReconnect:
+                "Email address updated. Sign in again with your new address.",
+            emailUpdateRejected:
+                "Address, password or verification code rejected.",
+            phoneCardTitle: "Phone",
+            phoneDescription: "Number used to contact you (optional).",
+            phoneNotSet: "No phone number set",
+            changePhone: "Change phone number",
+            phoneLabel: "Phone number",
+            phoneChangeDescription:
+                "Confirm the change with your verification code. Leave the field empty to clear the number.",
+            phoneUpdated: "Phone number updated.",
         },
         dashboard: {
             welcome: "Hello",

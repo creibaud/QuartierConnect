@@ -17,7 +17,7 @@ async function registerAndLogin(
 ): Promise<{ accessToken: string }> {
     const regRes = await request(app.getHttpServer())
         .post("/auth/register")
-        .send({ email, password: DEMO_PASSWORD })
+        .send({ email, password: DEMO_PASSWORD, consent: true })
         .expect(201);
 
     const urlParams = new URL(

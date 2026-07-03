@@ -23,7 +23,7 @@ async function registerAndLogin(
 ): Promise<{ accessToken: string; totpSecret: string; userId: string }> {
     const regRes = await request(app.getHttpServer())
         .post("/auth/register")
-        .send({ email, password: DEMO_PASSWORD })
+        .send({ email, password: DEMO_PASSWORD, consent: true })
         .expect(201);
 
     const urlParams = new URL(
@@ -220,7 +220,7 @@ describe("Contracts (e2e)", () => {
             const email = `e2e-contract-replay-${Date.now()}@test.fr`;
             const regRes = await request(app.getHttpServer())
                 .post("/auth/register")
-                .send({ email, password: DEMO_PASSWORD })
+                .send({ email, password: DEMO_PASSWORD, consent: true })
                 .expect(201);
             const secret = new URL(
                 regRes.body.otpauthUrl.replace("otpauth://", "http://"),

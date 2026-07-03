@@ -2,8 +2,10 @@ import { motion, useReducedMotion, type Variants } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import { PageHeader } from "@workspace/ui/components/page-header";
+import { EmailCard } from "@/features/account/components/email-card";
 import { NeighborhoodCard } from "@/features/account/components/neighborhood-card";
 import { NeighborhoodMapCard } from "@/features/account/components/neighborhood-map-card";
+import { PhoneCard } from "@/features/account/components/phone-card";
 import { PrivacyCard } from "@/features/account/components/privacy-card";
 import { ProfileCard } from "@/features/account/components/profile-card";
 import { SecurityCard } from "@/features/account/components/security-card";
@@ -57,6 +59,14 @@ export function AccountPage() {
 
                 <motion.div variants={fadeUp}>
                     <SecurityCard />
+                </motion.div>
+
+                <motion.div variants={fadeUp}>
+                    <EmailCard />
+                </motion.div>
+
+                <motion.div variants={fadeUp}>
+                    <PhoneCard />
                 </motion.div>
 
                 <motion.div variants={fadeUp}>
