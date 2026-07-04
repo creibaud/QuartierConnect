@@ -42,6 +42,12 @@
 		uri strip_prefix /api
 		reverse_proxy api:5000
 	}
+	handle /api/scalar* {
+		import docs_auth
+		import scalar_csp
+		uri strip_prefix /api
+		reverse_proxy api:5000
+	}
 	handle /api/* {
 		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self' ws: wss:; font-src 'self'; frame-ancestors 'none'"
 		uri strip_prefix /api
@@ -66,12 +72,12 @@
 		reverse_proxy admin:3001
 	}
 	handle /aide* {
-		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none'"
+		header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none'"
 		reverse_proxy docs-user:3002
 	}
 	handle /dev* {
 		import docs_auth
-		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none'"
+		header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none'"
 		reverse_proxy docs-dev:3003
 	}
 	handle {

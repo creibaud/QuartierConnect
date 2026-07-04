@@ -131,6 +131,8 @@ services:
     restart: unless-stopped
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+      DOCS_AUTH_USER: ${DOCS_AUTH_USER:?DOCS_AUTH_USER requis en prod}
+      DOCS_AUTH_HASH: ${DOCS_AUTH_HASH:?DOCS_AUTH_HASH requis en prod}
     volumes:
       - /var/log/quartierconnect/caddy:/var/log/caddy
       - ./downloads:/srv/downloads:ro

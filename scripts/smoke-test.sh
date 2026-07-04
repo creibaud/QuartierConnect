@@ -31,6 +31,14 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
     check_route /aide/ 200   # doc User publique
     check_route /dev/ 401    # doc Dev protégée (basic_auth)
     check_route /docs 401    # référence Scalar protégée
+    if [ -n "${DOCS_AUTH_USER:-}" ] && [ -n "${DOCS_AUTH_PLAINTEXT:-}" ]; then
+      auth_code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 -u "${DOCS_AUTH_USER}:${DOCS_AUTH_PLAINTEXT}" "${BASE_URL%/}/dev/" 2>/dev/null || echo "000")
+      if [ "$auth_code" != "200" ]; then
+        echo "✗ /dev/ avec identifiants a répondu ${auth_code} (attendu 200 — hash corrompu ou identifiants faux ?)" >&2
+        exit 1
+      fi
+      echo "✓ /dev/ (avec identifiants) → 200"
+    fi
     exit 0
   fi
   echo "  essai ${attempt}/${MAX_ATTEMPTS} : HTTP ${status} — nouvelle tentative dans ${SLEEP_SECONDS}s"
