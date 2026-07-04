@@ -4,7 +4,7 @@ services:
       context: ..
       dockerfile: api/Dockerfile
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"
     env_file:
       - ../.env
     environment:
@@ -27,7 +27,7 @@ services:
       context: ../web-apps
       dockerfile: apps/client/Dockerfile
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       - api
 
@@ -36,7 +36,7 @@ services:
       context: ../web-apps
       dockerfile: apps/admin/Dockerfile
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
     depends_on:
       - api
 

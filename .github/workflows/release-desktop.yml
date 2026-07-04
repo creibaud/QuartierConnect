@@ -50,7 +50,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Publier sur GitHub Releases
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           name: ${{ github.event.inputs.tag || github.ref_name }}
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
@@ -128,9 +128,38 @@ jobs:
         run: ${{ matrix.script }}
 
       - name: Attacher l'installateur à la release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           files: desktop-app/target/installer/*.${{ matrix.type }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  checksums:
+    name: Publier SHA256SUMS
+    needs: [jar, installers]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Télécharger tous les assets de la release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: gh release download "$TAG" --dir dist
+
+      - name: Générer SHA256SUMS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS
+
+      - name: Publier SHA256SUMS sur la release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: gh release upload "$TAG" dist/SHA256SUMS --clobber
