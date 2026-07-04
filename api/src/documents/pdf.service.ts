@@ -71,23 +71,34 @@ export const SIGNATURE_ZONES: { x: number; y: number; label: string }[] = [
 
 const ZONE_BOX = { offsetX: -6, offsetY: -8, width: 212, height: 96 };
 const ZONE_LINE_WIDTH = 200;
-const ZONE_FILL = rgb(0.98, 0.97, 0.95);
-const ZONE_BORDER = rgb(0.72, 0.68, 0.62);
-const ZONE_LINE = rgb(0.55, 0.5, 0.45);
+// Palette « service public » alignée sur le web (bleu France, ardoise, encre).
+const FRANCE = rgb(0, 0, 0.569);
+const INK = rgb(0.086, 0.094, 0.114);
+const MUTED = rgb(0.34, 0.36, 0.4);
+const HAIRLINE = rgb(0.855, 0.871, 0.902);
+const ZONE_FILL = rgb(1, 1, 1);
+const ZONE_BORDER = rgb(0.76, 0.78, 0.82);
+const ZONE_LINE = rgb(0.7, 0.72, 0.76);
 const INK_BLUE = rgb(0.12, 0.2, 0.45);
 const MIN_STAMP_IMAGE_WIDTH = 16;
 const MIN_STAMP_IMAGE_HEIGHT = 8;
 
-function wrapLines(text: string, max: number): string[] {
+function wrapLines(
+    text: string,
+    font: PDFFont,
+    size: number,
+    maxWidth: number,
+): string[] {
     const out: string[] = [];
     for (const raw of text.split("\n")) {
         let line = "";
         for (const word of raw.split(" ")) {
-            if ((line + " " + word).trim().length > max) {
-                out.push(line.trim());
+            const candidate = line ? `${line} ${word}` : word;
+            if (line && font.widthOfTextAtSize(candidate, size) > maxWidth) {
+                out.push(line);
                 line = word;
             } else {
-                line = (line + " " + word).trim();
+                line = candidate;
             }
         }
         out.push(line);
@@ -111,41 +122,110 @@ function fitTextSize(
 export class PdfService {
     async generateBaseContractPdf(data: ContractPdfData): Promise<Buffer> {
         const doc = await PDFDocument.create();
-        const page = doc.addPage([595.28, 841.89]);
         const font = await doc.embedFont(StandardFonts.Helvetica);
         const bold = await doc.embedFont(StandardFonts.HelveticaBold);
 
-        const draw = (
-            text: string,
-            x: number,
-            y: number,
-            size = 11,
-            f: PDFFont = font,
-        ) => page.drawText(text, { x, y, size, font: f, color: rgb(0, 0, 0) });
+        const W = 595.28;
+        const H = 841.89;
+        const M = 56;
+        const HEADER_H = 92;
 
-        let y = 800;
-        draw(data.title, 60, y, 18, bold);
-        y -= 36;
-        draw(`Payeur : ${data.payerName}`, 60, y);
-        y -= 18;
-        draw(`Bénéficiaire : ${data.payeeName}`, 60, y);
-        y -= 18;
-        draw(`Montant : ${formatPointsAmount(data.pointsAmount)}`, 60, y);
-        y -= 18;
-        draw(`Date : ${data.date}`, 60, y);
-        y -= 34;
-        draw("Objet du contrat", 60, y, 12, bold);
-        y -= 20;
-        for (const line of wrapLines(data.body, 92)) {
-            draw(line, 60, y, 10);
-            y -= 15;
+        let page = doc.addPage([W, H]);
+
+        // En-tête bleu France avec le nom du service et le titre du contrat.
+        page.drawRectangle({
+            x: 0,
+            y: H - HEADER_H,
+            width: W,
+            height: HEADER_H,
+            color: FRANCE,
+        });
+        page.drawText("QuartierConnect", {
+            x: M,
+            y: H - 40,
+            size: 11,
+            font: bold,
+            color: rgb(1, 1, 1),
+        });
+        const titleSize = fitTextSize(bold, data.title, 19, W - 2 * M);
+        page.drawText(data.title, {
+            x: M,
+            y: H - 68,
+            size: titleSize,
+            font: bold,
+            color: rgb(1, 1, 1),
+        });
+
+        let y = H - HEADER_H - 42;
+
+        // Métadonnées : libellé gris + valeur encre ; le montant est mis en avant.
+        const meta: [string, string, boolean][] = [
+            ["Payeur", data.payerName, false],
+            ["Bénéficiaire", data.payeeName, false],
+            ["Montant", formatPointsAmount(data.pointsAmount), true],
+            ["Date", data.date, false],
+        ];
+        for (const [label, value, strong] of meta) {
+            page.drawText(label.toUpperCase(), {
+                x: M,
+                y,
+                size: 8,
+                font: bold,
+                color: MUTED,
+            });
+            page.drawText(value, {
+                x: M + 120,
+                y: y - 1,
+                size: strong ? 13 : 11,
+                font: strong ? bold : font,
+                color: strong ? FRANCE : INK,
+            });
+            y -= 24;
         }
 
+        y -= 8;
+        page.drawLine({
+            start: { x: M, y },
+            end: { x: W - M, y },
+            thickness: 0.75,
+            color: HAIRLINE,
+        });
+        y -= 28;
+
+        page.drawText("Objet du contrat", {
+            x: M,
+            y,
+            size: 12,
+            font: bold,
+            color: FRANCE,
+        });
+        y -= 22;
+
+        const BODY_SIZE = 10.5;
+        const LINE_HEIGHT = 16;
+        const BODY_BOTTOM_LIMIT = 250; // réserve la place des zones de signature
+        for (const line of wrapLines(data.body, font, BODY_SIZE, W - 2 * M)) {
+            if (y < BODY_BOTTOM_LIMIT) {
+                page = doc.addPage([W, H]);
+                y = H - M;
+            }
+            page.drawText(line, { x: M, y, size: BODY_SIZE, font, color: INK });
+            y -= LINE_HEIGHT;
+        }
+
+        // Zones de signature toujours sur la première page.
+        const firstPage = doc.getPages()[0];
         const signatoryNames = [data.payerName, data.payeeName];
         SIGNATURE_ZONES.forEach((zone, index) => {
             const name = signatoryNames[index] || zone.label;
-            draw(`Signature — ${name}`, zone.x, zone.y + 94, 9, bold);
-            page.drawRectangle({
+            firstPage.drawText(`Signature — ${name}`, {
+                x: zone.x,
+                y: zone.y + 94,
+                size: 9,
+                font: bold,
+                color: FRANCE,
+            });
+            firstPage.drawRectangle({
                 x: zone.x + ZONE_BOX.offsetX,
                 y: zone.y + ZONE_BOX.offsetY,
                 width: ZONE_BOX.width,
@@ -154,7 +234,7 @@ export class PdfService {
                 borderColor: ZONE_BORDER,
                 borderWidth: 0.75,
             });
-            page.drawLine({
+            firstPage.drawLine({
                 start: { x: zone.x, y: zone.y + 34 },
                 end: { x: zone.x + ZONE_LINE_WIDTH, y: zone.y + 34 },
                 thickness: 0.75,
