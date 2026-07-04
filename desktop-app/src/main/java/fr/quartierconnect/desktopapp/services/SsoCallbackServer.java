@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -16,6 +17,8 @@ import java.util.logging.Logger;
 public class SsoCallbackServer {
 
     private static final Logger log = Logger.getLogger(SsoCallbackServer.class.getName());
+
+    private static final String CALLBACK_PATH = "/cb";
 
     private static final String SUCCESS_HTML = """
             <!DOCTYPE html>
@@ -86,7 +89,7 @@ public class SsoCallbackServer {
             String expectedState,
             CompletableFuture<String> future) throws IOException {
 
-        ServerSocket serverSocket = new ServerSocket(0);
+        ServerSocket serverSocket = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
         SsoCallbackServer callbackServer = new SsoCallbackServer(serverSocket);
 
         Thread thread = new Thread(() -> {
@@ -151,7 +154,14 @@ public class SsoCallbackServer {
 
             String pathAndQuery = parts[1];
             int qmark = pathAndQuery.indexOf('?');
+            String path = qmark >= 0 ? pathAndQuery.substring(0, qmark) : pathAndQuery;
             String query = qmark >= 0 ? pathAndQuery.substring(qmark + 1) : "";
+
+            if (!CALLBACK_PATH.equals(path)) {
+                log.fine("SSO callback rejected unexpected path: " + path);
+                sendResponse(socket.getOutputStream(), 404, "Not Found", ERROR_HTML);
+                return;
+            }
 
             String errorParam = parseQueryParam(query, "error");
             if (errorParam != null) {
