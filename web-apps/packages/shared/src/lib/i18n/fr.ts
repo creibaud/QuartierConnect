@@ -1012,6 +1012,7 @@ export default {
                 "Quartiers existants en gris. Choisissez l'outil stylo puis cliquez sur la carte pour poser les sommets ; fermez le tracé avec Entrée, un double-clic ou un clic sur le premier point. L'outil curseur permet de déplacer les sommets.",
             polygonPoints: "Polygone défini ({{count}} points)",
             overlapError: "Le tracé chevauche un quartier existant",
+            searchPlaceholder: "Rechercher par nom",
         },
         services: {
             title: "Services",

@@ -9,6 +9,26 @@ import {
 
 test.use({ baseURL: process.env.PLAYWRIGHT_BASE_URL_ADMIN ?? "http://localhost:3001/" });
 
+const API = "http://localhost:5000";
+const TEST_PREFIXES = ["Quartier E2E", "Quartier Edit", "Quartier Delete"];
+
+/** Remove neighborhoods left over by prior CRUD runs so the paginated list
+ *  never fills up with test data. */
+async function deleteTestNeighborhoods(accessToken: string): Promise<void> {
+    const res = await fetch(`${API}/neighborhoods?limit=200`);
+    if (!res.ok) return;
+    const all = (await res.json()) as { _id: string; name: string }[];
+    const leftovers = all.filter((n) =>
+        TEST_PREFIXES.some((prefix) => n.name.startsWith(prefix)),
+    );
+    for (const neighborhood of leftovers) {
+        await fetch(`${API}/neighborhoods/${neighborhood._id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+    }
+}
+
 test.describe("Admin — Quartiers (CRUD)", () => {
     let adminAccessToken: string;
     let adminRefreshToken: string;
@@ -27,10 +47,15 @@ test.describe("Admin — Quartiers (CRUD)", () => {
             const tokens = await apiLogin(adminEmail, adminSecret, -30);
             adminAccessToken = tokens.accessToken;
             adminRefreshToken = tokens.refreshToken;
+            await deleteTestNeighborhoods(adminAccessToken);
             apiAvailable = true;
         } catch (err) {
             // API or Docker not available — API-dependent tests will be skipped
         }
+    });
+
+    test.afterAll(async () => {
+        if (apiAvailable) await deleteTestNeighborhoods(adminAccessToken);
     });
 
     test.beforeEach(async ({ page }) => {
@@ -75,6 +100,7 @@ test.describe("Admin — Quartiers (CRUD)", () => {
         await expect(page.getByRole("dialog")).not.toBeVisible({
             timeout: 5000,
         });
+        await page.getByTestId("neighborhood-search").fill(name);
         await expect(page.getByText(name)).toBeVisible({ timeout: 5000 });
     });
 
@@ -95,6 +121,7 @@ test.describe("Admin — Quartiers (CRUD)", () => {
         await expect(page.getByRole("dialog")).not.toBeVisible({
             timeout: 5000,
         });
+        await page.getByTestId("neighborhood-search").fill(original);
         await expect(page.getByText(original)).toBeVisible({ timeout: 5000 });
 
         const row = page.getByRole("row").filter({ hasText: original });
@@ -112,6 +139,7 @@ test.describe("Admin — Quartiers (CRUD)", () => {
         await expect(page.getByRole("dialog")).not.toBeVisible({
             timeout: 5000,
         });
+        await page.getByTestId("neighborhood-search").fill(updated);
         await expect(page.getByText(updated)).toBeVisible({ timeout: 5000 });
     });
 
@@ -130,16 +158,18 @@ test.describe("Admin — Quartiers (CRUD)", () => {
         await expect(page.getByRole("dialog")).not.toBeVisible({
             timeout: 5000,
         });
+        await page.getByTestId("neighborhood-search").fill(name);
         await expect(page.getByText(name)).toBeVisible({ timeout: 5000 });
 
         const row = page.getByRole("row").filter({ hasText: name });
         await row.getByRole("button", { name: /supprimer|delete/i }).click();
-        const confirmBtn = page.getByRole("button", {
-            name: /confirmer|oui|yes/i,
-        });
-        if (await confirmBtn.isVisible({ timeout: 500 }))
-            await confirmBtn.click();
+        const confirmDialog = page.getByRole("alertdialog");
+        await confirmDialog
+            .getByRole("button", { name: /supprimer|delete/i })
+            .click();
 
-        await expect(page.getByText(name)).not.toBeVisible({ timeout: 5000 });
+        await expect(
+            page.getByRole("row").filter({ hasText: name }),
+        ).not.toBeVisible({ timeout: 5000 });
     });
 });

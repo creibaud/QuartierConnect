@@ -204,6 +204,7 @@ test.describe("Admin — Neighborhoods polygon draw", () => {
             .click();
 
         await expect(dialog).toBeHidden({ timeout: 15_000 });
+        await page.getByTestId("neighborhood-search").fill(name);
         await expect(
             page.getByRole("row").filter({ hasText: name }),
         ).toBeVisible();
@@ -230,6 +231,7 @@ test.describe("Admin — Neighborhoods polygon draw", () => {
             adminRefreshToken,
         );
         await page.goto("neighborhoods");
+        await page.getByTestId("neighborhood-search").fill(name);
 
         const row = page.getByRole("row").filter({ hasText: name });
         await row.getByRole("button", { name: "Modifier" }).click();
