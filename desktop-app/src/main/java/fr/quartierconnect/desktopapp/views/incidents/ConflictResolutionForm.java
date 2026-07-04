@@ -8,12 +8,14 @@ import fr.quartierconnect.desktopapp.ui.components.AppModal;
 import fr.quartierconnect.desktopapp.ui.components.ToastManager;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.VPos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.VBox;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
@@ -101,11 +103,13 @@ public class ConflictResolutionForm {
         grid.setHgap(0);
         grid.setVgap(0);
 
+        // Colonne « champ » assez large pour « Description » sans retour à la ligne.
         ColumnConstraints fieldCol = new ColumnConstraints();
-        fieldCol.setMinWidth(80);
-        fieldCol.setPrefWidth(80);
-        fieldCol.setMaxWidth(80);
+        fieldCol.setMinWidth(112);
+        fieldCol.setPrefWidth(112);
+        fieldCol.setMaxWidth(112);
 
+        // Base / local / serveur : tiers égaux de la largeur restante.
         ColumnConstraints baseCol = new ColumnConstraints();
         baseCol.setHgrow(Priority.ALWAYS);
         baseCol.setFillWidth(true);
@@ -119,6 +123,16 @@ public class ConflictResolutionForm {
         remoteCol.setFillWidth(true);
 
         grid.getColumnConstraints().addAll(fieldCol, baseCol, localCol, remoteCol);
+
+        // Rangées : cellules étirées sur toute la hauteur de la ligne et centrées
+        // verticalement, pour que bordures/fonds soient continus et que badge et
+        // texte restent alignés d'une colonne à l'autre.
+        for (int r = 0; r < 4; r++) {
+            RowConstraints rc = new RowConstraints();
+            rc.setValignment(VPos.CENTER);
+            rc.setFillHeight(true);
+            grid.getRowConstraints().add(rc);
+        }
 
         addMergeHeader(grid, 0);
 
@@ -140,7 +154,7 @@ public class ConflictResolutionForm {
     private void addMergeHeader(GridPane grid, int row) {
         Label fieldH = new Label("");
         fieldH.getStyleClass().add("merge-grid-header");
-        fieldH.setMaxWidth(Double.MAX_VALUE);
+        stretchCell(fieldH);
 
         FontIcon baseIcon = new FontIcon(FontAwesomeSolid.CODE_BRANCH);
         baseIcon.setIconSize(10);
@@ -149,7 +163,7 @@ public class ConflictResolutionForm {
         baseH.setGraphic(baseIcon);
         baseH.getStyleClass().add("merge-grid-header");
         baseH.getStyleClass().add("merge-grid-header-base");
-        baseH.setMaxWidth(Double.MAX_VALUE);
+        stretchCell(baseH);
 
         FontIcon localIcon = new FontIcon(FontAwesomeSolid.LAPTOP);
         localIcon.setIconSize(10);
@@ -158,7 +172,7 @@ public class ConflictResolutionForm {
         localH.setGraphic(localIcon);
         localH.getStyleClass().add("merge-grid-header");
         localH.getStyleClass().add("merge-grid-header-local");
-        localH.setMaxWidth(Double.MAX_VALUE);
+        stretchCell(localH);
 
         FontIcon remoteIcon = new FontIcon(FontAwesomeSolid.CLOUD);
         remoteIcon.setIconSize(10);
@@ -167,7 +181,7 @@ public class ConflictResolutionForm {
         remoteH.setGraphic(remoteIcon);
         remoteH.getStyleClass().add("merge-grid-header");
         remoteH.getStyleClass().add("merge-grid-header-remote");
-        remoteH.setMaxWidth(Double.MAX_VALUE);
+        stretchCell(remoteH);
 
         grid.add(fieldH,   0, row);
         grid.add(baseH,    1, row);
@@ -179,7 +193,7 @@ public class ConflictResolutionForm {
                                   String baseVal, String localVal, String remoteVal, boolean isDiff) {
         Label fieldLbl = new Label(fieldName);
         fieldLbl.getStyleClass().add("merge-grid-field");
-        fieldLbl.setMaxWidth(Double.MAX_VALUE);
+        stretchCell(fieldLbl);
 
         Label baseLbl = cellLabel(baseVal, "merge-grid-cell", "merge-cell-base");
         Label localLbl = cellLabel(localVal, "merge-grid-cell", "merge-cell-local");
@@ -200,7 +214,7 @@ public class ConflictResolutionForm {
                                     String baseStatus, String localStatus, String remoteStatus, boolean isDiff) {
         Label fieldLbl = new Label(fieldName);
         fieldLbl.getStyleClass().add("merge-grid-field");
-        fieldLbl.setMaxWidth(Double.MAX_VALUE);
+        stretchCell(fieldLbl);
 
         HBox baseBox = statusCell(baseStatus, "merge-cell-base");
         HBox localBox = statusCell(localStatus, "merge-cell-local");
@@ -220,7 +234,7 @@ public class ConflictResolutionForm {
     private Label cellLabel(String value, String... styleClasses) {
         Label lbl = new Label(value != null && !value.isBlank() ? value : "—");
         lbl.setWrapText(true);
-        lbl.setMaxWidth(Double.MAX_VALUE);
+        stretchCell(lbl);
         lbl.getStyleClass().addAll(styleClasses);
         return lbl;
     }
@@ -230,7 +244,18 @@ public class ConflictResolutionForm {
         HBox box = new HBox(badge);
         box.setAlignment(Pos.CENTER_LEFT);
         box.getStyleClass().addAll("merge-grid-cell", styleClass);
-        box.setMaxWidth(Double.MAX_VALUE);
+        stretchCell(box);
         return box;
+    }
+
+    /** Étire une cellule sur toute la largeur et la hauteur de sa case ; le texte
+     *  d'un Label est aligné à gauche et centré verticalement, de sorte que les
+     *  colonnes base / local / serveur restent alignées ligne à ligne. */
+    private void stretchCell(Region cell) {
+        cell.setMaxWidth(Double.MAX_VALUE);
+        cell.setMaxHeight(Double.MAX_VALUE);
+        if (cell instanceof Label) {
+            ((Label) cell).setAlignment(Pos.CENTER_LEFT);
+        }
     }
 }

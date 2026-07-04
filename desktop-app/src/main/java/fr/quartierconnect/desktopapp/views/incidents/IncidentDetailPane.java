@@ -16,6 +16,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.util.function.BiConsumer;
 
@@ -52,25 +54,14 @@ public class IncidentDetailPane {
         HBox statusActions = new HBox(6);
         statusActions.setAlignment(Pos.CENTER_LEFT);
         switch (item.status()) {
-            case "open" -> {
-                AppButton btn = new AppButton(I18n.get("incidents.detail.toInProgress"), AppButton.Variant.SECONDARY);
-                btn.setOnAction(e -> { statusChanger.accept(item, "in_progress"); appModal.hide(); });
-                AppButton btn2 = new AppButton(I18n.get("incidents.detail.toResolved"), AppButton.Variant.SECONDARY);
-                btn2.setOnAction(e -> { statusChanger.accept(item, "resolved"); appModal.hide(); });
-                statusActions.getChildren().addAll(btn, btn2);
-            }
-            case "in_progress" -> {
-                AppButton btn = new AppButton(I18n.get("incidents.detail.toResolved"), AppButton.Variant.SECONDARY);
-                btn.setOnAction(e -> { statusChanger.accept(item, "resolved"); appModal.hide(); });
-                AppButton btn2 = new AppButton(I18n.get("incidents.detail.reopen"), AppButton.Variant.SECONDARY);
-                btn2.setOnAction(e -> { statusChanger.accept(item, "open"); appModal.hide(); });
-                statusActions.getChildren().addAll(btn, btn2);
-            }
-            default -> {
-                AppButton btn = new AppButton(I18n.get("incidents.detail.reopen"), AppButton.Variant.SECONDARY);
-                btn.setOnAction(e -> { statusChanger.accept(item, "open"); appModal.hide(); });
-                statusActions.getChildren().add(btn);
-            }
+            case "open" -> statusActions.getChildren().addAll(
+                    statusBtn("incidents.detail.toInProgress", FontAwesomeSolid.CLOCK, item, "in_progress"),
+                    statusBtn("incidents.detail.toResolved", FontAwesomeSolid.CHECK, item, "resolved"));
+            case "in_progress" -> statusActions.getChildren().addAll(
+                    statusBtn("incidents.detail.toResolved", FontAwesomeSolid.CHECK, item, "resolved"),
+                    statusBtn("incidents.detail.reopen", FontAwesomeSolid.UNDO, item, "open"));
+            default -> statusActions.getChildren().add(
+                    statusBtn("incidents.detail.reopen", FontAwesomeSolid.UNDO, item, "open"));
         }
 
         Region divider = UiHelper.separator();
@@ -121,6 +112,18 @@ public class IncidentDetailPane {
         );
         content.getStyleClass().add("edit-form-content");
         appModal.show(I18n.get("incidents.detail.modalTitle", item.title()), content);
+    }
+
+    /** Bouton de changement de statut avec icône (plus de flèche texte). */
+    private AppButton statusBtn(String labelKey, FontAwesomeSolid iconCode,
+                                IncidentRepository.Incident item, String newStatus) {
+        AppButton btn = new AppButton(I18n.get(labelKey), AppButton.Variant.SECONDARY);
+        FontIcon icon = new FontIcon(iconCode);
+        icon.setIconSize(11);
+        btn.setGraphic(icon);
+        btn.setGraphicTextGap(6);
+        btn.setOnAction(e -> { statusChanger.accept(item, newStatus); appModal.hide(); });
+        return btn;
     }
 
     private String buildSyncInfoText(IncidentRepository.Incident item) {
