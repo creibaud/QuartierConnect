@@ -22,6 +22,12 @@ export default defineConfig(({ mode }) => ({
         tailwindcss(),
     ],
     resolve: {
+        // Force a single copy of i18next/react-i18next in the bundle. pnpm
+        // resolves i18next twice (against different transitive typescript peers),
+        // so without deduping the shared package inits one instance while the
+        // app's useTranslation reads another — the prod build then renders raw
+        // translation keys (e.g. "auth.password" instead of "Mot de passe").
+        dedupe: ["i18next", "react-i18next"],
         alias: {
             "@": path.resolve(__dirname, "./src"),
             "@workspace/shared": path.resolve(
