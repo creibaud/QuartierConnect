@@ -18,6 +18,19 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
   status=$(curl -fsS -o /dev/null -w '%{http_code}' --max-time 10 "$HEALTH_URL" 2>/dev/null || echo "000")
   if [ "$status" = "200" ]; then
     echo "✓ API saine (HTTP 200) après ${attempt} essai(s)"
+    check_route() {
+      local path="$1" expected="$2"
+      local code
+      code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "${BASE_URL%/}${path}" 2>/dev/null || echo "000")
+      if [ "$code" != "$expected" ]; then
+        echo "✗ ${path} a répondu ${code} (attendu ${expected})" >&2
+        exit 1
+      fi
+      echo "✓ ${path} → ${code}"
+    }
+    check_route /aide/ 200   # doc User publique
+    check_route /dev/ 401    # doc Dev protégée (basic_auth)
+    check_route /docs 401    # référence Scalar protégée
     exit 0
   fi
   echo "  essai ${attempt}/${MAX_ATTEMPTS} : HTTP ${status} — nouvelle tentative dans ${SLEEP_SECONDS}s"
