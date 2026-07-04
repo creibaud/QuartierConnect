@@ -40,6 +40,15 @@ services:
     depends_on:
       - api
 
+  docs-user:
+    build:
+      context: ../web-apps
+      dockerfile: apps/docs-user/Dockerfile
+    ports:
+      - "127.0.0.1:3002:3002"
+    depends_on:
+      - api
+
   mongo:
     image: mongo:7
     ports:
@@ -95,6 +104,7 @@ services:
       - api
       - client
       - admin
+      - docs-user
 
 volumes:
   mongo_data:

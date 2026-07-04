@@ -53,6 +53,10 @@
 		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.cartocdn.com; media-src 'self' blob:; connect-src 'self' ws: wss: https://*.cartocdn.com; font-src 'self'; worker-src blob:; frame-ancestors 'none'"
 		reverse_proxy admin:3001
 	}
+	handle /aide* {
+		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none'"
+		reverse_proxy docs-user:3002
+	}
 	handle {
 		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.cartocdn.com; media-src 'self' blob:; connect-src 'self' ws: wss: https://*.cartocdn.com; font-src 'self'; worker-src blob:; frame-ancestors 'none'"
 		reverse_proxy client:3000
