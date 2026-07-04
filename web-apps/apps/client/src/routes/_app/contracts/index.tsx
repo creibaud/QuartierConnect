@@ -11,7 +11,6 @@ import { getCurrentUser } from "@workspace/shared/lib/auth";
 import {
     useContracts,
     useCreateContract,
-    useSignContract,
 } from "@workspace/shared/lib/hooks/useContracts";
 import type { Contract } from "@workspace/shared/lib/types";
 import { Button } from "@workspace/ui/components/button";
@@ -50,6 +49,7 @@ import {
 import { Textarea } from "@workspace/ui/components/textarea";
 import { toast } from "sonner";
 import { ImportContractDialog } from "@/features/contracts/import-contract-dialog";
+import { SignContractDialog } from "@/features/contracts/sign-contract-dialog";
 import {
     type Neighbor,
     SignatoryPicker,
@@ -352,97 +352,6 @@ function CreateContractDialog({
                             {createContract.isPending
                                 ? t("common.creating")
                                 : t("common.create")}
-                        </Button>
-                    </div>
-                </form>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
-function SignContractDialog({
-    contract,
-    onOpenChange,
-    onSuccess,
-}: {
-    contract: Contract;
-    onOpenChange: (open: boolean) => void;
-    onSuccess: () => void;
-}) {
-    const { t } = useTranslation();
-    const [totpCode, setTotpCode] = useState("");
-    const signContract = useSignContract();
-
-    function handleSubmit(e: React.FormEvent) {
-        e.preventDefault();
-        if (totpCode.length !== 6) return;
-        signContract.mutate(
-            { id: contract._id, totpCode },
-            {
-                onSuccess: () => {
-                    toast.success(t("pages.contracts.signSuccess"));
-                    onSuccess();
-                },
-                onError: () => toast.error(t("pages.contracts.signError")),
-            },
-        );
-    }
-
-    return (
-        <Dialog open onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle className="text-xl">
-                        {t("contracts.signDialog.title")}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {t("pages.contracts.signDescription", {
-                            title: contract.title,
-                        })}
-                    </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="bg-muted text-muted-foreground line-clamp-4 rounded-md p-3 font-mono text-xs">
-                        {contract.content}
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="sign-totp">
-                            {t("pages.contracts.totpLabel")}
-                        </Label>
-                        <Input
-                            id="sign-totp"
-                            value={totpCode}
-                            onChange={(e) =>
-                                setTotpCode(
-                                    e.target.value
-                                        .replace(/\D/g, "")
-                                        .slice(0, 6),
-                                )
-                            }
-                            placeholder="123456"
-                            inputMode="numeric"
-                            maxLength={6}
-                            autoFocus
-                            required
-                        />
-                    </div>
-                    <div className="flex justify-end gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => onOpenChange(false)}
-                        >
-                            {t("common.cancel")}
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={
-                                signContract.isPending || totpCode.length !== 6
-                            }
-                        >
-                            {signContract.isPending
-                                ? t("pages.contracts.signing")
-                                : t("contracts.sign")}
                         </Button>
                     </div>
                 </form>
