@@ -51,8 +51,10 @@ test.describe("Admin — Login parcours", () => {
         await page.getByLabel("Email").fill(residentEmail);
         await page.getByLabel("Mot de passe").fill(DEMO_PASSWORD);
         await page.getByRole("button", { name: /continuer/i }).click();
-        await page.getByLabel(/code totp/i).fill(currentTotp(residentSecret));
-        await page.getByRole("button", { name: /se connecter/i }).click();
+        // input-otp ignores .fill(); type the digits — the 6th auto-submits.
+        await page
+            .getByLabel(/code totp/i)
+            .pressSequentially(currentTotp(residentSecret));
         await expect(page.getByRole("alert")).toContainText(
             /refusé|administrateur/i,
         );
@@ -66,8 +68,10 @@ test.describe("Admin — Login parcours", () => {
         await page.getByLabel("Email").fill(adminEmail);
         await page.getByLabel("Mot de passe").fill(DEMO_PASSWORD);
         await page.getByRole("button", { name: /continuer/i }).click();
-        await page.getByLabel(/code totp/i).fill(currentTotp(adminSecret));
-        await page.getByRole("button", { name: /se connecter/i }).click();
+        // input-otp ignores .fill(); type the digits — the 6th auto-submits.
+        await page
+            .getByLabel(/code totp/i)
+            .pressSequentially(currentTotp(adminSecret));
         await expect(page).toHaveURL(/\/dashboard/);
     });
 
