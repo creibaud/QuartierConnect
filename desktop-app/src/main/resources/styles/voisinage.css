@@ -1,50 +1,56 @@
 /* ═══════════════════════════════════════════════════════════════
-   QuartierConnect — Thème « Voisinage »
-   Base : AtlantaFX PrimerLight + tokens chauds alignés sur le web
-   (crème, terracotta, vert sauge — cf. web-apps client)
+   QuartierConnect — Thème « service public »
+   Base : AtlantaFX PrimerLight + tokens froids alignés sur le web
+   (bleu France, ardoise slate, rouge Marianne). Angles nets.
    ═══════════════════════════════════════════════════════════════ */
 
 .root {
-    /* Accent — terracotta */
-    -color-accent-fg: #a1512b;
-    -color-accent-emphasis: #a1512b;
-    -color-accent-muted: #d8a98f;
-    -color-accent-subtle: #f2e2d7;
+    /* Accent — bleu France */
+    -color-accent-fg: #000091;
+    -color-accent-emphasis: #000091;
+    -color-accent-muted: #9a9ac8;
+    -color-accent-subtle: #e9e9f8;
 
-    /* Backgrounds — crème chaude */
-    -color-bg-default: #faf8f4;
-    -color-bg-subtle: #f4f0e8;
-    -color-bg-inset: #efe9de;
-    -color-bg-overlay: #fffdf9;
+    /* Backgrounds — froids (ardoise clair, cartes blanches) */
+    -color-bg-default: #f1f3f6;
+    -color-bg-subtle: #ffffff;
+    -color-bg-inset: #e7eaf1;
+    -color-bg-overlay: #ffffff;
 
-    /* Foregrounds — encre chaude */
-    -color-fg-default: #2f2b25;
-    -color-fg-muted: #6b6459;
-    -color-fg-subtle: #99917f;
+    /* Foregrounds — encre froide */
+    -color-fg-default: #16181d;
+    -color-fg-muted: #565b67;
+    -color-fg-subtle: #8a8f9c;
 
-    /* Borders — beige */
-    -color-border-default: #ddd5c6;
-    -color-border-muted: #e8e1d3;
+    /* Borders — ardoise */
+    -color-border-default: #c2c7d2;
+    -color-border-muted: #dadee6;
 
-    /* Success — vert sauge */
-    -color-success-fg: #4f7942;
-    -color-success-emphasis: #5c8a4e;
-    -color-success-muted: #b9cfae;
-    -color-success-subtle: #e9f0e3;
+    /* Success — vert civique */
+    -color-success-fg: #18753c;
+    -color-success-emphasis: #18753c;
+    -color-success-muted: #a9cdb5;
+    -color-success-subtle: #e4f4e9;
+
+    /* Danger — rouge Marianne */
+    -color-danger-fg: #c40008;
+    -color-danger-emphasis: #c40008;
+    -color-danger-muted: #e6a3a6;
+    -color-danger-subtle: #fbe6e7;
 }
 
-/* ── Radius 8-10 sur les contrôles standards ─────────────────── */
+/* ── Radius net (4) sur les contrôles standards ──────────────── */
 
 .button,
 .toggle-button {
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
 }
 
 .text-field,
 .text-area,
 .combo-box-base,
 .choice-box {
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
 }

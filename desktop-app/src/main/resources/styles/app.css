@@ -46,7 +46,7 @@
     -fx-border-color: transparent;
     -fx-padding: 4 6;
     -fx-cursor: hand;
-    -fx-background-radius: 5;
+    -fx-background-radius: 4;
 }
 .sidebar-toggle-btn .ikonli-font-icon {
     -fx-icon-color: -color-fg-muted;
@@ -65,7 +65,7 @@
 
 /* Regular nav item — dimensions set in Java, CSS handles colour only */
 .sidebar-nav-item {
-    -fx-background-radius: 6;
+    -fx-background-radius: 4;
     -fx-background-color: transparent;
 }
 .sidebar-nav-item:hover {
@@ -93,7 +93,7 @@
 
 /* Logout item — dimensions set in Java, CSS handles colour only */
 .sidebar-nav-logout {
-    -fx-background-radius: 6;
+    -fx-background-radius: 4;
     -fx-background-color: transparent;
 }
 .sidebar-nav-logout:hover {
@@ -182,7 +182,6 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .page-title {
-    -fx-font-family: "Fraunces SemiBold";
     -fx-font-size: 20px;
     -fx-font-weight: bold;
     -fx-text-fill: -color-fg-default;
@@ -209,7 +208,6 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .content-title {
-    -fx-font-family: "Fraunces SemiBold";
     -fx-font-size: 21px;
     -fx-font-weight: bold;
     -fx-text-fill: -color-fg-default;
@@ -244,7 +242,7 @@
     -fx-font-size: 10.5px;
     -fx-font-weight: bold;
     -fx-padding: 2 8 2 6;
-    -fx-background-radius: 10;
+    -fx-background-radius: 4;
 }
 
 .badge .ikonli-font-icon {
@@ -305,9 +303,9 @@
 
 .card {
     -fx-background-color: -color-bg-subtle;
-    -fx-background-radius: 8;
+    -fx-background-radius: 4;
     -fx-border-color: -color-border-muted;
-    -fx-border-radius: 8;
+    -fx-border-radius: 4;
     -fx-border-width: 1;
     -fx-padding: 14 16 0 16;
     -fx-min-height: 80;
@@ -320,7 +318,6 @@
 }
 
 .card-value {
-    -fx-font-family: "Fraunces SemiBold";
     -fx-font-size: 26px;
     -fx-font-weight: bold;
     -fx-text-fill: -color-fg-default;
@@ -332,9 +329,9 @@
 
 .app-modal-box {
     -fx-background-color: -color-bg-overlay;
-    -fx-background-radius: 10;
+    -fx-background-radius: 4;
     -fx-border-color: -color-border-muted;
-    -fx-border-radius: 10;
+    -fx-border-radius: 4;
     -fx-border-width: 1;
 }
 
@@ -392,9 +389,9 @@
 
 .profile-hero {
     -fx-background-color: -color-bg-subtle;
-    -fx-background-radius: 10;
+    -fx-background-radius: 4;
     -fx-border-color: -color-border-muted;
-    -fx-border-radius: 10;
+    -fx-border-radius: 4;
     -fx-border-width: 1;
     -fx-padding: 18 20;
 }
@@ -427,9 +424,9 @@
 /* Detail cards (session / local DB) */
 .detail-card {
     -fx-background-color: -color-bg-subtle;
-    -fx-background-radius: 8;
+    -fx-background-radius: 4;
     -fx-border-color: -color-border-muted;
-    -fx-border-radius: 8;
+    -fx-border-radius: 4;
     -fx-border-width: 1;
     -fx-padding: 14 18;
 }
@@ -495,9 +492,9 @@
 /* Sync card (dashboard) */
 .sync-card {
     -fx-background-color: -color-bg-subtle;
-    -fx-background-radius: 8;
+    -fx-background-radius: 4;
     -fx-border-color: -color-border-muted;
-    -fx-border-radius: 8;
+    -fx-border-radius: 4;
     -fx-border-width: 1;
     -fx-padding: 12 16;
 }
@@ -524,7 +521,7 @@
 /* Legacy sync-info-row (keep for compat) */
 .sync-info-row {
     -fx-background-color: -color-bg-subtle;
-    -fx-background-radius: 6;
+    -fx-background-radius: 4;
     -fx-padding: 7 12;
 }
 
@@ -549,9 +546,9 @@
 
 .recent-card {
     -fx-background-color: -color-bg-subtle;
-    -fx-background-radius: 8;
+    -fx-background-radius: 4;
     -fx-border-color: -color-border-muted;
-    -fx-border-radius: 8;
+    -fx-border-radius: 4;
     -fx-border-width: 1;
 }
 
@@ -590,8 +587,8 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .toast {
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
     -fx-border-width: 1;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 12, 0, 0, 4);
     -fx-min-width: 200px;
@@ -637,15 +634,14 @@
 
 .login-card {
     -fx-background-color: -color-bg-subtle;
-    -fx-background-radius: 12;
+    -fx-background-radius: 4;
     -fx-border-color: -color-border-muted;
-    -fx-border-radius: 12;
+    -fx-border-radius: 4;
     -fx-border-width: 1;
     -fx-padding: 40 36 36 36;
 }
 
 .login-app-name {
-    -fx-font-family: "Fraunces SemiBold";
     -fx-font-size: 19px;
     -fx-font-weight: bold;
     -fx-text-fill: -color-fg-default;
@@ -661,8 +657,8 @@
     -fx-text-fill: white;
     -fx-font-size: 13px;
     -fx-font-weight: bold;
-    -fx-background-radius: 7;
-    -fx-border-radius: 7;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
     -fx-padding: 9 16;
     -fx-cursor: hand;
 }
@@ -680,8 +676,8 @@
     -fx-background-color: transparent;
     -fx-text-fill: -color-fg-muted;
     -fx-font-size: 12px;
-    -fx-background-radius: 7;
-    -fx-border-radius: 7;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
     -fx-border-color: -color-border-default;
     -fx-border-width: 1;
     -fx-padding: 7 16;
@@ -710,9 +706,9 @@
 /* Table wrapper card */
 .tbl-wrap {
     -fx-background-color: -color-bg-subtle;
-    -fx-background-radius: 8;
+    -fx-background-radius: 4;
     -fx-border-color: -color-border-muted;
-    -fx-border-radius: 8;
+    -fx-border-radius: 4;
     -fx-border-width: 1;
 }
 
@@ -785,7 +781,7 @@
     -fx-border-color: -color-border-muted transparent transparent transparent;
     -fx-border-width: 1 0 0 0;
     -fx-padding: 6 12;
-    -fx-background-radius: 0 0 8 8;
+    -fx-background-radius: 0 0 4 4;
 }
 
 .tbl-info {
@@ -804,8 +800,8 @@
     -fx-font-size: 12px;
     -fx-background-color: -color-bg-subtle;
     -fx-border-color: -color-border-muted;
-    -fx-border-radius: 6;
-    -fx-background-radius: 6;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
     -fx-border-width: 1;
     -fx-padding: 5 10;
     -fx-text-fill: -color-fg-default;
@@ -819,8 +815,8 @@
 .filter-btn {
     -fx-font-size: 11.5px;
     -fx-padding: 4 10;
-    -fx-background-radius: 6;
-    -fx-border-radius: 6;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
     -fx-border-color: transparent;
     -fx-background-color: transparent;
     -fx-text-fill: -color-fg-muted;
@@ -858,8 +854,8 @@
 .incidents-context-menu {
     -fx-background-color: -color-bg-overlay;
     -fx-border-color: -color-border-muted;
-    -fx-border-radius: 8;
-    -fx-background-radius: 8;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
     -fx-border-width: 1;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 12, 0, 0, 4);
 }
@@ -869,7 +865,7 @@
     -fx-font-size: 12.5px;
     -fx-text-fill: -color-fg-default;
     -fx-background-color: transparent;
-    -fx-background-radius: 5;
+    -fx-background-radius: 4;
 }
 
 .incidents-context-menu .menu-item:hover {
@@ -908,8 +904,8 @@
 .conflict-banner {
     -fx-background-color: -color-danger-subtle;
     -fx-border-color: -color-danger-muted;
-    -fx-border-radius: 8;
-    -fx-background-radius: 8;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
     -fx-border-width: 1;
     -fx-padding: 10 14;
 }
@@ -940,9 +936,9 @@
 
 .conflict-warning-header {
     -fx-background-color: -color-warning-subtle;
-    -fx-background-radius: 8;
+    -fx-background-radius: 4;
     -fx-border-color: -color-warning-muted;
-    -fx-border-radius: 8;
+    -fx-border-radius: 4;
     -fx-border-width: 1;
     -fx-padding: 12 14;
 }
@@ -966,9 +962,9 @@
 
 .merge-grid {
     -fx-background-color: -color-bg-subtle;
-    -fx-background-radius: 8;
+    -fx-background-radius: 4;
     -fx-border-color: -color-border-muted;
-    -fx-border-radius: 8;
+    -fx-border-radius: 4;
     -fx-border-width: 1;
 }
 
@@ -977,7 +973,7 @@
     -fx-font-size: 10px;
     -fx-font-weight: bold;
     -fx-text-fill: -color-fg-muted;
-    -fx-padding: 9 10;
+    -fx-padding: 9 12;
     -fx-border-color: transparent transparent -color-border-muted transparent;
     -fx-border-width: 0 0 1 0;
     -fx-background-color: rgba(125, 133, 144, 0.05);

@@ -10,10 +10,8 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
-import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
-import java.io.InputStream;
 import java.util.logging.Logger;
 
 public class MainApp extends Application {
@@ -27,7 +25,6 @@ public class MainApp extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         this.primaryStage = primaryStage;
-        loadBrandFonts();
         SQLiteDatabase.initialize();
 
         LoginView loginView = new LoginView(primaryStage, url -> getHostServices().showDocument(url));
@@ -45,21 +42,6 @@ public class MainApp extends Application {
     @Override
     public void stop() {
         updateService.shutdown();
-    }
-
-    private void loadBrandFonts() {
-        loadFont("/fonts/Fraunces-Regular.ttf");
-        loadFont("/fonts/Fraunces-SemiBold.ttf");
-    }
-
-    private void loadFont(String resourcePath) {
-        try (InputStream fontStream = getClass().getResourceAsStream(resourcePath)) {
-            if (fontStream == null || Font.loadFont(fontStream, 12) == null) {
-                LOG.warning("Brand font unavailable, system serif will be used: " + resourcePath);
-            }
-        } catch (Exception e) {
-            LOG.warning("Brand font failed to load (" + resourcePath + "): " + e.getMessage());
-        }
     }
 
     private void startBackgroundUpdateChecks() {

@@ -35,7 +35,7 @@ public class ThemePlugin implements QuartierConnectPlugin, PluginRegistry.Contex
     private static final String PREF_THEME_KEY = "themeId";
     private static final List<String> KNOWN_THEME_IDS = List.of(THEME_VOISINAGE, THEME_DARK);
 
-    private static final String VOISINAGE_ACCENT = "#a1512b";
+    private static final String VOISINAGE_ACCENT = "#000091";
     private static final String DARK_ACCENT = "#444c56";
 
     /** Surcharges appliquées par-dessus Primer Dark, ciblant les sélecteurs actuels du shell. */
@@ -129,13 +129,13 @@ public class ThemePlugin implements QuartierConnectPlugin, PluginRegistry.Contex
 
     private void applyThemeBtnStyle(ToggleButton btn, String accent, boolean selected) {
         if (selected) {
-            btn.setStyle("-fx-background-radius: 8; -fx-border-radius: 8; -fx-padding: 5 12; "
+            btn.setStyle("-fx-background-radius: 4; -fx-border-radius: 4;-fx-padding: 5 12; "
                     + "-fx-font-size: 11.5px; -fx-cursor: hand; "
                     + "-fx-border-width: 1; -fx-border-color: " + accent + "; "
                     + "-fx-background-color: " + accent + "; "
                     + "-fx-text-fill: white; -fx-font-weight: bold;");
         } else {
-            btn.setStyle("-fx-background-radius: 8; -fx-border-radius: 8; -fx-padding: 5 12; "
+            btn.setStyle("-fx-background-radius: 4; -fx-border-radius: 4;-fx-padding: 5 12; "
                     + "-fx-font-size: 11.5px; -fx-cursor: hand; "
                     + "-fx-background-color: transparent; "
                     + "-fx-border-width: 1; -fx-border-color: " + accent + "; "
