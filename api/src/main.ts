@@ -221,16 +221,15 @@ Endpoints that return lists accept \`?page=1&limit=20\` (max 100).
         },
     );
 
-    // Never expose the interactive API reference in production.
-    if (process.env.NODE_ENV !== "production") {
-        app.use(
-            "/docs",
-            apiReference({
-                content: document,
-                cdn: "/scalar/standalone.js",
-            }),
-        );
-    }
+    // API reference is exposed in every environment; access control is enforced
+    // at the Caddy edge (basic_auth on /docs, /api/docs, /scalar).
+    app.use(
+        "/docs",
+        apiReference({
+            content: document,
+            cdn: "/scalar/standalone.js",
+        }),
+    );
 
     app.use(
         helmet({

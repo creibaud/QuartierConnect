@@ -37,6 +37,7 @@
 	}
 
 	handle /api/docs* {
+		import docs_auth
 		import scalar_csp
 		uri strip_prefix /api
 		reverse_proxy api:5000
@@ -47,10 +48,12 @@
 		reverse_proxy api:5000
 	}
 	handle /docs* {
+		import docs_auth
 		import scalar_csp
 		reverse_proxy api:5000
 	}
 	handle /scalar* {
+		import docs_auth
 		import scalar_csp
 		reverse_proxy api:5000
 	}
