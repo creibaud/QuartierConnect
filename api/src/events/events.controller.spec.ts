@@ -239,7 +239,11 @@ describe("EventsController", () => {
             lng: 2.35,
             displayName: "1 rue X, Paris",
         });
-        await controller.update("evt-id-1", { address: "1 rue X" } as any);
+        await controller.update(
+            "evt-id-1",
+            { address: "1 rue X" } as any,
+            authReq() as any,
+        );
         expect(geocoding.geocode).toHaveBeenCalledWith("1 rue X");
         expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
             "evt-id-1",

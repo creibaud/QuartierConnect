@@ -1,6 +1,8 @@
 import { JwtService } from "@nestjs/jwt";
 import { Test, TestingModule } from "@nestjs/testing";
 import { WsException } from "@nestjs/websockets";
+import { TokenService } from "../auth/token.service";
+import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import { MessagingGateway } from "./messaging.gateway";
 import { MessagingService } from "./messaging.service";
 import { MessageType } from "./schemas/message.schema";
@@ -14,6 +16,19 @@ const mockMessagingService = {
 const mockJwtService = {
     verify: jest.fn(),
 };
+
+const mockTokenService = {
+    isAccessTokenRevoked: jest.fn().mockResolvedValue(false),
+};
+
+function makeDb(role = "resident") {
+    const db: any = {};
+    db.select = jest.fn().mockReturnValue(db);
+    db.from = jest.fn().mockReturnValue(db);
+    db.where = jest.fn().mockReturnValue(db);
+    db.limit = jest.fn().mockResolvedValue([{ role }]);
+    return db;
+}
 
 function makeSocket(overrides?: object) {
     return {
@@ -61,11 +76,14 @@ describe("MessagingGateway", () => {
 
     beforeEach(async () => {
         jest.clearAllMocks();
+        mockTokenService.isAccessTokenRevoked.mockResolvedValue(false);
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 MessagingGateway,
                 { provide: MessagingService, useValue: mockMessagingService },
                 { provide: JwtService, useValue: mockJwtService },
+                { provide: TokenService, useValue: mockTokenService },
+                { provide: DRIZZLE_TOKEN, useValue: makeDb() },
             ],
         }).compile();
 

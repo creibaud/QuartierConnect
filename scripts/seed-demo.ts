@@ -2,8 +2,8 @@ import * as crypto from "crypto";
 import { execSync } from "child_process";
 
 const BASE_URL = process.env.API_URL ?? "http://localhost:5000";
-const DEMO_PASSWORD = "Demo1234!";
-const DEMO_TOTP_SECRET = "JBSWY3DPEHPK3PXP";
+const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? "Demo1234!";
+const DEMO_TOTP_SECRET = process.env.DEMO_TOTP_SECRET ?? "JBSWY3DPEHPK3PXP";
 const PG_CONTAINER = process.env.PG_CONTAINER ?? "docker-postgres-1";
 const PG_USER = process.env.POSTGRES_USER ?? "qc";
 const PG_DB = process.env.POSTGRES_DB ?? "quartierconnect";

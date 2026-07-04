@@ -146,16 +146,6 @@ All protected routes use a **JWT Bearer** (HS256, 15 min lifetime).
 
 The token expires after 15 min. Use \`POST /auth/refresh\` to obtain a new one silently.
 
-## Demo users (seed)
-
-| Email | Password | Role | TOTP secret |
-|-------|-------------|------|-------------|
-| alice@demo.fr | Demo1234! | resident | JBSWY3DPEHPK3PXP |
-| bob@demo.fr | Demo1234! | moderator | JBSWY3DPEHPK3PXP |
-| admin@demo.fr | Demo1234! | admin | JBSWY3DPEHPK3PXP |
-
-Generate a TOTP code: \`oathtool --totp --base32 JBSWY3DPEHPK3PXP\`
-
 ## Data model
 
 | Entity | Database | Description |
@@ -231,13 +221,16 @@ Endpoints that return lists accept \`?page=1&limit=20\` (max 100).
         },
     );
 
-    app.use(
-        "/docs",
-        apiReference({
-            content: document,
-            cdn: "/scalar/standalone.js",
-        }),
-    );
+    // Never expose the interactive API reference in production.
+    if (process.env.NODE_ENV !== "production") {
+        app.use(
+            "/docs",
+            apiReference({
+                content: document,
+                cdn: "/scalar/standalone.js",
+            }),
+        );
+    }
 
     app.use(
         helmet({

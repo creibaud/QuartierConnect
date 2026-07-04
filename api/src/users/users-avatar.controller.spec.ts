@@ -52,9 +52,10 @@ async function build(db: any, bucket: any) {
 }
 
 const req = { user: { sub: "user-1" } } as any;
+const PNG_MAGIC_BYTES = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const imageFile = {
     mimetype: "image/png",
-    buffer: Buffer.from("img"),
+    buffer: Buffer.from(PNG_MAGIC_BYTES),
     originalname: "a.png",
 } as any;
 

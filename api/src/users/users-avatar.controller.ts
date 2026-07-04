@@ -34,6 +34,51 @@ interface AuthRequest {
     user: { sub: string };
 }
 
+const ALLOWED_AVATAR_MIME_TYPES = [
+    "image/png",
+    "image/jpeg",
+    "image/webp",
+] as const;
+
+type AllowedAvatarMimeType = (typeof ALLOWED_AVATAR_MIME_TYPES)[number];
+
+function isAllowedAvatarMimeType(
+    mimetype: string,
+): mimetype is AllowedAvatarMimeType {
+    return (ALLOWED_AVATAR_MIME_TYPES as readonly string[]).includes(mimetype);
+}
+
+// Verify the declared MIME type against the file's magic bytes so a hostile
+// payload (e.g. an SVG carrying script) cannot masquerade as a raster image.
+function hasMatchingImageMagicBytes(
+    buffer: Buffer,
+    mimetype: AllowedAvatarMimeType,
+): boolean {
+    switch (mimetype) {
+        case "image/png":
+            return (
+                buffer.length >= 4 &&
+                buffer[0] === 0x89 &&
+                buffer[1] === 0x50 &&
+                buffer[2] === 0x4e &&
+                buffer[3] === 0x47
+            );
+        case "image/jpeg":
+            return (
+                buffer.length >= 3 &&
+                buffer[0] === 0xff &&
+                buffer[1] === 0xd8 &&
+                buffer[2] === 0xff
+            );
+        case "image/webp":
+            return (
+                buffer.length >= 12 &&
+                buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
+                buffer.subarray(8, 12).toString("ascii") === "WEBP"
+            );
+    }
+}
+
 const PROFILE_COLUMNS = {
     id: schema.users.id,
     email: schema.users.email,
@@ -71,8 +116,13 @@ export class UsersAvatarController {
         @UploadedFile() file: Express.Multer.File,
     ) {
         if (!file) throw new BadRequestException("No file provided");
-        if (!file.mimetype.startsWith("image/")) {
-            throw new BadRequestException("File must be an image");
+        if (
+            !isAllowedAvatarMimeType(file.mimetype) ||
+            !hasMatchingImageMagicBytes(file.buffer, file.mimetype)
+        ) {
+            throw new BadRequestException(
+                "Avatar must be a PNG, JPEG or WebP image",
+            );
         }
 
         await this.deleteExisting(req.user.sub);
@@ -127,10 +177,16 @@ export class UsersAvatarController {
         const [file] = await this.bucket.find({ _id: objectId }).toArray();
         if (!file) throw new NotFoundException("Avatar not found");
 
+        // Never trust the stored content type for untrusted data: only emit a
+        // safe raster type, and force download so no active content can render.
+        const storedType = file.metadata?.contentType as string | undefined;
+        const contentType =
+            storedType && isAllowedAvatarMimeType(storedType)
+                ? storedType
+                : "image/jpeg";
         res.set({
-            "Content-Type":
-                (file.metadata?.contentType as string | undefined) ??
-                "image/jpeg",
+            "Content-Type": contentType,
+            "Content-Disposition": "attachment",
             "Cache-Control": "public, max-age=86400",
         });
         this.bucket.openDownloadStream(objectId).pipe(res);

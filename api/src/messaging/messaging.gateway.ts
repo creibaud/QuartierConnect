@@ -1,4 +1,4 @@
-import { Logger } from "@nestjs/common";
+import { Inject, Logger } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import {
     ConnectedSocket,
@@ -10,11 +10,16 @@ import {
     WebSocketServer,
     WsException,
 } from "@nestjs/websockets";
+import { eq } from "drizzle-orm";
+import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Server, Socket } from "socket.io";
+import { JwtPayload, TokenService } from "../auth/token.service";
 import {
     NotificationPayload,
     NotificationType,
 } from "../common/notification-events";
+import { DRIZZLE_TOKEN } from "../database/drizzle.module";
+import * as schema from "../database/schema";
 import { MessagingService } from "./messaging.service";
 import { MessageType } from "./schemas/message.schema";
 
@@ -44,6 +49,9 @@ export class MessagingGateway
     constructor(
         private readonly messagingService: MessagingService,
         private readonly jwtService: JwtService,
+        private readonly tokenService: TokenService,
+        @Inject(DRIZZLE_TOKEN)
+        private readonly db: PostgresJsDatabase<typeof schema>,
     ) {}
 
     async handleConnection(client: Socket) {
@@ -60,7 +68,12 @@ export class MessagingGateway
                 return;
             }
 
-            const payload = this.jwtService.verify<{ sub: string }>(token);
+            const payload = this.jwtService.verify<JwtPayload>(token);
+            if (!payload?.sub || !(await this.isTokenStillValid(payload))) {
+                client.disconnect();
+                return;
+            }
+
             const userId = payload.sub;
             (client as AuthSocket).userId = userId;
             void client.join(`user:${userId}`);
@@ -86,6 +99,27 @@ export class MessagingGateway
         } catch {
             client.disconnect();
         }
+    }
+
+    // Mirrors JwtStrategy.validate(): a socket must be rejected if its access
+    // token was revoked (logout) or if the account has since been banned/deleted.
+    private async isTokenStillValid(payload: JwtPayload): Promise<boolean> {
+        if (
+            payload.jti &&
+            (await this.tokenService.isAccessTokenRevoked(payload.jti))
+        ) {
+            return false;
+        }
+
+        const [user] = await this.db
+            .select({ role: schema.users.role })
+            .from(schema.users)
+            .where(eq(schema.users.id, payload.sub))
+            .limit(1);
+
+        return (
+            !!user && user.role !== "banned" && user.role !== "deleted"
+        );
     }
 
     handleDisconnect(client: Socket) {

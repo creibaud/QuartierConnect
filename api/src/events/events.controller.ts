@@ -2,6 +2,7 @@ import {
     Body,
     Controller,
     Delete,
+    ForbiddenException,
     Get,
     HttpCode,
     NotFoundException,
@@ -186,8 +187,22 @@ export class EventsController {
         type: EventDto,
         description: "Event updated",
     })
+    @ApiResponse({
+        status: 403,
+        description: "Access denied (owner or admin only)",
+    })
     @ApiResponse({ status: 404, description: "Event not found" })
-    async update(@Param("id") id: string, @Body() dto: UpdateEventDto) {
+    async update(
+        @Param("id") id: string,
+        @Body() dto: UpdateEventDto,
+        @Request() req: AuthRequest,
+    ) {
+        const event = await this.eventModel.findById(id).exec();
+        if (!event) throw new NotFoundException("Event not found");
+        if (event.createdBy !== req.user.sub && req.user.role !== "admin") {
+            throw new ForbiddenException("You can only update your own events");
+        }
+
         const changes: Record<string, unknown> = {};
         if (dto.title !== undefined) changes.title = dto.title;
         if (dto.description !== undefined)
@@ -210,11 +225,11 @@ export class EventsController {
             if (location) changes.location = location;
         }
 
-        const event = await this.eventModel
+        const updated = await this.eventModel
             .findByIdAndUpdate(String(id), { $set: changes }, { new: true })
             .exec();
-        if (!event) throw new NotFoundException("Event not found");
-        return event;
+        if (!updated) throw new NotFoundException("Event not found");
+        return updated;
     }
 
     @Delete(":id")
@@ -224,9 +239,17 @@ export class EventsController {
     @ApiOperation({ summary: "Delete an event" })
     @ApiParam({ name: "id", description: "MongoDB ID of the event" })
     @ApiResponse({ status: 204, description: "Event deleted" })
+    @ApiResponse({
+        status: 403,
+        description: "Access denied (owner or admin only)",
+    })
     @ApiResponse({ status: 404, description: "Event not found" })
-    async remove(@Param("id") id: string) {
-        const result = await this.eventModel.findByIdAndDelete(id).exec();
-        if (!result) throw new NotFoundException("Event not found");
+    async remove(@Param("id") id: string, @Request() req: AuthRequest) {
+        const event = await this.eventModel.findById(id).exec();
+        if (!event) throw new NotFoundException("Event not found");
+        if (event.createdBy !== req.user.sub && req.user.role !== "admin") {
+            throw new ForbiddenException("You can only delete your own events");
+        }
+        await this.eventModel.findByIdAndDelete(id).exec();
     }
 }

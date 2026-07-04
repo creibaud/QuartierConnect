@@ -155,6 +155,12 @@ export class MessagingController {
     ) {
         if (!file) throw new BadRequestException("No file provided");
 
+        // Reject non-participants before any bytes hit GridFS.
+        await this.messagingService.assertParticipant(
+            conversationId,
+            req.user.sub,
+        );
+
         const messageType = resolveUploadMessageType(file.mimetype);
         if (messageType === MessageType.AUDIO) {
             assertAudioSizeWithinLimit(file.size);

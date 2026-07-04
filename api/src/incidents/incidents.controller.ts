@@ -3,6 +3,7 @@ import {
     Body,
     Controller,
     Delete,
+    ForbiddenException,
     Get,
     Inject,
     NotFoundException,
@@ -54,6 +55,20 @@ export class IncidentsController {
         @Inject(DRIZZLE_TOKEN)
         private readonly db: PostgresJsDatabase<typeof schema>,
     ) {}
+
+    // Residents AND moderators only reach incidents in their own quartier;
+    // admins moderate across every neighborhood.
+    private assertNeighborhoodScope(
+        incident: { neighborhoodId: string | null },
+        req: AuthRequest,
+    ): void {
+        if (
+            req.user.role !== "admin" &&
+            incident.neighborhoodId !== req.user.neighborhoodId
+        ) {
+            throw new ForbiddenException("Incident outside your neighborhood");
+        }
+    }
 
     @Get()
     @ApiOperation({
@@ -144,7 +159,7 @@ export class IncidentsController {
         status: 404,
         description: "Incident not found or deleted",
     })
-    async findOne(@Param("id") id: string) {
+    async findOne(@Param("id") id: string, @Request() req: AuthRequest) {
         const [incident] = await this.db
             .select()
             .from(schema.incidents)
@@ -156,6 +171,7 @@ export class IncidentsController {
             );
 
         if (!incident) throw new NotFoundException("Incident not found");
+        this.assertNeighborhoodScope(incident, req);
         return incident;
     }
 
@@ -215,6 +231,7 @@ export class IncidentsController {
     async updateStatus(
         @Param("id") id: string,
         @Body() dto: UpdateIncidentStatusDto,
+        @Request() req: AuthRequest,
     ) {
         const [incident] = await this.db
             .select()
@@ -227,6 +244,7 @@ export class IncidentsController {
             );
 
         if (!incident) throw new NotFoundException("Incident not found");
+        this.assertNeighborhoodScope(incident, req);
 
         const allowed = VALID_TRANSITIONS[incident.status] ?? [];
         if (!allowed.includes(dto.status)) {
@@ -273,7 +291,7 @@ export class IncidentsController {
         description: "Insufficient role (moderator/admin required)",
     })
     @ApiResponse({ status: 404, description: "Incident not found" })
-    async remove(@Param("id") id: string) {
+    async remove(@Param("id") id: string, @Request() req: AuthRequest) {
         const [incident] = await this.db
             .select()
             .from(schema.incidents)
@@ -285,6 +303,7 @@ export class IncidentsController {
             );
 
         if (!incident) throw new NotFoundException("Incident not found");
+        this.assertNeighborhoodScope(incident, req);
 
         await this.db
             .update(schema.incidents)
@@ -303,10 +322,21 @@ export class IncidentsController {
     @ApiResponse({ status: 201, type: SyncResultDto })
     @ApiResponse({ status: 401, description: "Not authenticated" })
     async sync(@Body() dto: SyncIncidentsDto, @Request() req: AuthRequest) {
-        const canModerate = ["moderator", "admin"].includes(req.user.role);
-        const allowedItems = canModerate
+        const isAdmin = req.user.role === "admin";
+        const isModerator = req.user.role === "moderator";
+        const canModerate = isAdmin || isModerator;
+        // Admins moderate every neighborhood; moderators only their own quartier;
+        // residents only their own incidents. Out-of-scope items fall into
+        // skippedIds so the client keeps them pending (see response shape below).
+        const allowedItems = isAdmin
             ? dto.incidents
-            : dto.incidents.filter((item) => item.createdBy === req.user.sub);
+            : isModerator
+              ? dto.incidents.filter(
+                    (item) => item.neighborhoodId === req.user.neighborhoodId,
+                )
+              : dto.incidents.filter(
+                    (item) => item.createdBy === req.user.sub,
+                );
 
         if (allowedItems.length === 0)
             return {
@@ -337,18 +367,25 @@ export class IncidentsController {
             updatedAt: new Date(),
         };
 
-        const upsertedRows: { id: string }[] = await (
-            canModerate
-                ? upsert.onConflictDoUpdate({
-                      target: schema.incidents.id,
-                      set: conflictUpdateSet,
-                  })
-                : upsert.onConflictDoUpdate({
-                      target: schema.incidents.id,
-                      set: conflictUpdateSet,
-                      where: eq(schema.incidents.createdBy, req.user.sub),
-                  })
-        ).returning({ id: schema.incidents.id });
+        // Admins update any row; moderators only rows already in their own
+        // quartier (blocks spoofing another neighborhood's id); residents only
+        // rows they own.
+        const conflictWhere = isAdmin
+            ? undefined
+            : isModerator
+              ? eq(
+                    schema.incidents.neighborhoodId,
+                    req.user.neighborhoodId as string,
+                )
+              : eq(schema.incidents.createdBy, req.user.sub);
+
+        const upsertedRows: { id: string }[] = await upsert
+            .onConflictDoUpdate({
+                target: schema.incidents.id,
+                set: conflictUpdateSet,
+                ...(conflictWhere ? { where: conflictWhere } : {}),
+            })
+            .returning({ id: schema.incidents.id });
 
         const upsertedIds = new Set(upsertedRows.map((row) => row.id));
         return {

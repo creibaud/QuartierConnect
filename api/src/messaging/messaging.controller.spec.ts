@@ -32,6 +32,7 @@ const mockService = {
     getMessages: jest.fn(),
     sendMessage: jest.fn(),
     sendFileMessage: jest.fn(),
+    assertParticipant: jest.fn(),
 };
 
 const mockGateway = {

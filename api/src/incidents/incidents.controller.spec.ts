@@ -9,6 +9,7 @@ const mockIncident = {
     description: "Rue principale",
     status: "open",
     createdBy: "user-uuid-1",
+    neighborhoodId: "n1",
     deletedAt: null,
 };
 
@@ -115,7 +116,7 @@ describe("IncidentsController", () => {
     });
 
     it("GET /incidents/:id returns one", async () => {
-        const result = await controller.findOne("inc-uuid-1");
+        const result = await controller.findOne("inc-uuid-1", authReq() as any);
         expect(result).toEqual(mockIncident);
     });
 
@@ -126,9 +127,9 @@ describe("IncidentsController", () => {
             providers: [{ provide: DRIZZLE_TOKEN, useValue: mockDb }],
         }).compile();
         controller = module.get<IncidentsController>(IncidentsController);
-        await expect(controller.findOne("deleted-id")).rejects.toThrow(
-            NotFoundException,
-        );
+        await expect(
+            controller.findOne("deleted-id", authReq() as any),
+        ).rejects.toThrow(NotFoundException);
     });
 
     it("POST /incidents sets createdBy from JWT", async () => {
@@ -165,15 +166,21 @@ describe("IncidentsController", () => {
     });
 
     it("PATCH /incidents/:id/status transitions open → in_progress", async () => {
-        const result = await controller.updateStatus("inc-uuid-1", {
-            status: "in_progress",
-        });
+        const result = await controller.updateStatus(
+            "inc-uuid-1",
+            { status: "in_progress" },
+            authReq("mod1", "moderator") as any,
+        );
         expect(result).toBeDefined();
     });
 
     it("PATCH /incidents/:id/status rejects invalid transition (open → resolved)", async () => {
         await expect(
-            controller.updateStatus("inc-uuid-1", { status: "resolved" }),
+            controller.updateStatus(
+                "inc-uuid-1",
+                { status: "resolved" },
+                authReq("mod1", "moderator") as any,
+            ),
         ).rejects.toThrow(BadRequestException);
     });
 
@@ -185,7 +192,11 @@ describe("IncidentsController", () => {
         }).compile();
         controller = module.get<IncidentsController>(IncidentsController);
         await expect(
-            controller.updateStatus("inc-uuid-1", { status: "open" }),
+            controller.updateStatus(
+                "inc-uuid-1",
+                { status: "open" },
+                authReq("mod1", "moderator") as any,
+            ),
         ).rejects.toThrow(BadRequestException);
     });
 
@@ -197,12 +208,19 @@ describe("IncidentsController", () => {
         }).compile();
         controller = module.get<IncidentsController>(IncidentsController);
         await expect(
-            controller.updateStatus("inc-uuid-1", { status: "open" }),
+            controller.updateStatus(
+                "inc-uuid-1",
+                { status: "open" },
+                authReq("mod1", "moderator") as any,
+            ),
         ).rejects.toThrow(BadRequestException);
     });
 
     it("DELETE /incidents/:id sets deletedAt (soft delete)", async () => {
-        const result = await controller.remove("inc-uuid-1");
+        const result = await controller.remove(
+            "inc-uuid-1",
+            authReq("mod1", "moderator") as any,
+        );
         expect(result).toEqual({ success: true });
         expect(mockDb.set).toHaveBeenCalledWith(
             expect.objectContaining({ deletedAt: expect.any(Date) }),
@@ -216,9 +234,9 @@ describe("IncidentsController", () => {
             providers: [{ provide: DRIZZLE_TOKEN, useValue: mockDb }],
         }).compile();
         controller = module.get<IncidentsController>(IncidentsController);
-        await expect(controller.remove("bad-id")).rejects.toThrow(
-            NotFoundException,
-        );
+        await expect(
+            controller.remove("bad-id", authReq("mod1", "moderator") as any),
+        ).rejects.toThrow(NotFoundException);
     });
 
     it("POST /incidents/sync skips items from other users", async () => {
@@ -340,6 +358,7 @@ describe("IncidentsController", () => {
                         title: "Foreign",
                         description: "Owned by a resident",
                         createdBy: "other-user",
+                        neighborhoodId: "n1",
                     },
                 ],
             },
@@ -365,6 +384,7 @@ describe("IncidentsController", () => {
                         title: "Foreign",
                         description: "D",
                         createdBy: "other-user",
+                        neighborhoodId: "n1",
                     },
                 ],
             },
