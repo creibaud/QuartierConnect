@@ -1,0 +1,12 @@
+:3002 {
+	encode gzip
+
+	@static path_regexp \.(js|css|woff2?|ttf|svg|png|ico|json|txt)$
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	handle {
+		root * /srv
+		try_files {path} {path}.html {path}/index.html
+		file_server
+	}
+}

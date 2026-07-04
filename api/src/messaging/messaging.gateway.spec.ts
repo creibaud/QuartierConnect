@@ -22,7 +22,7 @@ const mockTokenService = {
 };
 
 function makeDb(role = "resident") {
-    const db: any = {};
+    const db: Record<string, jest.Mock> = {};
     db.select = jest.fn().mockReturnValue(db);
     db.from = jest.fn().mockReturnValue(db);
     db.where = jest.fn().mockReturnValue(db);

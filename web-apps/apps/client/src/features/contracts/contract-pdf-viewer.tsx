@@ -14,6 +14,9 @@ export function ContractPdfViewer({ contractId }: { contractId: string }) {
     useEffect(() => {
         let objectUrl: string | null = null;
         let cancelled = false;
+        // Reset to the loading state each time the contract changes so a stale
+        // PDF or error never lingers while the new blob is fetched.
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset-on-change
         setUrl(null);
         setError(false);
         apiBlob(`/contracts/${contractId}/pdf`)

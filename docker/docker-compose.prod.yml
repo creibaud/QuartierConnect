@@ -54,6 +54,30 @@ services:
         limits:
           memory: 192m
 
+  docs-user:
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+
+  docs-dev:
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+
   mongo:
     restart: unless-stopped
     logging:
@@ -107,6 +131,8 @@ services:
     restart: unless-stopped
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+      DOCS_AUTH_USER: ${DOCS_AUTH_USER:?DOCS_AUTH_USER requis en prod}
+      DOCS_AUTH_HASH: ${DOCS_AUTH_HASH:?DOCS_AUTH_HASH requis en prod}
     volumes:
       - /var/log/quartierconnect/caddy:/var/log/caddy
       - ./downloads:/srv/downloads:ro
