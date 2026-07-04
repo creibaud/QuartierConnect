@@ -14,6 +14,15 @@
 	header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' ws: wss: http://localhost:5000 http://localhost/api https://api.scalar.com; frame-ancestors 'none'; worker-src blob:"
 }
 
+# Shared basic_auth for the Dev docs site and the Scalar API reference.
+# Credentials come from the caddy container env (DOCS_AUTH_USER / DOCS_AUTH_HASH),
+# with a dev-only default set in docker-compose.yml.
+(docs_auth) {
+	basic_auth {
+		{$DOCS_AUTH_USER} {$DOCS_AUTH_HASH}
+	}
+}
+
 {$SITE_ADDRESS::80} {
 	import security_headers
 
@@ -56,6 +65,11 @@
 	handle /aide* {
 		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none'"
 		reverse_proxy docs-user:3002
+	}
+	handle /dev* {
+		import docs_auth
+		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none'"
+		reverse_proxy docs-dev:3003
 	}
 	handle {
 		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.cartocdn.com; media-src 'self' blob:; connect-src 'self' ws: wss: https://*.cartocdn.com; font-src 'self'; worker-src blob:; frame-ancestors 'none'"

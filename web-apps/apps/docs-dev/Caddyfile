@@ -1,4 +1,4 @@
-:3002 {
+:3003 {
 	encode gzip
 
 	@static path_regexp \.(js|css|woff2?|ttf|svg|png|ico|json|txt)$

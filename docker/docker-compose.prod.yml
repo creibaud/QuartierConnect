@@ -66,6 +66,18 @@ services:
         limits:
           memory: 64m
 
+  docs-dev:
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+
   mongo:
     restart: unless-stopped
     logging:
