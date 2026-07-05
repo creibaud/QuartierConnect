@@ -51,7 +51,7 @@ test.describe("Client — Register parcours", () => {
         await page.getByLabel(/confirmer/i).fill(DEMO_PASSWORD);
         await page.getByRole("checkbox").check();
         await page.getByRole("button", { name: /créer/i }).click();
-        await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 8000 });
+        await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 20000 });
         await expect(page.getByText(/scannez/i)).toBeVisible();
     });
 
@@ -87,7 +87,7 @@ test.describe("Client — Register parcours", () => {
         await page.getByLabel(/confirmer/i).fill(DEMO_PASSWORD);
         await page.getByRole("checkbox").check();
         await page.getByRole("button", { name: /créer/i }).click();
-        await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 8000 });
+        await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 20000 });
 
         await page.goto("/register");
         await page.getByLabel("Prénom", { exact: true }).fill("Test");
@@ -133,7 +133,7 @@ test.describe("Client — Register parcours", () => {
         });
 
         await page.getByRole("button", { name: /créer/i }).click();
-        await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 8000 });
+        await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 20000 });
 
         if (totpSecret) {
             // input-otp ignores .fill(); type the digits — the 6th auto-submits

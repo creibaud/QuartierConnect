@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
     apiLogin,
     apiRegister,
+    assignAddress,
     injectTokens,
     uniqueEmail,
 } from "../helpers/auth";
@@ -17,6 +18,7 @@ test.describe("Client — Services map", () => {
         try {
             const email = uniqueEmail();
             const secret = await apiRegister(email);
+            assignAddress(email);
             const tokens = await apiLogin(email, secret, -30);
             accessToken = tokens.accessToken;
             refreshToken = tokens.refreshToken;
