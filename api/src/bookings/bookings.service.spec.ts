@@ -2,6 +2,10 @@ import { BadRequestException, ForbiddenException } from "@nestjs/common";
 import { BookingsService } from "./bookings.service";
 import { BookingStatus } from "./schemas/service-booking.schema";
 
+// A syntactically valid Mongo ObjectId so request()'s isValidObjectId guard
+// passes (the mocked findById returns the stubbed service regardless of value).
+const SERVICE_ID = "664f1a2b3c4d5e6f7a8b9c0d";
+
 function paidService(over: Record<string, unknown> = {}) {
     return {
         _id: "svc1",
@@ -39,9 +43,9 @@ describe("BookingsService.request", () => {
             {} as any,
             emitter as any,
         );
-        await expect(svc.request("svc1", "initiator")).rejects.toBeInstanceOf(
-            BadRequestException,
-        );
+        await expect(
+            svc.request(SERVICE_ID, "initiator"),
+        ).rejects.toBeInstanceOf(BadRequestException);
         expect(emitter.emit).not.toHaveBeenCalled();
     });
 
@@ -57,7 +61,7 @@ describe("BookingsService.request", () => {
             {} as any,
             emitter as any,
         );
-        await expect(svc.request("svc1", "owner")).rejects.toBeInstanceOf(
+        await expect(svc.request(SERVICE_ID, "owner")).rejects.toBeInstanceOf(
             ForbiddenException,
         );
         expect(emitter.emit).not.toHaveBeenCalled();
@@ -81,7 +85,7 @@ describe("BookingsService.request", () => {
             {} as any,
             makeEmitter() as any,
         );
-        await svc.request("svc1", "initiator");
+        await svc.request(SERVICE_ID, "initiator");
         expect(created.payerId).toBe("initiator");
         expect(created.payeeId).toBe("owner");
         expect(created.pointsAmount).toBe(3); // ceil(base(60)=2 * 1.5)
@@ -106,7 +110,7 @@ describe("BookingsService.request", () => {
             {} as any,
             emitter as any,
         );
-        await svc.request("svc1", "initiator");
+        await svc.request(SERVICE_ID, "initiator");
         expect(emitter.emit).toHaveBeenCalledWith("booking.created", {
             bookingId: "b1",
             ownerId: "owner",

@@ -117,9 +117,12 @@ export class ServicesController {
         if (!isAdmin && !req.user.neighborhoodId) return [];
         const filter: Record<string, unknown> = {};
         if (!isAdmin) filter.neighborhoodId = req.user.neighborhoodId;
-        if (category) filter.category = category;
-        if (type) filter.type = type;
-        if (direction) filter.direction = direction;
+        // Guard against NoSQL injection: Express/qs can parse a crafted query
+        // string (e.g. ?category[$ne]=) into an object. Only accept strings so
+        // an attacker cannot smuggle Mongo operators into the filter.
+        if (typeof category === "string") filter.category = category;
+        if (typeof type === "string") filter.type = type;
+        if (typeof direction === "string") filter.direction = direction;
 
         const pageNum = Math.max(1, parseInt(page) || 1);
         const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));

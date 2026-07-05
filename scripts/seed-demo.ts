@@ -1,5 +1,5 @@
 import * as crypto from "crypto";
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 
 const BASE_URL = process.env.API_URL ?? "http://localhost:5000";
 const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? "Demo1234!";
@@ -69,9 +69,13 @@ function totp(secret: string): string {
 }
 
 function pgQuery(sql: string): string {
-  return execSync(
-    `docker exec ${PG_CONTAINER} psql -U "${PG_USER}" -d "${PG_DB}" -t -c "${sql}"`,
-    { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] },
+  // execFileSync (no shell) + SQL piped via stdin: container/db names and the
+  // query are passed as literal args/input, so nothing can break out into a
+  // shell command.
+  return execFileSync(
+    "docker",
+    ["exec", "-i", PG_CONTAINER, "psql", "-U", PG_USER, "-d", PG_DB, "-t"],
+    { input: sql, encoding: "utf8" },
   ).trim();
 }
 
@@ -155,7 +159,6 @@ async function seedAccount(
     console.log(`  → already exists`);
     normalizeTotpSecret(email);
     promoteRole(email, role);
-    console.log(`  → TOTP secret : ${DEMO_TOTP_SECRET}`);
     console.log(`  → code actuel : ${totp(DEMO_TOTP_SECRET)}`);
     return;
   }
@@ -181,7 +184,7 @@ async function seedAccount(
 
   normalizeTotpSecret(email);
   promoteRole(email, role);
-  console.log(`  ✓ created (TOTP: ${DEMO_TOTP_SECRET})`);
+  console.log(`  ✓ created`);
 }
 
 const PARIS_NEIGHBORHOODS: Array<{
@@ -625,9 +628,7 @@ async function main(): Promise<void> {
   }
 
   console.log("\nDone.");
-  console.log(`Login: Demo1234! + TOTP secret ${DEMO_TOTP_SECRET}`);
-  console.log(`Generate code: oathtool --totp --base32 ${DEMO_TOTP_SECRET}`);
-  console.log(`Or: make totp`);
+  console.log("Login: Demo1234! — run `make totp` for the current TOTP code");
 }
 
 main().catch((err: unknown) => {
