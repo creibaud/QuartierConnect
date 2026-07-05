@@ -1,0 +1,51 @@
+---
+title: Architecture
+description: Monorepo, API, bases de données et application desktop
+---
+
+QuartierConnect est une plateforme multi-composants : plusieurs applications actives et trois bases de données serveur, orchestrées via Docker Compose, plus un cache SQLite embarqué dans le client bureautique. L'API est le seul composant à établir des connexions sortantes vers Internet (l'API de géocodage Nominatim / OpenStreetMap).
+
+## Le monorepo
+
+Le dépôt regroupe quatre briques applicatives, chacune avec sa stack propre.
+
+- **API NestJS** (`api`, Node 20, port `:5000`) — cœur métier exposant une API REST et une passerelle WebSocket. Organisée en modules NestJS (`AuthModule`, `UsersModule`, `IncidentsModule`, `ServicesModule`, `EventsModule`, `PointsModule`, `ContractsModule`, `MessagingModule`, `VotesModule`, `CommunityVotesModule`, `DocumentsModule`, `NeighborhoodsModule`, `SocialModule`, `GeocodingModule`, `DslModule`). Le conteneur `api` embarque en outre la passerelle DSL Python PLY.
+- **Web-apps (Turbo)** — deux SPA React servies par Vite : le **client** résident (`:3000`) et l'**admin** back office (`:3001`). Le monorepo web partage des packages, dont le composant cartographique `<Map>` (`packages/ui`) autour de `react-leaflet`, et des helpers géo (`packages/shared`).
+- **Application desktop JavaFX** — distribuée en fat JAR, destinée aux admins et modérateurs. Elle communique avec l'API en HTTP REST, dispose d'un mode hors ligne, d'un système de plugins et d'un cache SQLite local.
+- **DSL** — un langage de requête compilé par un pipeline Python PLY (lexer → parser LALR → compilateur avec liste blanche de collections → requête MongoDB exécutée via Motor async), exposé par l'API via `DslModule`.
+
+## Les trois bases de données
+
+Chaque base est choisie pour ses atouts propres, selon une répartition stricte des données.
+
+| Base | Rôle | Contenu |
+|------|------|---------|
+| **PostgreSQL** (`:5432`) | Relationnel ACID strict | `users` (auth, rôles, hashes de tokens), `incidents` (machine à états + soft delete), `points_balances`, `points_transactions`, `revoked_tokens` |
+| **MongoDB** (`:27017`) | Documents flexibles + binaires | `neighborhoods` (GeoJSON), `services`, `events`, `contracts`, `conversations`/`messages`, `votes`, `communityvotes`, `documents`, plus les buckets GridFS (`pdfs`, `avatars`, `messaging_files`) et la collection éphémère `ssotokens` (TTL 5 min) |
+| **Neo4j** (`:7474`/`:7687`) | Graphe social | Nœuds `User`, `Neighborhood`, `Service`, `Event` et relations (`LIVES_IN`, `LOCATED_IN`, `HELD_IN`, `INTERESTED_IN`, `ATTENDING`, `HELPED`) pour les recommandations Cypher |
+
+L'ORM PostgreSQL est **Drizzle** (source de vérité `api/src/database/schema.ts`) ; MongoDB utilise **Mongoose**. Les transferts de points s'exécutent dans une transaction PostgreSQL avec verrou `FOR UPDATE`, et le solde minimum de `-10` est garanti par une contrainte `CHECK` en base. Les écritures Neo4j se font exclusivement via `SocialService`, en fire-and-forget : une panne de Neo4j ne bloque jamais l'API.
+
+> Une quatrième base, **SQLite**, sert de cache local au client bureautique JavaFX (tables `incidents`, `sync_log`, `session`). Elle n'est jamais source de vérité : l'API PostgreSQL fait autorité. Les tokens ne sont pas persistés dans SQLite mais dans le trousseau de l'OS (`TokenVault`).
+
+## Le reverse proxy Caddy
+
+Caddy (`:80`/`:443`) est le seul point d'entrée HTTP/HTTPS. Il termine le TLS (Let's Encrypt automatique en production) et route en interne :
+
+```
+/       → client:3000
+/admin  → admin:3001
+/api    → api:5000   (retire le préfixe /api)
+/api/docs → api:5000/docs (Scalar)
+```
+
+La stack tourne sur sept conteneurs (`caddy`, `client`, `admin`, `api`, `mongodb`, `postgres`, `neo4j`). En production, seuls les ports **22, 80 et 443** sont exposés à Internet ; les trois bases sont liées à `127.0.0.1`, accessibles uniquement via le réseau Docker interne. Le WebSocket (messagerie Socket.io) passe par le même `/api` avec bascule `wss://`.
+
+## Flux principaux
+
+- **Authentification** — inscription avec hash Argon2id et secret TOTP (RFC 6238) ; connexion en trois validations séquentielles (compte, mot de passe, TOTP avec anti-rejeu). L'API émet un access token JWT (15 min, `jti` révocable) et un refresh token en cookie `httpOnly` `qc_rt`, avec rotation stricte protégée par un verrou transactionnel anti-TOCTOU.
+- **SSO inter-surfaces** — un admin s'authentifie dans l'application JavaFX depuis l'admin web via un token SSO à usage unique (UUID v4, TTL 5 min) stocké dans `ssotokens`, échangé de façon atomique (rejeu impossible).
+- **Synchronisation Java ↔ API** — le desktop crée des incidents hors ligne dans SQLite, puis le `SyncService` pousse et récupère les changements avec une résolution de conflits **Three-Way Merge** (ancêtre / local / distant) et propagation des suppressions par tombstone.
+- **Synchronisation Neo4j** — chaque opération CRUD sociale déclenche une synchronisation fire-and-forget vers le graphe, avec `withRetry` (3 tentatives, backoff 100/200/400 ms).
+- **Messagerie temps réel** — la `MessagingGateway` Socket.io reconstruit les salons depuis MongoDB à chaque connexion et diffuse les messages aux participants connectés.
+- **Cycle de requête** — Caddy → Helmet → ThrottlerGuard → `JwtAuthGuard` (contrôle du `jti` révoqué) → `ValidationPipe` → contrôleur → service → base.

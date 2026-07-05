@@ -1,0 +1,84 @@
+---
+title: Sécurité
+description: Authentification, chiffrement, en-têtes et RGPD
+---
+
+Cette page décrit les mesures de sécurité implémentées côté API et client. Elle couvre le hachage des mots de passe, l'authentification multifacteur, les jetons JWT, les en-têtes HTTP, la limitation de débit et la conformité RGPD.
+
+## Hachage des mots de passe — Argon2id
+
+Les mots de passe sont hachés avec **Argon2id** (vainqueur de la Password Hashing Competition 2015), qui combine résistance aux GPU (coût mémoire) et résistance aux canaux auxiliaires. Les paramètres par défaut du paquet `argon2` sont utilisés :
+
+- `type: argon2id`
+- `memoryCost: 65536` (64 Mo)
+- `timeCost: 3`
+- `parallelism: 4`
+
+L'inscription appelle `argon2.hash(dto.password)` ; la connexion vérifie via `argon2.verify(user.passwordHash, dto.password)`.
+
+Le **jeton refresh JWT est lui aussi haché** en Argon2 avant stockage (`token.service.ts`). Un accès en lecture à la base ne suffit donc pas à rejouer un jeton refresh.
+
+## Authentification multifacteur — TOTP RFC 6238
+
+L'application impose un second facteur TOTP conforme à la RFC 6238 :
+
+```
+code = HOTP(secret, floor(Unix_timestamp / 30))
+HOTP(K, C) = truncate(HMAC-SHA1(K, C_bytes))
+```
+
+Le code est valide 30 secondes avec une tolérance de ±1 période (`window: 1`). À l'inscription, `speakeasy.generateSecret` produit un secret base32 stocké en PostgreSQL, et une `otpauth_url` renvoyée au client pour générer un QR code.
+
+La vérification intègre un **anti-rejeu en mémoire** : chaque couple `secret:token` accepté est mémorisé pendant 90 s (TanStack Store), et toute seconde présentation du même code est refusée. Même intercepté, un code valide ne peut donc pas être réutilisé.
+
+## JWT — Access et refresh
+
+Deux jetons HS256 sont émis :
+
+| Jeton | Durée de vie | Stockage | Accès JS |
+|-------|--------------|----------|----------|
+| access | 15 minutes | `localStorage` | Oui — en-tête `Authorization: Bearer` |
+| refresh | 7 jours | cookie httpOnly `qc_rt` (SameSite=strict) | Non |
+
+Le payload contient `sub`, `email`, `role`, `jti`, `iat` et `exp`. Le jeton refresh, inaccessible au JavaScript (httpOnly), élimine le principal vecteur XSS ; en production le flag `secure` impose HTTPS. Le cookie `SameSite=strict` combiné à l'usage de l'en-tête `Authorization` pour l'access rend le CSRF impossible.
+
+**Rotation stricte** — la rotation du refresh est protégée contre les conditions de course (TOCTOU) par un `SELECT FOR UPDATE` dans une transaction PostgreSQL. L'ancien hash est mis à `NULL` avant émission du nouveau : deux requêtes `POST /auth/refresh` simultanées ne peuvent pas réutiliser le même jeton, et le vol d'un refresh est détecté au prochain renouvellement légitime (révocation mutuelle).
+
+**Révocation instantanée** — à la déconnexion (`POST /auth/logout`), le jeton access courant est révoqué via son `jti` dans la table `revoked_tokens`, sans attendre son expiration. La stratégie JWT rejette tout jeton révoqué avec `{ code: "TOKEN_REVOKED" }`. Les entrées expirées sont purgées à chaque révocation, sans Redis ni tâche cron.
+
+## En-têtes de sécurité HTTP
+
+**Helmet.js** est appliqué à toutes les réponses, avec une CSP par route (Caddy + NestJS) :
+
+| En-tête | Protection |
+|---------|-----------|
+| `Content-Security-Policy` | Restreint scripts/styles/images — mitigation XSS |
+| `X-Content-Type-Options: nosniff` | Sniffing MIME |
+| `X-Frame-Options: DENY` | Clickjacking |
+| `Strict-Transport-Security` | Rétrogradation HTTPS → HTTP |
+| `X-XSS-Protection: 1; mode=block` | XSS navigateurs legacy |
+
+`'unsafe-inline'` a été retiré des routes client, admin et API ; seules les routes `/docs` et `/scalar` (UI Scalar tierce) le conservent dans `script-src`. Les applications React reposent sur des nonces implicites via Vite.
+
+## Limitation de débit
+
+Un `ThrottlerGuard` global limite chaque IP à **100 requêtes / 15 minutes** (`ThrottlerModule.forRoot([{ ttl: 900000, limit: 100 }])`). Des routes sensibles ont des limites spécifiques :
+
+| Route | Limite | Fenêtre | Raison |
+|-------|--------|---------|--------|
+| `POST /auth/login` | 5 tentatives | 15 min | Anti-force brute (TOTP + mot de passe) |
+| `POST /auth/refresh` | 10 requêtes | 60 s | Limiter la rotation abusive |
+
+## Autorisation basée sur les rôles
+
+La hiérarchie est `resident → moderator → admin`, avec `banned` comme état terminal (401 à la connexion). Le `RolesGuard` **relit le rôle depuis la base** à chaque refresh — aucune confiance n'est accordée au seul JWT, si bien qu'un bannissement prend effet immédiatement. Chaque contrôleur vérifie en outre la propriété de la ressource (`createdBy === req.user.sub`).
+
+## RGPD — Protection des données
+
+**Export des données personnelles** — `GET /me/export` renvoie une archive JSON complète (profil, incidents, services, événements, contrats, points, conversations). Elle n'inclut **jamais** `passwordHash`, `totpSecret` ni `refreshTokenHash`.
+
+**Suppression de compte** — le processus enchaîne :
+
+1. Soft delete des incidents (rétention pour modération)
+2. Révocation du jeton refresh (déconnexion immédiate)
+3. Suppression du nœud Neo4j via `deleteNode('User', id)`

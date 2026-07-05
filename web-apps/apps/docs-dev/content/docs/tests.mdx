@@ -1,0 +1,90 @@
+---
+title: Tests
+description: Tests unitaires, end-to-end et intégration continue
+---
+
+## Approche
+
+La stratégie de tests de QuartierConnect suit le modèle de la **pyramide de tests** : une large base de tests unitaires rapides, une couche intermédiaire de tests d'intégration et de tests end-to-end de l'API, et un sommet plus réduit de tests end-to-end pilotant les interfaces réelles dans un navigateur.
+
+Chaque test respecte les principes **F.I.R.S.T.** :
+
+- **Fast** — exécution en mémoire, sans dépendance réseau.
+- **Independent** — chaque cas est isolé (bases réinitialisées, comptes générés à la volée, aucun ordre implicite).
+- **Repeatable** — résultat identique dans tout environnement (les codes TOTP sont calculés à partir du secret, pas figés).
+- **Self-validating** — assertions explicites en fin de test.
+- **Timely** — les tests accompagnent le code et sont exécutés en continu.
+
+## Récapitulatif des suites
+
+| Suite | Outil | Tests | Cible make |
+|-------|-------|-------|------------|
+| API — unitaires | Jest | 527 (46 `.spec.ts`) | `make test-api` |
+| API — end-to-end | Jest + Supertest | 173 (13 `.e2e-spec.ts`) | `make test-e2e` |
+| Web — unitaires | Vitest | 147 | `make test-web` |
+| Web — end-to-end | Playwright | 94 (21 fichiers) | `make test-e2e-web` |
+| Desktop — unit./intégration | JUnit 5 | 158 (21 classes) | `make test-desktop` |
+| DSL — unitaires | pytest | 21 | `make test-dsl` |
+| **Total** | | **1120** | `make test` |
+
+La cible `make test` enchaîne les tests unitaires des quatre composants (API, Web, Desktop, DSL). Les tests end-to-end, qui nécessitent des services démarrés, disposent de cibles dédiées. La cible `make validate` exécute l'ensemble en séquence : lint, typecheck, tests unitaires + couverture, e2e API, e2e Web, desktop, DSL, puis build de production.
+
+## Tests unitaires — API (Jest)
+
+Les 527 tests unitaires couvrent la logique métier des 16 modules NestJS, avec les dépendances externes (bases de données, passerelles) remplacées par des doublures. Ils sont répartis entre contrôleurs (validation d'entrée, gardes, mapping de réponse) et services (règles métier).
+
+Domaines couverts, entre autres :
+
+- **Authentification** (`auth.service.spec.ts`, `token.service.spec.ts`, `totp.service.spec.ts`) : hachage du mot de passe, génération et vérification du secret TOTP, émission et rotation des JWT.
+- **Contrats et points** (`contracts.service.spec.ts`, `points.service.spec.ts`, `points-settlement.spec.ts`) : cycle de vie des contrats d'entraide et règlement des points.
+- **Messagerie temps réel** (`messaging.gateway.spec.ts`, `messaging.service.spec.ts`, `notifications.listener.spec.ts`) : passerelle WebSocket, messages et notifications.
+- **Services de quartier** (`services.controller.spec.ts`, `bookings.service.spec.ts`), **RGPD** (`gdpr-export.service.spec.ts`), **DSL** (`dsl.service.spec.ts`, `dsl.controller.spec.ts`) et **utilitaires** (`phone.util.spec.ts`, `geocoding.service.spec.ts`).
+
+```bash
+make test-api          # tests unitaires seuls
+make test-cov          # tests + couverture (seuils : stmts 80 %, branches 75 %)
+```
+
+Le rapport de couverture est généré dans `api/coverage/lcov-report/index.html`.
+
+## Tests end-to-end — API (Supertest)
+
+Les 173 tests end-to-end démarrent l'application NestJS complète et émettent de vraies requêtes HTTP via Supertest, contre des bases de données réelles (MongoDB et PostgreSQL). Ils valident l'intégration bout en bout : routage, validation, persistance et sérialisation des réponses.
+
+Le flux critique d'authentification est vérifié dans `auth.e2e-spec.ts`, qui couvre : l'inscription avec renvoi de l'`otpauthUrl` (le secret TOTP n'est jamais exposé directement), le refus sans consentement RGPD (`400`) et sur email déjà pris (`409`), la connexion valide retournant la paire de jetons JWT (`200`), le rejet d'un mauvais mot de passe ou code TOTP (`401`), la limitation de débit après 5 échecs (`429`), le rafraîchissement et la révocation de jeton, le parcours SSO du client lourd, et le rejet d'un jeton expiré.
+
+```bash
+make docker-up
+make test-e2e
+```
+
+## Tests unitaires — Web (Vitest)
+
+Les 147 tests Vitest portent sur le code mutualisé du monorepo, dans les paquets `@workspace/shared` et `@workspace/ui`, partagés par le client et l'admin :
+
+- **Fonctions pures** (`packages/shared/src/lib`) : `geo.test.ts`, `phone.test.ts`, `pricing.test.ts`, `contract-import.test.ts`.
+- **Hooks de données** (`packages/shared/src/lib/hooks/__tests__`) : hooks React Query pour incidents, services, réservations, événements, points, votes, messagerie, quartiers, statistiques, contrats, profil et administration des utilisateurs.
+- **Composants d'interface** (`packages/ui/src/components`) : `map.test.tsx` et `map-legend.test.tsx`.
+
+```bash
+make test-web
+```
+
+## Tests end-to-end — Web (Playwright)
+
+Les 94 tests Playwright pilotent le client (`:3000`) et l'admin (`:3001`) dans un navigateur réel, contre l'API (`:5000`). Ils sont répartis entre `web-apps/e2e/client` (11 fichiers) et `web-apps/e2e/admin` (9 fichiers), plus une baseline de refonte.
+
+Le parcours critique **connexion + TOTP** est couvert côté client dans `login.spec.ts` : redirection d'un utilisateur non authentifié vers `/login`, affichage de l'étape TOTP après identifiants valides, message d'erreur sur mauvais mot de passe, et connexion complète (mot de passe puis code TOTP à 6 chiffres généré dynamiquement) menant à l'onboarding d'adresse.
+
+> Le code TOTP est recalculé en direct via une implémentation RFC 6238 sans dépendance externe (`web-apps/e2e/helpers/auth.ts`), ce qui garantit la reproductibilité des tests.
+
+`register.spec.ts` couvre l'inscription complète jusqu'à la confirmation du QR code TOTP. Côté admin, `dsl.spec.ts` couvre l'éditeur du langage dédié, `neighborhoods-draw.spec.ts` le tracé des périmètres de quartier, et les autres fichiers les écrans de gestion (utilisateurs, incidents, événements, services).
+
+```bash
+make dev          # terminal 1 : bases + API + client + admin
+make test-e2e-web # terminal 2
+```
+
+## Intégration continue
+
+Les suites sont exécutées automatiquement en intégration continue sur les branches `main` et `develop` ainsi que sur les pull requests. La cible `make validate` reproduit localement l'intégralité du pipeline (lint des 4 composants, typecheck TypeScript, tests unitaires API avec couverture, e2e API, e2e Web, desktop, DSL, puis build de production) : elle permet de valider une contribution dans les mêmes conditions que la CI avant de la pousser.

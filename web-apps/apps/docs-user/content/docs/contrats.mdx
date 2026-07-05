@@ -1,0 +1,60 @@
+---
+title: Contrats et signature
+description: Contrats issus des réservations et signature électronique
+---
+
+Lorsque vous rendez ou recevez un service payant entre voisins, QuartierConnect crée un contrat pour formaliser l'échange. Cette page vous explique d'où viennent ces contrats, comment les consulter, les signer en toute sécurité et récupérer leur version PDF.
+
+## D'où viennent les contrats
+
+La page **Contrats** rassemble tous les contrats que vous avez créés et ceux que vous devez signer. Un contrat peut apparaître de trois manières :
+
+- il est **généré automatiquement** dès qu'une réservation d'un service payant est acceptée ;
+- vous le **créez vous-même**, en désignant un ou plusieurs voisins comme signataires ;
+- vous **importez** un document PDF déjà existant.
+
+### Le cas le plus courant : une réservation acceptée
+
+La plupart des contrats naissent d'un service payant, réglé en points. Voici le parcours complet :
+
+1. Un voisin publie une offre de service payant depuis la page Services.
+2. Vous demandez une **réservation** depuis la fiche du service. Le nombre de points est calculé à partir du barème du service.
+3. Le propriétaire du service retrouve votre demande dans l'onglet **Reçues** de la page Réservations ; vous la retrouvez, vous, dans l'onglet **Envoyées**.
+4. Lorsque le propriétaire **accepte** la réservation, un **contrat est généré automatiquement**. (Tant que la demande est en attente, il peut aussi la refuser ou l'annuler.)
+5. Les deux parties signent le contrat. À l'issue de la prestation, le transfert de points scelle l'échange.
+
+## Consulter un contrat
+
+Chaque contrat porte un **statut** qui vous indique où il en est :
+
+| Statut | Ce que cela signifie |
+|--------|----------------------|
+| Brouillon | Le contrat est créé mais aucune signature n'a encore été apposée. |
+| Partiellement signé | Une partie au moins a signé, mais il manque encore des signatures. |
+| Entièrement signé | Toutes les parties ont signé : le contrat est finalisé. |
+| Annulé | Le contrat n'est plus actif. |
+
+Depuis la fiche d'un contrat, vous pouvez **consulter le document PDF** à tout moment. Un **journal d'audit immuable** accompagne chaque contrat : il trace chaque événement, notamment l'empreinte SHA-256 du document et les signatures. Ce journal ne peut pas être modifié, ce qui garantit la traçabilité de l'accord.
+
+## Signer un contrat électroniquement
+
+La signature se déroule dans une boîte de dialogue guidée, en **trois étapes** :
+
+1. **Lecture** : vous relisez les termes du contrat et le nombre de points concernés.
+2. **Tracé** : vous dessinez votre signature manuscrite dans la zone prévue à cet effet.
+3. **Validation forte** : vous confirmez en saisissant votre **code TOTP à six chiffres**, généré par votre application d'authentification.
+
+> Cette dernière étape est une sécurité importante : votre code à usage unique confirme que c'est bien vous qui signez.
+
+Une fois que **toutes les parties signataires** ont apposé leur signature, le contrat bascule automatiquement au statut **entièrement signé**.
+
+## Télécharger le PDF
+
+Le document PDF d'un contrat est **consultable** directement depuis sa fiche, quel que soit son statut. Vous y accédez pour relire l'accord, vérifier les termes ou en conserver une copie.
+
+## En résumé
+
+- Un service payant accepté crée **automatiquement** un contrat entre les deux voisins.
+- Le statut du contrat vous indique s'il reste des signatures à recueillir.
+- La signature combine **votre tracé manuscrit** et **votre code TOTP** pour une validation sûre.
+- Un **journal d'audit** inaltérable et le **document PDF** restent consultables à tout moment.

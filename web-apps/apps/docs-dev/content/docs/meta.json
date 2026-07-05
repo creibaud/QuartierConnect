@@ -1,0 +1,15 @@
+{
+    "title": "Documentation développeur",
+    "pages": [
+        "index",
+        "demarrage",
+        "architecture",
+        "api",
+        "bases-de-donnees",
+        "dsl",
+        "plugins",
+        "deploiement",
+        "tests",
+        "securite"
+    ]
+}
