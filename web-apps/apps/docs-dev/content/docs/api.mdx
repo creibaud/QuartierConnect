@@ -1,0 +1,94 @@
+---
+title: Guide de l'API
+description: Authentification, pagination, rôles et référence Scalar
+---
+
+L'API REST de QuartierConnect est construite avec NestJS et expose 86 routes réparties en 16 modules fonctionnels. La version courante est `3.0`. Ce guide décrit les mécanismes transverses — authentification, pagination et rôles — communs à l'ensemble des endpoints. Pour le détail route par route (schémas de requête, de réponse et essais en direct), consultez la référence interactive Scalar.
+
+## Serveurs
+
+Deux serveurs sont déclarés dans la spécification OpenAPI :
+
+- `http://localhost:5000` — accès direct au service.
+- `http://localhost/api` — via le reverse proxy Caddy.
+
+## Authentification
+
+Toutes les routes protégées reposent sur un **JWT Bearer** signé en **HS256**, d'une durée de vie de **15 minutes**. Le jeton se transmet dans l'en-tête HTTP :
+
+```
+Authorization: Bearer <accessToken>
+```
+
+### Cycle d'authentification
+
+1. **Création de compte** via `POST /auth/register` : le secret **TOTP** est renvoyé dans le champ `otpauthUrl`.
+2. **Connexion** via `POST /auth/login` avec email + mot de passe + code TOTP à 6 chiffres.
+3. Le `accessToken` renvoyé est utilisé dans l'en-tête `Authorization`.
+
+Le jeton d'accès (15 min) est accompagné d'un **refresh token** de 7 jours, déposé dans un cookie `qc_rt` **httpOnly** (`SameSite=strict`, `Secure` en production). Le renouvellement se fait via `POST /auth/refresh`, avec **rotation** du refresh token : l'ancien est invalidé à chaque échange. À la déconnexion (`POST /auth/logout`), le hash du refresh token est effacé en base et le jeton d'accès courant est révoqué via une liste de JTI bloqués.
+
+> Un mode SSO à jeton unique (`POST /auth/sso/generate` puis `POST /auth/sso/exchange`, TTL 5 min) permet d'ouvrir une session sur le client lourd JavaFX sans re-saisir les identifiants. Le paramètre optionnel `state` (protection CSRF de type PKCE) est vérifié lors de l'échange.
+
+### MFA TOTP sur les actions sensibles
+
+Un code **TOTP** (30 s de validité, 6 chiffres) est exigé, en plus de la session, pour les opérations sensibles suivantes :
+
+| Action | Route |
+|--------|-------|
+| Connexion | `POST /auth/login` |
+| Signature d'un contrat | `POST /contracts/:id/sign` |
+| Changement de mot de passe | `PATCH /users/me/password` |
+| Changement d'email | `PATCH /users/me/email` |
+| Changement de téléphone | `PATCH /users/me/phone` |
+| Suppression du compte | `DELETE /users/me` |
+
+Deux limitations de débit protègent le flux : la connexion est plafonnée à **5 tentatives par 15 minutes**, le renouvellement de jeton à **10 par minute**.
+
+## Pagination
+
+Les endpoints de liste acceptent deux paramètres de requête :
+
+```
+GET /incidents?page=1&limit=20
+```
+
+- `page` — numéro de page (à partir de `1`).
+- `limit` — taille de page, **plafonnée à 100**.
+
+La pagination s'applique notamment aux utilisateurs, incidents, quartiers, votes communautaires, messages, historique de points et transactions.
+
+## Rôles et autorisations
+
+La hiérarchie des rôles est `resident` → `moderator` → `admin`, à laquelle s'ajoute l'état `banned`. Les autorisations sont appliquées par les gardes `JwtAuthGuard` et `RolesGuard`, pilotées par le décorateur `@Roles` sur chaque route.
+
+| Rôle / niveau | Périmètre |
+|---------------|-----------|
+| Public | Aucune authentification requise |
+| Authentifié | Tout compte connecté (résident, modérateur ou administrateur) |
+| moderator / admin | Modération : statut d'incident, suppression logique, exécution DSL |
+| admin | Administration complète : utilisateurs, quartiers, statistiques |
+
+Points saillants du modèle d'autorisation :
+
+- **resident** — accès authentifié standard. Le périmètre est cloisonné au quartier : les résidents ne voient que les incidents et services de leur propre quartier.
+- **moderator** — mêmes limites de quartier qu'un résident, plus la modération : `PATCH /incidents/:id/status`, `DELETE /incidents/:id` et l'exécution de requêtes `POST /dsl/query`.
+- **admin** — périmètre global (liste l'ensemble des quartiers, services et incidents) et accès à l'administration : `GET /users`, `PATCH /users/:id/role`, gestion des quartiers, `GET /stats`.
+- **banned** — état de compte bloquant. Le bannissement mémorise le rôle courant (`previousRole`) afin de le restaurer lors d'une réactivation.
+
+> La colonne « Rôle requis » de la référence Scalar reflète les gardes réellement appliqués sur chaque route.
+
+## Conventions
+
+- **Identifiants** : PostgreSQL utilise des UUID, MongoDB des `ObjectId`.
+- **Réponses d'erreur** : codes HTTP standards, complétés le cas échéant par un code applicatif dans le corps (par ex. `EMAIL_ALREADY_EXISTS`, `TOKEN_REVOKED`).
+
+## Référence interactive Scalar
+
+La spécification OpenAPI est générée à partir des décorateurs des contrôleurs (`@nestjs/swagger`) et exposée via une interface **Scalar** :
+
+```
+GET /docs
+```
+
+Le bundle Scalar est auto-hébergé (`/scalar/standalone.js`), sans dépendance à un CDN externe. L'interface permet de parcourir chaque route, d'inspecter les schémas de requête et de réponse, de renseigner un jeton via le bouton **Authorize**, puis d'exécuter les appels directement depuis le navigateur.

@@ -1,0 +1,131 @@
+---
+title: Plugins
+description: Système d'extensions
+---
+
+## À quoi sert le système de plugins
+
+Un plugin est un fichier JAR qui étend l'application desktop QuartierConnect sans en modifier le code source. Les plugins sont chargés au démarrage par `PluginRegistry` et peuvent apporter des tâches d'arrière-plan, des vues supplémentaires ou des intégrations avec des services externes.
+
+Les plugins communiquent avec l'application en cours d'exécution exclusivement via l'interface `AppContext`. Ils n'ont **aucun accès direct** aux bases de données ni aux services internes.
+
+## Interface de plugin
+
+Tout plugin doit implémenter `fr.quartierconnect.desktopapp.plugin.QuartierConnectPlugin` :
+
+```java
+public interface QuartierConnectPlugin {
+    String getId();       // Identifiant reverse-domain, ex. "fr.example.weather"
+    String getName();     // Nom lisible affiché dans le gestionnaire de plugins
+    String getVersion();  // Version semver, ex. "1.0.0"
+    void onLoad();        // Appelé une fois après enregistrement — initialise les ressources
+    void onUnload();      // Appelé une fois à l'arrêt — libère les ressources
+    default String getDescription() { return ""; }
+}
+```
+
+## AppContext — ce à quoi les plugins accèdent
+
+Le registre injecte un `AppContext` au chargement, qui expose des getters vers les services de l'application :
+
+| Getter | Service | Rôle |
+|--------|---------|------|
+| `getApiService()` | `ApiService` | Client HTTP authentifié, méthode `execute()` unique ; rafraîchit le JWT automatiquement |
+| `getAuthService()` | `AuthService` | Lecture seule de l'e-mail courant et de l'état du token |
+| `getScene()` | `Scene` | Scène JavaFX principale — injection de CSS, extension de l'UI |
+| `getIncidentRepository()` | `IncidentRepository` | Accès lecture/écriture au magasin d'incidents SQLite local |
+| `getSyncService()` | `SyncService` | Déclenche ou observe les synchronisations |
+| `getToastManager()` | `ToastManager` | Affiche des notifications toast |
+| `getEventBus()` | `PluginEventBus` | Abonnement aux événements de l'application |
+
+Pour recevoir l'`AppContext`, implémentez `PluginRegistry.ContextAwarePlugin` en plus de `QuartierConnectPlugin` :
+
+```java
+public class WeatherPlugin implements QuartierConnectPlugin, PluginRegistry.ContextAwarePlugin {
+    private AppContext context;
+
+    @Override
+    public void setContext(AppContext context) {
+        this.context = context;
+    }
+    // ... autres méthodes de l'interface
+}
+```
+
+Les plugins **ne doivent pas** accéder à `SQLiteDatabase` directement ; toute interaction avec l'UI passe par les points d'extension fournis ou par la `Scene`.
+
+## EventBus — communication inter-plugins
+
+`PluginEventBus` fournit un mécanisme publication/abonnement thread-safe (`CopyOnWriteArrayList`), évitant le polling. Les événements disponibles :
+
+| Événement | Charge utile | Description |
+|-----------|--------------|-------------|
+| `INCIDENTS_CHANGED` | null | Les incidents locaux ont changé |
+| `SYNC_STARTED` | null | Un cycle de synchronisation a commencé |
+| `SYNC_COMPLETED` | null | Synchronisation terminée avec succès |
+| `SYNC_FAILED` | String (message) | Échec de la synchronisation |
+| `ONLINE_STATUS_CHANGED` | Boolean | La connectivité réseau a changé |
+
+S'abonner et publier :
+
+```java
+context.getEventBus().subscribe(eventData -> {
+    switch (eventData.event()) {
+        case INCIDENTS_CHANGED -> context.getToastManager().show("Incidents updated");
+        case ONLINE_STATUS_CHANGED -> updateStatusIndicator((Boolean) eventData.payload());
+        default -> {}
+    }
+});
+
+context.getEventBus().publish(PluginEventBus.Event.SYNC_FAILED, "Connection timeout");
+```
+
+> Les exceptions levées par un abonné sont interceptées et silencieusement ignorées — un écouteur défectueux ne casse ni les autres écouteurs ni le publieur.
+
+## Écrire un plugin étape par étape
+
+1. **Créer un module Maven** dépendant de `fr.quartierconnect:quartierconnect-desktop-api` en scope `provided`, packaging `jar`.
+2. **Implémenter l'interface** `QuartierConnectPlugin` (et `ContextAwarePlugin` si l'`AppContext` est nécessaire).
+3. **Déclarer l'implémentation via ServiceLoader** : créez le fichier `src/main/resources/META-INF/services/fr.quartierconnect.desktopapp.plugin.QuartierConnectPlugin` contenant le nom pleinement qualifié de la classe. C'est ainsi que `PluginRegistry.loadFromJar()` découvre le plugin à l'exécution.
+4. **Empaqueter en fat JAR** :
+
+```bash
+./mvnw clean package -q
+# Produit : target/qc-weather-plugin-1.0.0.jar
+```
+
+## Charger un plugin
+
+**Depuis un JAR externe** — copiez le JAR dans le répertoire des plugins puis appelez `loadFromDirectory()` au démarrage :
+
+```bash
+mkdir -p ~/.quartierconnect/plugins/
+cp target/qc-weather-plugin-1.0.0.jar ~/.quartierconnect/plugins/
+```
+
+```java
+AppContext ctx = new AppContext(apiService, authService, scene,
+    incidentRepository, syncService, toastManager, eventBus);
+PluginRegistry.getInstance().loadFromDirectory(
+    Path.of(System.getProperty("user.home"), ".quartierconnect", "plugins"),
+    ctx
+);
+```
+
+**Enregistrement programmatique (développement)** — avant `Application.launch()` dans `Launcher.java` :
+
+```java
+PluginRegistry.getInstance().register(new WeatherPlugin(), ctx);
+```
+
+Utilisez la surcharge sans contexte `register(plugin)` si le plugin n'implémente pas `ContextAwarePlugin`.
+
+## Contraintes
+
+| Règle | Détail |
+|-------|--------|
+| Accès API uniquement | Passez par `ApiService` ; aucun appel direct JDBC/MongoDB/Neo4j |
+| Pas d'accès au stage | Ne manipulez ni `Stage` ni `Scene` hors des points d'extension fournis |
+| `onUnload` propre | Annulez les tâches planifiées et fermez les connexions ; sinon avertissements et fuites de threads |
+| Aucun stockage d'identifiants | Ne stockez ni tokens ni mots de passe sur le disque |
+| Sûreté aux exceptions | Les exceptions de `onLoad`/`onUnload` sont interceptées et journalisées ; le plugin reste enregistré, l'arrêt se poursuit |
