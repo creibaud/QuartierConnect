@@ -59,12 +59,14 @@ test.describe("Client — Services", () => {
         await expect(page.getByRole("combobox")).toBeVisible();
     });
 
-    test("filter selector contains 'Tous les quartiers' option", async ({
+    test("filter selector contains the 'all directions' option", async ({
         page,
     }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         await page.getByRole("combobox").click();
-        await expect(page.getByRole("option", { name: /tous/i })).toBeVisible();
+        await expect(
+            page.getByRole("option", { name: /toutes les directions/i }),
+        ).toBeVisible();
     });
 
     test("page loads without error state", async ({ page }) => {

@@ -52,7 +52,9 @@ test.describe("Client — Register parcours", () => {
         await page.getByRole("checkbox").check();
         await page.getByRole("button", { name: /créer/i }).click();
         await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 20000 });
-        await expect(page.getByText(/scannez/i)).toBeVisible();
+        // Two i18n strings start with "Scannez" (QR heading + hint) — scope to
+        // the first so strict mode doesn't flag the 2-element match.
+        await expect(page.getByText(/scannez/i).first()).toBeVisible();
     });
 
     test("submit stays disabled until consent is given", async ({ page }) => {
