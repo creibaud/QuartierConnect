@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { isValidObjectId, Model } from "mongoose";
 import {
     BOOKING_ACCEPTED_EVENT,
     BOOKING_CANCELLED_EVENT,
@@ -40,6 +40,11 @@ export class BookingsService {
     ) {}
 
     async request(serviceId: string, initiatorId: string) {
+        // Reject non-ObjectId input before it reaches a Mongo query, so a
+        // crafted value cannot be smuggled into findById/findOne.
+        if (!isValidObjectId(serviceId)) {
+            throw new NotFoundException("Service not found");
+        }
         const service = await this.serviceModel.findById(serviceId);
         if (!service) throw new NotFoundException("Service not found");
         if (service.type !== "paid") {
