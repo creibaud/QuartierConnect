@@ -78,7 +78,7 @@ test.describe("Admin — Événements (CRUD)", () => {
         await expect(page.getByRole("dialog")).not.toBeVisible({
             timeout: 5000,
         });
-        await expect(page.getByText(title)).toBeVisible({ timeout: 5000 });
+        await expect(page.getByText(title).first()).toBeVisible({ timeout: 5000 });
     });
 
     test("edits an existing event", async ({ page }) => {
@@ -135,17 +135,17 @@ test.describe("Admin — Événements (CRUD)", () => {
         await expect(page.getByRole("dialog")).not.toBeVisible({
             timeout: 5000,
         });
-        await expect(page.getByText(title)).toBeVisible({ timeout: 5000 });
+        await expect(page.getByText(title).first()).toBeVisible({ timeout: 5000 });
 
         const row = page.getByRole("row").filter({ hasText: title });
         await row.getByRole("button", { name: /supprimer/i }).click();
-        const confirmBtn = page.getByRole("button", {
-            name: /confirmer|oui|yes/i,
-        });
-        if (await confirmBtn.isVisible({ timeout: 500 }))
-            await confirmBtn.click();
+        // Confirm in the AlertDialog (its action button is also "Supprimer").
+        await page
+            .getByRole("alertdialog")
+            .getByRole("button", { name: /supprimer|confirmer|oui/i })
+            .click();
 
-        await expect(page.getByText(title)).not.toBeVisible({ timeout: 5000 });
+        await expect(page.getByText(title).first()).not.toBeVisible({ timeout: 5000 });
     });
 
     test("redirects non-admin to login", async ({ page }) => {

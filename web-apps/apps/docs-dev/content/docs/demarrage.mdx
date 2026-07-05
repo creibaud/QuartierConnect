@@ -1,0 +1,107 @@
+---
+title: Démarrage local
+description: Prérequis, configuration et lancement en local
+---
+
+Ce guide décrit la mise en route d'une instance QuartierConnect complète sur un poste de développement. La plateforme s'exécute sous forme de **7 conteneurs Docker** orchestrés par Docker Compose : `caddy` (reverse proxy), `client` et `admin` (SPA React servies par Vite), `api` (NestJS + passerelle DSL Python PLY), et les trois bases `mongodb`, `postgres`, `neo4j`.
+
+## Prérequis
+
+| Outil | Version / rôle |
+|-------|----------------|
+| Docker + Docker Compose v2 | Exécute toute la stack (`docker compose`) |
+| Git | Récupération du dépôt |
+| Node 20 | Runtime des conteneurs `client`, `admin`, `api` |
+| pnpm | Gestionnaire du monorepo (`pnpm --filter`), utile pour le fallback de seed |
+
+> Les applications web (`client`, `admin`) et l'API tournent **dans les conteneurs** : Docker et Docker Compose v2 suffisent pour un lancement complet. Node et pnpm ne sont requis que pour exécuter des scripts hors conteneur (par exemple le seed en repli).
+
+## Récupération du dépôt
+
+```bash
+git clone https://github.com/creibaud/QuartierConnect.git
+cd QuartierConnect
+```
+
+## Configuration du fichier `.env`
+
+Copiez le template fourni à la racine sous le nom `.env`, puis renseignez les secrets :
+
+```bash
+cp docker/.env.prod.example .env
+chmod 600 .env
+```
+
+Générez chaque valeur avec `openssl rand -base64 32 | tr -d '/+='` et remplissez :
+
+- `JWT_SECRET` (≥ 48 caractères)
+- `MONGO_ROOT_PASSWORD`
+- `POSTGRES_PASSWORD`
+- `NEO4J_PASSWORD` — recopiez la **même** valeur dans `NEO4J_AUTH=neo4j/<password>`
+
+Vérifiez qu'aucun placeholder ne subsiste :
+
+```bash
+grep -E '<(generate|password|same|strong)' .env && echo "⚠ Encore des placeholders" || echo "✓"
+```
+
+> Le mot de passe MongoDB n'est appliqué qu'à l'initialisation d'un volume vierge. Si vous le modifiez après un premier démarrage, MongoDB conservera l'ancien tant que le volume n'est pas recréé.
+
+## Lancement de la stack Docker
+
+En développement, on utilise uniquement `docker-compose.yml` (Caddy écoute en HTTP sur `:80`, sans TLS ni Let's Encrypt) :
+
+```bash
+docker compose -f docker/docker-compose.yml up -d --build
+```
+
+Cette commande construit et démarre les 7 conteneurs, **API et applications web comprises** — il n'y a pas d'étape de démarrage séparée. Vérifiez leur état :
+
+```bash
+docker compose -f docker/docker-compose.yml ps
+```
+
+Caddy expose un point d'entrée unique et route en interne :
+
+```
+/          → client:3000
+/admin     → admin:3001
+/api       → api:5000
+/api/docs  → api:5000/docs (Scalar)
+```
+
+Les applications sont donc accessibles sur `http://localhost/` (résident), `http://localhost/admin` (back office) et l'API sous `http://localhost/api`.
+
+## Seed des données de démo
+
+Une fois la stack `Up`, injectez les comptes et données de démonstration en exécutant le script dans le conteneur `api` :
+
+```bash
+docker exec docker-api-1 sh -c "cd /app && node -r ts-node/register /app/scripts/seed-demo.ts"
+```
+
+En repli, si l'exécution intra-conteneur échoue, lancez le script via pnpm depuis le monorepo :
+
+```bash
+API_URL=http://localhost/api \
+PG_CONTAINER=docker-postgres-1 \
+pnpm --filter api exec ts-node scripts/seed-demo.ts
+```
+
+> PostgreSQL est provisionné par `drizzle-kit push`. Si le migrator du bootstrap API rejoue la migration `0000` et plante, insérez une ligne de baseline dans `drizzle.__drizzle_migrations` (voir le RUNBOOK, section migrations).
+
+## Vérification
+
+L'API expose un point de santé agrégeant l'état des trois bases :
+
+```bash
+curl http://localhost/api/health
+```
+
+La réponse doit renvoyer `status:"ok"` avec `mongo`, `postgres` et `neo4j` remontés comme disponibles. Pour un contrôle de bout en bout (routes client/admin, `/api/docs`, WebSocket messagerie, en-têtes de sécurité), utilisez le script de smoke test :
+
+```bash
+./scripts/smoke-test.sh http://localhost
+```
+
+Une fois ces vérifications au vert, votre instance locale est opérationnelle : inscrivez un compte via `http://localhost/` ou connectez-vous avec un compte de démo issu du seed.

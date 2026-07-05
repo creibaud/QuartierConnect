@@ -40,6 +40,24 @@ services:
     depends_on:
       - api
 
+  docs-user:
+    build:
+      context: ../web-apps
+      dockerfile: apps/docs-user/Dockerfile
+    ports:
+      - "127.0.0.1:3002:3002"
+    depends_on:
+      - api
+
+  docs-dev:
+    build:
+      context: ../web-apps
+      dockerfile: apps/docs-dev/Dockerfile
+    ports:
+      - "127.0.0.1:3003:3003"
+    depends_on:
+      - api
+
   mongo:
     image: mongo:7
     ports:
@@ -88,6 +106,10 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      DOCS_AUTH_USER: ${DOCS_AUTH_USER:-docs}
+      # Hash bcrypt : chaque $ doublé en $$ (interpolation Compose s'applique aussi au .env prod).
+      DOCS_AUTH_HASH: ${DOCS_AUTH_HASH:-$$2a$$14$$hUWfdLnhOLdnbOyKO.ins.MqPcclORSRO.jAvMrRxA/FMtr8WSgVq}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
@@ -95,6 +117,8 @@ services:
       - api
       - client
       - admin
+      - docs-user
+      - docs-dev
 
 volumes:
   mongo_data:

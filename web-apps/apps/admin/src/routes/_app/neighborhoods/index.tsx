@@ -7,6 +7,7 @@ import {
     CheckmarkCircle01Icon,
     Delete01Icon,
     Edit01Icon,
+    Search01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -88,11 +89,20 @@ function NeighborhoodsPage() {
     const neighborhoods = data ?? [];
     const deleteNeighborhood = useDeleteNeighborhood();
 
-    const { sorted, toggle, getSortDirection } = useTableSort(neighborhoods, {
+    const [search, setSearch] = useState("");
+    const query = search.trim().toLowerCase();
+    const filtered = neighborhoods.filter(
+        (nbh) =>
+            query.length === 0 ||
+            nbh.name.toLowerCase().includes(query) ||
+            (nbh.city ?? "").toLowerCase().includes(query),
+    );
+
+    const { sorted, toggle, getSortDirection } = useTableSort(filtered, {
         initial: { key: "name", direction: "asc" },
     });
     const [page, setPage] = useState(1);
-    const pageCount = Math.ceil(sorted.length / PAGE_SIZE);
+    const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
     const currentPage = Math.min(page, Math.max(1, pageCount));
     const pageRows = sorted.slice(
         (currentPage - 1) * PAGE_SIZE,
@@ -161,6 +171,24 @@ function NeighborhoodsPage() {
                 }
             >
                 <div className="space-y-4">
+                    <div className="relative w-full sm:w-64">
+                        <HugeiconsIcon
+                            icon={Search01Icon}
+                            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+                        />
+                        <Input
+                            value={search}
+                            onChange={(e) => {
+                                setSearch(e.target.value);
+                                setPage(1);
+                            }}
+                            placeholder={t(
+                                "adminPages.neighborhoods.searchPlaceholder",
+                            )}
+                            className="pl-9"
+                            data-testid="neighborhood-search"
+                        />
+                    </div>
                     <div className="bg-card rounded-lg border">
                         <Table>
                             <TableHeader>

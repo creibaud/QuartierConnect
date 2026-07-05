@@ -25,6 +25,11 @@ import { MessageType } from "./schemas/message.schema";
 
 interface AuthSocket extends Socket {
     userId: string;
+    // Resolves once handleConnection has finished authenticating this socket.
+    // Message handlers await it so an early message (emitted right after the
+    // client's `connect` event, while the async token/role check is still
+    // running) does not read an unset `userId` and get wrongly rejected.
+    authReady?: Promise<void>;
 }
 
 const corsOrigins = process.env.CORS_ORIGINS
@@ -55,6 +60,15 @@ export class MessagingGateway
     ) {}
 
     async handleConnection(client: Socket) {
+        // Store the auth promise synchronously (before the first await) so a
+        // message emitted right after the client's `connect` event can wait for
+        // authentication to finish instead of racing it. See `AuthSocket.authReady`.
+        const ready = this.authenticateAndSetup(client);
+        (client as AuthSocket).authReady = ready;
+        await ready;
+    }
+
+    private async authenticateAndSetup(client: Socket): Promise<void> {
         try {
             const token =
                 (client.handshake.auth as Record<string, string>)?.token ||
@@ -101,6 +115,17 @@ export class MessagingGateway
         }
     }
 
+    // Resolves the authenticated userId, waiting for handleConnection's async
+    // authentication to finish first. Closes the race where a message arrives
+    // before `userId` has been set on the socket.
+    private async requireUserId(client: Socket): Promise<string> {
+        const ready = (client as AuthSocket).authReady;
+        if (ready) await ready;
+        const userId = (client as AuthSocket).userId;
+        if (!userId) throw new WsException("Unauthorized");
+        return userId;
+    }
+
     // Mirrors JwtStrategy.validate(): a socket must be rejected if its access
     // token was revoked (logout) or if the account has since been banned/deleted.
     private async isTokenStillValid(payload: JwtPayload): Promise<boolean> {
@@ -117,9 +142,7 @@ export class MessagingGateway
             .where(eq(schema.users.id, payload.sub))
             .limit(1);
 
-        return (
-            !!user && user.role !== "banned" && user.role !== "deleted"
-        );
+        return !!user && user.role !== "banned" && user.role !== "deleted";
     }
 
     handleDisconnect(client: Socket) {
@@ -141,8 +164,7 @@ export class MessagingGateway
         @ConnectedSocket() client: Socket,
         @MessageBody() conversationId: string,
     ) {
-        const userId = (client as AuthSocket).userId;
-        if (!userId) throw new WsException("Unauthorized");
+        const userId = await this.requireUserId(client);
 
         const isParticipant = await this.messagingService.isParticipant(
             conversationId,
@@ -169,8 +191,7 @@ export class MessagingGateway
         @MessageBody()
         data: { conversationId: string; content: string },
     ) {
-        const userId = (client as AuthSocket).userId;
-        if (!userId) throw new WsException("Unauthorized");
+        const userId = await this.requireUserId(client);
 
         const message = await this.messagingService.sendMessage(
             data.conversationId,
@@ -223,8 +244,7 @@ export class MessagingGateway
         conversationId: string | undefined,
         typing: boolean,
     ) {
-        const userId = (client as AuthSocket).userId;
-        if (!userId) throw new WsException("Unauthorized");
+        const userId = await this.requireUserId(client);
         if (!conversationId) {
             throw new WsException("conversationId is required");
         }

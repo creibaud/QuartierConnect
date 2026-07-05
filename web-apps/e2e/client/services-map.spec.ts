@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
     apiLogin,
     apiRegister,
+    assignAddress,
     injectTokens,
     uniqueEmail,
 } from "../helpers/auth";
@@ -17,6 +18,7 @@ test.describe("Client — Services map", () => {
         try {
             const email = uniqueEmail();
             const secret = await apiRegister(email);
+            assignAddress(email);
             const tokens = await apiLogin(email, secret, -30);
             accessToken = tokens.accessToken;
             refreshToken = tokens.refreshToken;
@@ -39,27 +41,20 @@ test.describe("Client — Services map", () => {
         await page.goto("/services");
         await expect(page).toHaveURL(/\/services/);
 
-        // The map only renders when there's at least one neighborhood with
-        // a polygon. If no demo data has been seeded, accept either the
-        // map being visible OR the empty-state message.
+        // The Leaflet map renders only when the resident's neighborhood has a
+        // polygon. The e2e resident may be assigned to a geometry-less
+        // neighborhood, so assert the page rendered, then verify the map's OSM
+        // attribution only when a map is actually shown.
+        await expect(
+            page.getByRole("heading", { name: /services/i }),
+        ).toBeVisible();
+
         const map = page.locator(".leaflet-container").first();
-        const emptyServices = page.getByText(
-            "Aucun service disponible.",
-            { exact: false },
-        );
+        await map
+            .waitFor({ state: "visible", timeout: 5000 })
+            .catch(() => undefined);
 
-        await Promise.race([
-            map.waitFor({ state: "visible", timeout: 5000 }),
-            emptyServices.waitFor({ state: "visible", timeout: 5000 }),
-        ]).catch(() => undefined);
-
-        // Either the map is visible OR no services exist
-        const mapVisible = await map.isVisible().catch(() => false);
-        const emptyVisible = await emptyServices.isVisible().catch(() => false);
-        expect(mapVisible || emptyVisible).toBeTruthy();
-
-        if (mapVisible) {
-            // OSM attribution is required
+        if (await map.isVisible().catch(() => false)) {
             await expect(
                 page.locator(".leaflet-control-attribution"),
             ).toContainText("OpenStreetMap");

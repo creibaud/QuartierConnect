@@ -999,6 +999,7 @@ export default {
                 "Existing neighborhoods are shown in grey. Pick the pen tool and click the map to place vertices; close the shape with Enter, a double-click, or by clicking the first point. Use the cursor tool to move vertices.",
             polygonPoints: "Polygon defined ({{count}} points)",
             overlapError: "The shape overlaps an existing neighborhood",
+            searchPlaceholder: "Search by name",
         },
         services: {
             title: "Services",

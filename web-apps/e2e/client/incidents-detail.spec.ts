@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
     apiLogin,
     apiRegister,
+    assignAddress,
     injectTokens,
     isConnectionError,
     uniqueEmail,
@@ -26,6 +27,7 @@ test.describe("Client — Détail d'un incident", () => {
         try {
             const email = uniqueEmail();
             const secret = await apiRegister(email);
+            assignAddress(email);
             const tokens = await apiLogin(email, secret);
             accessToken = tokens.accessToken;
             refreshToken = tokens.refreshToken;

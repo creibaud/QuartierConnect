@@ -1,0 +1,106 @@
+---
+title: Déploiement et exploitation
+description: Mise en production, Caddy, secrets et procédures
+---
+
+Cette page décrit la mise en production de QuartierConnect sur un VPS Linux (Ubuntu 22.04+ / Debian 12), la configuration de Caddy, la gestion des secrets et les procédures d'exploitation. Elle synthétise `docs/DEPLOYMENT.md` et `docs/RUNBOOK.md`.
+
+## Prérequis
+
+- **VPS** : 2 vCPU, 4 Go de RAM (8 Go conseillé), 40 Go SSD, IP publique fixe.
+- **Réseau** : ports **80** et **443** ouverts.
+- **DNS** : enregistrement A `quartierconnect.fr` → IP du VPS.
+- **Logiciels** : Docker + Docker Compose v2, plus `git make jq curl wget unzip awscli`.
+
+Le serveur est durci en amont : user non-root `deploy`, SSH root et authentification par mot de passe désactivés, UFW (80/443/22 uniquement), fail2ban (jails **SSH** et **caddy-auth**), et un cron quotidien installé depuis `ops/`.
+
+## Build et démarrage
+
+La stack de production se lance en superposant deux fichiers Compose (le fichier de base plus le patch prod) :
+
+```bash
+docker compose \
+  -f docker/docker-compose.yml \
+  -f docker/docker-compose.prod.yml \
+  up -d --build
+```
+
+Caddy met 30 à 60 s à obtenir son certificat Let's Encrypt ; suivre `logs -f caddy` pour le confirmer. Tous les services doivent passer `Up (healthy)` (`ps`). L'ordre de démarrage est garanti par `depends_on: condition: service_healthy` : l'API ne démarre qu'une fois les bases MongoDB, PostgreSQL et Neo4j saines.
+
+Le seed des comptes démo puis un smoke test valident l'installation :
+
+```bash
+./scripts/smoke-test.sh https://quartierconnect.fr
+```
+
+Le smoke test vérifie `/api/health` (dont l'état de chaque base), le client, `/admin`, `/docs` (Scalar), le rejet des credentials invalides (401), la présence des en-têtes **HSTS** et **CSP**, l'absence d'en-tête `Server`, la validité HTTPS et le WebSocket `/api/messaging`.
+
+## Caddy
+
+Caddy fait office de reverse proxy et de terminaison TLS. Il obtient et **renouvelle automatiquement** les certificats Let's Encrypt (~30 j avant expiration) via le challenge HTTP-01 sur le port 80. La configuration vit dans `Caddyfile.prod`.
+
+Points d'attention issus du runbook :
+
+- **Port 80 requis** pour le renouvellement ACME ; s'il est bloqué par UFW, le renew échoue silencieusement jusqu'à expiration.
+- **Rate limit Let's Encrypt** : 5 échecs/heure par domaine. Pour débugger, basculer temporairement sur `acme_ca https://acme-staging-v02.api.letsencrypt.org/directory` dans le bloc global du Caddyfile, puis retirer et recharger.
+- **Sécurité HTTP** : HSTS actif, CSP avec `frame-ancestors 'none'`, pas d'en-tête `Server`. Cible SSL Labs ≥ A.
+- **Auth des sites de docs** : les tentatives d'authentification échouées sur Caddy sont surveillées par la jail fail2ban **caddy-auth** (filtre `ops/fail2ban-filter-caddy-auth.conf`).
+
+Rechargement à chaud sans interruption :
+
+```bash
+docker exec docker-caddy-1 caddy reload --config /etc/caddy/Caddyfile
+```
+
+Les certificats Caddy sont sauvegardés une fois par semaine et restaurables ; le volume `quartierconnect_caddy_data` les contient.
+
+## Gestion des secrets
+
+La configuration prod part de `docker/.env.prod.example`, copié en `.env` avec `chmod 600`. Les valeurs sensibles sont générées avec `openssl rand -base64 32 | tr -d '/+='` :
+
+- `JWT_SECRET` (≥ 48 caractères)
+- `MONGO_ROOT_PASSWORD`
+- `POSTGRES_PASSWORD`
+- `NEO4J_PASSWORD` (à reporter aussi dans `NEO4J_AUTH=neo4j/<password>`)
+
+> Un mot de passe DB modifié **après** le premier `up` n'est pas pris en compte : il n'est appliqué qu'à l'initialisation d'un volume vierge. En cas d'auth refusée, vérifier que `.env` correspond au volume initialisé.
+
+Autres réglages prod : `LOGIN_RATE_LIMIT=5`, `CORS_ORIGINS` restreint au seul domaine HTTPS, et `BACKUP_S3_*` pour l'archivage. Un contrôle rapide confirme l'absence de placeholders : `grep -E '<(generate|password|same|strong)' .env`.
+
+Pour le déploiement automatisé, les secrets GitHub (environnement **production**) portent la clé SSH du user `deploy` (`VPS_SSH_PRIVATE_KEY`), l'hôte, le chemin de déploiement, le domaine et le webhook Discord.
+
+## Mises à jour et rollback
+
+Déploiement manuel depuis le VPS :
+
+```bash
+./scripts/deploy-vps.sh main
+```
+
+Le script capture le SHA courant, `git pull`, rebuild, smoke test, puis **rollback automatique si le test échoue**. En automatique, `deploy.yml` se déclenche sur un tag `v*.*.*` (reviewers requis) ou en `workflow_dispatch`.
+
+Rollback ciblé :
+
+```bash
+git log --oneline -10
+./scripts/rollback.sh <git-sha>
+```
+
+## Sauvegardes
+
+Un cron lance `backup-all.sh` chaque nuit à 2 h. Il dumpe MongoDB (`mongodump --gzip`), PostgreSQL (`pg_dumpall | gzip`), Neo4j (`neo4j-admin database dump`, à froid, ~30 s d'arrêt) et, le lundi, les certificats Caddy. Rétention locale 7 j (28 j pour les certifs), rétention S3 échelonnée (7 j + 4 sem + 12 mois). Une notification Discord n'est envoyée qu'en cas d'échec.
+
+> **Backup non testé = backup inexistant.** Effectuer un drill de restauration (`restore-mongo.sh`, `restore-postgres.sh`, `restore-neo4j.sh`) au moins une fois et consigner la durée dans le RUNBOOK.
+
+## Incidents courants
+
+Réflexe initial : `ps` de la stack puis `smoke-test.sh`. Le runbook détaille six incidents.
+
+- **MongoDB down** : redémarrer le conteneur ; si crash en boucle (`unclean shutdown`), `mongod --repair` sur le volume ; sinon restauration.
+- **Certificat expiré** : vérifier port 80, DNS (`dig +short`), rate limit ACME ; forcer un `caddy reload`.
+- **Disque plein** : `docker image/builder/system prune`, purge des vieux backups (déjà sur S3) et logs. **Jamais** supprimer un volume `*_data` sans backup vérifié.
+- **Neo4j OOM** : ajuster `NEO4J_server_memory_heap_max__size` et la limite mémoire conteneur, ou traquer une requête Cypher sans `LIMIT`.
+- **Deploy bloqué** : identifier le service unhealthy via ses logs ; si les deux versions sont KO, `rollback.sh` vers le dernier SHA stable.
+- **Restauration d'urgence** : récupérer le dump (local ou S3), exécuter le script `restore-*` (confirmation `oui` requise), revalider par smoke test.
+
+> **Migrations PostgreSQL (Drizzle)** : la base étant provisionnée par `drizzle-kit push`, insérer une ligne de baseline dans `drizzle.__drizzle_migrations` — sinon le migrator du bootstrap API rejoue `0000` et crashe.

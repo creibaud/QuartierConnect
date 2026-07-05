@@ -7,7 +7,12 @@ import {
     Request,
     UseGuards,
 } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
+import {
+    ApiBearerAuth,
+    ApiOperation,
+    ApiResponse,
+    ApiTags,
+} from "@nestjs/swagger";
 import { eq } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Driver } from "neo4j-driver";
@@ -41,6 +46,11 @@ export class AddressController {
 
     @Post("address")
     @ApiOperation({ summary: "Submit my address; assign me to a neighborhood" })
+    @ApiResponse({
+        status: 201,
+        description:
+            "Address processed; returns status assigned | pending | not_found",
+    })
     async submit(@Request() req: AuthRequest, @Body() body: SubmitAddressDto) {
         const geo = await this.geocoding.geocode(body.address);
         if (!geo) return { status: "not_found" as const };
@@ -76,6 +86,11 @@ export class AddressController {
 
     @Get("location")
     @ApiOperation({ summary: "My coordinates and neighborhood details" })
+    @ApiResponse({
+        status: 200,
+        description:
+            "Coordinates and neighborhood (null fields until an address is set)",
+    })
     async location(@Request() req: AuthRequest) {
         const [row] = await this.db
             .select({
@@ -122,6 +137,10 @@ export class AddressController {
 
     @Get("neighborhood-status")
     @ApiOperation({ summary: "My address/neighborhood status (for the gate)" })
+    @ApiResponse({
+        status: 200,
+        description: "Onboarding gate status: hasAddress + neighborhoodId",
+    })
     async status(@Request() req: AuthRequest) {
         const [row] = await this.db
             .select({

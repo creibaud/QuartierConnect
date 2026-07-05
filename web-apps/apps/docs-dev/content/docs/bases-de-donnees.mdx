@@ -1,0 +1,73 @@
+---
+title: Bases de données
+description: PostgreSQL, MongoDB, Neo4j et migrations
+---
+
+QuartierConnect répartit ses données sur **quatre** bases : PostgreSQL pour le relationnel ACID, MongoDB pour les documents et binaires flexibles, Neo4j pour le graphe social, et un cache SQLite embarqué dans le client bureautique JavaFX.
+
+## PostgreSQL — relationnel ACID
+
+ORM : **Drizzle ORM** (TypeScript), source de vérité `api/src/database/schema.ts`. **5 tables** : `users`, `incidents`, `points_balances`, `points_transactions`, `revoked_tokens`.
+
+- **`users`** — identité et sécurité. `email` unique et normalisé en minuscules, `password_hash` en **Argon2id** (jamais bcrypt), `totp_secret` base32 (RFC 6238), `refresh_token_hash` (rotation stricte, `NULL` si déconnecté). `role` suit la machine à états `resident → moderator → admin`, `banned` étant terminal mais réversible ; à un bannissement, le rôle courant est copié dans `previous_role` puis restauré à la réactivation. `address_lat` / `address_lng` sont géocodés via Nominatim (OpenStreetMap).
+- **`incidents`** — `status` suit `open → in_progress → resolved` (transitions validées côté API). Suppression **logique** via `deleted_at` (tombstone) pour propager les suppressions vers le client bureautique hors ligne. Index sur `status` et `deleted_at`.
+- **`points_balances`** — un solde unique par utilisateur (`user_id` UNIQUE), avec une contrainte `CHECK (balance >= -10)` garantie **au niveau de la base**, pas seulement en applicatif.
+- **`points_transactions`** — `type` (`service_payment` | `bonus` | `correction`) et `status` (`pending` | `completed` | `cancelled`) contrôlés par `CHECK`. Un `service_payment` référence un `contract_id` MongoDB.
+- **`revoked_tokens`** — liste de révocation par `jti` du JWT. Le `JwtAuthGuard` rejette tout token d'accès dont le `jti` y figure ; `expires_at` permet la purge des entrées expirées.
+
+Le transfert de points s'exécute dans une **transaction PostgreSQL** : verrou `SELECT ... FOR UPDATE` sur le solde émetteur, vérification du seuil `-10`, puis mises à jour `ON CONFLICT` des deux soldes.
+
+## MongoDB — documents flexibles
+
+ODM : **Mongoose** (`MongooseModule` NestJS). **17 collections** au total : **11 collections de documents**, plus **3 buckets GridFS** matérialisés chacun par une paire `.files` + `.chunks` (soit 6 collections physiques).
+
+| Collection | Contenu |
+|-----------|---------|
+| `neighborhoods` | Polygones GeoJSON, index `2dsphere` |
+| `services` / `serviceresponses` / `servicebookings` | Annonces de services, réponses, réservations payantes |
+| `events` | Événements de quartier (`interestedUserIds` via `$addToSet`) |
+| `contracts` | Contrats, `contentHash` SHA-256 et signatures |
+| `conversations` / `messages` | Messagerie |
+| `votes` | Votes de réaction (Strategy Pattern) |
+| `communityvotes` | Scrutins multi-types (`binary`, `single_choice`, `multiple_choice`, `weighted`) |
+| `documents` | Métadonnées GridFS + journal d'audit |
+
+Buckets GridFS : `pdfs` (PDF de contrats), `avatars` (images d'avatar), `messaging_files` (pièces jointes des messages).
+
+Points clés :
+
+- Les documents référencent les utilisateurs par leur **UUID PostgreSQL** (champs `createdBy`, `senderId`, etc.).
+- `neighborhoods.geometry` porte un index **`2dsphere`** pour `$geoIntersects` (chevauchement de quartiers, appartenance d'une adresse).
+- Index uniques métier : `{ serviceId, responderId }` sur `serviceresponses`, `{ userId, targetId, targetType }` sur `votes`.
+- La collection éphémère **`ssotokens`** (modèle `SsoToken`) utilise un index **TTL de 300 s** pour l'échange SSO inter-surfaces ; elle ne fait pas partie de l'inventaire persistant des 17 collections.
+
+## Neo4j — graphe social
+
+Écritures **exclusivement** via `SocialService` (`api/src/social/social.service.ts`), en **fire-and-forget**. Labels : `User`, `Neighborhood`, `Service`, `Event`. Relations : `LIVES_IN`, `LOCATED_IN`, `HELD_IN`, `INTERESTED_IN`, `ATTENDING`, `NOT_INTERESTED_IN`, `HELPED` (porte `serviceId` et `points`).
+
+L'endpoint de recommandation combine par union quatre sources classées (`RECOMMENDATIONS_QUERY`) : `serviceInNeighborhood` (score 3), `upcomingEventNearby` (score 2), `sharedInterests` (`3 + peerCount`) et `reliableNeighbor` (`4 + helpCount + sharedEvents`). Les résultats sont triés par score décroissant, dédupliqués par `type + name` et limités à 10.
+
+Résilience : chaque écriture passe par `withRetry` (3 tentatives, backoff 100/200/400 ms). Une panne de Neo4j ne bloque jamais l'API ; les lectures retombent alors sur une liste vide.
+
+## SQLite — cache du client bureautique
+
+Embarqué dans le client JavaFX (`quartierconnect.db`, redéfinissable via `sqlite.url`). Schéma : `desktop-app/.../database/SQLiteDatabase.java`. **3 tables** : `incidents`, `sync_log`, `session`.
+
+La synchronisation applique un **Three-Way Merge** : chaque champ (`title`, `description`, `status`) est comparé entre l'ancêtre commun (`base_*`), la valeur locale et la valeur serveur (`remote_*`). Les cas non ambigus fusionnent automatiquement (LWW quand le serveur est plus récent) ; un vrai conflit lève `is_conflict = 1` pour résolution manuelle. Les suppressions serveur sont propagées via `deleted_at` (tombstone).
+
+> **Sécurité.** La table `session` ne stocke **que** l'e-mail. Les tokens d'accès et de rafraîchissement ne sont **jamais** persistés dans SQLite : ils résident dans le trousseau de l'OS via `TokenVault`.
+
+## Migrations
+
+Côté PostgreSQL, le schéma est piloté par **Drizzle ORM** ; le fichier `api/src/database/schema.ts` fait autorité (tables, contraintes `CHECK`, index). Côté client bureautique, SQLite exécute des migrations **au démarrage** : ajout de la colonne `deleted_at` (tombstone) sur `incidents` et suppression des anciennes colonnes `access_token` / `refresh_token` désormais gérées par le trousseau.
+
+## Règles d'usage
+
+| Règle | Détail |
+|------|--------|
+| Points en ACID PostgreSQL | Jamais de transaction MongoDB — soldes + `CHECK >= -10` |
+| Pas d'auth dans MongoDB | Utilisateurs, rôles et hashes de tokens uniquement dans PostgreSQL |
+| Neo4j orienté lecture | Écritures via `SocialService`, fire-and-forget avec retry |
+| SQLite = cache local | Jamais la source de vérité — l'API PostgreSQL fait autorité |
+| GridFS = binaires | Les métadonnées vont dans la collection `documents` |
+| Tokens jamais dans SQLite | Trousseau de l'OS via `TokenVault` |

@@ -65,7 +65,8 @@ test.describe("Admin — Services (CRUD)", () => {
         await page.getByRole("button", { name: /ajouter/i }).first().click();
         await expect(page.getByRole("dialog")).toBeVisible();
         await page.getByLabel(/nom/i).fill(name);
-        await page.getByLabel(/catégorie/i).fill("other");
+        await page.getByLabel(/catégorie/i).click();
+        await page.getByRole("option", { name: "Autre" }).click();
         await page.getByLabel(/description/i).fill("Description de test E2E");
         await page.getByRole("button", { name: /créer/i }).last().click();
         await expect(page.getByRole("dialog")).not.toBeVisible({
@@ -81,7 +82,8 @@ test.describe("Admin — Services (CRUD)", () => {
 
         await page.getByRole("button", { name: /ajouter/i }).first().click();
         await page.getByLabel(/nom/i).fill(original);
-        await page.getByLabel(/catégorie/i).fill("other");
+        await page.getByLabel(/catégorie/i).click();
+        await page.getByRole("option", { name: "Autre" }).click();
         await page.getByLabel(/description/i).fill("Description de test E2E");
         await page.getByRole("button", { name: /créer/i }).last().click();
         await expect(page.getByRole("dialog")).not.toBeVisible({
@@ -105,7 +107,8 @@ test.describe("Admin — Services (CRUD)", () => {
         const name = `Service Delete ${Date.now()}`;
         await page.getByRole("button", { name: /ajouter/i }).first().click();
         await page.getByLabel(/nom/i).fill(name);
-        await page.getByLabel(/catégorie/i).fill("other");
+        await page.getByLabel(/catégorie/i).click();
+        await page.getByRole("option", { name: "Autre" }).click();
         await page.getByLabel(/description/i).fill("Description de test E2E");
         await page.getByRole("button", { name: /créer/i }).last().click();
         await expect(page.getByRole("dialog")).not.toBeVisible({

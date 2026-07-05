@@ -19,6 +19,7 @@ import {
     ApiBearerAuth,
     ApiConsumes,
     ApiOperation,
+    ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
 import { eq } from "drizzle-orm";
@@ -107,6 +108,14 @@ export class UsersAvatarController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: "Upload my avatar (GridFS)" })
+    @ApiResponse({
+        status: 201,
+        description: "Avatar uploaded; returns the updated profile",
+    })
+    @ApiResponse({
+        status: 400,
+        description: "No file, or unsupported image type (PNG/JPEG/WebP only)",
+    })
     @ApiConsumes("multipart/form-data")
     @UseInterceptors(
         FileInterceptor("file", { limits: { fileSize: 5 * 1024 * 1024 } }),
@@ -157,6 +166,10 @@ export class UsersAvatarController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: "Remove my avatar" })
+    @ApiResponse({
+        status: 200,
+        description: "Avatar removed; returns the updated profile",
+    })
     async remove(@Request() req: AuthRequest) {
         await this.deleteExisting(req.user.sub);
         const [profile] = await this.db
@@ -169,6 +182,12 @@ export class UsersAvatarController {
 
     @Get("avatar/:fileId")
     @ApiOperation({ summary: "Serve an avatar image (public)" })
+    @ApiResponse({
+        status: 200,
+        description: "Avatar image (binary; forced as attachment)",
+    })
+    @ApiResponse({ status: 400, description: "Invalid file id" })
+    @ApiResponse({ status: 404, description: "Avatar not found" })
     async serve(@Param("fileId") fileId: string, @Res() res: Response) {
         if (!ObjectId.isValid(fileId)) {
             throw new BadRequestException("Invalid file id");

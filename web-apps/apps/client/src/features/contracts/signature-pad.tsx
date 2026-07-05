@@ -16,7 +16,9 @@ export function SignaturePad({
     const ref = useRef<SignatureCanvas>(null);
     const wrapRef = useRef<HTMLDivElement>(null);
     const onChangeRef = useRef(onChange);
-    onChangeRef.current = onChange;
+    useEffect(() => {
+        onChangeRef.current = onChange;
+    });
 
     // Aligne la résolution interne du canvas sur sa taille affichée et la
     // densité de l'écran. Sans ça (canvas étiré par le CSS), les coordonnées

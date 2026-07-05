@@ -1,0 +1,68 @@
+---
+title: Documentation développeur
+description: Vue d'ensemble technique et liens utiles
+---
+
+Cette documentation s'adresse aux développeurs et intégrateurs qui contribuent à **QuartierConnect** ou consomment son API. Elle couvre l'architecture de la plateforme, ses trois bases de données, le DSL de requêtage, le système de plugins du bureau JavaFX, la synchronisation hors ligne, la sécurité en couches et le déploiement de production.
+
+QuartierConnect est une plateforme **multi-composants** : 4 applications actives et 3 bases de données orchestrées via Docker Compose, plus une seule intégration HTTP externe (Nominatim / OpenStreetMap) utilisée pour le géocodage d'adresses.
+
+## Référence API interactive (Scalar)
+
+La référence complète et interactive de l'API REST est générée par **Scalar** et servie directement par l'API NestJS. Elle est la source de vérité pour les endpoints, DTO, codes de statut et schémas de réponse.
+
+- **En local** : `api:5000/docs`, exposé par Caddy sous `/api/docs`.
+- **En production** : accessible via Caddy sous `/docs` (proxy interne vers l'API).
+
+> Utilisez toujours Scalar plutôt que cette documentation pour la signature exacte d'un endpoint : elle est générée à partir du code et reste synchronisée avec l'implémentation NestJS.
+
+Tous les appels entrants passent par Caddy, l'unique point d'entrée HTTP/HTTPS. Le préfixe `/api` est retiré avant proxy vers l'API, qui applique en chaîne les en-têtes Helmet, le `ThrottlerGuard`, le `JwtAuthGuard` (contrôle du `jti` révoqué), puis le `ValidationPipe` avant d'atteindre le contrôleur.
+
+## Organisation du monorepo
+
+Le dépôt regroupe les surfaces web, l'API, le bureau natif et le DSL. Les principaux points de repère :
+
+| Emplacement | Rôle |
+|-------------|------|
+| `api/src` | API NestJS — REST + WebSocket + passerelle DSL |
+| `api/src/geocoding/geocoding.service.ts` | Seule intégration sortante (Nominatim) |
+| `api/src/common/schemas/geo-point.schema.ts` | Sous-document GeoJSON Point réutilisable |
+| `packages/ui/src/components/map.tsx` | Composant `<Map>` partagé (react-leaflet) |
+| `packages/shared/src/lib/geo.ts` | Helpers géo (`centroidOf`, `pointToLatLng`, `latLngToPoint`) |
+
+Côté runtime, la stack tourne sur **7 conteneurs** : `caddy` (reverse proxy HTTPS + Let's Encrypt), `client` (SPA React résident, `:3000`), `admin` (SPA React back office, `:3001`), `api` (NestJS `:5000`, embarque la passerelle DSL Python PLY), `mongodb` (`:27017`), `postgres` (`:5432`) et `neo4j` (`:7474`/`:7687`).
+
+Le routage Caddy est le suivant :
+
+```
+/          → client:3000
+/admin     → admin:3001
+/api       → api:5000
+/api/docs  → api:5000/docs (Scalar)
+```
+
+### Modules NestJS
+
+L'`AppModule` compose les modules métier autour de `DrizzleModule` (ORM PostgreSQL) et `SocialModule` (driver Neo4j) : `AuthModule`, `NeighborhoodsModule`, `ServicesModule`, `EventsModule`, `IncidentsModule`, `PointsModule`, `UsersModule`, `ContractsModule`, `MessagingModule`, `VotesModule`, `CommunityVotesModule`, `DocumentsModule`, `DslModule` et `GeocodingModule`.
+
+### Répartition des données
+
+Le choix de trois moteurs répond à des contraintes distinctes :
+
+- **PostgreSQL** — données ACID strictes : `users` (auth, rôles, tokens), `incidents` (machine à états), `points_balances` et `points_transactions`.
+- **MongoDB** — documents flexibles : `neighborhoods` (GeoJSON `2dsphere`), `services`, `events`, `contracts`, `messages`/`conversations`, `votes`, `communityVotes`, `documents` (GridFS) et `ssoTokens` (index TTL 5 min).
+- **Neo4j** — graphe social : nœuds `User`, `Neighborhood`, `Service`, `Event` reliés par `LIVES_IN`, `LOCATED_IN`, `HELD_IN`, `INTERESTED_IN`, `USED`, alimentant les recommandations Cypher.
+
+La synchronisation vers Neo4j se fait en **fire-and-forget** : une panne du graphe ne bloque jamais l'API, et `withRetry` réessaie jusqu'à 3 fois avec backoff exponentiel (100/200/400 ms) sur erreur récupérable.
+
+## Pour aller plus loin
+
+- [Démarrage](/docs/demarrage) — prise en main de l'environnement de développement.
+- [Architecture](/docs/architecture) — vue d'ensemble, conteneurs et flux détaillés.
+- [API](/docs/api) — conventions REST, authentification et référence Scalar.
+- [Bases de données](/docs/bases-de-donnees) — répartition PostgreSQL / MongoDB / Neo4j.
+- [DSL](/docs/dsl) — pipeline de compilation PLY vers MongoDB.
+- [Plugins](/docs/plugins) — système de plugins du bureau JavaFX.
+- [Déploiement](/docs/deploiement) — infrastructure de production et CI/CD.
+- [Tests](/docs/tests) — stratégie de validation.
+- [Sécurité](/docs/securite) — modèle de sécurité en couches.

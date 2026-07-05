@@ -15,6 +15,13 @@ describe("UsersController", () => {
     let mockDb: any;
 
     beforeEach(async () => {
+        // updateRole reads the current role by awaiting `select(...).from().where()`
+        // directly, so that lookup resolves through `roleLookup`. Making the whole
+        // db mock thenable would break Nest injection (the DI container awaits a
+        // thenable useValue), so only the object returned by `where()` is thenable.
+        const roleLookup = jest.fn(() =>
+            Promise.resolve<unknown[]>([mockUser]),
+        );
         mockDb = {
             select: jest.fn().mockReturnThis(),
             from: jest.fn().mockReturnThis(),
@@ -23,9 +30,23 @@ describe("UsersController", () => {
             limit: jest.fn().mockResolvedValue([mockUser]),
             update: jest.fn().mockReturnThis(),
             set: jest.fn().mockReturnThis(),
-            where: jest.fn().mockReturnThis(),
             returning: jest.fn().mockResolvedValue([mockUser]),
+            roleLookup,
+            where: jest.fn(),
         };
+        // `where()` returns a builder that stays chainable (.orderBy()/.limit()
+        // for search/neighbors, .returning() for the update) yet is thenable so
+        // the role lookup resolves when awaited directly.
+        const whereBuilder = {
+            orderBy: mockDb.orderBy,
+            limit: mockDb.limit,
+            returning: mockDb.returning,
+            then: (
+                resolve: (rows: unknown[]) => unknown,
+                reject: (err: unknown) => unknown,
+            ) => roleLookup().then(resolve, reject),
+        };
+        mockDb.where.mockReturnValue(whereBuilder);
 
         const module: TestingModule = await Test.createTestingModule({
             controllers: [UsersController],
@@ -52,7 +73,7 @@ describe("UsersController", () => {
     });
 
     it("PATCH /users/:id/role throws 404 for unknown user", async () => {
-        mockDb.returning.mockResolvedValue([]);
+        mockDb.roleLookup.mockResolvedValue([]);
         await expect(
             controller.updateRole("bad-id", { role: "admin" }),
         ).rejects.toThrow(NotFoundException);
