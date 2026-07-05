@@ -45,7 +45,7 @@
         "helmet": "^8.1.0",
         "mongodb": "^7.1.1",
         "mongoose": "^9.4.1",
-        "multer": "^2.1.1",
+        "multer": "^2.2.0",
         "neo4j-driver": "^6.0.1",
         "nestjs-i18n": "^10.6.0",
         "passport": "^0.7.0",
@@ -140,6 +140,18 @@
             "core-js",
             "protobufjs",
             "vue-demi"
-        ]
+        ],
+        "overrides": {
+            "protobufjs": "7.6.1",
+            "shell-quote": "1.8.4",
+            "fast-uri": "3.1.2",
+            "form-data": "4.0.6",
+            "lodash": "4.18.0",
+            "path-to-regexp": "8.4.0",
+            "ws": "8.21.0",
+            "multer": "2.2.0",
+            "picomatch@2": "2.3.2",
+            "picomatch@4": "4.0.4"
+        }
     }
 }
