@@ -216,7 +216,9 @@ jobs:
 
       - name: Tests
         working-directory: desktop-app
-        run: ./mvnw -B test
+        # A virtual display lets the JavaFX smoke tests drive the real toolkit;
+        # -a picks a free display number to avoid collisions.
+        run: xvfb-run -a ./mvnw -B test
 
       - name: Build JAR
         working-directory: desktop-app
