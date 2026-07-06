@@ -14,24 +14,27 @@ jest.mock("pythonia", () => ({
     python: jest.fn().mockResolvedValue({ execute: mockExecute }),
 }));
 
+// find(...).lean().limit(n).exec() — the limit spy is exposed so tests can
+// assert the documented 100-result cap.
+const mongoQuery = (docs: unknown[] = []) => {
+    const limit = jest.fn().mockReturnValue({
+        exec: () => Promise.resolve(docs),
+    });
+    return { chain: { lean: () => ({ limit }) }, limit };
+};
+
 const mockNeighborhoodModel = {
-    find: jest
-        .fn()
-        .mockReturnValue({ lean: () => ({ exec: () => Promise.resolve([]) }) }),
+    find: jest.fn().mockReturnValue(mongoQuery().chain),
     countDocuments: jest.fn().mockResolvedValue(0),
 };
 
 const mockServiceModel = {
-    find: jest
-        .fn()
-        .mockReturnValue({ lean: () => ({ exec: () => Promise.resolve([]) }) }),
+    find: jest.fn().mockReturnValue(mongoQuery().chain),
     countDocuments: jest.fn().mockResolvedValue(0),
 };
 
 const mockEventModel = {
-    find: jest
-        .fn()
-        .mockReturnValue({ lean: () => ({ exec: () => Promise.resolve([]) }) }),
+    find: jest.fn().mockReturnValue(mongoQuery().chain),
     countDocuments: jest.fn().mockResolvedValue(0),
 };
 
@@ -86,9 +89,7 @@ describe("DslService", () => {
                 limit: null,
             }),
         );
-        mockNeighborhoodModel.find.mockReturnValue({
-            lean: () => ({ exec: () => Promise.resolve(docs) }),
-        });
+        mockNeighborhoodModel.find.mockReturnValue(mongoQuery(docs).chain);
 
         const result = await service.execute("FIND neighborhoods");
         expect(Array.isArray(result)).toBe(true);
@@ -280,6 +281,103 @@ describe("DslService", () => {
         await expect(service.execute("FIND incidents")).rejects.toThrow(
             BadRequestException,
         );
+    });
+
+    it("caps a FIND without LIMIT (and an oversized one) at 100 results", async () => {
+        mockExecute.mockResolvedValue(
+            JSON.stringify({
+                type: "find",
+                collection: "services",
+                filter: {},
+                limit: 999999,
+            }),
+        );
+        const { chain, limit } = mongoQuery();
+        mockServiceModel.find.mockReturnValue(chain);
+
+        await service.execute("FIND services LIMIT 999999");
+        expect(limit).toHaveBeenCalledWith(100);
+    });
+
+    it("scopes a moderator's Mongo FIND to their neighborhood", async () => {
+        mockExecute.mockResolvedValue(
+            JSON.stringify({
+                type: "find",
+                collection: "services",
+                filter: { type: "free" },
+                limit: null,
+            }),
+        );
+
+        await service.execute('FIND services WHERE type = "free"', {
+            sub: "mod-1",
+            role: "moderator",
+            neighborhoodId: "nbh-1",
+        });
+        expect(mockServiceModel.find).toHaveBeenCalledWith({
+            type: "free",
+            neighborhoodId: "nbh-1",
+        });
+    });
+
+    it("lets an admin query across all neighborhoods", async () => {
+        mockExecute.mockResolvedValue(
+            JSON.stringify({
+                type: "find",
+                collection: "services",
+                filter: { type: "free" },
+                limit: null,
+            }),
+        );
+
+        await service.execute('FIND services WHERE type = "free"', {
+            sub: "adm-1",
+            role: "admin",
+            neighborhoodId: null,
+        });
+        expect(mockServiceModel.find).toHaveBeenCalledWith({ type: "free" });
+    });
+
+    it("returns nothing to a scoped requester without a neighborhood", async () => {
+        mockExecute.mockResolvedValue(
+            JSON.stringify({
+                type: "find",
+                collection: "incidents",
+                filter: {},
+                limit: null,
+            }),
+        );
+
+        const result = await service.execute("FIND incidents", {
+            sub: "mod-1",
+            role: "moderator",
+            neighborhoodId: null,
+        });
+        expect(result).toEqual([]);
+        expect(mockDb.select).not.toHaveBeenCalled();
+    });
+
+    it("scopes a moderator's incidents COUNT to their neighborhood", async () => {
+        mockExecute.mockResolvedValue(
+            JSON.stringify({
+                type: "count",
+                collection: "incidents",
+                filter: {},
+                limit: null,
+            }),
+        );
+        const whereSpy = jest.fn().mockResolvedValue([{ id: "1" }]);
+        mockDb.select.mockReturnValue({
+            from: jest.fn().mockReturnValue({ where: whereSpy }),
+        });
+
+        const result = await service.execute("COUNT incidents", {
+            sub: "mod-1",
+            role: "moderator",
+            neighborhoodId: "nbh-1",
+        });
+        expect(result).toEqual({ count: 1 });
+        expect(whereSpy).toHaveBeenCalledWith(expect.anything());
     });
 
     it("reuses cached dsl module on second call", async () => {

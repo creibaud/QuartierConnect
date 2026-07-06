@@ -62,6 +62,13 @@ def test_like_condition():
     assert result["filter"] == {"name": {"$regex": "Paris", "$options": "i"}}
 
 
+def test_like_escapes_regex_metacharacters():
+    # LIKE is a literal substring match: a hostile pattern must reach the
+    # database fully escaped, never as an active regex (ReDoS).
+    result = compile_query('FIND services WHERE title LIKE "a+b("')
+    assert result["filter"] == {"title": {"$regex": r"a\+b\(", "$options": "i"}}
+
+
 def test_unknown_collection_raises():
     with pytest.raises(ValueError, match="Unknown collection"):
         compile_query("FIND unknown_table")

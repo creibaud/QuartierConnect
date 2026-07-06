@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Post, Request, UseGuards } from "@nestjs/common";
 import {
     ApiBearerAuth,
     ApiOperation,
@@ -8,9 +8,13 @@ import {
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
-import { DslService } from "./dsl.service";
+import { DslService, type DslRequester } from "./dsl.service";
 import { DslQueryDto } from "./dto/dsl-query.dto";
 import { DslQueryResultDto } from "./dto/dsl-response.dto";
+
+interface AuthRequest {
+    user: DslRequester;
+}
 
 @ApiTags("DSL")
 @ApiBearerAuth()
@@ -35,7 +39,9 @@ export class DslController {
         status: 403,
         description: "Insufficient role (moderator/admin required)",
     })
-    execute(@Body() dto: DslQueryDto) {
-        return this.dslService.execute(dto.query);
+    execute(@Body() dto: DslQueryDto, @Request() req: AuthRequest) {
+        // The requester scopes the query: moderators stay inside their own
+        // quartier exactly like on the REST endpoints.
+        return this.dslService.execute(dto.query, req.user);
     }
 }

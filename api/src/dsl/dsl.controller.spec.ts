@@ -20,7 +20,11 @@ describe("DslController", () => {
         controller = module.get<DslController>(DslController);
     });
 
-    it("executes FIND query and returns AST", async () => {
+    const moderatorReq = {
+        user: { sub: "mod-1", role: "moderator", neighborhoodId: "nbh-1" },
+    };
+
+    it("executes FIND query with the requester and returns AST", async () => {
         const ast = {
             type: "find",
             collection: "incidents",
@@ -28,12 +32,14 @@ describe("DslController", () => {
             limit: null,
         };
         mockService.execute.mockResolvedValue(ast);
-        const result = await controller.execute({
-            query: 'FIND incidents WHERE status = "open"',
-        });
+        const result = await controller.execute(
+            { query: 'FIND incidents WHERE status = "open"' },
+            moderatorReq,
+        );
         expect(result).toEqual(ast);
         expect(mockService.execute).toHaveBeenCalledWith(
             'FIND incidents WHERE status = "open"',
+            moderatorReq.user,
         );
     });
 
@@ -45,9 +51,10 @@ describe("DslController", () => {
             limit: null,
         };
         mockService.execute.mockResolvedValue(ast);
-        const result = (await controller.execute({
-            query: "COUNT incidents",
-        })) as typeof ast;
+        const result = (await controller.execute(
+            { query: "COUNT incidents" },
+            moderatorReq,
+        )) as typeof ast;
         expect(result.type).toBe("count");
     });
 
@@ -55,9 +62,9 @@ describe("DslController", () => {
         mockService.execute.mockRejectedValue(
             new BadRequestException("Syntax error"),
         );
-        await expect(controller.execute({ query: "FIND" })).rejects.toThrow(
-            BadRequestException,
-        );
+        await expect(
+            controller.execute({ query: "FIND" }, moderatorReq),
+        ).rejects.toThrow(BadRequestException);
     });
 
     it("throws 400 on unknown collection", async () => {
@@ -65,7 +72,7 @@ describe("DslController", () => {
             new BadRequestException("Unknown collection 'secret_table'"),
         );
         await expect(
-            controller.execute({ query: "FIND secret_table" }),
+            controller.execute({ query: "FIND secret_table" }, moderatorReq),
         ).rejects.toThrow(BadRequestException);
     });
 });
