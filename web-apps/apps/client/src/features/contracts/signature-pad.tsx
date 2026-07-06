@@ -20,9 +20,9 @@ export function SignaturePad({
         onChangeRef.current = onChange;
     });
 
-    // Aligne la résolution interne du canvas sur sa taille affichée et la
-    // densité de l'écran. Sans ça (canvas étiré par le CSS), les coordonnées
-    // du pointeur sont faussées et le tracé apparaît décalé du curseur.
+    // Matches the canvas internal resolution to its displayed size and the
+    // screen density. Without this (canvas stretched by CSS), pointer
+    // coordinates are skewed and the stroke appears offset from the cursor.
     useEffect(() => {
         const wrap = wrapRef.current;
         if (!wrap) return;
@@ -55,9 +55,9 @@ export function SignaturePad({
             onChange(null);
             return;
         }
-        // Aplati sur un fond blanc opaque : l'encre reste visible dans tous les
-        // thèmes et l'export n'a pas de canal alpha « tout noir » qui virerait
-        // en bloc noir une fois embarqué dans le PDF (pdf-lib).
+        // Flattens onto an opaque white background: the ink stays visible in
+        // every theme and the export carries no alpha channel that would turn
+        // into a black block once embedded in the PDF (pdf-lib).
         const source = pad.getCanvas();
         const flat = document.createElement("canvas");
         flat.width = source.width;

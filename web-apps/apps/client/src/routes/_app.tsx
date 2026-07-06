@@ -133,7 +133,6 @@ function AppLayout() {
                             </Breadcrumb>
                             <div className="ml-auto flex items-center gap-2">
                                 <HeaderPoints />
-                                {/* Notification bell goes here once the notifications feature ships */}
                             </div>
                         </header>
                         <ScrollArea className="min-h-0 flex-1">

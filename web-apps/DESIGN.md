@@ -109,7 +109,7 @@ Mêmes tokens, même BrandLogo, mêmes badges de statut ; les vues denses
 denses. Ce qui distingue l'admin : la densité, pas la palette. Le client
 reste plus aéré (`p-6 md:p-8`, contenus centrés `max-w-5xl`).
 
-## 7. Garde-fous anti-slop
+## 7. Garde-fous visuels
 
 Pas de dégradés violets/indigo, pas de héros « 3 colonnes icône-dans-cercle »,
 pas de tout-centré, pas d'emoji-icônes, pas de bordures gauches colorées sur

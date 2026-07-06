@@ -71,7 +71,7 @@ export const SIGNATURE_ZONES: { x: number; y: number; label: string }[] = [
 
 const ZONE_BOX = { offsetX: -6, offsetY: -8, width: 212, height: 96 };
 const ZONE_LINE_WIDTH = 200;
-// Palette « service public » alignée sur le web (bleu France, ardoise, encre).
+// "Service public" palette aligned with the web apps (France blue, slate, ink).
 const FRANCE = rgb(0, 0, 0.569);
 const INK = rgb(0.086, 0.094, 0.114);
 const MUTED = rgb(0.34, 0.36, 0.4);
@@ -132,7 +132,7 @@ export class PdfService {
 
         let page = doc.addPage([W, H]);
 
-        // En-tête bleu France avec le nom du service et le titre du contrat.
+        // France-blue header carrying the service name and the contract title.
         page.drawRectangle({
             x: 0,
             y: H - HEADER_H,
@@ -158,7 +158,7 @@ export class PdfService {
 
         let y = H - HEADER_H - 42;
 
-        // Métadonnées : libellé gris + valeur encre ; le montant est mis en avant.
+        // Metadata: gray label + ink value; the amount is emphasized.
         const meta: [string, string, boolean][] = [
             ["Payeur", data.payerName, false],
             ["Bénéficiaire", data.payeeName, false],
@@ -203,7 +203,7 @@ export class PdfService {
 
         const BODY_SIZE = 10.5;
         const LINE_HEIGHT = 16;
-        const BODY_BOTTOM_LIMIT = 250; // réserve la place des zones de signature
+        const BODY_BOTTOM_LIMIT = 250; // keeps room for the signature zones
         for (const line of wrapLines(data.body, font, BODY_SIZE, W - 2 * M)) {
             if (y < BODY_BOTTOM_LIMIT) {
                 page = doc.addPage([W, H]);
@@ -213,7 +213,7 @@ export class PdfService {
             y -= LINE_HEIGHT;
         }
 
-        // Zones de signature toujours sur la première page.
+        // Signature zones always live on the first page.
         const firstPage = doc.getPages()[0];
         const signatoryNames = [data.payerName, data.payeeName];
         SIGNATURE_ZONES.forEach((zone, index) => {
