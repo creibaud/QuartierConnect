@@ -30,11 +30,13 @@ export function TextField({
     type = "text",
     placeholder,
     autoFocus,
+    autoComplete,
 }: {
     label: string;
     type?: string;
     placeholder?: string;
     autoFocus?: boolean;
+    autoComplete?: string;
 }) {
     const field = useFieldContext<string>();
     return (
@@ -42,12 +44,14 @@ export function TextField({
             <Label htmlFor={field.name}>{label}</Label>
             <Input
                 id={field.name}
+                name={field.name}
                 type={type}
                 value={field.state.value}
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
                 placeholder={placeholder}
                 autoFocus={autoFocus}
+                autoComplete={autoComplete}
                 aria-invalid={field.state.meta.errors.length > 0}
             />
             <FieldError errors={field.state.meta.errors} />

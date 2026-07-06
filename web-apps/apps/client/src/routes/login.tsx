@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { useHead } from "@unhead/react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useHead } from "@unhead/react";
 import { apiPost } from "@workspace/shared/lib/api";
 import { setTokens, type LoginResponse } from "@workspace/shared/lib/auth";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
+import { AuthLayout } from "@workspace/ui/components/auth-layout";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Spinner } from "@workspace/ui/components/spinner";
 import { useAppForm } from "@workspace/ui/lib/form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { AuthLayout } from "@workspace/ui/components/auth-layout";
 
 export const Route = createFileRoute("/login")({
     component: LoginPage,
@@ -22,9 +22,13 @@ function LoginPage() {
     useHead({ title: t("pages.login.pageTitle") });
     const navigate = useNavigate();
 
+    const emailSchema = z.string().email(t("auth.validation.invalidEmail"));
+    const passwordSchema = z
+        .string()
+        .min(1, t("auth.validation.passwordRequired"));
     const credentialsSchema = z.object({
-        email: z.string().email(t("auth.validation.invalidEmail")),
-        password: z.string().min(1, t("auth.validation.passwordRequired")),
+        email: emailSchema,
+        password: passwordSchema,
     });
 
     const totpSchema = z.object({
@@ -99,21 +103,35 @@ function LoginPage() {
                             }}
                             className="space-y-4"
                         >
-                            <credentialsForm.AppField name="email">
+                            <credentialsForm.AppField
+                                name="email"
+                                validators={{
+                                    onBlur: emailSchema,
+                                    onChange: emailSchema,
+                                }}
+                            >
                                 {(field) => (
                                     <field.TextField
                                         label={t("auth.email")}
                                         type="email"
-                                        placeholder="alice@demo.fr"
+                                        placeholder="prenom@exemple.fr"
                                         autoFocus
+                                        autoComplete="email"
                                     />
                                 )}
                             </credentialsForm.AppField>
-                            <credentialsForm.AppField name="password">
+                            <credentialsForm.AppField
+                                name="password"
+                                validators={{
+                                    onBlur: passwordSchema,
+                                    onChange: passwordSchema,
+                                }}
+                            >
                                 {(field) => (
                                     <field.TextField
                                         label={t("auth.password")}
                                         type="password"
+                                        autoComplete="current-password"
                                     />
                                 )}
                             </credentialsForm.AppField>
@@ -159,7 +177,9 @@ function LoginPage() {
                                     )}
                                 </totpForm.AppField>
                             </div>
-                            <totpForm.Subscribe selector={(s) => s.isSubmitting}>
+                            <totpForm.Subscribe
+                                selector={(s) => s.isSubmitting}
+                            >
                                 {(isSubmitting) => (
                                     <Button
                                         type="submit"

@@ -23,7 +23,9 @@ test.describe("Client — Register parcours", () => {
         }
     });
 
-    test("shows error when passwords do not match", async ({ page }) => {
+    test("shows error and keeps submit disabled when passwords do not match", async ({
+        page,
+    }) => {
         await page.goto("/register");
         await page.getByLabel("Prénom", { exact: true }).fill("Test");
         await page.getByLabel("Nom", { exact: true }).fill("Resident");
@@ -33,10 +35,74 @@ test.describe("Client — Register parcours", () => {
             .fill(DEMO_PASSWORD);
         await page.getByLabel(/confirmer/i).fill("Different1!");
         await page.getByRole("checkbox").check();
-        await page.getByRole("button", { name: /créer/i }).click();
+        // Live validation: the mismatch error shows without submitting
         await expect(page.getByRole("alert")).toContainText(
             /correspondent pas/i,
         );
+        await expect(
+            page.getByRole("button", { name: /créer/i }),
+        ).toBeDisabled();
+    });
+
+    test("shows email format error on blur", async ({ page }) => {
+        await page.goto("/register");
+        await page.getByLabel("Email").fill("pas-un-email");
+        await page.getByLabel("Email").blur();
+        await expect(page.getByRole("alert")).toContainText(/email invalide/i);
+    });
+
+    test("submit stays disabled until every field is valid", async ({
+        page,
+    }) => {
+        await page.goto("/register");
+        await page.getByRole("checkbox").check();
+        const submit = page.getByRole("button", { name: /créer/i });
+        await expect(submit).toBeDisabled();
+        await page.getByLabel("Prénom", { exact: true }).fill("Test");
+        await page.getByLabel("Nom", { exact: true }).fill("Resident");
+        await page.getByLabel("Email").fill("pas-un-email");
+        await page
+            .getByLabel("Mot de passe", { exact: true })
+            .fill(DEMO_PASSWORD);
+        await page.getByLabel(/confirmer/i).fill(DEMO_PASSWORD);
+        await expect(submit).toBeDisabled();
+        await page.getByLabel("Email").fill(uniqueEmail());
+        await expect(submit).toBeEnabled();
+    });
+
+    test("register inputs expose autocomplete hints", async ({ page }) => {
+        await page.goto("/register");
+        await expect(
+            page.getByLabel("Prénom", { exact: true }),
+        ).toHaveAttribute("autocomplete", "given-name");
+        await expect(page.getByLabel("Nom", { exact: true })).toHaveAttribute(
+            "autocomplete",
+            "family-name",
+        );
+        await expect(page.getByLabel("Email")).toHaveAttribute(
+            "autocomplete",
+            "email",
+        );
+        await expect(
+            page.getByLabel("Mot de passe", { exact: true }),
+        ).toHaveAttribute("autocomplete", "new-password");
+        await expect(page.getByLabel(/confirmer/i)).toHaveAttribute(
+            "autocomplete",
+            "new-password",
+        );
+    });
+
+    test("consent notice dialog closes with a French close button", async ({
+        page,
+    }) => {
+        await page.goto("/register");
+        await page
+            .getByRole("button", { name: /notice d'information/i })
+            .click();
+        const dialog = page.getByRole("dialog");
+        await expect(dialog).toBeVisible();
+        await dialog.getByRole("button", { name: "Fermer" }).click();
+        await expect(dialog).not.toBeVisible();
     });
 
     test("shows QR code after successful registration", async ({ page }) => {
@@ -51,7 +117,9 @@ test.describe("Client — Register parcours", () => {
         await page.getByLabel(/confirmer/i).fill(DEMO_PASSWORD);
         await page.getByRole("checkbox").check();
         await page.getByRole("button", { name: /créer/i }).click();
-        await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 20000 });
+        await expect(page.getByTestId("totp-qr")).toBeVisible({
+            timeout: 20000,
+        });
         // Two i18n strings start with "Scannez" (QR heading + hint) — scope to
         // the first so strict mode doesn't flag the 2-element match.
         await expect(page.getByText(/scannez/i).first()).toBeVisible();
@@ -89,7 +157,9 @@ test.describe("Client — Register parcours", () => {
         await page.getByLabel(/confirmer/i).fill(DEMO_PASSWORD);
         await page.getByRole("checkbox").check();
         await page.getByRole("button", { name: /créer/i }).click();
-        await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 20000 });
+        await expect(page.getByTestId("totp-qr")).toBeVisible({
+            timeout: 20000,
+        });
 
         await page.goto("/register");
         await page.getByLabel("Prénom", { exact: true }).fill("Test");
@@ -135,7 +205,9 @@ test.describe("Client — Register parcours", () => {
         });
 
         await page.getByRole("button", { name: /créer/i }).click();
-        await expect(page.getByTestId("totp-qr")).toBeVisible({ timeout: 20000 });
+        await expect(page.getByTestId("totp-qr")).toBeVisible({
+            timeout: 20000,
+        });
 
         if (totpSecret) {
             // input-otp ignores .fill(); type the digits — the 6th auto-submits
