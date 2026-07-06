@@ -1,0 +1,13 @@
+*
+!api
+!dsl
+api/node_modules
+api/dist
+api/coverage
+api/test
+api/.env
+api/*.tsbuildinfo
+dsl/.venv
+dsl/parser.out
+dsl/parsetab.py
+dsl/__pycache__

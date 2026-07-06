@@ -34,17 +34,17 @@ jobs:
     timeout-minutes: 35
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.inputs.branch || github.ref }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           version: 9
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -106,13 +106,16 @@ jobs:
           pnpm exec drizzle-kit migrate
 
       - name: Seed des comptes démo
+        # DEMO_TOTP_SECRET : le script n'a plus de fallback, la valeur doit
+        # correspondre à celle du .env de CI (conteneur api) ci-dessus.
         run: |
           cd api && pnpm install --frozen-lockfile
           API_URL=http://localhost/api PG_CONTAINER=docker-postgres-1 \
+            DEMO_TOTP_SECRET=JBSWY3DPEHPK3PXP \
             pnpm exec tsx ../scripts/seed-demo.ts || echo "Seed failed"
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -120,7 +123,7 @@ jobs:
         run: pip install uv
 
       - name: Cache uv
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/uv
           key: uv-${{ runner.os }}-${{ hashFiles('dsl/uv.lock') }}
@@ -158,7 +161,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-${{ github.run_id }}
           path: |

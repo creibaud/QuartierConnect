@@ -556,6 +556,18 @@ function NeighborhoodDialog({
                         </p>
                     )}
 
+                    {!geometry && !initial && (
+                        <Alert>
+                            <HugeiconsIcon
+                                icon={Alert01Icon}
+                                className="size-4"
+                            />
+                            <AlertDescription>
+                                {t("adminPages.neighborhoods.noPolygonWarning")}
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
                     {submitError && (
                         <Alert variant="destructive">
                             <HugeiconsIcon
@@ -574,7 +586,13 @@ function NeighborhoodDialog({
                                         )}
                             </AlertTitle>
                             <AlertDescription>
-                                {submitError.message}
+                                {isOverlapError(submitError)
+                                    ? t(
+                                          "adminPages.neighborhoods.overlapErrorDetail",
+                                      )
+                                    : t(
+                                          "adminPages.neighborhoods.submitErrorDetail",
+                                      )}
                             </AlertDescription>
                         </Alert>
                     )}

@@ -94,15 +94,22 @@ export const Route = createFileRoute("/_app/incidents/")({
 function AdminIncidentsPage() {
     const { t, i18n } = useTranslation();
     const [statusFilter, setStatusFilter] = useState<string>("all");
+    const [categoryFilter, setCategoryFilter] = useState<string>("all");
     const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage } =
         useInfiniteIncidents(20, statusFilter);
     const updateStatus = useUpdateIncidentStatus();
     const deleteIncident = useDeleteIncident();
-    const incidents = data?.pages.flat() ?? [];
+    const incidents = (data?.pages.flat() ?? []).filter(
+        (incident) =>
+            categoryFilter === "all" || incident.category === categoryFilter,
+    );
     const { data: neighborhoods } = useNeighborhoods();
+    const categoryKey = (category: string) =>
+        `pages.incidents.categories.${category}`;
     const { sorted, toggle, getSortDirection } = useTableSort(incidents, {
         accessors: {
             status: (incident) => statusLabel(t, incident.status),
+            category: (incident) => t(categoryKey(incident.category)),
             reportedAt: (incident) => new Date(incident.createdAt),
         },
     });
@@ -121,32 +128,74 @@ function AdminIncidentsPage() {
                     title={t("incidents.title")}
                     description={t("adminPages.incidents.description")}
                     actions={
-                        <Select
-                            value={statusFilter}
-                            onValueChange={setStatusFilter}
-                        >
-                            <SelectTrigger className="w-44">
-                                <SelectValue
-                                    placeholder={t(
-                                        "adminPages.incidents.allStatuses",
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Select
+                                value={categoryFilter}
+                                onValueChange={setCategoryFilter}
+                            >
+                                <SelectTrigger
+                                    className="w-52"
+                                    aria-label={t(
+                                        "adminPages.incidents.categoryColumn",
                                     )}
-                                />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">
-                                    {t("adminPages.incidents.filterAll")}
-                                </SelectItem>
-                                <SelectItem value="open">
-                                    {t("adminPages.incidents.filterOpen")}
-                                </SelectItem>
-                                <SelectItem value="in_progress">
-                                    {t("incidents.status.in_progress")}
-                                </SelectItem>
-                                <SelectItem value="resolved">
-                                    {t("adminPages.incidents.filterResolved")}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
+                                >
+                                    <SelectValue
+                                        placeholder={t(
+                                            "adminPages.incidents.allCategories",
+                                        )}
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        {t(
+                                            "adminPages.incidents.allCategories",
+                                        )}
+                                    </SelectItem>
+                                    <SelectItem value="neighborhood">
+                                        {t(categoryKey("neighborhood"))}
+                                    </SelectItem>
+                                    <SelectItem value="reporting">
+                                        {t(categoryKey("reporting"))}
+                                    </SelectItem>
+                                    <SelectItem value="bug">
+                                        {t(categoryKey("bug"))}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select
+                                value={statusFilter}
+                                onValueChange={setStatusFilter}
+                            >
+                                <SelectTrigger
+                                    className="w-44"
+                                    aria-label={t(
+                                        "adminPages.incidents.statusColumn",
+                                    )}
+                                >
+                                    <SelectValue
+                                        placeholder={t(
+                                            "adminPages.incidents.allStatuses",
+                                        )}
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        {t("adminPages.incidents.filterAll")}
+                                    </SelectItem>
+                                    <SelectItem value="open">
+                                        {t("adminPages.incidents.filterOpen")}
+                                    </SelectItem>
+                                    <SelectItem value="in_progress">
+                                        {t("incidents.status.in_progress")}
+                                    </SelectItem>
+                                    <SelectItem value="resolved">
+                                        {t(
+                                            "adminPages.incidents.filterResolved",
+                                        )}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     }
                 />
 
@@ -223,6 +272,18 @@ function AdminIncidentsPage() {
                                             </SortableHead>
                                             <SortableHead
                                                 direction={getSortDirection(
+                                                    "category",
+                                                )}
+                                                onSort={() =>
+                                                    toggle("category")
+                                                }
+                                            >
+                                                {t(
+                                                    "adminPages.incidents.categoryColumn",
+                                                )}
+                                            </SortableHead>
+                                            <SortableHead
+                                                direction={getSortDirection(
                                                     "reportedAt",
                                                 )}
                                                 onSort={() =>
@@ -255,6 +316,13 @@ function AdminIncidentsPage() {
                                                             incident.status,
                                                         )}
                                                     </StatusBadge>
+                                                </TableCell>
+                                                <TableCell className="text-muted-foreground py-2 text-sm">
+                                                    {t(
+                                                        categoryKey(
+                                                            incident.category,
+                                                        ),
+                                                    )}
                                                 </TableCell>
                                                 <TableCell className="text-muted-foreground py-2 text-sm tabular-nums">
                                                     {new Date(

@@ -137,7 +137,10 @@ export class UsersAvatarController {
         await this.deleteExisting(req.user.sub);
 
         const fileId = new ObjectId();
-        await new Promise<void>((resolve) => {
+        // The write must reject on failure: without it the request either
+        // hangs or records an avatarUrl pointing at a file that was never
+        // stored.
+        await new Promise<void>((resolve, reject) => {
             const stream = this.bucket.openUploadStreamWithId(
                 fileId,
                 `avatar-${req.user.sub}`,
@@ -148,6 +151,7 @@ export class UsersAvatarController {
                     },
                 },
             );
+            stream.on("error", reject);
             stream.end(file.buffer, () => resolve());
         });
 
@@ -208,7 +212,14 @@ export class UsersAvatarController {
             "Content-Disposition": "attachment",
             "Cache-Control": "public, max-age=86400",
         });
-        this.bucket.openDownloadStream(objectId).pipe(res);
+        const download = this.bucket.openDownloadStream(objectId);
+        // .pipe() does not forward errors; an unhandled 'error' on the read
+        // stream (missing chunks) would crash the process.
+        download.on("error", () => {
+            if (res.headersSent) res.destroy();
+            else res.status(500).end();
+        });
+        download.pipe(res);
     }
 
     private async deleteExisting(userId: string): Promise<void> {

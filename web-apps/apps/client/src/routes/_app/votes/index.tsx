@@ -231,13 +231,16 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
     const isMultiSelect =
         vote.voteType === "multiple_choice" || vote.voteType === "weighted";
 
+    const showResults = hasVoted || isClosed;
+    // Anonymous votes only carry the requester's own cast, so displayed
+    // totals must come from the aggregated results endpoint.
     const { data: apiResults } = useQuery({
         queryKey: ["community-votes", vote._id, "results"],
         queryFn: () =>
             apiGet<Record<string, unknown>>(
                 `/community-votes/${vote._id}/results`,
             ),
-        enabled: isClosed,
+        enabled: showResults,
     });
 
     const localResults = computeVoteTotals(vote);
@@ -247,7 +250,6 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
     const totalParticipants =
         (apiResults?.totalParticipants as number | undefined) ??
         localResults.totalParticipants;
-    const showResults = hasVoted || isClosed;
 
     const cast = useMutation({
         mutationFn: (payload: {
@@ -260,7 +262,15 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
                 queryKey: ["community-votes"],
             });
         },
-        onError: (err: Error) => toast.error(err.message ?? t("common.error")),
+        // The backend replies in raw English; only the 409 (already voted)
+        // carries meaning worth relaying, everything else gets a generic
+        // localized message.
+        onError: (err: Error & { status?: number }) =>
+            toast.error(
+                err.status === 409
+                    ? t("pages.votes.alreadyVoted")
+                    : t("pages.votes.castError"),
+            ),
     });
 
     function toggleChoice(id: string) {

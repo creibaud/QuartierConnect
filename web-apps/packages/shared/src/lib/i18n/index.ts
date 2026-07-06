@@ -12,8 +12,6 @@ export const resources = {
     en: { translation: en },
 } as const;
 
-export type TranslationKeys = typeof fr;
-
 if (!i18n.isInitialized) {
     const savedLocale = (localStorage.getItem(STORAGE_KEY) ?? "fr") as Locale;
 
@@ -28,10 +26,6 @@ if (!i18n.isInitialized) {
 export function setLocale(locale: Locale) {
     localStorage.setItem(STORAGE_KEY, locale);
     void i18n.changeLanguage(locale);
-}
-
-export function getLocale(): Locale {
-    return (i18n.language as Locale) ?? "fr";
 }
 
 export { i18n };

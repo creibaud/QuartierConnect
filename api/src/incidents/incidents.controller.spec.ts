@@ -1,6 +1,9 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
+import { and, eq, gt, isNull, or, SQL } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
+import * as schema from "../database/schema";
 import { IncidentsController } from "./incidents.controller";
 
 const mockIncident = {
@@ -8,10 +11,15 @@ const mockIncident = {
     title: "Fuite d'eau",
     description: "Rue principale",
     status: "open",
+    category: "neighborhood",
     createdBy: "user-uuid-1",
     neighborhoodId: "n1",
     deletedAt: null,
 };
+
+function renderSql(condition: unknown) {
+    return new PgDialect().sqlToQuery(condition as SQL);
+}
 
 const authReq = (
     sub = "user-uuid-1",
@@ -74,12 +82,24 @@ describe("IncidentsController", () => {
     });
 
     it("GET /incidents returns list without filter (resident, scoped)", async () => {
-        await controller.findAll(undefined, "1", "20", authReq() as any);
+        await controller.findAll(
+            undefined,
+            "1",
+            "20",
+            undefined,
+            authReq() as any,
+        );
         expect(mockDb.select).toHaveBeenCalled();
     });
 
     it("GET /incidents?status=open filters by status", async () => {
-        await controller.findAll("open", "1", "20", authReq() as any);
+        await controller.findAll(
+            "open",
+            "1",
+            "20",
+            undefined,
+            authReq() as any,
+        );
         expect(mockDb.select).toHaveBeenCalled();
     });
 
@@ -88,6 +108,7 @@ describe("IncidentsController", () => {
             undefined,
             "1",
             "20",
+            undefined,
             authReq("u", "resident", null) as any,
         );
         expect(result).toEqual([]);
@@ -99,6 +120,7 @@ describe("IncidentsController", () => {
             undefined,
             "1",
             "20",
+            undefined,
             authReq("admin1", "admin", null) as any,
         );
         expect(mockDb.select).toHaveBeenCalled();
@@ -109,10 +131,115 @@ describe("IncidentsController", () => {
             undefined,
             "1",
             "20",
+            undefined,
             authReq("mod1", "moderator", null) as any,
         );
         expect(result).toEqual([]);
         expect(mockDb.select).not.toHaveBeenCalled();
+    });
+
+    it("GET /incidents (resident) restricts the where to neighborhood category or own submissions", async () => {
+        await controller.findAll(
+            undefined,
+            "1",
+            "20",
+            undefined,
+            authReq() as any,
+        );
+
+        const rendered = renderSql(mockDb.where.mock.calls[0][0]);
+        expect(rendered).toEqual(
+            renderSql(
+                and(
+                    isNull(schema.incidents.deletedAt),
+                    eq(schema.incidents.neighborhoodId, "n1"),
+                    or(
+                        eq(schema.incidents.category, "neighborhood"),
+                        eq(schema.incidents.createdBy, "user-uuid-1"),
+                    ),
+                ),
+            ),
+        );
+    });
+
+    it("GET /incidents (moderator) keeps the quartier scope but no category filter", async () => {
+        await controller.findAll(
+            undefined,
+            "1",
+            "20",
+            undefined,
+            authReq("mod1", "moderator", "n1") as any,
+        );
+
+        const rendered = renderSql(mockDb.where.mock.calls[0][0]);
+        expect(rendered.sql).not.toContain("category");
+        expect(rendered).toEqual(
+            renderSql(
+                and(
+                    isNull(schema.incidents.deletedAt),
+                    eq(schema.incidents.neighborhoodId, "n1"),
+                ),
+            ),
+        );
+    });
+
+    it("GET /incidents (admin) applies neither quartier nor category filter", async () => {
+        await controller.findAll(
+            undefined,
+            "1",
+            "20",
+            undefined,
+            authReq("admin1", "admin", null) as any,
+        );
+
+        const rendered = renderSql(mockDb.where.mock.calls[0][0]);
+        expect(rendered.sql).not.toContain("neighborhood_id");
+        expect(rendered.sql).not.toContain("category");
+        expect(rendered).toEqual(
+            renderSql(and(isNull(schema.incidents.deletedAt))),
+        );
+    });
+
+    it("GET /incidents?since=ISO adds an updatedAt delta condition", async () => {
+        await controller.findAll(
+            undefined,
+            "1",
+            "20",
+            "2026-07-01T00:00:00.000Z",
+            authReq() as any,
+        );
+
+        const rendered = renderSql(mockDb.where.mock.calls[0][0]);
+        expect(rendered).toEqual(
+            renderSql(
+                and(
+                    isNull(schema.incidents.deletedAt),
+                    eq(schema.incidents.neighborhoodId, "n1"),
+                    or(
+                        eq(schema.incidents.category, "neighborhood"),
+                        eq(schema.incidents.createdBy, "user-uuid-1"),
+                    ),
+                    gt(
+                        schema.incidents.updatedAt,
+                        new Date("2026-07-01T00:00:00.000Z"),
+                    ),
+                ),
+            ),
+        );
+    });
+
+    it("GET /incidents?since=garbage throws 400", () => {
+        const callWithGarbageSince = () =>
+            controller.findAll(
+                undefined,
+                "1",
+                "20",
+                "garbage",
+                authReq() as any,
+            );
+
+        expect(callWithGarbageSince).toThrow(BadRequestException);
+        expect(callWithGarbageSince).toThrow("Invalid since: garbage");
     });
 
     it("GET /incidents/:id returns one", async () => {
@@ -130,6 +257,29 @@ describe("IncidentsController", () => {
         await expect(
             controller.findOne("deleted-id", authReq() as any),
         ).rejects.toThrow(NotFoundException);
+    });
+
+    it("GET /incidents/:id hides a foreign reporting from a resident (404, not 403)", async () => {
+        mockDb = buildMockDb([
+            { ...mockIncident, category: "reporting", createdBy: "other-user" },
+        ]);
+        controller = await compileWithDb(mockDb);
+
+        const findForeignReporting = () =>
+            controller.findOne("inc-uuid-1", authReq() as any);
+        await expect(findForeignReporting()).rejects.toThrow(NotFoundException);
+        await expect(findForeignReporting()).rejects.toThrow(
+            "Incident not found",
+        );
+    });
+
+    it("GET /incidents/:id returns a resident's own reporting", async () => {
+        const ownReporting = { ...mockIncident, category: "reporting" };
+        mockDb = buildMockDb([ownReporting]);
+        controller = await compileWithDb(mockDb);
+
+        const result = await controller.findOne("inc-uuid-1", authReq() as any);
+        expect(result).toEqual(ownReporting);
     });
 
     it("POST /incidents sets createdBy from JWT", async () => {
@@ -162,6 +312,26 @@ describe("IncidentsController", () => {
         );
         expect(mockDb.values).toHaveBeenCalledWith(
             expect.objectContaining({ category: "neighborhood" }),
+        );
+    });
+
+    it("POST /incidents ignores dto.neighborhoodId for non-admins (anti-spoofing)", async () => {
+        await controller.create(
+            { title: "T", description: "D", neighborhoodId: "n2" } as any,
+            authReq() as any,
+        );
+        expect(mockDb.values).toHaveBeenCalledWith(
+            expect.objectContaining({ neighborhoodId: "n1" }),
+        );
+    });
+
+    it("POST /incidents lets an admin target another neighborhood", async () => {
+        await controller.create(
+            { title: "T", description: "D", neighborhoodId: "n2" } as any,
+            authReq("admin-uuid-1", "admin", "n1") as any,
+        );
+        expect(mockDb.values).toHaveBeenCalledWith(
+            expect.objectContaining({ neighborhoodId: "n2" }),
         );
     });
 
@@ -281,7 +451,7 @@ describe("IncidentsController", () => {
         expect(result.skipped).toBe(1);
     });
 
-    it("POST /incidents/sync preserves status from client payload", async () => {
+    it("POST /incidents/sync forces status open for residents (state machine is moderator-only)", async () => {
         const valuesSpy = jest.fn().mockReturnValue({
             onConflictDoUpdate: jest.fn().mockReturnValue({
                 returning: jest.fn().mockResolvedValue([]),
@@ -304,7 +474,7 @@ describe("IncidentsController", () => {
                         title: "T",
                         description: "D",
                         createdBy: "user-uuid-1",
-                        status: "in_progress",
+                        status: "resolved",
                     },
                 ],
             },
@@ -312,7 +482,7 @@ describe("IncidentsController", () => {
         );
 
         const insertedValues = valuesSpy.mock.calls[0][0];
-        expect(insertedValues[0].status).toBe("in_progress");
+        expect(insertedValues[0].status).toBe("open");
     });
 
     interface SyncMockDb {
@@ -393,6 +563,78 @@ describe("IncidentsController", () => {
 
         const insertedValues = sync.valuesSpy.mock.calls[0][0];
         expect(insertedValues[0].createdBy).toBe("other-user");
+    });
+
+    it("POST /incidents/sync preserves status from a moderator payload", async () => {
+        const sync = buildSyncMockDb(["inc-foreign-1"]);
+        controller = await compileWithDb(sync.db);
+
+        await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-foreign-1",
+                        title: "Foreign",
+                        description: "D",
+                        createdBy: "other-user",
+                        neighborhoodId: "n1",
+                        status: "in_progress",
+                    },
+                ],
+            },
+            authReq("mod-uuid-1", "moderator") as any,
+        );
+
+        const insertedValues = sync.valuesSpy.mock.calls[0][0];
+        expect(insertedValues[0].status).toBe("in_progress");
+        const conflictConfig = sync.onConflictSpy.mock.calls[0][0];
+        expect(conflictConfig.set.status).toBeDefined();
+    });
+
+    it("POST /incidents/sync excludes status from the resident conflict update set", async () => {
+        const sync = buildSyncMockDb(["inc-1"]);
+        controller = await compileWithDb(sync.db);
+
+        await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-1",
+                        title: "Mine",
+                        description: "D",
+                        createdBy: "user-uuid-1",
+                        status: "resolved",
+                    },
+                ],
+            },
+            authReq() as any,
+        );
+
+        const conflictConfig = sync.onConflictSpy.mock.calls[0][0];
+        expect(conflictConfig.set.status).toBeUndefined();
+    });
+
+    it("POST /incidents/sync forces the resident's own neighborhood (anti-spoofing)", async () => {
+        const sync = buildSyncMockDb(["inc-1"]);
+        controller = await compileWithDb(sync.db);
+
+        await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-1",
+                        title: "Mine",
+                        description: "D",
+                        createdBy: "user-uuid-1",
+                        neighborhoodId: "n2",
+                    },
+                ],
+            },
+            authReq() as any,
+        );
+
+        const insertedValues = sync.valuesSpy.mock.calls[0][0];
+        expect(insertedValues[0].neighborhoodId).toBe("n1");
     });
 
     it("POST /incidents/sync drops the ownership guard for admins", async () => {

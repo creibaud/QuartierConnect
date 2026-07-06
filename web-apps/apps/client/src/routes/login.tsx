@@ -1,19 +1,33 @@
 import { useState } from "react";
-import { useHead } from "@unhead/react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import {
+    createFileRoute,
+    Link,
+    useNavigate,
+    useRouter,
+} from "@tanstack/react-router";
+import { useHead } from "@unhead/react";
 import { apiPost } from "@workspace/shared/lib/api";
 import { setTokens, type LoginResponse } from "@workspace/shared/lib/auth";
+import { sanitizeRedirectPath } from "@workspace/shared/lib/redirect";
+import { resolveAuthErrorMessage } from "@workspace/shared/lib/server-error";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
+import { AuthLayout } from "@workspace/ui/components/auth-layout";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Spinner } from "@workspace/ui/components/spinner";
 import { useAppForm } from "@workspace/ui/lib/form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { AuthLayout } from "@workspace/ui/components/auth-layout";
 
 export const Route = createFileRoute("/login")({
+    // `redirect` must stay optional in the derived search type so the
+    // existing navigations without a search object keep compiling.
+    validateSearch: (
+        search: Record<string, unknown>,
+    ): { redirect?: string } => ({
+        redirect: sanitizeRedirectPath(search.redirect),
+    }),
     component: LoginPage,
 });
 
@@ -21,10 +35,16 @@ function LoginPage() {
     const { t } = useTranslation();
     useHead({ title: t("pages.login.pageTitle") });
     const navigate = useNavigate();
+    const router = useRouter();
+    const { redirect: redirectTo } = Route.useSearch();
 
+    const emailSchema = z.string().email(t("auth.validation.invalidEmail"));
+    const passwordSchema = z
+        .string()
+        .min(1, t("auth.validation.passwordRequired"));
     const credentialsSchema = z.object({
-        email: z.string().email(t("auth.validation.invalidEmail")),
-        password: z.string().min(1, t("auth.validation.passwordRequired")),
+        email: emailSchema,
+        password: passwordSchema,
     });
 
     const totpSchema = z.object({
@@ -56,7 +76,13 @@ function LoginPage() {
                 });
                 setTokens(data.accessToken);
                 toast.success(t("auth.loginSuccess"));
-                navigate({ to: "/dashboard" });
+                // Back to the page that triggered the login when one was
+                // recorded; the dashboard otherwise.
+                if (redirectTo) {
+                    router.history.push(redirectTo);
+                } else {
+                    navigate({ to: "/dashboard" });
+                }
             } catch (err) {
                 const apiErr = err as { code?: string; message?: string };
                 const messages: Record<string, string> = {
@@ -64,9 +90,11 @@ function LoginPage() {
                     INVALID_TOTP: t("auth.errors.invalidTotp"),
                 };
                 setServerError(
-                    messages[apiErr.code ?? ""] ??
-                        apiErr.message ??
+                    resolveAuthErrorMessage(
+                        apiErr.code,
+                        messages,
                         t("auth.errors.loginFailed"),
+                    ),
                 );
                 if (apiErr.code === "INVALID_TOTP") {
                     totpForm.setFieldValue("totpCode", "");
@@ -99,21 +127,35 @@ function LoginPage() {
                             }}
                             className="space-y-4"
                         >
-                            <credentialsForm.AppField name="email">
+                            <credentialsForm.AppField
+                                name="email"
+                                validators={{
+                                    onBlur: emailSchema,
+                                    onChange: emailSchema,
+                                }}
+                            >
                                 {(field) => (
                                     <field.TextField
                                         label={t("auth.email")}
                                         type="email"
-                                        placeholder="alice@demo.fr"
+                                        placeholder="prenom@exemple.fr"
                                         autoFocus
+                                        autoComplete="email"
                                     />
                                 )}
                             </credentialsForm.AppField>
-                            <credentialsForm.AppField name="password">
+                            <credentialsForm.AppField
+                                name="password"
+                                validators={{
+                                    onBlur: passwordSchema,
+                                    onChange: passwordSchema,
+                                }}
+                            >
                                 {(field) => (
                                     <field.TextField
                                         label={t("auth.password")}
                                         type="password"
+                                        autoComplete="current-password"
                                     />
                                 )}
                             </credentialsForm.AppField>
@@ -159,7 +201,9 @@ function LoginPage() {
                                     )}
                                 </totpForm.AppField>
                             </div>
-                            <totpForm.Subscribe selector={(s) => s.isSubmitting}>
+                            <totpForm.Subscribe
+                                selector={(s) => s.isSubmitting}
+                            >
                                 {(isSubmitting) => (
                                     <Button
                                         type="submit"

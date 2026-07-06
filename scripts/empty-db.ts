@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 
 const MONGO_CONTAINER = process.env.MONGO_CONTAINER ?? "docker-mongodb-1";
 const MONGO_DB = process.env.MONGO_DB ?? "quartierconnect";
@@ -7,8 +7,11 @@ const PG_USER = process.env.POSTGRES_USER ?? "qc";
 const PG_DB = process.env.POSTGRES_DB ?? "quartierconnect";
 const NEO4J_CONTAINER = process.env.NEO4J_CONTAINER ?? "docker-neo4j-1";
 
-function runSilent(cmd: string): void {
-  execSync(cmd, { stdio: "pipe" });
+// execFileSync (no shell): container names, credentials and statements are
+// passed as literal argv entries, so an env var containing spaces or quotes
+// can never break out into a shell command (same approach as seed-demo.ts).
+function runSilent(args: string[]): void {
+  execFileSync("docker", args, { stdio: "pipe" });
 }
 
 function emptyMongo(): void {
@@ -27,14 +30,26 @@ function emptyMongo(): void {
   ];
 
   for (const col of collections) {
-    runSilent(
-      `docker exec ${MONGO_CONTAINER} mongosh ${MONGO_DB} --quiet --eval "db.${col}.deleteMany({})"`,
-    );
+    runSilent([
+      "exec",
+      MONGO_CONTAINER,
+      "mongosh",
+      MONGO_DB,
+      "--quiet",
+      "--eval",
+      `db.${col}.deleteMany({})`,
+    ]);
   }
 
-  runSilent(
-    `docker exec ${MONGO_CONTAINER} mongosh ${MONGO_DB} --quiet --eval "db.runCommand({listBuckets: 1}).buckets?.forEach(b => { db[b.name + '.files'].deleteMany({}); db[b.name + '.chunks'].deleteMany({}); })"`,
-  );
+  runSilent([
+    "exec",
+    MONGO_CONTAINER,
+    "mongosh",
+    MONGO_DB,
+    "--quiet",
+    "--eval",
+    "db.runCommand({listBuckets: 1}).buckets?.forEach(b => { db[b.name + '.files'].deleteMany({}); db[b.name + '.chunks'].deleteMany({}); })",
+  ]);
 
   console.log("  ✓ MongoDB vidée");
 }
@@ -49,18 +64,34 @@ function emptyPostgres(): void {
   ];
 
   for (const table of tables) {
-    runSilent(
-      `docker exec ${PG_CONTAINER} psql -U ${PG_USER} -d ${PG_DB} -c "TRUNCATE TABLE ${table} CASCADE" -q`,
-    );
+    runSilent([
+      "exec",
+      PG_CONTAINER,
+      "psql",
+      "-U",
+      PG_USER,
+      "-d",
+      PG_DB,
+      "-c",
+      `TRUNCATE TABLE ${table} CASCADE`,
+      "-q",
+    ]);
   }
 
   console.log("  ✓ PostgreSQL vidée");
 }
 
 function emptyNeo4j(): void {
-  runSilent(
-    `docker exec ${NEO4J_CONTAINER} cypher-shell -u neo4j -p password "MATCH (n) DETACH DELETE n"`,
-  );
+  runSilent([
+    "exec",
+    NEO4J_CONTAINER,
+    "cypher-shell",
+    "-u",
+    "neo4j",
+    "-p",
+    "password",
+    "MATCH (n) DETACH DELETE n",
+  ]);
 
   console.log("  ✓ Neo4j vidée");
 }

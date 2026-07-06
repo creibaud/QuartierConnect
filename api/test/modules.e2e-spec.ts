@@ -1,5 +1,6 @@
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
+import { ThrottlerStorage } from "@nestjs/throttler";
 import { eq } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as speakeasy from "speakeasy";
@@ -241,6 +242,24 @@ describe("New modules (e2e)", () => {
                 .set("Authorization", `Bearer ${userToken}`)
                 .expect(404);
         });
+
+        it("GET /messaging/conversations/:id/messages returns 400 for a non-numeric page", async () => {
+            await request(app.getHttpServer())
+                .get(
+                    `/messaging/conversations/${conversationId}/messages?page=abc`,
+                )
+                .set("Authorization", `Bearer ${userToken}`)
+                .expect(400);
+        });
+
+        it("GET /messaging/conversations/:id/messages returns 400 for page 0", async () => {
+            await request(app.getHttpServer())
+                .get(
+                    `/messaging/conversations/${conversationId}/messages?page=0`,
+                )
+                .set("Authorization", `Bearer ${userToken}`)
+                .expect(400);
+        });
     });
 
     // ─── Votes ────────────────────────────────────────────────────────────────
@@ -317,6 +336,169 @@ describe("New modules (e2e)", () => {
                     voteType: "like",
                 })
                 .expect(400);
+        });
+    });
+
+    // ─── Community votes ──────────────────────────────────────────────────────
+
+    describe("Community votes", () => {
+        const binaryOptions = [
+            { id: "yes", label: "Oui" },
+            { id: "no", label: "Non" },
+        ];
+        const inOneDay = () =>
+            new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+        let voteId: string;
+        let voterToken: string;
+        let voterId: string;
+
+        beforeAll(async () => {
+            const ts = Date.now();
+            const voter = await registerAndLogin(
+                app,
+                `e2e-modules-voter-${ts}@test.fr`,
+            );
+            voterToken = voter.accessToken;
+            voterId = voter.userId;
+
+            // The auth throttler allows 5 logins per window; the extra voter
+            // login above would starve later describes, so reset the counter.
+            const throttler = module.get<{ storage: Map<string, unknown> }>(
+                ThrottlerStorage,
+            );
+            throttler.storage.clear();
+        }, 30000);
+
+        it("GET /community-votes returns 401 without token", async () => {
+            await request(app.getHttpServer())
+                .get("/community-votes")
+                .expect(401);
+        });
+
+        it("POST /community-votes creates a binary vote", async () => {
+            const res = await request(app.getHttpServer())
+                .post("/community-votes")
+                .set("Authorization", `Bearer ${userToken}`)
+                .send({
+                    title: "Faut-il installer des bancs au parc ?",
+                    description: "Consultation e2e",
+                    voteType: "binary",
+                    options: binaryOptions,
+                    endsAt: inOneDay(),
+                    quorum: 0,
+                    isAnonymous: false,
+                })
+                .expect(201);
+
+            expect(res.body._id).toBeTruthy();
+            expect(res.body.status).toBe("open");
+            expect(res.body.options).toHaveLength(2);
+            voteId = res.body._id as string;
+        });
+
+        it("POST /community-votes/:id/cast records the creator's ballot", async () => {
+            const res = await request(app.getHttpServer())
+                .post(`/community-votes/${voteId}/cast`)
+                .set("Authorization", `Bearer ${userToken}`)
+                .send({ choices: ["yes"] })
+                .expect(201);
+
+            expect(
+                (res.body.casts as Array<{ userId: string }>).some(
+                    (c) => c.userId === userId,
+                ),
+            ).toBe(true);
+        });
+
+        it("POST /community-votes/:id/cast returns 409 on double cast", async () => {
+            await request(app.getHttpServer())
+                .post(`/community-votes/${voteId}/cast`)
+                .set("Authorization", `Bearer ${userToken}`)
+                .send({ choices: ["no"] })
+                .expect(409);
+        });
+
+        it("POST /community-votes/:id/cast returns 400 for an unknown option", async () => {
+            await request(app.getHttpServer())
+                .post(`/community-votes/${voteId}/cast`)
+                .set("Authorization", `Bearer ${voterToken}`)
+                .send({ choices: ["maybe"] })
+                .expect(400);
+        });
+
+        it("GET /community-votes/:id/results aggregates totals per option", async () => {
+            await request(app.getHttpServer())
+                .post(`/community-votes/${voteId}/cast`)
+                .set("Authorization", `Bearer ${voterToken}`)
+                .send({ choices: ["no"] })
+                .expect(201);
+
+            const res = await request(app.getHttpServer())
+                .get(`/community-votes/${voteId}/results`)
+                .set("Authorization", `Bearer ${userToken}`)
+                .expect(200);
+
+            expect(res.body.totals).toEqual({ yes: 1, no: 1 });
+            expect(res.body.totalParticipants).toBe(2);
+            expect(res.body.quorumReached).toBe(true);
+        });
+
+        it("POST /community-votes/:id/close returns 403 for a non-creator", async () => {
+            await request(app.getHttpServer())
+                .post(`/community-votes/${voteId}/close`)
+                .set("Authorization", `Bearer ${voterToken}`)
+                .expect(403);
+        });
+
+        it("POST /community-votes/:id/close returns 201 for the creator", async () => {
+            const res = await request(app.getHttpServer())
+                .post(`/community-votes/${voteId}/close`)
+                .set("Authorization", `Bearer ${userToken}`)
+                .expect(201);
+            expect(res.body.status).toBe("closed");
+        });
+
+        it("GET /community-votes hides other users' casts on anonymous votes", async () => {
+            const createRes = await request(app.getHttpServer())
+                .post("/community-votes")
+                .set("Authorization", `Bearer ${userToken}`)
+                .send({
+                    title: "Scrutin anonyme e2e",
+                    voteType: "binary",
+                    options: binaryOptions,
+                    endsAt: inOneDay(),
+                    quorum: 0,
+                    isAnonymous: true,
+                })
+                .expect(201);
+            const anonymousVoteId = createRes.body._id as string;
+
+            await request(app.getHttpServer())
+                .post(`/community-votes/${anonymousVoteId}/cast`)
+                .set("Authorization", `Bearer ${userToken}`)
+                .send({ choices: ["yes"] })
+                .expect(201);
+
+            const listRes = await request(app.getHttpServer())
+                .get("/community-votes")
+                .set("Authorization", `Bearer ${voterToken}`)
+                .expect(200);
+
+            const anonymousVote = (
+                listRes.body as Array<{
+                    _id: string;
+                    casts: Array<{ userId: string }>;
+                }>
+            ).find((v) => v._id === anonymousVoteId);
+
+            expect(anonymousVote).toBeDefined();
+            expect(anonymousVote!.casts.some((c) => c.userId === userId)).toBe(
+                false,
+            );
+            expect(
+                anonymousVote!.casts.every((c) => c.userId === voterId),
+            ).toBe(true);
         });
     });
 

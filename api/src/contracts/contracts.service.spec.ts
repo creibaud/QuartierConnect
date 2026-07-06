@@ -35,6 +35,8 @@ const mockContractDoc = {
 const mockContractModel = {
     find: jest.fn(),
     findById: jest.fn(),
+    findOneAndUpdate: jest.fn(),
+    updateOne: jest.fn(),
     deleteOne: jest.fn().mockReturnValue({
         exec: jest.fn().mockResolvedValue({}),
     }),
@@ -90,6 +92,19 @@ describe("ContractsService", () => {
         jest.clearAllMocks();
         mockContractDoc.signatures = [];
         mockContractDoc.status = ContractStatus.DRAFT;
+
+        // Deterministic defaults for the atomic-write paths; individual tests
+        // queue their own results with mockReturnValueOnce.
+        mockContractModel.findOneAndUpdate.mockReturnValue({
+            exec: jest.fn().mockResolvedValue(null),
+        });
+        mockContractModel.updateOne.mockReturnValue({
+            exec: jest.fn().mockResolvedValue({ matchedCount: 1 }),
+        });
+        mockPointsService.completeServicePayment.mockResolvedValue(undefined);
+        mockPointsService.isServicePaymentCompleted.mockResolvedValue(false);
+        mockDocs.getCurrentPdf.mockResolvedValue(null);
+        mockDocs.storePdf.mockResolvedValue({ fileId: "f", sha256: "h" });
 
         // Default Drizzle chain: `.limit(...)` serves the TOTP lookup, while
         // awaiting the chain directly (no `.limit`) serves name resolution.
@@ -182,7 +197,6 @@ describe("ContractsService", () => {
                 status: ContractStatus.PARTIAL,
                 bookingId: "booking-1",
                 signedAt: null as Date | null,
-                save: jest.fn().mockResolvedValue({}),
             };
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(contract),
@@ -195,7 +209,18 @@ describe("ContractsService", () => {
 
             expect(result.status).toBe(ContractStatus.FULLY_SIGNED);
             expect(result.signedAt).toBeInstanceOf(Date);
-            expect(contract.save).toHaveBeenCalled();
+            expect(mockContractModel.updateOne).toHaveBeenCalledWith(
+                {
+                    _id: "ct-1",
+                    status: { $ne: ContractStatus.FULLY_SIGNED },
+                },
+                {
+                    $set: {
+                        status: ContractStatus.FULLY_SIGNED,
+                        signedAt: expect.any(Date),
+                    },
+                },
+            );
         });
 
         it("does not query PointsService for a manual contract without a bookingId", async () => {
@@ -215,7 +240,6 @@ describe("ContractsService", () => {
                 ...mockContractDoc,
                 status: ContractStatus.PARTIAL,
                 bookingId: "booking-1",
-                save: jest.fn().mockResolvedValue({}),
             };
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(contract),
@@ -227,7 +251,7 @@ describe("ContractsService", () => {
             const result = await service.findOne("ct-1", "user-1");
 
             expect(result.status).toBe(ContractStatus.PARTIAL);
-            expect(contract.save).not.toHaveBeenCalled();
+            expect(mockContractModel.updateOne).not.toHaveBeenCalled();
         });
 
         it("enforces access control before any heal — a non-party never triggers the payment query", async () => {
@@ -252,10 +276,12 @@ describe("ContractsService", () => {
                 ...mockContractDoc,
                 status: ContractStatus.PARTIAL,
                 bookingId: "booking-1",
-                save: jest.fn().mockRejectedValue(new Error("Mongo down")),
             };
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(contract),
+            });
+            mockContractModel.updateOne.mockReturnValueOnce({
+                exec: jest.fn().mockRejectedValue(new Error("Mongo down")),
             });
             mockPointsService.isServicePaymentCompleted.mockResolvedValueOnce(
                 true,
@@ -264,7 +290,7 @@ describe("ContractsService", () => {
             const result = await service.findOne("ct-1", "user-1");
 
             expect(result.status).toBe(ContractStatus.FULLY_SIGNED);
-            expect(contract.save).toHaveBeenCalled();
+            expect(mockContractModel.updateOne).toHaveBeenCalled();
         });
     });
 
@@ -336,6 +362,19 @@ describe("ContractsService", () => {
     });
 
     describe("sign", () => {
+        const signatureOf = (userId: string) => ({
+            userId,
+            signedAt: new Date(),
+            hash: `hash-${userId}`,
+        });
+
+        // Queues the document returned by the next atomic findOneAndUpdate
+        // (first call = signature claim, second = FULLY_SIGNED flip/rollback).
+        const queueAtomicWriteResult = (doc: unknown) =>
+            mockContractModel.findOneAndUpdate.mockReturnValueOnce({
+                exec: jest.fn().mockResolvedValue(doc),
+            });
+
         it("throws NotFoundException when contract not found", async () => {
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(null),
@@ -411,7 +450,6 @@ describe("ContractsService", () => {
                 ...mockContractDoc,
                 signatories: ["user-1", "user-2"],
                 signatures: [],
-                save: jest.fn().mockResolvedValue({}),
             };
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(contract),
@@ -422,9 +460,90 @@ describe("ContractsService", () => {
                 limit: jest.fn().mockResolvedValue([{ totpSecret: "SECRET" }]),
             });
             mockTotpService.verify.mockReturnValue(true);
+            queueAtomicWriteResult({
+                ...contract,
+                status: ContractStatus.PARTIAL,
+                signatures: [signatureOf("user-1")],
+            });
+
+            const result = await service.sign("ct-1", "user-1", "123456");
+
+            expect(result.status).toBe(ContractStatus.PARTIAL);
+            expect(mockContractModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
+        });
+
+        it("claims the signature slot atomically with the status and duplicate guards in the filter", async () => {
+            const contract = {
+                ...mockContractDoc,
+                signatories: ["user-1", "user-2"],
+                signatures: [],
+            };
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(contract),
+            });
+            mockTotpService.verify.mockReturnValue(true);
+            queueAtomicWriteResult({
+                ...contract,
+                status: ContractStatus.PARTIAL,
+                signatures: [signatureOf("user-1")],
+            });
 
             await service.sign("ct-1", "user-1", "123456");
-            expect(contract.status).toBe(ContractStatus.PARTIAL);
+
+            expect(mockContractModel.findOneAndUpdate).toHaveBeenCalledWith(
+                {
+                    _id: "ct-1",
+                    status: {
+                        $in: [ContractStatus.DRAFT, ContractStatus.PARTIAL],
+                    },
+                    signatories: "user-1",
+                    "signatures.userId": { $ne: "user-1" },
+                },
+                {
+                    $push: {
+                        signatures: {
+                            userId: "user-1",
+                            signedAt: expect.any(Date),
+                            hash: expect.any(String),
+                        },
+                    },
+                    $set: { status: ContractStatus.PARTIAL },
+                },
+                { new: true },
+            );
+        });
+
+        it("rejects a double-submit with 400 Already signed when the claim is lost to the first request", async () => {
+            const beforeClaim = {
+                ...mockContractDoc,
+                signatories: ["user-1", "user-2"],
+                signatures: [],
+            };
+            const afterFirstSubmit = {
+                ...mockContractDoc,
+                signatories: ["user-1", "user-2"],
+                signatures: [signatureOf("user-1")],
+                status: ContractStatus.PARTIAL,
+            };
+            // Pre-claim read races ahead of the first submit; the atomic
+            // claim (default: null) then loses and the re-read sees it.
+            mockContractModel.findById
+                .mockReturnValueOnce({
+                    exec: jest.fn().mockResolvedValue(beforeClaim),
+                })
+                .mockReturnValueOnce({
+                    exec: jest.fn().mockResolvedValue(afterFirstSubmit),
+                });
+            mockTotpService.verify.mockReturnValue(true);
+
+            const attempt = service.sign("ct-1", "user-1", "123456");
+
+            await expect(attempt).rejects.toThrow(BadRequestException);
+            await expect(attempt).rejects.toThrow("Already signed");
+            expect(
+                mockPointsService.completeServicePayment,
+            ).not.toHaveBeenCalled();
+            expect(mockEventEmitter.emit).not.toHaveBeenCalled();
         });
 
         it("marks a manual contract as FULLY_SIGNED without settlement when all signatories have signed", async () => {
@@ -433,7 +552,6 @@ describe("ContractsService", () => {
                 signatories: ["user-1"],
                 signatures: [],
                 bookingId: null,
-                save: jest.fn().mockResolvedValue({}),
             };
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(contract),
@@ -444,10 +562,23 @@ describe("ContractsService", () => {
                 limit: jest.fn().mockResolvedValue([{ totpSecret: "SECRET" }]),
             });
             mockTotpService.verify.mockReturnValue(true);
+            const fullySigned = {
+                ...contract,
+                signatures: [signatureOf("user-1")],
+            };
+            queueAtomicWriteResult({
+                ...fullySigned,
+                status: ContractStatus.PARTIAL,
+            });
+            queueAtomicWriteResult({
+                ...fullySigned,
+                status: ContractStatus.FULLY_SIGNED,
+                signedAt: new Date(),
+            });
 
-            await service.sign("ct-1", "user-1", "123456");
+            const result = await service.sign("ct-1", "user-1", "123456");
 
-            expect(contract.status).toBe(ContractStatus.FULLY_SIGNED);
+            expect(result.status).toBe(ContractStatus.FULLY_SIGNED);
             expect(
                 mockPointsService.completeServicePayment,
             ).not.toHaveBeenCalled();
@@ -480,13 +611,12 @@ describe("ContractsService", () => {
             ).not.toHaveBeenCalled();
         });
 
-        it("settles the service payment before saving the final signature, then emits contract.fully_signed", async () => {
+        it("settles the service payment before flipping to FULLY_SIGNED, then emits contract.fully_signed", async () => {
             const contract = {
                 ...mockContractDoc,
                 signatories: ["user-1"],
                 signatures: [],
                 bookingId: "booking-1",
-                save: jest.fn().mockResolvedValue({}),
             };
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(contract),
@@ -497,8 +627,21 @@ describe("ContractsService", () => {
                 limit: jest.fn().mockResolvedValue([{ totpSecret: "SECRET" }]),
             });
             mockTotpService.verify.mockReturnValue(true);
+            const fullySigned = {
+                ...contract,
+                signatures: [signatureOf("user-1")],
+            };
+            queueAtomicWriteResult({
+                ...fullySigned,
+                status: ContractStatus.PARTIAL,
+            });
+            queueAtomicWriteResult({
+                ...fullySigned,
+                status: ContractStatus.FULLY_SIGNED,
+                signedAt: new Date(),
+            });
 
-            await service.sign("ct-1", "user-1", "123456");
+            const result = await service.sign("ct-1", "user-1", "123456");
 
             expect(
                 mockPointsService.completeServicePayment,
@@ -506,8 +649,20 @@ describe("ContractsService", () => {
             expect(
                 mockPointsService.completeServicePayment.mock
                     .invocationCallOrder[0],
-            ).toBeLessThan(contract.save.mock.invocationCallOrder[0]);
-            expect(contract.status).toBe(ContractStatus.FULLY_SIGNED);
+            ).toBeLessThan(
+                mockContractModel.findOneAndUpdate.mock.invocationCallOrder[1],
+            );
+            expect(mockContractModel.findOneAndUpdate).toHaveBeenCalledWith(
+                { _id: "ct-1", status: ContractStatus.PARTIAL },
+                {
+                    $set: {
+                        status: ContractStatus.FULLY_SIGNED,
+                        signedAt: expect.any(Date),
+                    },
+                },
+                { new: true },
+            );
+            expect(result.status).toBe(ContractStatus.FULLY_SIGNED);
             expect(mockEventEmitter.emit).toHaveBeenCalledWith(
                 "contract.fully_signed",
                 expect.objectContaining({
@@ -518,16 +673,106 @@ describe("ContractsService", () => {
             );
         });
 
+        it("does not emit contract.fully_signed when the flip loses against a cancellation", async () => {
+            const contract = {
+                ...mockContractDoc,
+                signatories: ["user-1"],
+                signatures: [],
+                bookingId: "booking-1",
+            };
+            const cancelledMeanwhile = {
+                ...contract,
+                signatures: [signatureOf("user-1")],
+                status: ContractStatus.CANCELLED,
+            };
+            mockContractModel.findById
+                .mockReturnValueOnce({
+                    exec: jest.fn().mockResolvedValue(contract),
+                })
+                .mockReturnValueOnce({
+                    exec: jest.fn().mockResolvedValue(cancelledMeanwhile),
+                });
+            mockDb.select.mockReturnValue({
+                from: jest.fn().mockReturnThis(),
+                where: jest.fn().mockReturnThis(),
+                limit: jest.fn().mockResolvedValue([{ totpSecret: "SECRET" }]),
+            });
+            mockTotpService.verify.mockReturnValue(true);
+            queueAtomicWriteResult({
+                ...contract,
+                signatures: [signatureOf("user-1")],
+                status: ContractStatus.PARTIAL,
+            });
+            queueAtomicWriteResult(null); // flip lost: no longer PARTIAL
+
+            await service.sign("ct-1", "user-1", "123456");
+
+            expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+                "contract.signed",
+                expect.anything(),
+            );
+            expect(mockEventEmitter.emit).not.toHaveBeenCalledWith(
+                "contract.fully_signed",
+                expect.anything(),
+            );
+        });
+
+        it("treats a reconciliation flip that raced ahead as a completed signature", async () => {
+            const contract = {
+                ...mockContractDoc,
+                signatories: ["user-1"],
+                signatures: [],
+                bookingId: "booking-1",
+            };
+            const healedMeanwhile = {
+                ...contract,
+                signatures: [signatureOf("user-1")],
+                status: ContractStatus.FULLY_SIGNED,
+                signedAt: new Date(),
+            };
+            mockContractModel.findById
+                .mockReturnValueOnce({
+                    exec: jest.fn().mockResolvedValue(contract),
+                })
+                .mockReturnValueOnce({
+                    exec: jest.fn().mockResolvedValue(healedMeanwhile),
+                });
+            mockDb.select.mockReturnValue({
+                from: jest.fn().mockReturnThis(),
+                where: jest.fn().mockReturnThis(),
+                limit: jest.fn().mockResolvedValue([{ totpSecret: "SECRET" }]),
+            });
+            mockTotpService.verify.mockReturnValue(true);
+            queueAtomicWriteResult({
+                ...contract,
+                signatures: [signatureOf("user-1")],
+                status: ContractStatus.PARTIAL,
+            });
+            queueAtomicWriteResult(null); // flip lost against the read-path heal
+
+            const result = await service.sign("ct-1", "user-1", "123456");
+
+            expect(result.status).toBe(ContractStatus.FULLY_SIGNED);
+            expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+                "contract.fully_signed",
+                expect.objectContaining({ contractId: "ct-1" }),
+            );
+        });
+
         it("emits contract.signed with the signer identity and the counterpart signatories", async () => {
             const contract = {
                 ...mockContractDoc,
                 signatories: ["user-1", "user-2"],
                 signatures: [],
                 pointsAmount: 12,
-                save: jest.fn().mockResolvedValue({}),
             };
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(contract),
+            });
+            queueAtomicWriteResult({
+                ...contract,
+                status: ContractStatus.PARTIAL,
+                signatures: [signatureOf("user-1")],
             });
             mockDb.select.mockReturnValue({
                 from: jest.fn().mockReturnThis(),
@@ -564,10 +809,14 @@ describe("ContractsService", () => {
                 ...mockContractDoc,
                 signatories: ["user-1", "user-2"],
                 signatures: [],
-                save: jest.fn().mockResolvedValue({}),
             };
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(contract),
+            });
+            queueAtomicWriteResult({
+                ...contract,
+                status: ContractStatus.PARTIAL,
+                signatures: [signatureOf("user-1")],
             });
             mockDb.select.mockReturnValue({
                 from: jest.fn().mockReturnThis(),
@@ -597,7 +846,6 @@ describe("ContractsService", () => {
                 signatories: ["user-1", "user-2"],
                 signatures: [],
                 bookingId: "booking-1",
-                save: jest.fn().mockResolvedValue({}),
             };
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(contract),
@@ -608,13 +856,19 @@ describe("ContractsService", () => {
                 limit: jest.fn().mockResolvedValue([{ totpSecret: "SECRET" }]),
             });
             mockTotpService.verify.mockReturnValue(true);
+            queueAtomicWriteResult({
+                ...contract,
+                status: ContractStatus.PARTIAL,
+                signatures: [signatureOf("user-1")],
+            });
 
-            await service.sign("ct-1", "user-1", "123456");
+            const result = await service.sign("ct-1", "user-1", "123456");
 
-            expect(contract.status).toBe(ContractStatus.PARTIAL);
+            expect(result.status).toBe(ContractStatus.PARTIAL);
             expect(
                 mockPointsService.completeServicePayment,
             ).not.toHaveBeenCalled();
+            expect(mockContractModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
             expect(mockEventEmitter.emit).toHaveBeenCalledWith(
                 "contract.signed",
                 expect.objectContaining({ signerId: "user-1" }),
@@ -625,19 +879,81 @@ describe("ContractsService", () => {
             );
         });
 
-        it("does not persist the signature when settlement fails on the final signer", async () => {
-            const priorSignature = {
-                userId: "user-1",
-                signedAt: new Date(),
-                hash: "prior-hash",
+        it("settles exactly once when two signatories race: the claim landing the last signature flips to FULLY_SIGNED", async () => {
+            const contract = {
+                ...mockContractDoc,
+                signatories: ["user-1", "user-2"],
+                bookingId: "booking-1",
             };
+            mockTotpService.verify.mockReturnValue(true);
+
+            // First signer: their post-push document only holds their own
+            // signature, so no settlement and no flip happen.
+            mockContractModel.findById.mockReturnValueOnce({
+                exec: jest
+                    .fn()
+                    .mockResolvedValue({ ...contract, signatures: [] }),
+            });
+            queueAtomicWriteResult({
+                ...contract,
+                status: ContractStatus.PARTIAL,
+                signatures: [signatureOf("user-1")],
+            });
+            const first = await service.sign("ct-1", "user-1", "123456");
+
+            // Second signer raced the first: their pre-claim read predates
+            // the first signature, but the post-push document holds both.
+            mockContractModel.findById.mockReturnValueOnce({
+                exec: jest
+                    .fn()
+                    .mockResolvedValue({ ...contract, signatures: [] }),
+            });
+            const bothSigned = [signatureOf("user-1"), signatureOf("user-2")];
+            queueAtomicWriteResult({
+                ...contract,
+                status: ContractStatus.PARTIAL,
+                signatures: bothSigned,
+            });
+            queueAtomicWriteResult({
+                ...contract,
+                status: ContractStatus.FULLY_SIGNED,
+                signatures: bothSigned,
+                signedAt: new Date(),
+            });
+            const second = await service.sign("ct-1", "user-2", "123456");
+
+            expect(first.status).toBe(ContractStatus.PARTIAL);
+            expect(second.status).toBe(ContractStatus.FULLY_SIGNED);
+            expect(
+                mockPointsService.completeServicePayment,
+            ).toHaveBeenCalledTimes(1);
+            expect(
+                mockPointsService.completeServicePayment,
+            ).toHaveBeenCalledWith("ct-1");
+            expect(mockContractModel.findOneAndUpdate).toHaveBeenCalledWith(
+                { _id: "ct-1", status: ContractStatus.PARTIAL },
+                {
+                    $set: {
+                        status: ContractStatus.FULLY_SIGNED,
+                        signedAt: expect.any(Date),
+                    },
+                },
+                { new: true },
+            );
+            expect(mockEventEmitter.emit).toHaveBeenCalledWith(
+                "contract.fully_signed",
+                expect.objectContaining({ contractId: "ct-1" }),
+            );
+        });
+
+        it("withdraws the pushed signature and rethrows without flipping when settlement fails on the final signer", async () => {
+            const priorSignature = signatureOf("user-1");
             const contract = {
                 ...mockContractDoc,
                 signatories: ["user-1", "user-2"],
                 signatures: [priorSignature],
                 status: ContractStatus.PARTIAL,
                 bookingId: "booking-1",
-                save: jest.fn().mockResolvedValue({}),
             };
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(contract),
@@ -651,27 +967,83 @@ describe("ContractsService", () => {
             mockPointsService.completeServicePayment.mockRejectedValue(
                 new BadRequestException("Insufficient balance"),
             );
+            queueAtomicWriteResult({
+                ...contract,
+                signatures: [priorSignature, signatureOf("user-2")],
+            });
+            queueAtomicWriteResult({
+                ...contract,
+                signatures: [priorSignature],
+            });
 
-            await expect(
-                service.sign("ct-1", "user-2", "123456"),
-            ).rejects.toBeInstanceOf(BadRequestException);
+            const attempt = service.sign("ct-1", "user-2", "123456");
 
-            expect(contract.signatures).toHaveLength(1);
-            expect(contract.status).toBe(ContractStatus.PARTIAL);
-            expect(contract.save).not.toHaveBeenCalled();
+            await expect(attempt).rejects.toBeInstanceOf(BadRequestException);
+            await expect(attempt).rejects.toThrow("Insufficient balance");
+            expect(mockContractModel.findOneAndUpdate).toHaveBeenCalledWith(
+                { _id: "ct-1" },
+                { $pull: { signatures: { userId: "user-2" } } },
+                { new: true },
+            );
+            expect(mockContractModel.findOneAndUpdate).not.toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({
+                    $set: expect.objectContaining({
+                        status: ContractStatus.FULLY_SIGNED,
+                    }),
+                }),
+                expect.anything(),
+            );
+            expect(mockContractModel.updateOne).not.toHaveBeenCalled();
             expect(mockEventEmitter.emit).not.toHaveBeenCalled();
         });
 
-        it("does not throw when PDF stamping fails (invariant: signature/settlement still commit)", async () => {
-            const contract: Record<string, unknown> = {
+        it("returns the contract to DRAFT when the rolled-back signature was the only one", async () => {
+            const contract = {
                 ...mockContractDoc,
                 signatories: ["user-1"],
                 signatures: [],
                 bookingId: "booking-1",
             };
-            contract.save = jest
-                .fn()
-                .mockImplementation(() => Promise.resolve(contract));
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(contract),
+            });
+            mockTotpService.verify.mockReturnValue(true);
+            mockPointsService.completeServicePayment.mockRejectedValue(
+                new BadRequestException("Insufficient balance"),
+            );
+            queueAtomicWriteResult({
+                ...contract,
+                status: ContractStatus.PARTIAL,
+                signatures: [signatureOf("user-1")],
+            });
+            queueAtomicWriteResult({
+                ...contract,
+                status: ContractStatus.PARTIAL,
+                signatures: [],
+            });
+
+            await expect(
+                service.sign("ct-1", "user-1", "123456"),
+            ).rejects.toThrow("Insufficient balance");
+
+            expect(mockContractModel.updateOne).toHaveBeenCalledWith(
+                {
+                    _id: "ct-1",
+                    status: ContractStatus.PARTIAL,
+                    signatures: { $size: 0 },
+                },
+                { $set: { status: ContractStatus.DRAFT } },
+            );
+        });
+
+        it("does not throw when PDF stamping fails (invariant: signature/settlement still commit)", async () => {
+            const contract = {
+                ...mockContractDoc,
+                signatories: ["user-1"],
+                signatures: [],
+                bookingId: "booking-1",
+            };
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(contract),
             });
@@ -681,6 +1053,19 @@ describe("ContractsService", () => {
             );
             mockDocs.getCurrentPdf.mockResolvedValue(Buffer.from("%PDF-"));
             mockPdf.stampSignature.mockRejectedValue(new Error("stamp boom"));
+            const fullySigned = {
+                ...contract,
+                signatures: [signatureOf("user-1")],
+            };
+            queueAtomicWriteResult({
+                ...fullySigned,
+                status: ContractStatus.PARTIAL,
+            });
+            queueAtomicWriteResult({
+                ...fullySigned,
+                status: ContractStatus.FULLY_SIGNED,
+                signedAt: new Date(),
+            });
 
             const res = await service.sign("ct-1", "user-1", "123456");
 
@@ -694,7 +1079,6 @@ describe("ContractsService", () => {
                 bookingId: "bk-1",
                 signatories: ["user-1", "user-2"],
                 signatures: [],
-                save: jest.fn().mockResolvedValue({}),
             };
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(contract),
@@ -703,6 +1087,12 @@ describe("ContractsService", () => {
             mockDocs.getCurrentPdf.mockResolvedValue(Buffer.from("%PDF-"));
             mockPdf.stampSignature.mockResolvedValue(Buffer.from("%PDF-x"));
             mockDocs.storePdf.mockResolvedValue({ fileId: "f1", sha256: "h" });
+            queueAtomicWriteResult({
+                ...contract,
+                status: ContractStatus.PARTIAL,
+                signatures: [signatureOf("user-1")],
+                save: jest.fn().mockResolvedValue({}),
+            });
 
             await service.sign(
                 "ct-1",
@@ -757,7 +1147,6 @@ describe("ContractsService", () => {
                 signatories: ["user-1", "user-2"],
                 signatures: [],
                 bookingId: null,
-                save: jest.fn().mockResolvedValue({}),
             };
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(contract),
@@ -768,6 +1157,12 @@ describe("ContractsService", () => {
                 Buffer.from("%PDF-zones"),
             );
             mockDocs.storePdf.mockResolvedValue({ fileId: "f9", sha256: "h" });
+            queueAtomicWriteResult({
+                ...contract,
+                status: ContractStatus.PARTIAL,
+                signatures: [signatureOf("user-1")],
+                save: jest.fn().mockResolvedValue({}),
+            });
 
             await service.sign("ct-1", "user-1", "123456");
 
@@ -803,9 +1198,6 @@ describe("ContractsService", () => {
                 signatories: ["user-1"],
                 signatures: [],
                 bookingId: null,
-                save: jest
-                    .fn()
-                    .mockImplementation(() => Promise.resolve(contract)),
             };
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(contract),
@@ -815,6 +1207,19 @@ describe("ContractsService", () => {
             mockPdf.stampSignatureAtZones.mockRejectedValue(
                 new Error("zone stamp boom"),
             );
+            const fullySigned = {
+                ...contract,
+                signatures: [signatureOf("user-1")],
+            };
+            queueAtomicWriteResult({
+                ...fullySigned,
+                status: ContractStatus.PARTIAL,
+            });
+            queueAtomicWriteResult({
+                ...fullySigned,
+                status: ContractStatus.FULLY_SIGNED,
+                signedAt: new Date(),
+            });
 
             const res = await service.sign("ct-1", "user-1", "123456");
 
@@ -1258,34 +1663,58 @@ describe("ContractsService", () => {
             ).resolves.toBeUndefined();
         });
 
-        it("throws BadRequestException when the contract is already fully signed", async () => {
+        it("does nothing when the contract is already cancelled (idempotent)", async () => {
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({
+                    ...mockContractDoc,
+                    status: ContractStatus.CANCELLED,
+                }),
+            });
+
+            await expect(
+                service.cancelContract("ct-1"),
+            ).resolves.toBeUndefined();
+        });
+
+        it("throws 400 with the exact message when the contract is already fully signed", async () => {
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue({
                     ...mockContractDoc,
                     status: ContractStatus.FULLY_SIGNED,
-                    save: jest.fn(),
                 }),
             });
 
-            await expect(service.cancelContract("ct-1")).rejects.toThrow(
-                BadRequestException,
+            const attempt = service.cancelContract("ct-1");
+
+            await expect(attempt).rejects.toThrow(BadRequestException);
+            await expect(attempt).rejects.toThrow(
+                "A fully-signed contract cannot be cancelled",
             );
         });
 
-        it("marks the contract as CANCELLED otherwise", async () => {
-            const contract = {
-                ...mockContractDoc,
-                status: ContractStatus.PARTIAL,
-                save: jest.fn().mockResolvedValue({}),
-            };
-            mockContractModel.findById.mockReturnValue({
-                exec: jest.fn().mockResolvedValue(contract),
+        it("marks the contract as CANCELLED through the guarded atomic update otherwise", async () => {
+            mockContractModel.findOneAndUpdate.mockReturnValueOnce({
+                exec: jest.fn().mockResolvedValue({
+                    ...mockContractDoc,
+                    status: ContractStatus.CANCELLED,
+                }),
             });
 
             await service.cancelContract("ct-1");
 
-            expect(contract.status).toBe(ContractStatus.CANCELLED);
-            expect(contract.save).toHaveBeenCalled();
+            expect(mockContractModel.findOneAndUpdate).toHaveBeenCalledWith(
+                {
+                    _id: "ct-1",
+                    status: {
+                        $nin: [
+                            ContractStatus.FULLY_SIGNED,
+                            ContractStatus.CANCELLED,
+                        ],
+                    },
+                },
+                { $set: { status: ContractStatus.CANCELLED } },
+            );
+            expect(mockContractModel.findById).not.toHaveBeenCalled();
         });
     });
 });

@@ -235,6 +235,9 @@ export class SocialService {
                             `MERGE (n:Neighborhood {id: $neighborhoodId})
            WITH n
            MATCH (u:User {id: $userId})
+           OPTIONAL MATCH (u)-[old:LIVES_IN]->(other:Neighborhood)
+           WHERE other <> n
+           DELETE old
            MERGE (u)-[:LIVES_IN]->(n)`,
                             { userId, neighborhoodId },
                         );
@@ -270,6 +273,9 @@ export class SocialService {
                             `MERGE (n:Neighborhood {id: $neighborhoodId})
            WITH n
            MATCH (s:Service {id: $serviceId})
+           OPTIONAL MATCH (s)-[old:LOCATED_IN]->(other:Neighborhood)
+           WHERE other <> n
+           DELETE old
            MERGE (s)-[:LOCATED_IN]->(n)`,
                             { serviceId, neighborhoodId },
                         );
@@ -372,6 +378,9 @@ export class SocialService {
                             `MERGE (n:Neighborhood {id: $neighborhoodId})
            WITH n
            MATCH (e:Event {id: $eventId})
+           OPTIONAL MATCH (e)-[old:HELD_IN]->(other:Neighborhood)
+           WHERE other <> n
+           DELETE old
            MERGE (e)-[:HELD_IN]->(n)`,
                             { eventId, neighborhoodId },
                         );

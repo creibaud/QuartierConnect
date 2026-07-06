@@ -1,36 +1,22 @@
 package fr.quartierconnect.desktopapp.services;
 
 import fr.quartierconnect.desktopapp.i18n.I18n;
-import javafx.application.Platform;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
 
 public class ApiService {
 
     private static volatile boolean offlineMode = false;
-    private static final List<Consumer<Boolean>> offlineModeListeners = new CopyOnWriteArrayList<>();
 
     public static void setOfflineMode(boolean offline) {
         offlineMode = offline;
-        Platform.runLater(() -> offlineModeListeners.forEach(l -> l.accept(offline)));
     }
 
     public static boolean isOfflineMode() { return offlineMode; }
-
-    public static void addOfflineModeListener(Consumer<Boolean> listener) {
-        offlineModeListeners.add(listener);
-    }
-
-    public static void removeOfflineModeListener(Consumer<Boolean> listener) {
-        offlineModeListeners.remove(listener);
-    }
 
     private static String getBaseUrl() {
         return ServerConfig.apiUrl();

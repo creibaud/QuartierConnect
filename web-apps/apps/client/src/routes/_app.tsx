@@ -40,10 +40,15 @@ import {
 import { RealtimeProvider } from "@/features/realtime/realtime-provider";
 
 export const Route = createFileRoute("/_app")({
-    beforeLoad: async () => {
+    beforeLoad: async ({ location }) => {
         const user = await ensureAuthenticated();
         if (!user) {
-            throw redirect({ to: "/login" });
+            // Remember the requested page so the login form can come back
+            // to it instead of always landing on the dashboard.
+            throw redirect({
+                to: "/login",
+                search: { redirect: location.href },
+            });
         }
         if (user.role !== "admin") {
             let status: NeighborhoodStatus | null = null;
@@ -133,7 +138,6 @@ function AppLayout() {
                             </Breadcrumb>
                             <div className="ml-auto flex items-center gap-2">
                                 <HeaderPoints />
-                                {/* Notification bell goes here once the notifications feature ships */}
                             </div>
                         </header>
                         <ScrollArea className="min-h-0 flex-1">

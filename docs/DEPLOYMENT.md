@@ -32,7 +32,12 @@
 | Disque | 40 Go SSD |
 | OS | Ubuntu 22.04 LTS / Debian 12 |
 | Réseau | IP publique fixe, ports **80** et **443** ouverts |
-| DNS | Enregistrement A `quartierconnect.fr` → IP du VPS |
+| DNS | Enregistrement A `<votre-domaine>` → IP du VPS |
+
+> Le domaine de production n'est pas figé : il est configuré côté GitHub via la
+> **variable** `PROD_DOMAIN` (Settings → Variables → Actions), consommée par
+> `deploy.yml` (`vars.PROD_DOMAIN`). Remplacez `<votre-domaine>` par votre
+> domaine dans toutes les commandes ci-dessous.
 
 ---
 
@@ -165,13 +170,17 @@ docker compose \
 
 ## 5. Seed des comptes démo
 
+Le seed s'exécute sur l'hôte (via `npx tsx`) : il faut Node.js 22 + pnpm sur le
+VPS et les dépendances de l'API installées une fois (`make install-api`).
+
 ```bash
-# Depuis le VPS, depuis le repo
-docker exec docker-api-1 sh -c "cd /app && node -r ts-node/register /app/scripts/seed-demo.ts" || \
-  API_URL=https://quartierconnect.fr/api \
-  PG_CONTAINER=docker-postgres-1 \
-  pnpm --filter api exec ts-node scripts/seed-demo.ts
+# Depuis le VPS, à la racine du repo
+make install-api   # une seule fois
+make seed          # migrations + comptes démo + graphe Neo4j
 ```
+
+Le script parle à l'API sur `http://localhost:5000` (port lié à 127.0.0.1 sur
+le VPS) et à PostgreSQL via `docker exec` sur le conteneur `docker-postgres-1`.
 
 ---
 
@@ -179,7 +188,7 @@ docker exec docker-api-1 sh -c "cd /app && node -r ts-node/register /app/scripts
 
 ```bash
 # Smoke test complet (depuis n'importe où)
-./scripts/smoke-test.sh https://quartierconnect.fr
+./scripts/smoke-test.sh https://<votre-domaine>
 ```
 
 Devrait afficher :
@@ -204,7 +213,7 @@ Devrait afficher :
 Test additionnel SSL Labs (cible : note A+) :
 
 ```bash
-curl https://api.ssllabs.com/api/v3/analyze?host=quartierconnect.fr
+curl https://api.ssllabs.com/api/v3/analyze?host=<votre-domaine>
 ```
 
 ---
@@ -243,8 +252,13 @@ Configuration dans GitHub → Settings → **Environments** → **production** :
 | `VPS_HOST` | IP ou hostname du VPS |
 | `VPS_USER` | `deploy` |
 | `VPS_DEPLOY_PATH` | `/home/deploy/QuartierConnect` |
-| `PROD_DOMAIN` | `quartierconnect.fr` (sans https://) |
 | `DISCORD_WEBHOOK` | URL webhook Discord pour notifications |
+
+**Variable GitHub** (Settings → Variables → Actions) :
+
+| Variable | Description |
+|----------|-------------|
+| `PROD_DOMAIN` | Domaine de production, sans `https://` — utilisé par `deploy.yml` via `vars.PROD_DOMAIN` |
 
 Génération de la clé SSH dédiée au deploy :
 
@@ -346,7 +360,7 @@ Après chaque drill, **noter la date + le temps de restauration** dans le RUNBOO
 1. Créer un compte sur https://uptimerobot.com
 2. Ajouter un monitor :
    - Type : HTTPS
-   - URL : `https://quartierconnect.fr/api/health`
+   - URL : `https://<votre-domaine>/api/health`
    - Intervalle : 5 min
    - Keyword monitoring : "ok"
 3. Configurer une alerte :
@@ -391,7 +405,7 @@ docker compose \
 - [ ] Ports DB (5432, 27017, 7474, 7687) **non exposés** publiquement (vérifier avec `nmap <IP_VPS>`)
 - [ ] `LOGIN_RATE_LIMIT=5` en production
 - [ ] `CORS_ORIGINS` ne contient que le domaine HTTPS de prod
-- [ ] HSTS actif (`curl -I https://quartierconnect.fr | grep -i strict`)
+- [ ] HSTS actif (`curl -I https://<votre-domaine> | grep -i strict`)
 - [ ] CSP avec `frame-ancestors 'none'`
 - [ ] SSL Labs note ≥ A
 - [ ] Backup quotidien automatisé via cron

@@ -1,8 +1,18 @@
 import { BadRequestException } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { Test, TestingModule } from "@nestjs/testing";
+import { SQL } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import { PointsService } from "./points.service";
+
+function renderSql(query: unknown): { sql: string; params: unknown[] } {
+    return new PgDialect().sqlToQuery(query as SQL);
+}
+
+function makePostgresError(code: string): Error {
+    return Object.assign(new Error(`postgres error ${code}`), { code });
+}
 
 interface MockTerminal {
     then: (
@@ -66,15 +76,29 @@ describe("PointsService", () => {
 
     beforeEach(async () => {
         mockTx = {
-            execute: jest
-                .fn()
-                .mockResolvedValue([{ id: "bal-1", balance: 100 }]),
+            execute: jest.fn().mockImplementation((query: unknown) => {
+                const { sql: rendered } = renderSql(query);
+                if (rendered.includes("FROM users")) {
+                    return Promise.resolve([
+                        { id: "recv-id", role: "resident" },
+                    ]);
+                }
+                return Promise.resolve([
+                    { user_id: "recv-id", balance: 80 },
+                    { user_id: "sender-id", balance: 100 },
+                ]);
+            }),
             update: jest.fn().mockReturnThis(),
             set: jest.fn().mockReturnThis(),
             where: jest.fn().mockResolvedValue(undefined),
             insert: jest.fn().mockReturnThis(),
             values: jest.fn().mockReturnThis(),
-            onConflictDoUpdate: jest.fn().mockResolvedValue(undefined),
+            onConflictDoNothing: jest.fn().mockResolvedValue(undefined),
+            returning: jest
+                .fn()
+                .mockResolvedValue([
+                    { id: "tx-1", senderId: "sender-id", amount: 20 },
+                ]),
         };
 
         ({ db } = buildMockDb([
@@ -192,24 +216,121 @@ describe("PointsService", () => {
             expect(mockTx.insert).toHaveBeenCalled();
         });
 
-        it("throws BadRequestException when balance would go below -10", async () => {
-            mockTx.execute.mockResolvedValue([{ id: "bal-1", balance: 5 }]);
+        it("returns the created transaction and both updated balances", async () => {
+            const result = await service.transfer("sender-id", {
+                recipientId: "recv-id",
+                amount: 20,
+            });
+            expect(result.transaction).toEqual(
+                expect.objectContaining({ id: "tx-1" }),
+            );
+            expect(result.senderBalance).toBe(80);
+            expect(result.recipientBalance).toBe(100);
+        });
+
+        it("throws BadRequestException when the recipient does not exist", async () => {
+            mockTx.execute.mockResolvedValueOnce([]);
+            await expect(
+                service.transfer("sender-id", {
+                    recipientId: "ghost-id",
+                    amount: 10,
+                }),
+            ).rejects.toThrow("Recipient does not exist");
+            expect(mockTx.insert).not.toHaveBeenCalled();
+        });
+
+        it("throws BadRequestException when the recipient is banned", async () => {
+            mockTx.execute.mockResolvedValueOnce([
+                { id: "recv-id", role: "banned" },
+            ]);
             await expect(
                 service.transfer("sender-id", {
                     recipientId: "recv-id",
-                    amount: 20,
+                    amount: 10,
                 }),
-            ).rejects.toThrow(BadRequestException);
+            ).rejects.toThrow("Recipient does not exist");
+            expect(mockTx.insert).not.toHaveBeenCalled();
+        });
+
+        it("throws BadRequestException when the locked sender balance would go below -10", async () => {
+            mockTx.execute
+                .mockResolvedValueOnce([{ id: "recv-id", role: "resident" }])
+                .mockResolvedValueOnce([
+                    { user_id: "sender-id", balance: 5 },
+                    { user_id: "recv-id", balance: 0 },
+                ]);
+            const error = await service
+                .transfer("sender-id", { recipientId: "recv-id", amount: 20 })
+                .catch((e: unknown) => e);
+            expect(error).toBeInstanceOf(BadRequestException);
+            expect((error as BadRequestException).getResponse()).toMatchObject({
+                code: "INSUFFICIENT_BALANCE",
+                message: "Insufficient balance for this transfer",
+            });
+            expect(mockTx.update).not.toHaveBeenCalled();
         });
 
         it("treats missing balance row as 0 and rejects when amount exceeds limit", async () => {
-            mockTx.execute.mockResolvedValue([]);
-            await expect(
-                service.transfer("sender-id", {
-                    recipientId: "recv-id",
-                    amount: 100,
-                }),
-            ).rejects.toThrow(BadRequestException);
+            mockTx.execute
+                .mockResolvedValueOnce([{ id: "recv-id", role: "resident" }])
+                .mockResolvedValueOnce([]);
+            const error = await service
+                .transfer("sender-id", { recipientId: "recv-id", amount: 100 })
+                .catch((e: unknown) => e);
+            expect(error).toBeInstanceOf(BadRequestException);
+            expect((error as BadRequestException).getResponse()).toMatchObject({
+                code: "INSUFFICIENT_BALANCE",
+            });
+        });
+    });
+
+    describe("transfer concurrency", () => {
+        it("locks both balance rows sorted by user_id with FOR UPDATE, inserting them first", async () => {
+            await service.transfer("sender-id", {
+                recipientId: "recv-id",
+                amount: 20,
+            });
+
+            expect(mockTx.values).toHaveBeenNthCalledWith(1, [
+                { userId: "recv-id", balance: 0 },
+                { userId: "sender-id", balance: 0 },
+            ]);
+            const { sql: renderedSql, params } = renderSql(
+                mockTx.execute.mock.calls[1][0],
+            );
+            expect(renderedSql).toContain("IN (");
+            expect(renderedSql).toContain("ORDER BY user_id");
+            expect(renderedSql).toContain("FOR UPDATE");
+            expect(params).toEqual(["recv-id", "sender-id"]);
+            expect(
+                mockTx.onConflictDoNothing.mock.invocationCallOrder[0],
+            ).toBeLessThan(mockTx.execute.mock.invocationCallOrder[1]);
+        });
+
+        it("maps a Postgres deadlock (40P01) raised in the transaction to CONCURRENT_UPDATE", async () => {
+            mockTx.execute
+                .mockResolvedValueOnce([{ id: "recv-id", role: "resident" }])
+                .mockRejectedValueOnce(makePostgresError("40P01"));
+            const error = await service
+                .transfer("sender-id", { recipientId: "recv-id", amount: 20 })
+                .catch((e: unknown) => e);
+            expect(error).toBeInstanceOf(BadRequestException);
+            expect((error as BadRequestException).getResponse()).toMatchObject({
+                code: "CONCURRENT_UPDATE",
+                message: "Concurrent update detected, please retry",
+            });
+        });
+
+        it("maps a balance CHECK violation (23514) raised in the transaction to INSUFFICIENT_BALANCE", async () => {
+            mockTx.where.mockRejectedValueOnce(makePostgresError("23514"));
+            const error = await service
+                .transfer("sender-id", { recipientId: "recv-id", amount: 20 })
+                .catch((e: unknown) => e);
+            expect(error).toBeInstanceOf(BadRequestException);
+            expect((error as BadRequestException).getResponse()).toMatchObject({
+                code: "INSUFFICIENT_BALANCE",
+                message: "Insufficient balance for this transfer",
+            });
         });
     });
 });

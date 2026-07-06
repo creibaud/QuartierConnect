@@ -7,7 +7,9 @@ import {
     UnfoldMoreIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { apiPost } from "@workspace/shared/lib/api";
 import { clearTokens, getCurrentUser } from "@workspace/shared/lib/auth";
 import { useLocale } from "@workspace/shared/lib/hooks/useLocale";
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar";
@@ -46,6 +48,7 @@ export function NavUser() {
     const { t, locale, setLocale } = useLocale();
     const { isMobile } = useSidebar();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const { theme, setTheme } = useTheme();
     const user = getCurrentUser();
 
@@ -62,8 +65,10 @@ export function NavUser() {
 
     const roleLabel = roleLabels[user.role] ?? user.role;
 
-    function handleLogout() {
+    async function handleLogout() {
+        await apiPost("/auth/logout", {}).catch(() => undefined);
         clearTokens();
+        queryClient.clear();
         navigate({ to: "/login", search: { forbidden: false } });
     }
 

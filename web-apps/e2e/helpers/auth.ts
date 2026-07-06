@@ -21,6 +21,19 @@ export function assignAddress(email: string): void {
     }
 }
 
+/** Give a registered user an address that no neighborhood polygon covers, so
+ *  the gate routes them to /onboarding/pending. Twin of assignAddress. */
+export function assignUncoveredAddress(email: string): void {
+    try {
+        execSync(
+            `docker exec ${PG_CONTAINER} psql -U "${PG_USER}" -d "${PG_DB}" -c "UPDATE users SET address='1 rue Isolee, 99999 Nullepart', address_lat=45.0, address_lng=5.0, neighborhood_id=NULL WHERE email='${email}'"`,
+            { stdio: "pipe" },
+        );
+    } catch {
+        // docker/psql unavailable (e.g. local run) — gate-dependent tests will fail visibly
+    }
+}
+
 /** RFC 6238 TOTP — pure Node crypto, no external dependency.
  *  @param timeOffsetSeconds — shift the clock by N seconds (e.g. -30 = previous window)
  */
@@ -87,18 +100,20 @@ export async function apiRegister(email: string): Promise<string> {
 
 /** Login via API and return tokens.
  *  @param timeOffsetSeconds — shift the TOTP clock (e.g. -30 for previous window)
+ *  @param password — override after a password-change test
  */
 export async function apiLogin(
     email: string,
     secret: string,
     timeOffsetSeconds = 0,
+    password = DEMO_PASSWORD,
 ): Promise<{ accessToken: string; refreshToken: string }> {
     const res = await fetch(`${API}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             email,
-            password: DEMO_PASSWORD,
+            password,
             totpCode: currentTotp(secret, timeOffsetSeconds),
         }),
     });

@@ -113,8 +113,5 @@ export const pointsTransactions = pgTable(
 );
 
 export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
 export type Incident = typeof incidents.$inferSelect;
-export type NewIncident = typeof incidents.$inferInsert;
-export type PointsBalance = typeof pointsBalances.$inferSelect;
 export type PointsTransaction = typeof pointsTransactions.$inferSelect;

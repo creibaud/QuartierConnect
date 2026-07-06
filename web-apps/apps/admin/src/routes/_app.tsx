@@ -26,13 +26,21 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { adminNavItems } from "@/components/nav-items";
 
 export const Route = createFileRoute("/_app")({
-    beforeLoad: async () => {
+    beforeLoad: async ({ location }) => {
         const user = await ensureAuthenticated();
         if (!user) {
-            throw redirect({ to: "/login", search: { forbidden: false } });
+            // Remember the requested page so the login form can come back
+            // to it instead of always landing on the dashboard.
+            throw redirect({
+                to: "/login",
+                search: { forbidden: false, redirect: location.href },
+            });
         }
         if (user.role !== "admin") {
-            throw redirect({ to: "/login", search: { forbidden: true } });
+            throw redirect({
+                to: "/login",
+                search: { forbidden: true },
+            });
         }
     },
     component: AppLayout,

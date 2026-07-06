@@ -1,4 +1,4 @@
-import { NotFoundException } from "@nestjs/common";
+import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
 import { GeocodingService } from "../geocoding/geocoding.service";
@@ -13,10 +13,15 @@ const mockEvent = {
     category: "community",
     date: new Date("2026-06-15"),
     createdBy: "user-uuid-1",
+    neighborhoodId: "n1",
     interestedUserIds: [],
 };
 
-const authReq = (sub = "user-uuid-1") => ({ user: { sub, role: "resident" } });
+const authReq = (
+    sub = "user-uuid-1",
+    role = "resident",
+    neighborhoodId: string | null = "n1",
+) => ({ user: { sub, role, neighborhoodId } });
 
 describe("EventsController", () => {
     let controller: EventsController;
@@ -27,6 +32,7 @@ describe("EventsController", () => {
     beforeEach(async () => {
         model = {
             find: jest.fn().mockReturnValue({
+                sort: jest.fn().mockReturnThis(),
                 skip: jest.fn().mockReturnThis(),
                 limit: jest.fn().mockReturnValue({
                     exec: jest.fn().mockResolvedValue([mockEvent]),
@@ -65,20 +71,42 @@ describe("EventsController", () => {
         geocoding = module.get(GeocodingService);
     });
 
-    it("GET /events returns list", async () => {
-        const result = await controller.findAll();
+    it("GET /events returns list scoped to the caller's neighborhood", async () => {
+        const result = await controller.findAll(
+            undefined,
+            undefined,
+            "1",
+            "20",
+            authReq() as any,
+        );
         expect(result).toHaveLength(1);
+        expect(model.find).toHaveBeenCalledWith({ neighborhoodId: "n1" });
     });
 
     it("GET /events?category=community filters by category", async () => {
-        await controller.findAll("community");
+        await controller.findAll(
+            "community",
+            undefined,
+            "1",
+            "20",
+            authReq() as any,
+        );
         expect(model.find).toHaveBeenCalledWith(
-            expect.objectContaining({ category: "community" }),
+            expect.objectContaining({
+                neighborhoodId: "n1",
+                category: "community",
+            }),
         );
     });
 
     it("GET /events?date=2026-06-15 filters by date range", async () => {
-        await controller.findAll(undefined, "2026-06-15");
+        await controller.findAll(
+            undefined,
+            "2026-06-15",
+            "1",
+            "20",
+            authReq() as any,
+        );
         expect(model.find).toHaveBeenCalledWith(
             expect.objectContaining({
                 date: expect.objectContaining({ $gte: expect.any(Date) }),
@@ -86,18 +114,66 @@ describe("EventsController", () => {
         );
     });
 
+    it("GET /events returns [] when the caller has no neighborhood", async () => {
+        const result = await controller.findAll(
+            undefined,
+            undefined,
+            "1",
+            "20",
+            authReq("user-uuid-1", "resident", null) as any,
+        );
+        expect(result).toEqual([]);
+        expect(model.find).not.toHaveBeenCalled();
+    });
+
+    it("GET /events lets an admin list across all neighborhoods", async () => {
+        await controller.findAll(
+            undefined,
+            undefined,
+            "1",
+            "20",
+            authReq("admin1", "admin", null) as any,
+        );
+        const calledFilter = model.find.mock.calls[0][0];
+        expect(calledFilter).not.toHaveProperty("neighborhoodId");
+    });
+
     it("GET /events/:id returns one event", async () => {
-        const result = await controller.findOne("evt-id-1");
+        const result = await controller.findOne("evt-id-1", authReq() as any);
         expect(result).toEqual(mockEvent);
+    });
+
+    it("GET /events/:id throws 403 for an event outside the caller's neighborhood", async () => {
+        model.findById.mockReturnValue({
+            exec: jest
+                .fn()
+                .mockResolvedValue({ ...mockEvent, neighborhoodId: "n2" }),
+        });
+        await expect(
+            controller.findOne("evt-id-1", authReq() as any),
+        ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("GET /events/:id lets an admin read any neighborhood's event", async () => {
+        model.findById.mockReturnValue({
+            exec: jest
+                .fn()
+                .mockResolvedValue({ ...mockEvent, neighborhoodId: "n2" }),
+        });
+        const result = await controller.findOne(
+            "evt-id-1",
+            authReq("admin1", "admin", null) as any,
+        );
+        expect(result).toMatchObject({ neighborhoodId: "n2" });
     });
 
     it("GET /events/:id throws 404 when not found", async () => {
         model.findById.mockReturnValue({
             exec: jest.fn().mockResolvedValue(null),
         });
-        await expect(controller.findOne("bad-id")).rejects.toThrow(
-            NotFoundException,
-        );
+        await expect(
+            controller.findOne("bad-id", authReq() as any),
+        ).rejects.toThrow(NotFoundException);
     });
 
     it("POST /events creates event with createdBy from JWT", async () => {
@@ -112,6 +188,64 @@ describe("EventsController", () => {
         );
         expect(model.create).toHaveBeenCalledWith(
             expect.objectContaining({ createdBy: "user-uuid-1" }),
+        );
+    });
+
+    it("POST /events forces the caller's neighborhood for non-admins", async () => {
+        await controller.create(
+            {
+                title: "Party",
+                description: "Desc",
+                category: "community",
+                date: "2026-06-15",
+                neighborhoodId: "n2",
+            },
+            authReq() as any,
+        );
+        expect(model.create).toHaveBeenCalledWith(
+            expect.objectContaining({ neighborhoodId: "n1" }),
+        );
+    });
+
+    it("POST /events lets an admin target another neighborhood", async () => {
+        await controller.create(
+            {
+                title: "Party",
+                description: "Desc",
+                category: "community",
+                date: "2026-06-15",
+                neighborhoodId: "n2",
+            },
+            authReq("admin1", "admin", "n1") as any,
+        );
+        expect(model.create).toHaveBeenCalledWith(
+            expect.objectContaining({ neighborhoodId: "n2" }),
+        );
+    });
+
+    it("PATCH /events/:id ignores a neighborhood change from a non-admin owner", async () => {
+        await controller.update(
+            "evt-id-1",
+            { neighborhoodId: "n2" } as any,
+            authReq() as any,
+        );
+        expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+            "evt-id-1",
+            { $set: {} },
+            { new: true, runValidators: true },
+        );
+    });
+
+    it("PATCH /events/:id lets an admin change the neighborhood", async () => {
+        await controller.update(
+            "evt-id-1",
+            { neighborhoodId: "n2" } as any,
+            authReq("admin1", "admin", "n1") as any,
+        );
+        expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+            "evt-id-1",
+            { $set: { neighborhoodId: "n2" } },
+            { new: true, runValidators: true },
         );
     });
 
@@ -253,7 +387,45 @@ describe("EventsController", () => {
                     location: { type: "Point", coordinates: [2.35, 48.85] },
                 },
             },
-            { new: true },
+            { new: true, runValidators: true },
+        );
+    });
+
+    it("PATCH /events/:id sets location to null when geocoding the new address fails", async () => {
+        geocoding.geocode.mockResolvedValue(null);
+        await controller.update(
+            "evt-id-1",
+            { address: "adresse introuvable" } as any,
+            authReq() as any,
+        );
+        expect(geocoding.geocode).toHaveBeenCalledWith("adresse introuvable");
+        expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+            "evt-id-1",
+            { $set: { address: "adresse introuvable", location: null } },
+            { new: true, runValidators: true },
+        );
+    });
+
+    it("PATCH /events/:id re-syncs the updated event to Neo4j", async () => {
+        const updatedDate = new Date("2026-07-01");
+        model.findByIdAndUpdate.mockReturnValue({
+            exec: jest.fn().mockResolvedValue({
+                ...mockEvent,
+                title: "Brocante estivale",
+                date: updatedDate,
+            }),
+        });
+        await controller.update(
+            "evt-id-1",
+            { title: "Brocante estivale" } as any,
+            authReq() as any,
+        );
+        expect(socialService.syncEvent).toHaveBeenCalledWith(
+            "evt-id-1",
+            "Brocante estivale",
+            updatedDate,
+            "n1",
+            "user-uuid-1",
         );
     });
 });

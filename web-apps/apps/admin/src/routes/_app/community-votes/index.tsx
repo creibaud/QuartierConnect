@@ -9,6 +9,17 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { apiGet, apiPost } from "@workspace/shared/lib/api";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@workspace/ui/components/alert-dialog";
 import { Button } from "@workspace/ui/components/button";
 import {
     Card,
@@ -221,19 +232,52 @@ function CommunityVotesPage() {
                                             )}
                                         </Button>
                                         {vote.status === "open" && (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="w-full"
-                                                disabled={closeVote.isPending}
-                                                onClick={() =>
-                                                    closeVote.mutate(vote._id)
-                                                }
-                                            >
-                                                {t(
-                                                    "adminPages.communityVotes.closeVote",
-                                                )}
-                                            </Button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="w-full"
+                                                        disabled={
+                                                            closeVote.isPending
+                                                        }
+                                                    >
+                                                        {t(
+                                                            "adminPages.communityVotes.closeVote",
+                                                        )}
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>
+                                                            {t(
+                                                                "adminPages.communityVotes.closeConfirmTitle",
+                                                            )}
+                                                        </AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            {t(
+                                                                "adminPages.communityVotes.closeConfirmDescription",
+                                                            )}
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>
+                                                            {t("common.cancel")}
+                                                        </AlertDialogCancel>
+                                                        <AlertDialogAction
+                                                            onClick={() =>
+                                                                closeVote.mutate(
+                                                                    vote._id,
+                                                                )
+                                                            }
+                                                        >
+                                                            {t(
+                                                                "adminPages.communityVotes.closeVote",
+                                                            )}
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         )}
                                     </div>
                                 </CardContent>

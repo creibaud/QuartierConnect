@@ -5,17 +5,19 @@ import { Badge } from "@workspace/ui/components/badge";
 import { Item, ItemGroup, ItemContent, ItemTitle, ItemDescription, ItemActions } from "@workspace/ui/components/item";
 import { selectUpcomingEvents } from "../lib/kpis";
 import { formatEventDay, formatEventMonth } from "../lib/format";
-import { EmptyBlock, FeedCard, Rows } from "./feed-card";
+import { EmptyBlock, ErrorBlock, FeedCard, Rows } from "./feed-card";
 
 export function UpcomingEventsCard({ now }: { now: number }) {
     const { t } = useTranslation();
-    const { data: events, isLoading } = useEvents();
+    const { data: events, isLoading, isError, refetch } = useEvents();
     const upcoming = selectUpcomingEvents(events ?? [], now);
 
     return (
         <FeedCard title={t("pages.dashboard.upcomingEvents")} to="/events" icon={Calendar01Icon}>
             {isLoading ? (
                 <Rows count={3} />
+            ) : isError ? (
+                <ErrorBlock onRetry={() => refetch()} />
             ) : upcoming.length === 0 ? (
                 <EmptyBlock
                     icon={Calendar01Icon}

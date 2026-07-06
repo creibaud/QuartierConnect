@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 
 const ENDPOINT = "https://nominatim.openstreetmap.org/search";
 const USER_AGENT = "QuartierConnect/1.0 (contact: admin@quartierconnect.local)";
-const MIN_INTERVAL_MS = 1100; // respecter la politique ~1 req/s
+const MIN_INTERVAL_MS = 1100; // honor the ~1 req/s usage policy
 
 export interface SearchOptions {
     /** Preferred label language (i18n locale, e.g. "fr" | "en"). */

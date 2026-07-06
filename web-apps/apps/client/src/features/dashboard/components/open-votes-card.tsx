@@ -10,12 +10,12 @@ import { StatusBadge } from "@workspace/ui/components/status-badge";
 import type { CommunityVote } from "../lib/community-vote";
 import { formatDeadline } from "../lib/format";
 import { selectOpenVotes } from "../lib/kpis";
-import { EmptyBlock, FeedCard, Rows } from "./feed-card";
+import { EmptyBlock, ErrorBlock, FeedCard, Rows } from "./feed-card";
 
 export function OpenVotesCard() {
     const { t } = useTranslation();
     const user = getCurrentUser();
-    const { data: votes, isLoading } = useQuery<CommunityVote[]>({
+    const { data: votes, isLoading, isError, refetch } = useQuery<CommunityVote[]>({
         queryKey: ["community-votes"],
         queryFn: () => apiGet<CommunityVote[]>("/community-votes"),
     });
@@ -25,6 +25,8 @@ export function OpenVotesCard() {
         <FeedCard title={t("pages.dashboard.openVotes")} to="/votes" icon={ThumbsUpIcon}>
             {isLoading ? (
                 <Rows count={3} />
+            ) : isError ? (
+                <ErrorBlock onRetry={() => refetch()} />
             ) : openVotes.length === 0 ? (
                 <EmptyBlock
                     icon={ThumbsUpIcon}

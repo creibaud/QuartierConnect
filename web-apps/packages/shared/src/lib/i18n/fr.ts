@@ -18,6 +18,12 @@ export default {
         loadMore: "Voir plus",
         optional: "optionnel",
         loadError: "Impossible de charger les données",
+        theme: {
+            label: "Thème",
+            light: "Clair",
+            dark: "Sombre",
+            system: "Système",
+        },
     },
     auth: {
         login: "Se connecter",
@@ -192,6 +198,7 @@ export default {
         sending: "Envoi…",
         download: "Télécharger",
         uploadError: "Impossible d'envoyer le fichier",
+        sendError: "Impossible d'envoyer le message",
         imageAlt: "Pièce jointe",
         recordVoice: "Enregistrer un message vocal",
         recording: "Enregistrement en cours",
@@ -362,6 +369,7 @@ export default {
             updatePassword: "Mettre à jour le mot de passe",
             passwordUpdated: "Mot de passe mis à jour.",
             currentPasswordWrong: "Mot de passe actuel incorrect.",
+            passwordChangeFailed: "Une erreur est survenue, réessayez.",
             passwordMismatch: "Les mots de passe ne correspondent pas.",
             twoFactor: "Authentification à deux facteurs (2FA)",
             twoFactorOn: "La 2FA est requise et active sur votre compte.",
@@ -516,6 +524,11 @@ export default {
             transferring: "Transfert…",
             transferSuccess: "Points transférés",
             transferError: "Impossible de transférer les points",
+            errors: {
+                recipientNotFound: "Ce destinataire n'existe pas",
+                insufficientBalance: "Solde insuffisant pour ce transfert",
+                selfTransfer: "Vous ne pouvez pas vous transférer des points",
+            },
             historyTitle: "Historique des transactions",
             emptyTitle: "Aucune transaction",
             emptyDescription: "Vos transferts de points apparaîtront ici.",
@@ -618,6 +631,8 @@ export default {
             recording: "Enregistrement…",
             vote: "Voter",
             voteRecorded: "Vote enregistré",
+            castError: "Impossible d'enregistrer votre vote",
+            alreadyVoted: "Vous avez déjà voté sur ce scrutin",
             participantCount_one: "{{count}} participant",
             participantCount_other: "{{count}} participants",
             liveResults: "Résultats provisoires",
@@ -774,6 +789,11 @@ export default {
                 "Vous n'avez pas encore de conversation.",
             conversationReady: "Conversation prête",
             unknownError: "Erreur inconnue",
+            createConversationError: "Impossible de créer la conversation",
+            userEmailNotFound: "Aucun voisin ne correspond à cet email",
+            selfConversation:
+                "Vous ne pouvez pas démarrer une conversation avec vous-même",
+            participantsRequired: "Renseignez au moins un participant",
             newConversationDescription:
                 "Démarre une discussion avec un voisin via son email.",
             neighborEmail: "Email du voisin",
@@ -958,6 +978,8 @@ export default {
                 "{{email}} retrouvera le rôle Résident et l'accès à la plateforme.",
             banConfirmDescription:
                 "{{email}} perdra immédiatement l'accès à la plateforme.",
+            cannotModifySelf:
+                "Vous ne pouvez pas modifier votre propre compte.",
         },
         incidents: {
             description: "Modération et suivi des signalements",
@@ -970,6 +992,8 @@ export default {
             emptyDescription:
                 "Les signalements des résidents apparaîtront ici dès qu'ils seront soumis.",
             statusColumn: "Statut",
+            categoryColumn: "Catégorie",
+            allCategories: "Toutes les catégories",
             reportedAt: "Signalé le",
             done: "Terminé",
             statusUpdated: "Statut mis à jour",
@@ -1011,7 +1035,13 @@ export default {
             polygonHint:
                 "Quartiers existants en gris. Choisissez l'outil stylo puis cliquez sur la carte pour poser les sommets ; fermez le tracé avec Entrée, un double-clic ou un clic sur le premier point. L'outil curseur permet de déplacer les sommets.",
             polygonPoints: "Polygone défini ({{count}} points)",
+            noPolygonWarning:
+                "Aucun périmètre tracé : le quartier sera créé sans zone.",
             overlapError: "Le tracé chevauche un quartier existant",
+            overlapErrorDetail:
+                "Ajustez le périmètre pour qu'il ne recouvre aucun autre quartier.",
+            submitErrorDetail:
+                "Vérifiez les champs du formulaire puis réessayez.",
             searchPlaceholder: "Rechercher par nom",
         },
         services: {
@@ -1096,6 +1126,8 @@ export default {
             participants: "Participants",
             endsAt: "Fin",
             closeVote: "Fermer le vote",
+            closeConfirmTitle: "Fermer ce vote ?",
+            closeConfirmDescription: "Cette action est irréversible.",
             createTitle: "Créer un vote communautaire",
             titleLabel: "Titre *",
             titlePlaceholder: "Question du vote",

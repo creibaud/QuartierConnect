@@ -14,16 +14,18 @@ import {
 
 // --- socket.io-client mock ---------------------------------------------------
 // vi.hoisted ensures the factory runs before module imports (required by Vitest).
-const { mockSocket, mockIo } = vi.hoisted(() => {
+const { mockSocket, mockIo, mockEmitWithAck } = vi.hoisted(() => {
+    const mockEmitWithAck = vi.fn();
     const mockSocket = {
         on: vi.fn(),
         off: vi.fn(),
         emit: vi.fn(),
+        timeout: vi.fn(() => ({ emitWithAck: mockEmitWithAck })),
         disconnect: vi.fn(),
         connected: true,
     };
     const mockIo = vi.fn(() => mockSocket);
-    return { mockSocket, mockIo };
+    return { mockSocket, mockIo, mockEmitWithAck };
 });
 
 vi.mock("socket.io-client", () => ({ io: mockIo }));
@@ -243,21 +245,58 @@ describe("useSocketMessages", () => {
         expect(onMessage).not.toHaveBeenCalled();
     });
 
-    it("sendMessage emits send_message with content", () => {
+    it("sendMessage awaits the server ack and resolves with the message", async () => {
         const onMessage = vi.fn();
+        mockEmitWithAck.mockResolvedValueOnce(mockMessage);
         const { result } = renderHook(
             () => useSocketMessages("conv-1", onMessage),
             { wrapper: createWrapper() },
         );
 
-        act(() => {
-            result.current.sendMessage("Hello world");
+        await act(async () => {
+            await expect(
+                result.current.sendMessage("Hello world"),
+            ).resolves.toEqual(mockMessage);
         });
 
-        expect(mockSocket.emit).toHaveBeenCalledWith("send_message", {
+        expect(mockSocket.timeout).toHaveBeenCalledWith(5000);
+        expect(mockEmitWithAck).toHaveBeenCalledWith("send_message", {
             conversationId: "conv-1",
             content: "Hello world",
         });
+    });
+
+    it("sendMessage rejects when the ack never arrives", async () => {
+        const onMessage = vi.fn();
+        mockEmitWithAck.mockRejectedValueOnce(new Error("timeout"));
+        const { result } = renderHook(
+            () => useSocketMessages("conv-1", onMessage),
+            { wrapper: createWrapper() },
+        );
+
+        await act(async () => {
+            await expect(
+                result.current.sendMessage("Hello world"),
+            ).rejects.toThrow("timeout");
+        });
+    });
+
+    it("sendMessage rejects immediately when the socket is disconnected", async () => {
+        const onMessage = vi.fn();
+        mockSocket.connected = false;
+        const { result } = renderHook(
+            () => useSocketMessages("conv-1", onMessage),
+            { wrapper: createWrapper() },
+        );
+
+        await act(async () => {
+            await expect(
+                result.current.sendMessage("Hello world"),
+            ).rejects.toThrow("socket disconnected");
+        });
+        mockSocket.connected = true;
+
+        expect(mockEmitWithAck).not.toHaveBeenCalled();
     });
 
     it("removes its listeners but keeps the shared socket on unmount", () => {

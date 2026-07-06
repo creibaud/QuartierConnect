@@ -127,6 +127,27 @@ describe("Points (e2e)", () => {
 
             expect(Array.isArray(res.body)).toBe(true);
         });
+
+        it("returns 400 for a non-numeric page", async () => {
+            await request(app.getHttpServer())
+                .get("/points/history?page=abc")
+                .set("Authorization", `Bearer ${senderToken}`)
+                .expect(400);
+        });
+
+        it("returns 400 for page 0", async () => {
+            await request(app.getHttpServer())
+                .get("/points/history?page=0")
+                .set("Authorization", `Bearer ${senderToken}`)
+                .expect(400);
+        });
+
+        it("returns 400 for a limit above 100", async () => {
+            await request(app.getHttpServer())
+                .get("/points/history?limit=101")
+                .set("Authorization", `Bearer ${senderToken}`)
+                .expect(400);
+        });
     });
 
     describe("POST /points/transfer", () => {
@@ -154,6 +175,27 @@ describe("Points (e2e)", () => {
             expect(res.body.message).toMatch(/insufficient/i);
         });
 
+        it("returns 400 when the recipient does not exist", async () => {
+            const res = await request(app.getHttpServer())
+                .post("/points/transfer")
+                .set("Authorization", `Bearer ${senderToken}`)
+                .send({
+                    recipientId: "00000000-0000-4000-8000-000000000000",
+                    amount: 1,
+                })
+                .expect(400);
+
+            expect(res.body.message).toMatch(/recipient/i);
+        });
+
+        it("returns 400 when the amount exceeds 100000", async () => {
+            await request(app.getHttpServer())
+                .post("/points/transfer")
+                .set("Authorization", `Bearer ${senderToken}`)
+                .send({ recipientId, amount: 100_001 })
+                .expect(400);
+        });
+
         it("transfers points when the recipient starts with a zero balance", async () => {
             const recipientBefore = await request(app.getHttpServer())
                 .get("/points/balance")
@@ -162,11 +204,19 @@ describe("Points (e2e)", () => {
 
             const balanceBefore = recipientBefore.body.balance as number;
 
-            await request(app.getHttpServer())
+            const transferRes = await request(app.getHttpServer())
                 .post("/points/transfer")
                 .set("Authorization", `Bearer ${senderToken}`)
                 .send({ recipientId, amount: 2, note: "E2E test" })
                 .expect(201);
+
+            expect(transferRes.body.transaction).toMatchObject({
+                recipientId,
+                amount: 2,
+                note: "E2E test",
+            });
+            expect(typeof transferRes.body.senderBalance).toBe("number");
+            expect(transferRes.body.recipientBalance).toBe(balanceBefore + 2);
 
             const recipientAfter = await request(app.getHttpServer())
                 .get("/points/balance")

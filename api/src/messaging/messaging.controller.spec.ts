@@ -62,6 +62,7 @@ describe("MessagingController", () => {
         controller = module.get<MessagingController>(MessagingController);
         (controller as unknown as Record<string, unknown>)["bucket"] = {
             openUploadStreamWithId: jest.fn().mockReturnValue({
+                on: jest.fn(),
                 end: jest.fn((buf: unknown, cb: () => void) => cb()),
             }),
         };
@@ -88,21 +89,45 @@ describe("MessagingController", () => {
 
     it("getMessages returns paginated messages", async () => {
         mockService.getMessages.mockResolvedValue([mockMessage]);
-        const result = await controller.getMessages("conv-1", req as any);
+        const result = await controller.getMessages("conv-1", req as any, {
+            page: 2,
+            limit: 10,
+        });
         expect(result).toHaveLength(1);
+        expect(mockService.getMessages).toHaveBeenCalledWith(
+            "conv-1",
+            "user-1",
+            2,
+            10,
+        );
+    });
+
+    it("getMessages uses default page=1 limit=50 when not provided", async () => {
+        mockService.getMessages.mockResolvedValue([]);
+        await controller.getMessages("conv-1", req as any, {});
+        expect(mockService.getMessages).toHaveBeenCalledWith(
+            "conv-1",
+            "user-1",
+            1,
+            50,
+        );
     });
 
     it("getMessages throws 403 for non-participant", async () => {
         mockService.getMessages.mockRejectedValue(new ForbiddenException());
         await expect(
-            controller.getMessages("conv-1", { user: { sub: "other" } } as any),
+            controller.getMessages(
+                "conv-1",
+                { user: { sub: "other" } } as any,
+                {},
+            ),
         ).rejects.toThrow(ForbiddenException);
     });
 
     it("getMessages throws 404 for missing conversation", async () => {
         mockService.getMessages.mockRejectedValue(new NotFoundException());
         await expect(
-            controller.getMessages("missing", req as any),
+            controller.getMessages("missing", req as any, {}),
         ).rejects.toThrow(NotFoundException);
     });
 
@@ -206,6 +231,97 @@ describe("MessagingController", () => {
                 "clip.bin",
                 MessageType.FILE,
             );
+        });
+
+        it("rejects the request when the GridFS write fails", async () => {
+            (controller as unknown as Record<string, unknown>)["bucket"] = {
+                openUploadStreamWithId: jest.fn().mockReturnValue({
+                    on: jest.fn(
+                        (event: string, handler: (err: Error) => void) => {
+                            if (event === "error") {
+                                handler(new Error("write failed"));
+                            }
+                        },
+                    ),
+                    end: jest.fn(),
+                }),
+            };
+            await expect(
+                controller.uploadFile(
+                    "conv-1",
+                    makeUpload("application/pdf") as any,
+                    req as any,
+                ),
+            ).rejects.toThrow("write failed");
+            expect(mockService.sendFileMessage).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("getFile", () => {
+        const FILE_ID = "507f1f77bcf86cd799439011";
+
+        const makeRes = () => ({
+            set: jest.fn(),
+            status: jest.fn().mockReturnThis(),
+            end: jest.fn(),
+            destroy: jest.fn(),
+            headersSent: false,
+        });
+
+        const stubBucket = (contentType: string) => {
+            const download = { on: jest.fn(), pipe: jest.fn() };
+            (controller as unknown as Record<string, unknown>)["bucket"] = {
+                find: jest.fn().mockReturnValue({
+                    toArray: jest.fn().mockResolvedValue([
+                        {
+                            filename: "piece.bin",
+                            metadata: {
+                                conversationId: "conv-1",
+                                contentType,
+                            },
+                        },
+                    ]),
+                }),
+                openDownloadStream: jest.fn().mockReturnValue(download),
+            };
+            return download;
+        };
+
+        it("serves an allowlisted image inline with its stored type", async () => {
+            stubBucket("image/png");
+            const res = makeRes();
+            await controller.getFile(FILE_ID, req as any, res as any);
+            expect(res.set).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    "Content-Type": "image/png",
+                    "Content-Disposition": expect.stringContaining("inline"),
+                }),
+            );
+        });
+
+        it("forces an uploader-controlled active type to download", async () => {
+            stubBucket("text/html");
+            const res = makeRes();
+            await controller.getFile(FILE_ID, req as any, res as any);
+            expect(res.set).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    "Content-Type": "application/octet-stream",
+                    "Content-Disposition":
+                        expect.stringContaining("attachment"),
+                }),
+            );
+        });
+
+        it("answers 500 instead of crashing when the download stream errors", async () => {
+            const download = stubBucket("image/png");
+            const res = makeRes();
+            await controller.getFile(FILE_ID, req as any, res as any);
+            const errorHandler = download.on.mock.calls.find(
+                ([event]: [string]) => event === "error",
+            )?.[1] as () => void;
+            errorHandler();
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.end).toHaveBeenCalled();
         });
     });
 });

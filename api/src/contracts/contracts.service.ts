@@ -91,7 +91,22 @@ export class ContractsService {
             contract.status = ContractStatus.FULLY_SIGNED;
             if (!contract.signedAt) contract.signedAt = new Date();
             try {
-                await contract.save();
+                // Guarded write so this read-path reconciliation can never
+                // clobber a status written concurrently.
+                await this.contractModel
+                    .updateOne(
+                        {
+                            _id: contract._id,
+                            status: { $ne: ContractStatus.FULLY_SIGNED },
+                        },
+                        {
+                            $set: {
+                                status: ContractStatus.FULLY_SIGNED,
+                                signedAt: contract.signedAt,
+                            },
+                        },
+                    )
+                    .exec();
             } catch {
                 // best-effort reconciliation: persistence is retried on the
                 // next read
@@ -290,15 +305,28 @@ export class ContractsService {
     }
 
     async cancelContract(id: string): Promise<void> {
-        const contract = await this.contractModel.findById(id).exec();
-        if (!contract) return;
-        if (contract.status === ContractStatus.FULLY_SIGNED) {
-            throw new BadRequestException(
-                "A fully-signed contract cannot be cancelled",
-            );
-        }
-        contract.status = ContractStatus.CANCELLED;
-        await contract.save();
+        // Conditional update so a signature that completed the contract in
+        // the meantime can never be clobbered by a late cancellation.
+        const cancelled = await this.contractModel
+            .findOneAndUpdate(
+                {
+                    _id: id,
+                    status: {
+                        $nin: [
+                            ContractStatus.FULLY_SIGNED,
+                            ContractStatus.CANCELLED,
+                        ],
+                    },
+                },
+                { $set: { status: ContractStatus.CANCELLED } },
+            )
+            .exec();
+        if (cancelled) return;
+        const current = await this.contractModel.findById(id).exec();
+        if (!current || current.status === ContractStatus.CANCELLED) return;
+        throw new BadRequestException(
+            "A fully-signed contract cannot be cancelled",
+        );
     }
 
     async getContractPdf(
@@ -371,58 +399,169 @@ export class ContractsService {
             [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
             user.email;
 
-        const signerIds = new Set(contract.signatures.map((s) => s.userId));
-        signerIds.add(userId);
-        const willBeFullySigned = contract.signatories.every((s) =>
-            signerIds.has(s),
-        );
-        const contractId = String(contract._id);
-
-        // Money-critical: settle BEFORE persisting the final signature so a
-        // `fully_signed` service contract can never exist without payment.
-        if (willBeFullySigned && contract.bookingId) {
-            await this.pointsService.completeServicePayment(contractId);
-        }
-
         const hash = crypto
             .createHash("sha256")
             .update(contract.content + userId + new Date().toISOString())
             .digest("hex");
-        contract.signatures.push({ userId, signedAt: new Date(), hash });
-        if (willBeFullySigned) {
-            contract.status = ContractStatus.FULLY_SIGNED;
-            contract.signedAt = new Date();
-        } else {
-            contract.status = ContractStatus.PARTIAL;
+
+        // Atomic claim of the signature slot: MongoDB re-checks the status
+        // and duplicate guards itself, so two concurrent sign calls can never
+        // push twice nor revive a cancelled contract.
+        const updated = await this.contractModel
+            .findOneAndUpdate(
+                {
+                    _id: id,
+                    status: {
+                        $in: [ContractStatus.DRAFT, ContractStatus.PARTIAL],
+                    },
+                    signatories: userId,
+                    "signatures.userId": { $ne: userId },
+                },
+                {
+                    $push: {
+                        signatures: { userId, signedAt: new Date(), hash },
+                    },
+                    $set: { status: ContractStatus.PARTIAL },
+                },
+                { new: true },
+            )
+            .exec();
+        if (!updated) {
+            throw await this.resolveSignRejection(id, userId);
         }
-        const saved = await contract.save();
+
+        const contractId = String(updated._id);
+        // Completeness is computed from the post-push document, so exactly
+        // the request that lands the last signature settles and flips.
+        // Demoted back to false when the flip loses against a cancellation,
+        // so completion events never fire for a contract that ended
+        // cancelled.
+        let isFullySigned = updated.signatories.every((signatory) =>
+            updated.signatures.some((s) => s.userId === signatory),
+        );
+
+        let result = updated;
+        if (isFullySigned) {
+            if (updated.bookingId) {
+                // Money-critical: settle BEFORE flipping the status so a
+                // `fully_signed` service contract can never exist without
+                // payment. On failure the pushed signature is withdrawn so
+                // the signer can retry once the payment issue is resolved.
+                try {
+                    await this.pointsService.completeServicePayment(contractId);
+                } catch (err) {
+                    await this.rollbackSignature(id, userId);
+                    throw err;
+                }
+            }
+            let flipped = await this.contractModel
+                .findOneAndUpdate(
+                    { _id: id, status: ContractStatus.PARTIAL },
+                    {
+                        $set: {
+                            status: ContractStatus.FULLY_SIGNED,
+                            signedAt: new Date(),
+                        },
+                    },
+                    { new: true },
+                )
+                .exec();
+            if (!flipped) {
+                // The read-path reconciliation may have flipped the status
+                // first: that still counts as a completed signature. Only a
+                // contract that ended CANCELLED must not fire completion.
+                const current = await this.contractModel.findById(id).exec();
+                if (current?.status === ContractStatus.FULLY_SIGNED) {
+                    flipped = current;
+                }
+            }
+            if (flipped) {
+                result = flipped;
+            } else {
+                isFullySigned = false;
+            }
+        }
 
         this.eventEmitter.emit(CONTRACT_SIGNED_EVENT, {
             contractId,
             signerId: userId,
-            signatories: [...contract.signatories],
-            bookingId: contract.bookingId ?? undefined,
-            serviceTitle: contract.title,
-            amount: contract.pointsAmount ?? undefined,
+            signatories: [...result.signatories],
+            bookingId: result.bookingId ?? undefined,
+            serviceTitle: result.title,
+            amount: result.pointsAmount ?? undefined,
             actorName: signerName,
         } satisfies ContractSignedEvent);
 
-        await this.stampSignedPdf(contract, userId, hash, signatureImage);
+        await this.stampSignedPdf(result, userId, hash, signatureImage);
 
-        if (willBeFullySigned && contract.bookingId) {
-            const [payerId, payeeId] = contract.signatories;
+        if (isFullySigned && result.bookingId) {
+            const [payerId, payeeId] = result.signatories;
             this.eventEmitter.emit(CONTRACT_FULLY_SIGNED_EVENT, {
                 contractId,
-                bookingId: contract.bookingId,
-                signatories: [...contract.signatories],
-                serviceTitle: contract.title,
-                amount: contract.pointsAmount ?? undefined,
+                bookingId: result.bookingId,
+                signatories: [...result.signatories],
+                serviceTitle: result.title,
+                amount: result.pointsAmount ?? undefined,
                 payerId,
                 payeeId,
-                serviceId: contract.serviceId ?? undefined,
+                serviceId: result.serviceId ?? undefined,
             } satisfies ContractFullySignedEvent);
         }
-        return saved;
+        return result;
+    }
+
+    // Maps a lost signature claim to the same error the pre-claim guards
+    // would have produced, by re-reading the current document state.
+    private async resolveSignRejection(
+        id: string,
+        userId: string,
+    ): Promise<Error> {
+        const current = await this.contractModel.findById(id).exec();
+        if (!current) return new NotFoundException("Contract not found");
+        if (current.status === ContractStatus.CANCELLED) {
+            return new BadRequestException("Contract is cancelled");
+        }
+        if (!current.signatories.includes(userId)) {
+            return new ForbiddenException("Not a signatory of this contract");
+        }
+        if (current.signatures.some((s) => s.userId === userId)) {
+            return new BadRequestException("Already signed");
+        }
+        return new BadRequestException("Contract cannot be signed");
+    }
+
+    // Best-effort compensation for a failed settlement: withdraw the pushed
+    // signature (and the PARTIAL status when it was the only one) so the
+    // contract returns to its pre-sign state.
+    private async rollbackSignature(
+        contractId: string,
+        userId: string,
+    ): Promise<void> {
+        try {
+            const reverted = await this.contractModel
+                .findOneAndUpdate(
+                    { _id: contractId },
+                    { $pull: { signatures: { userId } } },
+                    { new: true },
+                )
+                .exec();
+            if (reverted && reverted.signatures.length === 0) {
+                await this.contractModel
+                    .updateOne(
+                        {
+                            _id: contractId,
+                            status: ContractStatus.PARTIAL,
+                            signatures: { $size: 0 },
+                        },
+                        { $set: { status: ContractStatus.DRAFT } },
+                    )
+                    .exec();
+            }
+        } catch {
+            // the signature stays recorded; the settlement error still
+            // surfaces to the caller and the flow remains retryable through
+            // the read-path reconciliation
+        }
     }
 
     // Best-effort PDF stamp — must never affect settlement/signature/status.

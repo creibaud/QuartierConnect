@@ -129,6 +129,49 @@ describe("POST /services", () => {
         expect(accepted.body.contractId).toBeTruthy();
     });
 
+    it("refuses to delete a service with an active booking (409), then allows it once cancelled", async () => {
+        const carol = await registerAndLogin(
+            app,
+            `carol-svc-${Date.now()}@test.fr`,
+        );
+        const svc = await request(app.getHttpServer())
+            .post("/services")
+            .set("Authorization", `Bearer ${aliceToken}`)
+            .send({
+                title: "Paid cleaning",
+                description: "One hour of cleaning",
+                category: "other",
+                type: "paid",
+                direction: "offer",
+                duration: 60,
+            })
+            .expect(201);
+
+        const booking = await request(app.getHttpServer())
+            .post("/bookings")
+            .set("Authorization", `Bearer ${carol.accessToken}`)
+            .send({ serviceId: svc.body._id })
+            .expect(201);
+
+        // A pending booking blocks the deletion.
+        const conflict = await request(app.getHttpServer())
+            .delete(`/services/${svc.body._id}`)
+            .set("Authorization", `Bearer ${aliceToken}`)
+            .expect(409);
+        expect(conflict.body.code).toBe("SERVICE_HAS_ACTIVE_BOOKINGS");
+
+        // Once the booking is cancelled, the deletion goes through.
+        await request(app.getHttpServer())
+            .post(`/bookings/${booking.body._id}/cancel`)
+            .set("Authorization", `Bearer ${carol.accessToken}`)
+            .expect(201);
+
+        await request(app.getHttpServer())
+            .delete(`/services/${svc.body._id}`)
+            .set("Authorization", `Bearer ${aliceToken}`)
+            .expect(200);
+    });
+
     it("rejects booking your own service", async () => {
         const svc = await request(app.getHttpServer())
             .post("/services")

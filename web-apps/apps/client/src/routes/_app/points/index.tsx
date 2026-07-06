@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
     ArrowDown01Icon,
@@ -14,6 +14,7 @@ import {
     usePointsHistory,
     useTransferPoints,
 } from "@workspace/shared/lib/hooks/points.hooks";
+import { useDebouncedValue } from "@workspace/shared/lib/hooks/useDebouncedValue";
 import {
     type UserSearchResult,
     useUserSearch,
@@ -233,17 +234,6 @@ function TransactionRow({
     );
 }
 
-function useDebouncedValue<T>(value: T, delayMs: number): T {
-    const [debounced, setDebounced] = useState(value);
-
-    useEffect(() => {
-        const timer = setTimeout(() => setDebounced(value), delayMs);
-        return () => clearTimeout(timer);
-    }, [value, delayMs]);
-
-    return debounced;
-}
-
 function RecipientPicker({
     recipient,
     onSelect,
@@ -321,6 +311,14 @@ function RecipientPicker({
     );
 }
 
+const MAX_TRANSFER_AMOUNT = 100000;
+
+const TRANSFER_ERROR_KEYS: Record<string, string> = {
+    RECIPIENT_NOT_FOUND: "pages.points.errors.recipientNotFound",
+    INSUFFICIENT_BALANCE: "pages.points.errors.insufficientBalance",
+    SELF_TRANSFER: "pages.points.errors.selfTransfer",
+};
+
 function TransferForm() {
     const { t } = useTranslation();
     const [recipient, setRecipient] = useState<UserSearchResult | null>(null);
@@ -332,7 +330,8 @@ function TransferForm() {
     const isValid =
         recipient !== null &&
         Number.isInteger(parsedAmount) &&
-        parsedAmount >= 1;
+        parsedAmount >= 1 &&
+        parsedAmount <= MAX_TRANSFER_AMOUNT;
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -350,10 +349,13 @@ function TransferForm() {
                     setAmount("");
                     setNote("");
                 },
-                onError: (error: Error) =>
+                onError: (error: Error) => {
+                    const code = (error as { code?: string }).code;
+                    const key = code ? TRANSFER_ERROR_KEYS[code] : undefined;
                     toast.error(
-                        error.message || t("pages.points.transferError"),
-                    ),
+                        key ? t(key) : t("pages.points.transferError"),
+                    );
+                },
             },
         );
     }

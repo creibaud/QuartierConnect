@@ -476,9 +476,16 @@ function ConversationThread({
         e.preventDefault();
         const text = inputValue.trim();
         if (!text) return;
-        sendMessage(text);
+        // Optimistic clear; on failure the draft is restored so nothing the
+        // user typed is ever lost silently.
         stopTyping();
         setInputValue("");
+        sendMessage(text)
+            .then((msg) => handleNewMessage(msg))
+            .catch(() => {
+                toast.error(t("messaging.sendError"));
+                setInputValue(text);
+            });
     }
 
     function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
@@ -784,11 +791,21 @@ function NewConversationDialog({
             onOpenChange(false);
             onCreated(conv._id);
         } catch (err) {
-            const message =
-                err instanceof Error
-                    ? err.message
-                    : t("pages.messages.unknownError");
-            toast.error(message);
+            // The backend replies with stable codes; the raw English message
+            // is never shown to the user.
+            const codeKeys: Record<string, string> = {
+                USER_EMAIL_NOT_FOUND: "pages.messages.userEmailNotFound",
+                SELF_CONVERSATION: "pages.messages.selfConversation",
+                NO_OTHER_PARTICIPANTS: "pages.messages.participantsRequired",
+                PARTICIPANTS_REQUIRED: "pages.messages.participantsRequired",
+            };
+            const code = (err as { code?: string }).code;
+            toast.error(
+                t(
+                    (code && codeKeys[code]) ??
+                        "pages.messages.createConversationError",
+                ),
+            );
         }
     }
 

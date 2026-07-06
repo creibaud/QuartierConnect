@@ -8,14 +8,9 @@ import javafx.scene.layout.VBox;
 
 public class PageLayout extends HBox {
 
-    private final AppSidebar sidebar;
-    private final AppTopBar  topBar;
-    private final StackPane  contentArea = new StackPane();
+    private final StackPane contentArea = new StackPane();
 
     public PageLayout(AppSidebar sidebar, AppTopBar topBar) {
-        this.sidebar = sidebar;
-        this.topBar  = topBar;
-
         contentArea.getStyleClass().add("content-area");
         VBox.setVgrow(contentArea, Priority.ALWAYS);
 
@@ -30,7 +25,4 @@ public class PageLayout extends HBox {
     public void setContent(Node node) {
         contentArea.getChildren().setAll(node);
     }
-
-    public AppSidebar getSidebar()  { return sidebar; }
-    public AppTopBar  getTopBar()   { return topBar; }
 }

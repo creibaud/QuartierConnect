@@ -7,7 +7,6 @@ reserved = {
     "OR": "OR",
     "LIMIT": "LIMIT",
     "COUNT": "COUNT",
-    "IN": "IN",
     "LIKE": "LIKE",
 }
 
@@ -21,10 +20,6 @@ tokens = [
     "GTE",
     "LT",
     "LTE",
-    "LPAREN",
-    "RPAREN",
-    "COMMA",
-    "DOT",
 ] + list(reserved.values())
 
 t_EQ = r"="
@@ -33,10 +28,6 @@ t_GT = r">"
 t_GTE = r">="
 t_LT = r"<"
 t_LTE = r"<="
-t_LPAREN = r"\("
-t_RPAREN = r"\)"
-t_COMMA = r","
-t_DOT = r"\."
 t_ignore = " \t\n"
 
 

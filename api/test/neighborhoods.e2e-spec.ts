@@ -183,6 +183,15 @@ describe("Neighborhoods CRUD (e2e)", () => {
                 .get("/neighborhoods/000000000000000000000000")
                 .expect(404);
         });
+
+        it("returns 400 for a non-ObjectId id, not a 500", async () => {
+            const res = await request(app.getHttpServer())
+                .get("/neighborhoods/invalid-id-123")
+                .expect(400);
+
+            expect(res.body.error).toBe("Bad Request");
+            expect(res.body.statusCode).toBe(400);
+        });
     });
 
     describe("PATCH /neighborhoods/:id", () => {

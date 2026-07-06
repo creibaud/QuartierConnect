@@ -7,11 +7,17 @@ import {
 import { apiGet, apiPatch } from "../api";
 import type { User } from "../types";
 
-export function useInfiniteUsers(limit = 20) {
+export function useInfiniteUsers(limit = 20, search = "", role = "") {
     return useInfiniteQuery({
-        queryKey: ["admin", "users"],
+        // search/role are part of the key so changing a filter restarts the
+        // pagination from page 1 with server-side filtering.
+        queryKey: ["admin", "users", search, role],
         queryFn: ({ pageParam }: { pageParam: number }) =>
-            apiGet<User[]>(`/users?page=${pageParam}&limit=${limit}`),
+            apiGet<User[]>(
+                `/users?page=${pageParam}&limit=${limit}` +
+                    `&search=${encodeURIComponent(search)}` +
+                    `&role=${encodeURIComponent(role)}`,
+            ),
         getNextPageParam: (lastPage: User[], allPages: User[][]) =>
             lastPage.length === limit ? allPages.length + 1 : undefined,
         initialPageParam: 1,

@@ -9,11 +9,11 @@ import {
     ItemActions,
 } from "@workspace/ui/components/item";
 import { resolveCounterparty, formatPointsDelta } from "../lib/format";
-import { EmptyBlock, FeedCard, Rows } from "./feed-card";
+import { EmptyBlock, ErrorBlock, FeedCard, Rows } from "./feed-card";
 
 export function TransactionsCard({ currentEmail }: { currentEmail: string }) {
     const { t } = useTranslation();
-    const { data: history, isLoading } = usePointsHistory(1, 5);
+    const { data: history, isLoading, isError, refetch } = usePointsHistory(1, 5);
     const transactions = (history ?? []).slice(0, 4);
 
     return (
@@ -24,6 +24,8 @@ export function TransactionsCard({ currentEmail }: { currentEmail: string }) {
         >
             {isLoading ? (
                 <Rows count={3} />
+            ) : isError ? (
+                <ErrorBlock onRetry={() => refetch()} />
             ) : transactions.length === 0 ? (
                 <EmptyBlock
                     icon={Coins01Icon}

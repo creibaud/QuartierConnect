@@ -1,6 +1,12 @@
-import { ForbiddenException, NotFoundException } from "@nestjs/common";
+import {
+    BadRequestException,
+    ConflictException,
+    ForbiddenException,
+    NotFoundException,
+} from "@nestjs/common";
 import { getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
+import { ServiceBooking } from "../bookings/schemas/service-booking.schema";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import { GeocodingService } from "../geocoding/geocoding.service";
 import { SocialService } from "../social/social.service";
@@ -14,7 +20,9 @@ const mockService = {
     description: "Repairs",
     category: "home",
     type: "paid",
+    duration: 60,
     createdBy: "user-uuid-1",
+    neighborhoodId: "n1",
 };
 
 const authReq = (
@@ -29,12 +37,14 @@ describe("ServicesController", () => {
     let controller: ServicesController;
     let model: any;
     let responseModel: any;
+    let bookingModel: any;
     let db: any;
     let geocoding: any;
 
     beforeEach(async () => {
         model = {
             find: jest.fn().mockReturnValue({
+                sort: jest.fn().mockReturnThis(),
                 skip: jest.fn().mockReturnThis(),
                 limit: jest.fn().mockReturnValue({
                     exec: jest.fn().mockResolvedValue([mockService]),
@@ -62,6 +72,10 @@ describe("ServicesController", () => {
             deleteOne: jest.fn().mockResolvedValue({ deletedCount: 1 }),
         };
 
+        bookingModel = {
+            countDocuments: jest.fn().mockResolvedValue(0),
+        };
+
         db = {
             select: jest.fn().mockReturnValue({
                 from: jest.fn().mockReturnValue({
@@ -77,6 +91,10 @@ describe("ServicesController", () => {
                 {
                     provide: getModelToken(ServiceResponse.name),
                     useValue: responseModel,
+                },
+                {
+                    provide: getModelToken(ServiceBooking.name),
+                    useValue: bookingModel,
                 },
                 {
                     provide: SocialService,
@@ -142,6 +160,7 @@ describe("ServicesController", () => {
 
     it("GET /services with unknown category returns empty array (no 400)", async () => {
         model.find.mockReturnValue({
+            sort: jest.fn().mockReturnThis(),
             skip: jest.fn().mockReturnThis(),
             limit: jest.fn().mockReturnValue({
                 exec: jest.fn().mockResolvedValue([]),
@@ -295,13 +314,41 @@ describe("ServicesController", () => {
         expect(result).toEqual([]);
     });
 
+    it("GET /services/:id returns the service for a caller in the same neighborhood", async () => {
+        const result = await controller.findOne("svc-id-1", authReq() as any);
+        expect(result).toEqual(mockService);
+    });
+
+    it("GET /services/:id throws 403 for a service outside the caller's neighborhood", async () => {
+        model.findById.mockReturnValue({
+            exec: jest
+                .fn()
+                .mockResolvedValue({ ...mockService, neighborhoodId: "n2" }),
+        });
+        await expect(
+            controller.findOne("svc-id-1", authReq() as any),
+        ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("GET /services/:id lets an admin read any neighborhood's service", async () => {
+        model.findById.mockReturnValue({
+            exec: jest
+                .fn()
+                .mockResolvedValue({ ...mockService, neighborhoodId: "n2" }),
+        });
+        const result = await controller.findOne("svc-id-1", {
+            user: { sub: "admin1", role: "admin" },
+        } as any);
+        expect(result).toMatchObject({ neighborhoodId: "n2" });
+    });
+
     it("GET /services/:id throws 404 when not found", async () => {
         model.findById.mockReturnValue({
             exec: jest.fn().mockResolvedValue(null),
         });
-        await expect(controller.findOne("bad-id")).rejects.toThrow(
-            NotFoundException,
-        );
+        await expect(
+            controller.findOne("bad-id", authReq() as any),
+        ).rejects.toThrow(NotFoundException);
     });
 
     it("POST /services sets createdBy from JWT", async () => {
@@ -336,7 +383,7 @@ describe("ServicesController", () => {
         );
     });
 
-    it("POST /services uses dto.neighborhoodId when explicitly provided", async () => {
+    it("POST /services ignores dto.neighborhoodId for non-admins (anti-spoofing)", async () => {
         await controller.create(
             {
                 title: "T",
@@ -349,7 +396,50 @@ describe("ServicesController", () => {
             authReq("resident", "user-uuid-1", "n1") as any,
         );
         expect(model.create).toHaveBeenCalledWith(
+            expect.objectContaining({ neighborhoodId: "n1" }),
+        );
+    });
+
+    it("POST /services lets an admin target another neighborhood", async () => {
+        await controller.create(
+            {
+                title: "T",
+                description: "D",
+                category: "home",
+                type: "free",
+                direction: "offer",
+                neighborhoodId: "n2",
+            },
+            authReq("admin", "admin-uuid-1", "n1") as any,
+        );
+        expect(model.create).toHaveBeenCalledWith(
             expect.objectContaining({ neighborhoodId: "n2" }),
+        );
+    });
+
+    it("PATCH /services/:id ignores a neighborhood change from a non-admin owner", async () => {
+        await controller.update(
+            "svc-id-1",
+            { neighborhoodId: "n2" },
+            authReq() as any,
+        );
+        expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+            "svc-id-1",
+            { $set: {} },
+            { new: true, runValidators: true },
+        );
+    });
+
+    it("PATCH /services/:id lets an admin change the neighborhood", async () => {
+        await controller.update(
+            "svc-id-1",
+            { neighborhoodId: "n2" },
+            authReq("admin", "admin-uuid-1", "n1") as any,
+        );
+        expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+            "svc-id-1",
+            { $set: { neighborhoodId: "n2" } },
+            { new: true, runValidators: true },
         );
     });
 
@@ -381,6 +471,61 @@ describe("ServicesController", () => {
         expect(result).toEqual(mockService);
     });
 
+    it("PATCH /services/:id rejects switching to paid without any duration", async () => {
+        model.findById.mockReturnValue({
+            exec: jest.fn().mockResolvedValue({
+                ...mockService,
+                type: "free",
+                duration: undefined,
+            }),
+        });
+        await expect(
+            controller.update("svc-id-1", { type: "paid" }, authReq() as any),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        await expect(
+            controller.update("svc-id-1", { type: "paid" }, authReq() as any),
+        ).rejects.toMatchObject({
+            response: {
+                code: "PAID_SERVICE_REQUIRES_DURATION",
+                message: "A paid service requires a duration",
+            },
+        });
+        expect(model.findByIdAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it("PATCH /services/:id accepts switching to paid with a duration in the same body", async () => {
+        model.findById.mockReturnValue({
+            exec: jest.fn().mockResolvedValue({
+                ...mockService,
+                type: "free",
+                duration: undefined,
+            }),
+        });
+        await controller.update(
+            "svc-id-1",
+            { type: "paid", duration: 30 },
+            authReq() as any,
+        );
+        expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+            "svc-id-1",
+            { $set: { type: "paid", duration: 30 } },
+            { new: true, runValidators: true },
+        );
+    });
+
+    it("PATCH /services/:id runs schema validators on the atomic update", async () => {
+        await controller.update(
+            "svc-id-1",
+            { title: "Updated" },
+            authReq() as any,
+        );
+        expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+            "svc-id-1",
+            { $set: { title: "Updated" } },
+            expect.objectContaining({ runValidators: true }),
+        );
+    });
+
     it("DELETE /services/:id allows the owner to remove it", async () => {
         const result = await controller.remove("svc-id-1", authReq() as any);
         expect(result).toEqual({ success: true });
@@ -405,6 +550,22 @@ describe("ServicesController", () => {
         expect(model.findByIdAndDelete).not.toHaveBeenCalled();
     });
 
+    it("DELETE /services/:id throws 409 when active bookings exist", async () => {
+        bookingModel.countDocuments.mockResolvedValue(1);
+        await expect(
+            controller.remove("svc-id-1", authReq() as any),
+        ).rejects.toThrow(ConflictException);
+        expect(model.findByIdAndDelete).not.toHaveBeenCalled();
+    });
+
+    it("DELETE /services/:id only counts pending and accepted bookings", async () => {
+        await controller.remove("svc-id-1", authReq() as any);
+        expect(bookingModel.countDocuments).toHaveBeenCalledWith({
+            serviceId: "svc-id-1",
+            status: { $in: ["pending", "accepted"] },
+        });
+    });
+
     it("PATCH /services/:id persists a direction change", async () => {
         await controller.update(
             "svc-id-1",
@@ -414,7 +575,7 @@ describe("ServicesController", () => {
         expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
             "svc-id-1",
             { $set: { direction: "request" } },
-            { new: true },
+            { new: true, runValidators: true },
         );
     });
 
@@ -562,11 +723,11 @@ describe("ServicesController", () => {
                     location: { type: "Point", coordinates: [2.35, 48.85] },
                 },
             },
-            { new: true },
+            { new: true, runValidators: true },
         );
     });
 
-    it("PATCH /services/:id keeps the stored location when geocode fails", async () => {
+    it("PATCH /services/:id clears the location when geocode fails", async () => {
         geocoding.geocode.mockResolvedValue(null);
         await controller.update(
             "svc-id-1",
@@ -575,7 +736,7 @@ describe("ServicesController", () => {
         );
         const setArg = model.findByIdAndUpdate.mock.calls[0][1].$set;
         expect(setArg.address).toBe("bad");
-        expect(setArg.location).toBeUndefined();
+        expect(setArg.location).toBeNull();
     });
 
     it("GET /services/mine returns own services with responders enriched from Drizzle", async () => {

@@ -59,8 +59,9 @@ export class CommunityVotesController {
     findAll(
         @Query("page", new DefaultValuePipe(1), ParseIntPipe) page: number,
         @Query("limit", new DefaultValuePipe(20), ParseIntPipe) limit: number,
+        @Request() req: AuthRequest = { user: { sub: "", role: "" } },
     ) {
-        return this.communityVotesService.findAll(page, limit);
+        return this.communityVotesService.findAllFor(req.user.sub, page, limit);
     }
 
     @Get(":id")
@@ -68,8 +69,8 @@ export class CommunityVotesController {
     @ApiParam({ name: "id", description: "MongoDB ObjectId of the vote" })
     @ApiResponse({ status: 200, type: CommunityVoteDto })
     @ApiResponse({ status: 404, description: "Vote not found" })
-    findOne(@Param("id") id: string) {
-        return this.communityVotesService.findOne(id);
+    findOne(@Param("id") id: string, @Request() req: AuthRequest) {
+        return this.communityVotesService.findOneFor(id, req.user.sub);
     }
 
     @Post(":id/cast")

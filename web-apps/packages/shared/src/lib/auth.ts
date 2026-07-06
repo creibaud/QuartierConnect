@@ -26,10 +26,21 @@ export function clearTokens(): void {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
 }
 
+function base64UrlToBytes(encoded: string): Uint8Array {
+    const base64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(
+        base64.length + ((4 - (base64.length % 4)) % 4),
+        "=",
+    );
+    return Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
+}
+
 export function decodeToken(token: string): TokenPayload | null {
     try {
         const payload = token.split(".")[1];
-        return JSON.parse(atob(payload)) as TokenPayload;
+        if (!payload) return null;
+        const json = new TextDecoder().decode(base64UrlToBytes(payload));
+        return JSON.parse(json) as TokenPayload;
     } catch {
         return null;
     }

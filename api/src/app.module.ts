@@ -1,7 +1,7 @@
 import * as path from "path";
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import { APP_GUARD } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { EventEmitterModule } from "@nestjs/event-emitter";
 import { MongooseModule } from "@nestjs/mongoose";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
@@ -9,6 +9,7 @@ import { AcceptLanguageResolver, I18nModule, QueryResolver } from "nestjs-i18n";
 import { AppController } from "./app.controller";
 import { AuthModule } from "./auth/auth.module";
 import { BookingsModule } from "./bookings/bookings.module";
+import { MongooseExceptionFilter } from "./common/filters/mongoose-exception.filter";
 import { CommunityVotesModule } from "./community-votes/community-votes.module";
 import { ContractsModule } from "./contracts/contracts.module";
 import { DrizzleModule } from "./database/drizzle.module";
@@ -74,6 +75,10 @@ import { VotesModule } from "./votes/votes.module";
         {
             provide: APP_GUARD,
             useClass: ThrottlerGuard,
+        },
+        {
+            provide: APP_FILTER,
+            useClass: MongooseExceptionFilter,
         },
     ],
 })

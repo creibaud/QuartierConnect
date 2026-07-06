@@ -6,14 +6,26 @@ import { createHead, UnheadProvider } from "@unhead/react/client";
 import "@workspace/ui/globals.css";
 import "@workspace/ui/voisinage.css";
 import "@workspace/shared/lib/i18n/index";
+import { NotFoundPage, RouterErrorPage } from "./components/router-fallback";
 import { ThemeProvider } from "./components/theme-provider";
 import { routeTree } from "./routeTree.gen";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            retry: 1,
+            staleTime: 30_000,
+        },
+    },
+});
 
 const head = createHead();
 
-const router = createRouter({ routeTree });
+const router = createRouter({
+    routeTree,
+    defaultNotFoundComponent: NotFoundPage,
+    defaultErrorComponent: RouterErrorPage,
+});
 
 declare module "@tanstack/react-router" {
     interface Register {

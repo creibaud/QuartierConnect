@@ -8,10 +8,12 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { getCurrentUser } from "@workspace/shared/lib/auth";
 import {
     useInfiniteUsers,
     useUpdateUserRole,
 } from "@workspace/shared/lib/hooks/useAdminUsers";
+import { useDebouncedValue } from "@workspace/shared/lib/hooks/useDebouncedValue";
 import type { User } from "@workspace/shared/lib/types";
 import {
     AlertDialog,
@@ -72,13 +74,20 @@ export const Route = createFileRoute("/_app/users/")({
 
 function UsersPage() {
     const { t, i18n } = useTranslation();
-    const { data, isLoading, isError, fetchNextPage, hasNextPage } =
-        useInfiniteUsers();
-    const updateRole = useUpdateUserRole();
-    const users = data?.pages.flat() ?? [];
-
     const [search, setSearch] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
+    // Server-side filtering: a client-side filter would only ever search the
+    // pages already loaded, missing any user beyond them.
+    const debouncedSearch = useDebouncedValue(search.trim(), 300);
+    const { data, isLoading, isError, fetchNextPage, hasNextPage } =
+        useInfiniteUsers(
+            20,
+            debouncedSearch,
+            roleFilter === "all" ? "" : roleFilter,
+        );
+    const updateRole = useUpdateUserRole();
+    const currentUserId = getCurrentUser()?.sub ?? null;
+    const users = data?.pages.flat() ?? [];
 
     const roleLabels: Record<string, string> = {
         resident: t("adminPages.roles.resident"),
@@ -117,15 +126,7 @@ function UsersPage() {
         );
     }
 
-    const query = search.trim().toLowerCase();
-    const filteredUsers = users.filter((user) => {
-        const matchesSearch =
-            query.length === 0 || user.email.toLowerCase().includes(query);
-        const matchesRole = roleFilter === "all" || user.role === roleFilter;
-        return matchesSearch && matchesRole;
-    });
-
-    const { sorted, toggle, getSortDirection } = useTableSort(filteredUsers, {
+    const { sorted, toggle, getSortDirection } = useTableSort(users, {
         accessors: {
             role: (user) => roleLabels[user.role] ?? user.role,
             createdAt: (user) => new Date(user.createdAt),
@@ -182,7 +183,7 @@ function UsersPage() {
                 <DataState
                     loading={isLoading}
                     error={isError ? true : undefined}
-                    isEmpty={filteredUsers.length === 0}
+                    isEmpty={users.length === 0}
                     skeleton={
                         <div className="flex flex-col gap-2">
                             {Array.from({ length: 6 }).map((_, i) => (
@@ -239,7 +240,9 @@ function UsersPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {sorted.map((user) => (
+                                {sorted.map((user) => {
+                                    const isSelf = user.id === currentUserId;
+                                    return (
                                     <TableRow key={user.id}>
                                         <TableCell className="py-2 font-medium">
                                             {user.email}
@@ -261,7 +264,16 @@ function UsersPage() {
                                             ).toLocaleDateString(i18n.language)}
                                         </TableCell>
                                         <TableCell className="py-2 text-right">
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div
+                                                className="flex items-center justify-end gap-2"
+                                                title={
+                                                    isSelf
+                                                        ? t(
+                                                              "adminPages.users.cannotModifySelf",
+                                                          )
+                                                        : undefined
+                                                }
+                                            >
                                                 {user.role !== "banned" && (
                                                     <Select
                                                         value={user.role}
@@ -272,7 +284,8 @@ function UsersPage() {
                                                             )
                                                         }
                                                         disabled={
-                                                            updateRole.isPending
+                                                            updateRole.isPending ||
+                                                            isSelf
                                                         }
                                                     >
                                                         <SelectTrigger className="h-8 w-36 text-xs">
@@ -309,7 +322,8 @@ function UsersPage() {
                                                             size="sm"
                                                             className="h-8 text-xs"
                                                             disabled={
-                                                                updateRole.isPending
+                                                                updateRole.isPending ||
+                                                                isSelf
                                                             }
                                                         >
                                                             <HugeiconsIcon
@@ -393,7 +407,8 @@ function UsersPage() {
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                    );
+                                })}
                             </TableBody>
                         </Table>
 
