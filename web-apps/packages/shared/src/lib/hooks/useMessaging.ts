@@ -89,8 +89,19 @@ export function useSocketMessages(
         };
     }, [conversationId, onMessage, queryClient]);
 
-    const sendMessage = (content: string) => {
-        getRealtimeSocket()?.emit("send_message", { conversationId, content });
+    // The gateway returns the persisted message as a socket.io ack, and a
+    // WsException never acks: awaiting with a timeout is what turns a silent
+    // loss (closed socket, rejected message) into a visible failure.
+    const SEND_ACK_TIMEOUT_MS = 5000;
+
+    const sendMessage = (content: string): Promise<Message> => {
+        const socket = getRealtimeSocket();
+        if (!socket?.connected) {
+            return Promise.reject(new Error("socket disconnected"));
+        }
+        return socket
+            .timeout(SEND_ACK_TIMEOUT_MS)
+            .emitWithAck("send_message", { conversationId, content });
     };
 
     return { sendMessage };

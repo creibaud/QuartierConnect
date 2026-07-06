@@ -39,6 +39,7 @@ describe("UsersController", () => {
         // the role lookup resolves when awaited directly.
         const whereBuilder = {
             orderBy: mockDb.orderBy,
+            offset: mockDb.offset,
             limit: mockDb.limit,
             returning: mockDb.returning,
             then: (
@@ -60,6 +61,22 @@ describe("UsersController", () => {
         const result = await controller.findAll();
         expect(result).toHaveLength(1);
         expect(mockDb.select).toHaveBeenCalled();
+    });
+
+    it("GET /users without filters queries with an undefined where clause", async () => {
+        await controller.findAll();
+        expect(mockDb.where).toHaveBeenCalledWith(undefined);
+    });
+
+    it("GET /users?search filters server-side instead of relying on loaded pages", async () => {
+        await controller.findAll("1", "20", "bob", "resident");
+        expect(mockDb.where).toHaveBeenCalled();
+        expect(mockDb.where.mock.calls[0][0]).toBeDefined();
+    });
+
+    it("GET /users ignores an unknown role filter", async () => {
+        await controller.findAll("1", "20", "", "superadmin");
+        expect(mockDb.where).toHaveBeenCalledWith(undefined);
     });
 
     const authReq = (sub = "user-uuid-1"): { user: { sub: string } } => ({

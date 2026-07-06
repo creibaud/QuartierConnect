@@ -19,7 +19,7 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
-import { and, eq, ilike, ne, notInArray, sql } from "drizzle-orm";
+import { and, eq, ilike, ne, notInArray, sql, type SQL } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -41,6 +41,7 @@ const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_RESULTS = 10;
 const MAX_NEIGHBOR_RESULTS = 20;
 const EXCLUDED_NEIGHBOR_ROLES = ["banned", "deleted"];
+const FILTERABLE_ROLES = ["resident", "moderator", "admin", "banned"] as const;
 const FALLBACK_NEIGHBOR_NAME = "Voisin";
 
 function escapeLikePattern(value: string): string {
@@ -148,10 +149,22 @@ export class UsersController {
     @ApiOperation({
         summary: "List users (admin)",
         description:
-            "Returns the paginated list of users. Returned fields: id, email, role, createdAt. Sensitive fields (passwordHash, totpSecret, refreshTokenHash) are excluded.",
+            "Returns the paginated list of users, filterable by email substring and role. Returned fields: id, email, role, createdAt. Sensitive fields (passwordHash, totpSecret, refreshTokenHash) are excluded.",
     })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
+    @ApiQuery({
+        name: "search",
+        required: false,
+        example: "bob",
+        description: "Email substring (case-insensitive)",
+    })
+    @ApiQuery({
+        name: "role",
+        required: false,
+        enum: FILTERABLE_ROLES,
+        description: "Filter by role (unknown values are ignored)",
+    })
     @ApiResponse({
         status: 200,
         type: [UserPublicDto],
@@ -161,10 +174,27 @@ export class UsersController {
         status: 403,
         description: "Insufficient role (admin required)",
     })
-    findAll(@Query("page") page = "1", @Query("limit") limit = "20") {
+    findAll(
+        @Query("page") page = "1",
+        @Query("limit") limit = "20",
+        @Query("search") search = "",
+        @Query("role") role = "",
+    ) {
         const pageNum = Math.max(1, parseInt(page) || 1);
         const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
         const skip = (pageNum - 1) * limitNum;
+        // Server-side filters: the admin screen pages through users, so a
+        // client-side filter would only ever search the loaded pages.
+        const conditions: SQL[] = [];
+        const term = search.trim();
+        if (term.length > 0) {
+            conditions.push(
+                ilike(schema.users.email, `%${escapeLikePattern(term)}%`),
+            );
+        }
+        if ((FILTERABLE_ROLES as readonly string[]).includes(role)) {
+            conditions.push(eq(schema.users.role, role));
+        }
         return this.db
             .select({
                 id: schema.users.id,
@@ -173,6 +203,8 @@ export class UsersController {
                 createdAt: schema.users.createdAt,
             })
             .from(schema.users)
+            .where(conditions.length ? and(...conditions) : undefined)
+            .orderBy(schema.users.createdAt, schema.users.id)
             .offset(skip)
             .limit(limitNum);
     }

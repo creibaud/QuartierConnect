@@ -64,7 +64,13 @@ async function apiFetch(
         const refreshed = await refreshTokens();
         if (refreshed) return apiFetch(path, init, false);
         clearTokens();
-        window.location.href = "/login";
+        // Keep the interrupted destination so the login page can send the
+        // user back where they were once re-authenticated.
+        const destination =
+            window.location.pathname + window.location.search;
+        window.location.href = destination.startsWith("/login")
+            ? "/login"
+            : `/login?redirect=${encodeURIComponent(destination)}`;
     }
 
     return res;
@@ -133,11 +139,11 @@ export async function apiDelete<T>(path: string, body?: unknown): Promise<T> {
         body: body ? JSON.stringify(body) : undefined,
     });
     if (res.status === 204) return undefined as T;
-    const data = await res.json();
+    const data = await parseJsonSafely(res);
     if (!res.ok) {
-        const err = data as ApiError;
-        throw Object.assign(new Error(err.message ?? "Request failed"), {
-            code: err.code,
+        const err = data as ApiError | null;
+        throw Object.assign(new Error(err?.message ?? "Request failed"), {
+            code: err?.code,
             status: res.status,
         });
     }
@@ -167,22 +173,16 @@ export async function apiUpload<T>(
     path: string,
     formData: FormData,
 ): Promise<T> {
-    const token = getAccessToken();
-    const headers: Record<string, string> = {};
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+    // Delegates to apiFetch so uploads get the same silent token refresh as
+    // every other verb (a stale access token used to fail the upload
+    // outright) and the same non-JSON error handling.
+    const res = await apiFetch(path, { method: "POST", body: formData });
 
-    const res = await fetch(`${BASE_URL}${path}`, {
-        method: "POST",
-        headers,
-        body: formData,
-        credentials: "include",
-    });
-
-    const data = await res.json();
+    const data = await parseJsonSafely(res);
     if (!res.ok) {
-        const err = data as ApiError;
-        throw Object.assign(new Error(err.message ?? "Request failed"), {
-            code: err.code,
+        const err = data as ApiError | null;
+        throw Object.assign(new Error(err?.message ?? "Request failed"), {
+            code: err?.code,
             status: res.status,
         });
     }

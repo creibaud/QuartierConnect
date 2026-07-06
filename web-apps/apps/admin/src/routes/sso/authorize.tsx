@@ -6,6 +6,7 @@ import {
     setTokens,
     type LoginResponse,
 } from "@workspace/shared/lib/auth";
+import { resolveAuthErrorMessage } from "@workspace/shared/lib/server-error";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
 import { AuthLayout } from "@workspace/ui/components/auth-layout";
 import { Button } from "@workspace/ui/components/button";
@@ -124,9 +125,11 @@ function SsoAuthorizePage() {
                     INVALID_TOTP: t("adminPages.auth.invalidTotp"),
                 };
                 setServerError(
-                    messages[apiErr.code ?? ""] ??
-                        apiErr.message ??
+                    resolveAuthErrorMessage(
+                        apiErr.code,
+                        messages,
                         t("adminPages.auth.loginError"),
+                    ),
                 );
                 if (apiErr.code === "INVALID_TOTP") {
                     totpForm.setFieldValue("totpCode", "");

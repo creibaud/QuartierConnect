@@ -3,6 +3,7 @@ import { useHead } from "@unhead/react";
 import {
     createFileRoute,
     useNavigate,
+    useRouter,
     useSearch,
 } from "@tanstack/react-router";
 import { apiPost } from "@workspace/shared/lib/api";
@@ -11,6 +12,8 @@ import {
     setTokens,
     type LoginResponse,
 } from "@workspace/shared/lib/auth";
+import { sanitizeRedirectPath } from "@workspace/shared/lib/redirect";
+import { resolveAuthErrorMessage } from "@workspace/shared/lib/server-error";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
 import { AuthLayout } from "@workspace/ui/components/auth-layout";
 import { Button } from "@workspace/ui/components/button";
@@ -22,8 +25,13 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 export const Route = createFileRoute("/login")({
-    validateSearch: (search: Record<string, unknown>) => ({
+    // `redirect` must stay optional in the derived search type so the
+    // existing navigations passing only `forbidden` keep compiling.
+    validateSearch: (
+        search: Record<string, unknown>,
+    ): { forbidden: boolean; redirect?: string } => ({
         forbidden: search.forbidden === true,
+        redirect: sanitizeRedirectPath(search.redirect),
     }),
     component: AdminLoginPage,
 });
@@ -32,7 +40,8 @@ function AdminLoginPage() {
     const { t } = useTranslation();
     useHead({ title: t("adminPages.auth.loginTitle") });
     const navigate = useNavigate();
-    const { forbidden } = useSearch({ from: "/login" });
+    const router = useRouter();
+    const { forbidden, redirect: redirectTo } = useSearch({ from: "/login" });
 
     const credentialsSchema = z.object({
         email: z.string().email(t("adminPages.auth.invalidEmail")),
@@ -77,7 +86,13 @@ function AdminLoginPage() {
                 }
                 setTokens(data.accessToken);
                 toast.success(t("adminPages.auth.loginSuccess"));
-                navigate({ to: "/dashboard" });
+                // Back to the page that triggered the login when one was
+                // recorded; the dashboard otherwise.
+                if (redirectTo) {
+                    router.history.push(redirectTo);
+                } else {
+                    navigate({ to: "/dashboard" });
+                }
             } catch (err) {
                 const apiErr = err as { code?: string; message?: string };
                 const messages: Record<string, string> = {
@@ -85,9 +100,11 @@ function AdminLoginPage() {
                     INVALID_TOTP: t("adminPages.auth.invalidTotp"),
                 };
                 setServerError(
-                    messages[apiErr.code ?? ""] ??
-                        apiErr.message ??
+                    resolveAuthErrorMessage(
+                        apiErr.code,
+                        messages,
                         t("adminPages.auth.loginError"),
+                    ),
                 );
                 if (apiErr.code === "INVALID_TOTP") {
                     totpForm.setFieldValue("totpCode", "");

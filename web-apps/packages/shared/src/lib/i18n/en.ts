@@ -197,6 +197,7 @@ export default {
         sending: "Sending…",
         download: "Download",
         uploadError: "Unable to send the file",
+        sendError: "Unable to send the message",
         imageAlt: "Attachment",
         recordVoice: "Record a voice message",
         recording: "Recording in progress",
@@ -621,6 +622,8 @@ export default {
             recording: "Recording…",
             vote: "Vote",
             voteRecorded: "Vote recorded",
+            castError: "Unable to record your vote",
+            alreadyVoted: "You have already voted on this ballot",
             participantCount_one: "{{count}} participant",
             participantCount_other: "{{count}} participants",
             liveResults: "Live results",
@@ -775,6 +778,10 @@ export default {
             noConversationsDescription: "You don't have any conversation yet.",
             conversationReady: "Conversation ready",
             unknownError: "Unknown error",
+            createConversationError: "Unable to create the conversation",
+            userEmailNotFound: "No neighbor matches this email",
+            selfConversation: "You cannot start a conversation with yourself",
+            participantsRequired: "Add at least one participant",
             newConversationDescription:
                 "Start a discussion with a neighbor via their email.",
             neighborEmail: "Neighbor's email",
@@ -970,6 +977,8 @@ export default {
             emptyDescription:
                 "Residents' reports will appear here as soon as they are submitted.",
             statusColumn: "Status",
+            categoryColumn: "Category",
+            allCategories: "All categories",
             reportedAt: "Reported on",
             done: "Done",
             statusUpdated: "Status updated",
@@ -1014,6 +1023,9 @@ export default {
             noPolygonWarning:
                 "No boundary drawn: the neighborhood will be created without a zone.",
             overlapError: "The shape overlaps an existing neighborhood",
+            overlapErrorDetail:
+                "Adjust the boundary so it does not cover any other neighborhood.",
+            submitErrorDetail: "Check the form fields and try again.",
             searchPlaceholder: "Search by name",
         },
         services: {
