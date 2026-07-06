@@ -16,7 +16,6 @@ function RootLayout() {
                 name: "description",
                 content: t("adminPages.meta.description"),
             },
-            { name: "theme-color", content: "#0a0a0a" },
         ],
     });
 
