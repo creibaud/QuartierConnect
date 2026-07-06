@@ -26,7 +26,17 @@ public class SyncService {
     private static final Logger LOG = Logger.getLogger(SyncService.class.getName());
 
     private static final int POLL_INTERVAL_SECONDS = 30;
+    private static final int PULL_PAGE_SIZE = 100;
+    // Safety bound against an unbounded loop (~1M incidents per scope).
+    private static final int MAX_PULL_PAGES = 10000;
     private static final ObjectMapper JSON = new ObjectMapper();
+
+    // Seam over ApiService.get so pagination can be driven by a fake in tests
+    // (ApiService.get throws a checked exception, hence a dedicated interface).
+    @FunctionalInterface
+    interface PageFetcher {
+        String fetch(String path, String token) throws Exception;
+    }
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread t = new Thread(r, "sync-worker");
@@ -35,6 +45,8 @@ public class SyncService {
     });
 
     private final IncidentRepository incidentRepo = new IncidentRepository();
+
+    private PageFetcher pageFetcher = ApiService::get;
 
     private volatile boolean isSyncing = false;
     private volatile String lastPullTimestamp = null;
@@ -228,46 +240,59 @@ public class SyncService {
      * ce client (mis à jour depuis le pull précédent et non envoyés par nous),
      * afin que l'UI puisse annoncer « N incidents reçus ».
      */
-    private int pullIncidents(String token, Set<String> justPushed) throws Exception {
+    // Package-private for direct testing with a fake PageFetcher (no network,
+    // no AuthService), driven independently of the poll() scheduler loop.
+    int pullIncidents(String token, Set<String> justPushed) throws Exception {
         boolean isFullPull = lastPullTimestamp == null;
         String previousPullTs = lastPullTimestamp;
-        String path = isFullPull
-                ? "/incidents?limit=100"
-                : "/incidents?limit=100&since=" + lastPullTimestamp;
-
-        String response = ApiService.get(path, token);
-        JsonNode incidents = JSON.readTree(response);
-
-        if (!incidents.isArray()) return 0;
 
         String newestTs = lastPullTimestamp;
         Set<String> seenRemoteIds = isFullPull ? new HashSet<>() : null;
         int receivedCount = 0;
+        boolean reachedLastPage = false;
 
-        for (JsonNode node : incidents) {
-            String remoteId = node.path("id").asText(null);
-            if (remoteId == null) continue;
+        // Paginate the whole scope: a single limit-capped page would leave any
+        // incident beyond page 1 unseen, and tombstoneOrphans would then delete
+        // it locally by mistake.
+        for (int page = 1; page <= MAX_PULL_PAGES; page++) {
+            String path = buildPullPath(isFullPull, previousPullTs, page);
+            String response = pageFetcher.fetch(path, token);
+            JsonNode incidents = JSON.readTree(response);
+            if (!incidents.isArray()) break;
 
-            String title       = node.path("title").asText("");
-            String description = node.path("description").asText(null);
-            String status      = node.path("status").asText("open");
-            String updatedAt   = node.path("updatedAt").asText(null);
-            if (updatedAt == null) updatedAt = node.path("updated_at").asText("");
+            for (JsonNode node : incidents) {
+                String remoteId = node.path("id").asText(null);
+                if (remoteId == null) continue;
 
-            if (!justPushed.contains(remoteId)) {
-                incidentRepo.upsertFromServer(remoteId, title, description, status, updatedAt);
-                if (previousPullTs == null || updatedAt.compareTo(previousPullTs) > 0) {
-                    receivedCount++;
+                String title       = node.path("title").asText("");
+                String description = node.path("description").asText(null);
+                String status      = node.path("status").asText("open");
+                String updatedAt   = node.path("updatedAt").asText(null);
+                if (updatedAt == null) updatedAt = node.path("updated_at").asText("");
+
+                if (!justPushed.contains(remoteId)) {
+                    incidentRepo.upsertFromServer(remoteId, title, description, status, updatedAt);
+                    if (previousPullTs == null || updatedAt.compareTo(previousPullTs) > 0) {
+                        receivedCount++;
+                    }
+                }
+
+                if (seenRemoteIds != null) seenRemoteIds.add(remoteId);
+                if (newestTs == null || updatedAt.compareTo(newestTs) > 0) {
+                    newestTs = updatedAt;
                 }
             }
 
-            if (seenRemoteIds != null) seenRemoteIds.add(remoteId);
-            if (newestTs == null || updatedAt.compareTo(newestTs) > 0) {
-                newestTs = updatedAt;
+            if (incidents.size() < PULL_PAGE_SIZE) {
+                reachedLastPage = true;
+                break;
             }
         }
 
-        if (isFullPull && seenRemoteIds != null) {
+        // Only tombstone once the whole scope has been seen (a short last page).
+        // Bailing out on MAX_PULL_PAGES with full pages leaves the set partial,
+        // so we keep local data rather than delete unseen incidents.
+        if (isFullPull && reachedLastPage && seenRemoteIds != null) {
             incidentRepo.tombstoneOrphans(seenRemoteIds);
         }
 
@@ -275,6 +300,13 @@ public class SyncService {
             lastPullTimestamp = newestTs;
         }
         return receivedCount;
+    }
+
+    private static String buildPullPath(boolean isFullPull, String since, int page) {
+        String base = "/incidents?limit=" + PULL_PAGE_SIZE + "&page=" + page;
+        if (isFullPull) return base;
+        return base + "&since="
+                + java.net.URLEncoder.encode(since, java.nio.charset.StandardCharsets.UTF_8);
     }
 
     private void notifyStatus(boolean online) {
@@ -297,6 +329,14 @@ public class SyncService {
 
     void setStatusDispatcher(Consumer<Runnable> dispatcher) {
         this.statusDispatcher = dispatcher;
+    }
+
+    void setPageFetcher(PageFetcher fetcher) {
+        this.pageFetcher = fetcher;
+    }
+
+    void setLastPullTimestampForTest(String timestamp) {
+        this.lastPullTimestamp = timestamp;
     }
 
     private void publishEvent(PluginEventBus.Event event) {
