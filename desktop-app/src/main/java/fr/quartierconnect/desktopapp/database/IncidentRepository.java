@@ -76,16 +76,6 @@ public class IncidentRepository {
         return -1;
     }
 
-    public void writeRemoteId(int localId, String remoteId) throws SQLException {
-        String sql = "UPDATE incidents SET remote_id = ?, is_dirty = 0 WHERE id = ?";
-        try (Connection conn = SQLiteDatabase.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, remoteId);
-            stmt.setInt(2, localId);
-            stmt.executeUpdate();
-        }
-    }
-
     public void markSynced(int localId) throws SQLException {
         String sql = "UPDATE incidents SET is_dirty = 0 WHERE id = ?";
         try (Connection conn = SQLiteDatabase.getConnection();

@@ -2,13 +2,10 @@ package fr.quartierconnect.desktopapp.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fr.quartierconnect.desktopapp.i18n.I18n;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class ContractsService {
@@ -67,15 +64,5 @@ public class ContractsService {
         } catch (Exception e) {
             return List.of();
         }
-    }
-
-    public void signContract(String contractId, String totpCode) throws Exception {
-        String token = AuthService.getInstance().getAccessToken();
-        if (token == null) throw new RuntimeException(I18n.get("common.notAuthenticated"));
-
-        Map<String, String> body = new HashMap<>();
-        body.put("totpCode", totpCode);
-
-        ApiService.post("/contracts/" + contractId + "/sign", JSON.writeValueAsString(body), token);
     }
 }

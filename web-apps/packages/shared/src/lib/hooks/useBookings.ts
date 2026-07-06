@@ -9,14 +9,6 @@ export function useMyBookings() {
     });
 }
 
-export function useBooking(id: string) {
-    return useQuery<Booking>({
-        queryKey: ["bookings", id],
-        queryFn: () => apiGet<Booking>(`/bookings/${id}`),
-        enabled: !!id,
-    });
-}
-
 export function useCreateBooking() {
     const queryClient = useQueryClient();
     return useMutation({

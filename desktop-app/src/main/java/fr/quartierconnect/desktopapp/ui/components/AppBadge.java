@@ -39,22 +39,6 @@ public class AppBadge extends Label {
         };
     }
 
-    public static AppBadge fromRole(String role) {
-        return switch (role == null ? "" : role) {
-            case "admin"     -> withIcon(I18n.get("badge.role.admin"),     Variant.CONFLICT,    FontAwesomeSolid.SHIELD_ALT);
-            case "moderator" -> withIcon(I18n.get("badge.role.moderator"), Variant.IN_PROGRESS, FontAwesomeSolid.USER_SHIELD);
-            default          -> withIcon(I18n.get("badge.role.user"),      Variant.NEUTRAL,     FontAwesomeSolid.USER);
-        };
-    }
-
-    public static AppBadge fromContractStatus(String status) {
-        return switch (status == null ? "" : status) {
-            case "partial"      -> withIcon(I18n.get("badge.contract.partial"),     Variant.IN_PROGRESS, FontAwesomeSolid.PEN_FANCY);
-            case "fully_signed" -> withIcon(I18n.get("badge.contract.fullySigned"), Variant.RESOLVED,    FontAwesomeSolid.FILE_SIGNATURE);
-            default             -> withIcon(I18n.get("badge.contract.draft"),       Variant.NEUTRAL,     FontAwesomeSolid.FILE_ALT);
-        };
-    }
-
     private static AppBadge withIcon(String text, Variant variant, FontAwesomeSolid iconCode) {
         AppBadge badge = new AppBadge(text, variant);
         badge.setGraphic(UiHelper.icon(iconCode, 9));
