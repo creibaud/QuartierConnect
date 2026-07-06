@@ -224,9 +224,16 @@ describe("API modules (e2e)", () => {
             serviceId = res.body._id as string;
         });
 
+        it("GET /services/:id returns 401 without token", async () => {
+            await request(app.getHttpServer())
+                .get(`/services/${serviceId}`)
+                .expect(401);
+        });
+
         it("GET /services/:id returns the service", async () => {
             const res = await request(app.getHttpServer())
                 .get(`/services/${serviceId}`)
+                .set("Authorization", `Bearer ${userToken}`)
                 .expect(200);
             expect(res.body.title).toBe("Baby-sitting");
         });
@@ -271,9 +278,14 @@ describe("API modules (e2e)", () => {
             Date.now() + 7 * 24 * 3600 * 1000,
         ).toISOString();
 
-        it("GET /events returns array", async () => {
+        it("GET /events returns 401 without token", async () => {
+            await request(app.getHttpServer()).get("/events").expect(401);
+        });
+
+        it("GET /events returns array for authenticated user", async () => {
             const res = await request(app.getHttpServer())
                 .get("/events")
+                .set("Authorization", `Bearer ${userToken}`)
                 .expect(200);
             expect(Array.isArray(res.body)).toBe(true);
         });
@@ -307,9 +319,16 @@ describe("API modules (e2e)", () => {
             eventId = res.body._id as string;
         });
 
+        it("GET /events/:id returns 401 without token", async () => {
+            await request(app.getHttpServer())
+                .get(`/events/${eventId}`)
+                .expect(401);
+        });
+
         it("GET /events/:id returns the event", async () => {
             const res = await request(app.getHttpServer())
                 .get(`/events/${eventId}`)
+                .set("Authorization", `Bearer ${userToken}`)
                 .expect(200);
             expect(res.body.title).toBe("Vide-grenier");
         });
@@ -317,6 +336,7 @@ describe("API modules (e2e)", () => {
         it("GET /events/:id returns 404 for unknown id", async () => {
             await request(app.getHttpServer())
                 .get("/events/000000000000000000000000")
+                .set("Authorization", `Bearer ${userToken}`)
                 .expect(404);
         });
 
@@ -452,6 +472,7 @@ describe("API modules (e2e)", () => {
                             title: "Should be open",
                             description: "Test",
                             createdBy: userSub,
+                            status: "resolved",
                         },
                     ],
                 })
@@ -463,6 +484,21 @@ describe("API modules (e2e)", () => {
                 .expect(200);
 
             expect((fetchRes.body as { status: string }).status).toBe("open");
+        });
+
+        it("POST /incidents ignores a spoofed neighborhoodId for residents", async () => {
+            const res = await request(app.getHttpServer())
+                .post("/incidents")
+                .set("Authorization", `Bearer ${userToken}`)
+                .send({
+                    title: "Spoof attempt",
+                    description: "Should stay in my own quartier",
+                    neighborhoodId: "664f1a2b3c4d5e6f7a8b9c0d",
+                })
+                .expect(201);
+
+            // The e2e user has no neighborhood, so the forced value is null.
+            expect(res.body[0].neighborhoodId).toBeNull();
         });
 
         it("DELETE /incidents/:id returns 403 for non-moderator", async () => {

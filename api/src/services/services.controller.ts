@@ -1,5 +1,6 @@
 import {
     Body,
+    ConflictException,
     Controller,
     Delete,
     ForbiddenException,
@@ -26,6 +27,11 @@ import { inArray } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Model, Types } from "mongoose";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import {
+    BookingStatus,
+    ServiceBooking,
+    ServiceBookingDocument,
+} from "../bookings/schemas/service-booking.schema";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { GeocodingService } from "../geocoding/geocoding.service";
@@ -51,11 +57,26 @@ export class ServicesController {
         private readonly serviceModel: Model<ServiceDocument>,
         @InjectModel(ServiceResponse.name)
         private readonly responseModel: Model<ServiceResponseDocument>,
+        @InjectModel(ServiceBooking.name)
+        private readonly bookingModel: Model<ServiceBookingDocument>,
         private readonly socialService: SocialService,
         @Inject(DRIZZLE_TOKEN)
         private readonly db: PostgresJsDatabase<typeof schema>,
         private readonly geocoding: GeocodingService,
     ) {}
+
+    // Residents AND moderators only reach services in their own quartier;
+    // admins moderate across every neighborhood (same rule as findAll).
+    private assertNeighborhoodScope(
+        service: { neighborhoodId?: string | null },
+        req: AuthRequest,
+    ): void {
+        if (req.user.role === "admin") return;
+        const serviceNeighborhood = service.neighborhoodId?.toString() ?? null;
+        if (serviceNeighborhood !== (req.user.neighborhoodId ?? null)) {
+            throw new ForbiddenException("Service outside your neighborhood");
+        }
+    }
 
     private async resolveLocation(
         address?: string,
@@ -211,6 +232,8 @@ export class ServicesController {
     }
 
     @Get(":id")
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
     @ApiOperation({ summary: "Service details" })
     @ApiParam({
         name: "id",
@@ -218,10 +241,16 @@ export class ServicesController {
         example: "664f1a2b3c4d5e6f7a8b9c0d",
     })
     @ApiResponse({ status: 200, type: ServiceDto })
+    @ApiResponse({ status: 401, description: "Not authenticated" })
+    @ApiResponse({
+        status: 403,
+        description: "Service outside the caller's neighborhood",
+    })
     @ApiResponse({ status: 404, description: "Service not found" })
-    async findOne(@Param("id") id: string) {
+    async findOne(@Param("id") id: string, @Request() req: AuthRequest) {
         const service = await this.serviceModel.findById(id).exec();
         if (!service) throw new NotFoundException("Service not found");
+        this.assertNeighborhoodScope(service, req);
         return service;
     }
 
@@ -231,7 +260,7 @@ export class ServicesController {
     @ApiOperation({
         summary: "Create a service listing",
         description:
-            "Creates a service listing. The `createdBy` field is automatically populated from the JWT.",
+            "Creates a service listing. The `createdBy` field is automatically populated from the JWT. For non-admin callers the provided `neighborhoodId` is ignored and replaced by the caller's own neighborhood.",
     })
     @ApiResponse({
         status: 201,
@@ -241,11 +270,16 @@ export class ServicesController {
     @ApiResponse({ status: 401, description: "Not authenticated" })
     async create(@Body() dto: CreateServiceDto, @Request() req: AuthRequest) {
         const location = await this.resolveLocation(dto.address, dto.location);
+        // Anti-spoofing: only admins may target another quartier; residents
+        // and moderators always publish into their own.
+        const neighborhoodId =
+            req.user.role === "admin"
+                ? (dto.neighborhoodId ?? req.user.neighborhoodId ?? undefined)
+                : (req.user.neighborhoodId ?? undefined);
         const created = await this.serviceModel.create({
             ...dto,
             location,
-            neighborhoodId:
-                dto.neighborhoodId ?? req.user.neighborhoodId ?? undefined,
+            neighborhoodId,
             createdBy: req.user.sub,
         });
         void this.socialService.syncService(
@@ -262,7 +296,8 @@ export class ServicesController {
     @ApiBearerAuth()
     @ApiOperation({
         summary: "Update a service",
-        description: "The owner or an admin can update it.",
+        description:
+            "The owner or an admin can update it. `neighborhoodId` changes are admin-only and silently ignored otherwise.",
     })
     @ApiParam({ name: "id", description: "MongoDB ID of the service" })
     @ApiResponse({
@@ -297,7 +332,9 @@ export class ServicesController {
         if (dto.category !== undefined) changes.category = dto.category;
         if (dto.type !== undefined) changes.type = dto.type;
         if (dto.direction !== undefined) changes.direction = dto.direction;
-        if (dto.neighborhoodId !== undefined)
+        // Only admins may move a service to another quartier; the field is
+        // silently ignored for everyone else (anti-spoofing).
+        if (dto.neighborhoodId !== undefined && req.user.role === "admin")
             changes.neighborhoodId = dto.neighborhoodId;
         if (dto.pointsMultiplier !== undefined)
             changes.pointsMultiplier = dto.pointsMultiplier;
@@ -375,7 +412,8 @@ export class ServicesController {
     @ApiBearerAuth()
     @ApiOperation({
         summary: "Delete a service",
-        description: "The owner or an admin can delete it.",
+        description:
+            "The owner or an admin can delete it. Deletion is refused (409) while a pending or accepted booking references the service — bookings must be declined, cancelled, or completed first.",
     })
     @ApiParam({ name: "id", description: "MongoDB ID of the service" })
     @ApiResponse({
@@ -388,6 +426,11 @@ export class ServicesController {
         description: "Access denied (owner or admin only)",
     })
     @ApiResponse({ status: 404, description: "Service not found" })
+    @ApiResponse({
+        status: 409,
+        description:
+            "The service still has active (pending or accepted) bookings",
+    })
     async remove(@Param("id") id: string, @Request() req: AuthRequest) {
         const service = await this.serviceModel.findById(id).exec();
         if (!service) throw new NotFoundException("Service not found");
@@ -395,6 +438,18 @@ export class ServicesController {
             throw new ForbiddenException(
                 "You can only delete your own services",
             );
+        }
+        // Deleting a booked service would orphan its contract and payment
+        // (cancel/accept would 404); the caller must settle bookings first.
+        const activeBookings = await this.bookingModel.countDocuments({
+            serviceId: service._id,
+            status: { $in: [BookingStatus.PENDING, BookingStatus.ACCEPTED] },
+        });
+        if (activeBookings > 0) {
+            throw new ConflictException({
+                code: "SERVICE_HAS_ACTIVE_BOOKINGS",
+                message: "Cannot delete a service with active bookings",
+            });
         }
         await this.serviceModel.findByIdAndDelete(id).exec();
         void this.socialService.deleteNode("Service", service._id.toString());

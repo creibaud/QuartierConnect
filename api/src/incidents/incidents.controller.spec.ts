@@ -165,6 +165,26 @@ describe("IncidentsController", () => {
         );
     });
 
+    it("POST /incidents ignores dto.neighborhoodId for non-admins (anti-spoofing)", async () => {
+        await controller.create(
+            { title: "T", description: "D", neighborhoodId: "n2" } as any,
+            authReq() as any,
+        );
+        expect(mockDb.values).toHaveBeenCalledWith(
+            expect.objectContaining({ neighborhoodId: "n1" }),
+        );
+    });
+
+    it("POST /incidents lets an admin target another neighborhood", async () => {
+        await controller.create(
+            { title: "T", description: "D", neighborhoodId: "n2" } as any,
+            authReq("admin-uuid-1", "admin", "n1") as any,
+        );
+        expect(mockDb.values).toHaveBeenCalledWith(
+            expect.objectContaining({ neighborhoodId: "n2" }),
+        );
+    });
+
     it("PATCH /incidents/:id/status transitions open → in_progress", async () => {
         const result = await controller.updateStatus(
             "inc-uuid-1",
@@ -281,7 +301,7 @@ describe("IncidentsController", () => {
         expect(result.skipped).toBe(1);
     });
 
-    it("POST /incidents/sync preserves status from client payload", async () => {
+    it("POST /incidents/sync forces status open for residents (state machine is moderator-only)", async () => {
         const valuesSpy = jest.fn().mockReturnValue({
             onConflictDoUpdate: jest.fn().mockReturnValue({
                 returning: jest.fn().mockResolvedValue([]),
@@ -304,7 +324,7 @@ describe("IncidentsController", () => {
                         title: "T",
                         description: "D",
                         createdBy: "user-uuid-1",
-                        status: "in_progress",
+                        status: "resolved",
                     },
                 ],
             },
@@ -312,7 +332,7 @@ describe("IncidentsController", () => {
         );
 
         const insertedValues = valuesSpy.mock.calls[0][0];
-        expect(insertedValues[0].status).toBe("in_progress");
+        expect(insertedValues[0].status).toBe("open");
     });
 
     interface SyncMockDb {
@@ -393,6 +413,78 @@ describe("IncidentsController", () => {
 
         const insertedValues = sync.valuesSpy.mock.calls[0][0];
         expect(insertedValues[0].createdBy).toBe("other-user");
+    });
+
+    it("POST /incidents/sync preserves status from a moderator payload", async () => {
+        const sync = buildSyncMockDb(["inc-foreign-1"]);
+        controller = await compileWithDb(sync.db);
+
+        await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-foreign-1",
+                        title: "Foreign",
+                        description: "D",
+                        createdBy: "other-user",
+                        neighborhoodId: "n1",
+                        status: "in_progress",
+                    },
+                ],
+            },
+            authReq("mod-uuid-1", "moderator") as any,
+        );
+
+        const insertedValues = sync.valuesSpy.mock.calls[0][0];
+        expect(insertedValues[0].status).toBe("in_progress");
+        const conflictConfig = sync.onConflictSpy.mock.calls[0][0];
+        expect(conflictConfig.set.status).toBeDefined();
+    });
+
+    it("POST /incidents/sync excludes status from the resident conflict update set", async () => {
+        const sync = buildSyncMockDb(["inc-1"]);
+        controller = await compileWithDb(sync.db);
+
+        await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-1",
+                        title: "Mine",
+                        description: "D",
+                        createdBy: "user-uuid-1",
+                        status: "resolved",
+                    },
+                ],
+            },
+            authReq() as any,
+        );
+
+        const conflictConfig = sync.onConflictSpy.mock.calls[0][0];
+        expect(conflictConfig.set.status).toBeUndefined();
+    });
+
+    it("POST /incidents/sync forces the resident's own neighborhood (anti-spoofing)", async () => {
+        const sync = buildSyncMockDb(["inc-1"]);
+        controller = await compileWithDb(sync.db);
+
+        await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-1",
+                        title: "Mine",
+                        description: "D",
+                        createdBy: "user-uuid-1",
+                        neighborhoodId: "n2",
+                    },
+                ],
+            },
+            authReq() as any,
+        );
+
+        const insertedValues = sync.valuesSpy.mock.calls[0][0];
+        expect(insertedValues[0].neighborhoodId).toBe("n1");
     });
 
     it("POST /incidents/sync drops the ownership guard for admins", async () => {
