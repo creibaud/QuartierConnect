@@ -19,6 +19,21 @@
             media="(prefers-color-scheme: dark)"
         />
         <title>QuartierConnect Admin</title>
+        <script>
+            (function () {
+                try {
+                    var stored = localStorage.getItem("theme");
+                    var theme =
+                        stored === "dark" || stored === "light"
+                            ? stored
+                            : window.matchMedia("(prefers-color-scheme: dark)")
+                                    .matches
+                              ? "dark"
+                              : "light";
+                    document.documentElement.classList.add(theme);
+                } catch (e) {}
+            })();
+        </script>
     </head>
     <body>
         <div id="root"></div>

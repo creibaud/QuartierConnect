@@ -364,6 +364,7 @@ export default {
             updatePassword: "Update password",
             passwordUpdated: "Password updated.",
             currentPasswordWrong: "Current password is incorrect.",
+            passwordChangeFailed: "An error occurred, please try again.",
             passwordMismatch: "Passwords do not match.",
             twoFactor: "Two-factor authentication (2FA)",
             twoFactorOn: "2FA is required and active on your account.",
@@ -513,6 +514,11 @@ export default {
             transferring: "Transferring…",
             transferSuccess: "Points transferred",
             transferError: "Unable to transfer points",
+            errors: {
+                recipientNotFound: "This recipient does not exist",
+                insufficientBalance: "Insufficient balance for this transfer",
+                selfTransfer: "You cannot transfer points to yourself",
+            },
             historyTitle: "Transaction history",
             emptyTitle: "No transactions",
             emptyDescription: "Your point transfers will appear here.",
@@ -951,6 +957,7 @@ export default {
                 "{{email}} will regain the Resident role and access to the platform.",
             banConfirmDescription:
                 "{{email}} will immediately lose access to the platform.",
+            cannotModifySelf: "You cannot modify your own account.",
         },
         incidents: {
             description: "Moderation and tracking of reports",
@@ -1004,6 +1011,8 @@ export default {
             polygonHint:
                 "Existing neighborhoods are shown in grey. Pick the pen tool and click the map to place vertices; close the shape with Enter, a double-click, or by clicking the first point. Use the cursor tool to move vertices.",
             polygonPoints: "Polygon defined ({{count}} points)",
+            noPolygonWarning:
+                "No boundary drawn: the neighborhood will be created without a zone.",
             overlapError: "The shape overlaps an existing neighborhood",
             searchPlaceholder: "Search by name",
         },
@@ -1089,6 +1098,8 @@ export default {
             participants: "Participants",
             endsAt: "Ends",
             closeVote: "Close vote",
+            closeConfirmTitle: "Close this vote?",
+            closeConfirmDescription: "This action is irreversible.",
             createTitle: "Create a community vote",
             titleLabel: "Title *",
             titlePlaceholder: "Vote question",

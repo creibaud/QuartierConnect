@@ -16,6 +16,7 @@ import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { Separator } from "@workspace/ui/components/separator";
 import { PasswordStrengthMeter } from "@/features/account/components/password-strength-meter";
+import { passwordChangeErrorKey } from "@/features/account/lib/password-change-error";
 import {
     TOTP_LENGTH,
     TotpCodeField,
@@ -46,14 +47,16 @@ export function SecurityCard() {
                     setTotpCode("");
                 },
                 onError: (err) => {
-                    const apiErr = err as { code?: string; message?: string };
-                    const totpRejected =
-                        apiErr.code === "INVALID_TOTP" ||
-                        /totp/i.test(apiErr.message ?? "");
                     toast.error(
-                        totpRejected
-                            ? t("auth.errors.invalidTotpCheckApp")
-                            : t("pages.account.currentPasswordWrong"),
+                        t(
+                            passwordChangeErrorKey(
+                                err as {
+                                    code?: string;
+                                    message?: string;
+                                    status?: number;
+                                },
+                            ),
+                        ),
                     );
                     setTotpCode("");
                 },

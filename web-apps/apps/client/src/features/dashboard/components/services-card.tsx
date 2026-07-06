@@ -3,11 +3,11 @@ import { useTranslation } from "react-i18next";
 import { useServices } from "@workspace/shared/lib/hooks/services.hooks";
 import { Badge } from "@workspace/ui/components/badge";
 import { Item, ItemGroup, ItemContent, ItemTitle, ItemDescription, ItemActions } from "@workspace/ui/components/item";
-import { EmptyBlock, FeedCard, Rows } from "./feed-card";
+import { EmptyBlock, ErrorBlock, FeedCard, Rows } from "./feed-card";
 
 export function ServicesCard() {
     const { t } = useTranslation();
-    const { data: services, isLoading } = useServices();
+    const { data: services, isLoading, isError, refetch } = useServices();
     const someServices = (services ?? []).slice(0, 4);
 
     return (
@@ -18,6 +18,8 @@ export function ServicesCard() {
         >
             {isLoading ? (
                 <Rows count={3} />
+            ) : isError ? (
+                <ErrorBlock onRetry={() => refetch()} />
             ) : someServices.length === 0 ? (
                 <EmptyBlock
                     icon={CustomerServiceIcon}

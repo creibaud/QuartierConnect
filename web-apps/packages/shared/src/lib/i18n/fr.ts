@@ -368,6 +368,7 @@ export default {
             updatePassword: "Mettre à jour le mot de passe",
             passwordUpdated: "Mot de passe mis à jour.",
             currentPasswordWrong: "Mot de passe actuel incorrect.",
+            passwordChangeFailed: "Une erreur est survenue, réessayez.",
             passwordMismatch: "Les mots de passe ne correspondent pas.",
             twoFactor: "Authentification à deux facteurs (2FA)",
             twoFactorOn: "La 2FA est requise et active sur votre compte.",
@@ -522,6 +523,11 @@ export default {
             transferring: "Transfert…",
             transferSuccess: "Points transférés",
             transferError: "Impossible de transférer les points",
+            errors: {
+                recipientNotFound: "Ce destinataire n'existe pas",
+                insufficientBalance: "Solde insuffisant pour ce transfert",
+                selfTransfer: "Vous ne pouvez pas vous transférer des points",
+            },
             historyTitle: "Historique des transactions",
             emptyTitle: "Aucune transaction",
             emptyDescription: "Vos transferts de points apparaîtront ici.",
@@ -964,6 +970,8 @@ export default {
                 "{{email}} retrouvera le rôle Résident et l'accès à la plateforme.",
             banConfirmDescription:
                 "{{email}} perdra immédiatement l'accès à la plateforme.",
+            cannotModifySelf:
+                "Vous ne pouvez pas modifier votre propre compte.",
         },
         incidents: {
             description: "Modération et suivi des signalements",
@@ -1017,6 +1025,8 @@ export default {
             polygonHint:
                 "Quartiers existants en gris. Choisissez l'outil stylo puis cliquez sur la carte pour poser les sommets ; fermez le tracé avec Entrée, un double-clic ou un clic sur le premier point. L'outil curseur permet de déplacer les sommets.",
             polygonPoints: "Polygone défini ({{count}} points)",
+            noPolygonWarning:
+                "Aucun périmètre tracé : le quartier sera créé sans zone.",
             overlapError: "Le tracé chevauche un quartier existant",
             searchPlaceholder: "Rechercher par nom",
         },
@@ -1102,6 +1112,8 @@ export default {
             participants: "Participants",
             endsAt: "Fin",
             closeVote: "Fermer le vote",
+            closeConfirmTitle: "Fermer ce vote ?",
+            closeConfirmDescription: "Cette action est irréversible.",
             createTitle: "Créer un vote communautaire",
             titleLabel: "Titre *",
             titlePlaceholder: "Question du vote",
