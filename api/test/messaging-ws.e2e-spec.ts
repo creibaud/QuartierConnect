@@ -276,6 +276,42 @@ describe("Messaging WebSocket (e2e)", () => {
             expect(ack.content).toBe("Ack test");
             socket.disconnect();
         });
+
+        it("rejects an empty content with an exception", async () => {
+            const socket = connectSocket(port, token1);
+            await waitForConnect(socket);
+
+            const error = await new Promise<unknown>((resolve) => {
+                socket.emit(
+                    "send_message",
+                    { conversationId, content: "   " },
+                    (res: unknown) => resolve(res),
+                );
+                socket.once("exception", (err: unknown) => resolve(err));
+                setTimeout(() => resolve({ error: "no response" }), 3000);
+            });
+
+            expect(JSON.stringify(error)).toMatch(/empty|error/i);
+            socket.disconnect();
+        });
+
+        it("rejects a content longer than 4000 characters", async () => {
+            const socket = connectSocket(port, token1);
+            await waitForConnect(socket);
+
+            const error = await new Promise<unknown>((resolve) => {
+                socket.emit(
+                    "send_message",
+                    { conversationId, content: "a".repeat(4001) },
+                    (res: unknown) => resolve(res),
+                );
+                socket.once("exception", (err: unknown) => resolve(err));
+                setTimeout(() => resolve({ error: "no response" }), 3000);
+            });
+
+            expect(JSON.stringify(error)).toMatch(/exceed|error/i);
+            socket.disconnect();
+        });
     });
 
     describe("leave_conversation", () => {

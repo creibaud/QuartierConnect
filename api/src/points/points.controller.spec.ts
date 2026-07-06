@@ -14,7 +14,11 @@ describe("PointsController", () => {
             getHistory: jest
                 .fn()
                 .mockResolvedValue([{ id: "tx-1", amount: 10 }]),
-            transfer: jest.fn().mockResolvedValue(undefined),
+            transfer: jest.fn().mockResolvedValue({
+                transaction: { id: "tx-1", amount: 50 },
+                senderBalance: 50,
+                recipientBalance: 50,
+            }),
         } as any;
 
         const module: TestingModule = await Test.createTestingModule({
@@ -33,13 +37,13 @@ describe("PointsController", () => {
     });
 
     it("GET /points/history returns paginated history with explicit page/limit", async () => {
-        await controller.getHistory(authReq() as any, "2", "10");
+        await controller.getHistory(authReq() as any, { page: 2, limit: 10 });
         // eslint-disable-next-line @typescript-eslint/unbound-method
         expect(service.getHistory).toHaveBeenCalledWith("user-uuid-1", 2, 10);
     });
 
     it("GET /points/history uses default page=1 limit=20 when not provided", async () => {
-        await controller.getHistory(authReq() as any);
+        await controller.getHistory(authReq() as any, {});
         // eslint-disable-next-line @typescript-eslint/unbound-method
         expect(service.getHistory).toHaveBeenCalledWith("user-uuid-1", 1, 20);
     });
@@ -53,6 +57,18 @@ describe("PointsController", () => {
         expect(service.transfer).toHaveBeenCalledWith("user-uuid-1", {
             recipientId: "recv-id",
             amount: 50,
+        });
+    });
+
+    it("POST /points/transfer returns the transaction and updated balances", async () => {
+        const result = await controller.transfer(
+            { recipientId: "recv-id", amount: 50 },
+            authReq() as any,
+        );
+        expect(result).toEqual({
+            transaction: { id: "tx-1", amount: 50 },
+            senderBalance: 50,
+            recipientBalance: 50,
         });
     });
 });

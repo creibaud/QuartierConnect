@@ -36,6 +36,8 @@ const corsOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(",").map((origin) => origin.trim())
     : ["http://localhost:3000", "http://localhost:3001"];
 
+const MAX_MESSAGE_CONTENT_LENGTH = 4000;
+
 @WebSocketGateway({
     namespace: "/messaging",
     cors: { origin: corsOrigins, credentials: true },
@@ -189,22 +191,49 @@ export class MessagingGateway
     async handleSendMessage(
         @ConnectedSocket() client: Socket,
         @MessageBody()
-        data: { conversationId: string; content: string },
+        data: { conversationId?: unknown; content?: unknown },
     ) {
         const userId = await this.requireUserId(client);
+        const { conversationId, content } = this.validateSendMessage(data);
 
         const message = await this.messagingService.sendMessage(
-            data.conversationId,
+            conversationId,
             userId,
-            data.content,
+            content,
             MessageType.TEXT,
         );
 
         this.server
-            .to(`conversation:${data.conversationId}`)
+            .to(`conversation:${conversationId}`)
             .emit("new_message", message);
 
         return message;
+    }
+
+    // WS payloads bypass the HTTP ValidationPipe, so the shape must be
+    // checked here before anything is persisted or broadcast.
+    private validateSendMessage(
+        data: { conversationId?: unknown; content?: unknown } | undefined,
+    ): { conversationId: string; content: string } {
+        if (
+            typeof data?.conversationId !== "string" ||
+            data.conversationId.length === 0
+        ) {
+            throw new WsException("conversationId is required");
+        }
+        if (typeof data.content !== "string") {
+            throw new WsException("content must be a string");
+        }
+        const content = data.content.trim();
+        if (content.length === 0) {
+            throw new WsException("content must not be empty");
+        }
+        if (content.length > MAX_MESSAGE_CONTENT_LENGTH) {
+            throw new WsException(
+                `content must not exceed ${MAX_MESSAGE_CONTENT_LENGTH} characters`,
+            );
+        }
+        return { conversationId: data.conversationId, content };
     }
 
     @SubscribeMessage("typing:start")

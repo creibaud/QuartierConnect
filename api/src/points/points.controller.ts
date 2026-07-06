@@ -6,15 +6,16 @@ import {
     Query,
     Request,
     UseGuards,
+    ValidationPipe,
 } from "@nestjs/common";
 import {
     ApiBearerAuth,
     ApiOperation,
-    ApiQuery,
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { PaginationQueryDto } from "../common/dto/pagination-query.dto";
 import {
     PointsBalanceResponseDto,
     PointsTransactionResponseDto,
@@ -38,7 +39,7 @@ export class PointsController {
     @ApiOperation({
         summary: "Check your points balance",
         description:
-            "Returns the current balance of the authenticated user. Creates a record at 0 if no balance exists yet (lazy init).",
+            "Returns the current balance of the authenticated user (0 when the user has no balance row yet).",
     })
     @ApiResponse({ status: 200, type: PointsBalanceResponseDto })
     getBalance(@Request() req: AuthRequest) {
@@ -51,18 +52,20 @@ export class PointsController {
         description:
             "Returns the transactions (sent and received) of the authenticated user, sorted by date in descending order.",
     })
-    @ApiQuery({ name: "page", required: false, example: "1" })
-    @ApiQuery({ name: "limit", required: false, example: "20" })
     @ApiResponse({ status: 200, type: [PointsTransactionResponseDto] })
+    @ApiResponse({
+        status: 400,
+        description: "Invalid pagination (page must be >= 1, limit 1 to 100)",
+    })
     getHistory(
         @Request() req: AuthRequest,
-        @Query("page") page = "1",
-        @Query("limit") limit = "20",
+        @Query(new ValidationPipe({ transform: true, whitelist: true }))
+        pagination: PaginationQueryDto,
     ) {
         return this.pointsService.getHistory(
             req.user.sub,
-            parseInt(page),
-            parseInt(limit),
+            pagination.page ?? 1,
+            pagination.limit ?? 20,
         );
     }
 
@@ -70,12 +73,13 @@ export class PointsController {
     @ApiOperation({
         summary: "Transfer points",
         description:
-            "Transfers points to another user. The transaction is atomic (PostgreSQL ACID): the sender's balance is debited and the recipient's balance is credited within the same transaction. Fails if the balance is insufficient.",
+            "Transfers points to another user. The transaction is atomic (PostgreSQL ACID): the sender's balance is debited and the recipient's balance is credited within the same transaction. Returns the created transaction and both updated balances. Fails if the balance is insufficient.",
     })
     @ApiResponse({ status: 201, type: TransferResponseDto })
     @ApiResponse({
         status: 400,
-        description: "Insufficient balance or recipient does not exist",
+        description:
+            "Insufficient balance, invalid amount or recipient does not exist",
     })
     transfer(@Body() dto: TransferPointsDto, @Request() req: AuthRequest) {
         return this.pointsService.transfer(req.user.sub, dto);

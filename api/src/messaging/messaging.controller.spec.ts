@@ -88,21 +88,45 @@ describe("MessagingController", () => {
 
     it("getMessages returns paginated messages", async () => {
         mockService.getMessages.mockResolvedValue([mockMessage]);
-        const result = await controller.getMessages("conv-1", req as any);
+        const result = await controller.getMessages("conv-1", req as any, {
+            page: 2,
+            limit: 10,
+        });
         expect(result).toHaveLength(1);
+        expect(mockService.getMessages).toHaveBeenCalledWith(
+            "conv-1",
+            "user-1",
+            2,
+            10,
+        );
+    });
+
+    it("getMessages uses default page=1 limit=50 when not provided", async () => {
+        mockService.getMessages.mockResolvedValue([]);
+        await controller.getMessages("conv-1", req as any, {});
+        expect(mockService.getMessages).toHaveBeenCalledWith(
+            "conv-1",
+            "user-1",
+            1,
+            50,
+        );
     });
 
     it("getMessages throws 403 for non-participant", async () => {
         mockService.getMessages.mockRejectedValue(new ForbiddenException());
         await expect(
-            controller.getMessages("conv-1", { user: { sub: "other" } } as any),
+            controller.getMessages(
+                "conv-1",
+                { user: { sub: "other" } } as any,
+                {},
+            ),
         ).rejects.toThrow(ForbiddenException);
     });
 
     it("getMessages throws 404 for missing conversation", async () => {
         mockService.getMessages.mockRejectedValue(new NotFoundException());
         await expect(
-            controller.getMessages("missing", req as any),
+            controller.getMessages("missing", req as any, {}),
         ).rejects.toThrow(NotFoundException);
     });
 
