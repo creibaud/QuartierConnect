@@ -119,34 +119,85 @@ export class BookingsService {
             claimed.payeeId,
         ]);
         const content = this.renderContent(service, claimed, partyNames);
-        const contract = await this.contractsService.createServiceContract({
-            title: `Contrat de service — ${service.title}`,
-            content,
-            serviceId: String(service._id),
-            bookingId: String(claimed._id),
-            signatories: [claimed.payerId, claimed.payeeId],
-            pointsAmount: claimed.pointsAmount,
-            createdBy: userId,
-        });
-        await this.pointsService.reserveServicePayment({
-            contractId: String(contract._id),
-            payerId: claimed.payerId,
-            payeeId: claimed.payeeId,
-            amount: claimed.pointsAmount,
-            note: `Service payment: ${service.title}`,
-        });
-        claimed.contractId = String(contract._id);
-        await claimed.save();
+        // The post-claim steps form a small saga: any failure unwinds the
+        // minted contract/payment and releases the claim so the owner can
+        // simply retry, instead of leaving a signable orphan behind.
+        let contractId: string | null = null;
+        let linked: ServiceBookingDocument | null = null;
+        try {
+            const contract = await this.contractsService.createServiceContract({
+                title: `Contrat de service — ${service.title}`,
+                content,
+                serviceId: String(service._id),
+                bookingId: String(claimed._id),
+                signatories: [claimed.payerId, claimed.payeeId],
+                pointsAmount: claimed.pointsAmount,
+                createdBy: userId,
+            });
+            contractId = String(contract._id);
+            await this.pointsService.reserveServicePayment({
+                contractId,
+                payerId: claimed.payerId,
+                payeeId: claimed.payeeId,
+                amount: claimed.pointsAmount,
+                note: `Service payment: ${service.title}`,
+            });
+            // Guarded link: a booking cancelled while the contract was being
+            // minted must not end up pointing at a live contract.
+            linked = await this.bookingModel.findOneAndUpdate(
+                {
+                    _id: bookingId,
+                    status: BookingStatus.ACCEPTED,
+                    contractId: null,
+                },
+                { $set: { contractId } },
+                { new: true },
+            );
+        } catch (err) {
+            await this.compensateAccept(bookingId, contractId);
+            throw err;
+        }
+        if (!linked) {
+            await this.compensateAccept(bookingId, contractId);
+            throw new BadRequestException("Booking is not pending");
+        }
         this.eventEmitter.emit(BOOKING_ACCEPTED_EVENT, {
-            bookingId: String(claimed._id),
+            bookingId: String(linked._id),
             ownerId: userId,
-            initiatorId: claimed.initiatorId,
+            initiatorId: linked.initiatorId,
             actorId: userId,
             serviceTitle: service.title,
-            amount: claimed.pointsAmount,
+            amount: linked.pointsAmount,
             actorName: partyNames[userId],
         } satisfies BookingLifecycleEvent);
-        return claimed;
+        return linked;
+    }
+
+    // Best-effort unwind of a half-completed accept: kill the minted
+    // contract and its pending payment, then release the ACCEPTED claim so
+    // the booking becomes acceptable again.
+    private async compensateAccept(
+        bookingId: string,
+        contractId: string | null,
+    ): Promise<void> {
+        if (contractId) {
+            await this.contractsService
+                .cancelContract(contractId)
+                .catch(() => undefined);
+            await this.pointsService
+                .cancelServicePayment(contractId)
+                .catch(() => undefined);
+        }
+        await this.bookingModel
+            .updateOne(
+                {
+                    _id: bookingId,
+                    status: BookingStatus.ACCEPTED,
+                    contractId: null,
+                },
+                { $set: { status: BookingStatus.PENDING } },
+            )
+            .catch(() => undefined);
     }
 
     async decline(bookingId: string, userId: string) {
@@ -157,20 +208,23 @@ export class BookingsService {
         if (service.createdBy !== userId) {
             throw new ForbiddenException("Only the service owner can decline");
         }
-        if (booking.status !== BookingStatus.PENDING) {
-            throw new BadRequestException("Booking is not pending");
-        }
-        booking.status = BookingStatus.DECLINED;
-        await booking.save();
+        // Atomic claim: a booking accepted concurrently must not be clobbered
+        // to DECLINED while its contract and pending payment stay alive.
+        const claimed = await this.bookingModel.findOneAndUpdate(
+            { _id: bookingId, status: BookingStatus.PENDING },
+            { $set: { status: BookingStatus.DECLINED } },
+            { new: true },
+        );
+        if (!claimed) throw new BadRequestException("Booking is not pending");
         this.eventEmitter.emit(BOOKING_DECLINED_EVENT, {
-            bookingId: String(booking._id),
+            bookingId: String(claimed._id),
             ownerId: userId,
-            initiatorId: booking.initiatorId,
+            initiatorId: claimed.initiatorId,
             actorId: userId,
             serviceTitle: service.title,
-            amount: booking.pointsAmount,
+            amount: claimed.pointsAmount,
         } satisfies BookingLifecycleEvent);
-        return booking;
+        return claimed;
     }
 
     async cancel(bookingId: string, userId: string) {
@@ -183,33 +237,56 @@ export class BookingsService {
         if (!isParty)
             throw new ForbiddenException("Not a party to this booking");
 
-        if (booking.status === BookingStatus.PENDING) {
-            if (userId !== booking.initiatorId) {
-                throw new ForbiddenException(
-                    "Only the initiator can cancel a pending booking",
-                );
-            }
-        } else if (booking.status === BookingStatus.ACCEPTED) {
-            if (booking.contractId) {
-                await this.contractsService.cancelContract(booking.contractId);
-                await this.pointsService.cancelServicePayment(
-                    booking.contractId,
-                );
-            }
-        } else {
+        if (
+            booking.status === BookingStatus.PENDING &&
+            userId !== booking.initiatorId
+        ) {
+            throw new ForbiddenException(
+                "Only the initiator can cancel a pending booking",
+            );
+        }
+        // The initiator can cancel their pending or accepted booking; the
+        // owner only an accepted one (a pending booking is declined instead).
+        const cancellableStatuses =
+            userId === booking.initiatorId
+                ? [BookingStatus.PENDING, BookingStatus.ACCEPTED]
+                : [BookingStatus.ACCEPTED];
+        // Atomic claim: a transition that a concurrent accept, decline or
+        // final signature already performed must not be clobbered.
+        const claimed = await this.bookingModel.findOneAndUpdate(
+            { _id: bookingId, status: { $in: cancellableStatuses } },
+            { $set: { status: BookingStatus.CANCELLED } },
+            { new: true },
+        );
+        if (!claimed) {
             throw new BadRequestException("Booking cannot be cancelled");
         }
-        booking.status = BookingStatus.CANCELLED;
-        await booking.save();
+        if (claimed.contractId) {
+            try {
+                await this.contractsService.cancelContract(claimed.contractId);
+            } catch (err) {
+                // The contract turned fully-signed while we were cancelling:
+                // the money already moved, so surface the completed state
+                // instead of leaving a cancelled booking behind.
+                await this.bookingModel
+                    .updateOne(
+                        { _id: bookingId, status: BookingStatus.CANCELLED },
+                        { $set: { status: BookingStatus.COMPLETED } },
+                    )
+                    .catch(() => undefined);
+                throw err;
+            }
+            await this.pointsService.cancelServicePayment(claimed.contractId);
+        }
         this.eventEmitter.emit(BOOKING_CANCELLED_EVENT, {
-            bookingId: String(booking._id),
+            bookingId: String(claimed._id),
             ownerId: service.createdBy,
-            initiatorId: booking.initiatorId,
+            initiatorId: claimed.initiatorId,
             actorId: userId,
             serviceTitle: service.title,
-            amount: booking.pointsAmount,
+            amount: claimed.pointsAmount,
         } satisfies BookingLifecycleEvent);
-        return booking;
+        return claimed;
     }
 
     async findForUser(userId: string) {
@@ -244,11 +321,12 @@ export class BookingsService {
         contractId: string;
         bookingId: string;
     }) {
-        const booking = await this.bookingModel.findById(payload.bookingId);
-        if (!booking) return;
-        if (booking.status !== BookingStatus.ACCEPTED) return;
-        booking.status = BookingStatus.COMPLETED;
-        await booking.save();
+        // Conditional update so a booking that reached a terminal state in
+        // the meantime (e.g. cancelled) is never clobbered back.
+        await this.bookingModel.updateOne(
+            { _id: payload.bookingId, status: BookingStatus.ACCEPTED },
+            { $set: { status: BookingStatus.COMPLETED } },
+        );
     }
 
     private renderContent(

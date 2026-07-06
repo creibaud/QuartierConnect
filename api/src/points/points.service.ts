@@ -117,53 +117,88 @@ export class PointsService {
             });
         }
 
-        return this.db.transaction(async (tx) => {
-            await this.assertRecipientExists(tx, dto.recipientId);
+        try {
+            return await this.db.transaction(async (tx) => {
+                await this.assertRecipientExists(tx, dto.recipientId);
 
-            const [senderRow] = await tx.execute<{
-                id: string;
-                balance: number;
-            }>(
-                sql`SELECT id, balance FROM points_balances WHERE user_id = ${senderId} FOR UPDATE`,
-            );
-
-            const currentBalance = senderRow?.balance ?? 0;
-
-            if (currentBalance - dto.amount < MIN_BALANCE) {
-                throw new BadRequestException({
-                    code: "INSUFFICIENT_BALANCE",
-                    message: "Insufficient balance for this transfer",
-                });
-            }
-
-            await this.applyBalanceDelta(
-                tx,
-                senderId,
-                dto.recipientId,
-                dto.amount,
-                currentBalance,
-            );
-
-            const [transaction] = await tx
-                .insert(schema.pointsTransactions)
-                .values({
+                const balances = await this.lockBalances(tx, [
                     senderId,
-                    recipientId: dto.recipientId,
-                    amount: dto.amount,
-                    note: dto.note,
-                })
-                .returning();
+                    dto.recipientId,
+                ]);
+                const currentBalance = balances.get(senderId) ?? 0;
 
-            const [recipientRow] = await tx.execute<{ balance: number }>(
-                sql`SELECT balance FROM points_balances WHERE user_id = ${dto.recipientId}`,
-            );
+                if (currentBalance - dto.amount < MIN_BALANCE) {
+                    throw new BadRequestException({
+                        code: "INSUFFICIENT_BALANCE",
+                        message: "Insufficient balance for this transfer",
+                    });
+                }
 
-            return {
-                transaction,
-                senderBalance: currentBalance - dto.amount,
-                recipientBalance: recipientRow?.balance ?? dto.amount,
-            };
-        });
+                await this.applyBalanceDelta(
+                    tx,
+                    senderId,
+                    dto.recipientId,
+                    dto.amount,
+                );
+
+                const [transaction] = await tx
+                    .insert(schema.pointsTransactions)
+                    .values({
+                        senderId,
+                        recipientId: dto.recipientId,
+                        amount: dto.amount,
+                        note: dto.note,
+                    })
+                    .returning();
+
+                return {
+                    transaction,
+                    senderBalance: currentBalance - dto.amount,
+                    recipientBalance:
+                        (balances.get(dto.recipientId) ?? 0) + dto.amount,
+                };
+            });
+        } catch (err) {
+            throw this.mapPostgresConcurrencyError(err);
+        }
+    }
+
+    // Locks both balance rows in a deterministic (sorted) order so crossed
+    // transfers (A→B ‖ B→A) can never deadlock, and inserts missing rows
+    // first so the FOR UPDATE actually serializes first-time senders.
+    private async lockBalances(
+        tx: TransactionClient,
+        userIds: [string, string],
+    ): Promise<Map<string, number>> {
+        const ids = [...userIds].sort();
+        await tx
+            .insert(schema.pointsBalances)
+            .values(ids.map((userId) => ({ userId, balance: 0 })))
+            .onConflictDoNothing();
+        const rows = await tx.execute<{ user_id: string; balance: number }>(
+            sql`SELECT user_id, balance FROM points_balances WHERE user_id IN (${ids[0]}, ${ids[1]}) ORDER BY user_id FOR UPDATE`,
+        );
+        return new Map(rows.map((row) => [row.user_id, row.balance]));
+    }
+
+    // Postgres can still abort a transaction under extreme concurrency
+    // (deadlock detector) or through the balance CHECK constraint; both must
+    // surface as actionable 4xx responses instead of raw 500s.
+    private mapPostgresConcurrencyError(err: unknown): unknown {
+        const code = (err as { code?: string })?.code;
+        if (code === "40P01") {
+            return new BadRequestException({
+                code: "CONCURRENT_UPDATE",
+                message: "Concurrent update detected, please retry",
+            });
+        }
+        if (code === "23514") {
+            return new BadRequestException({
+                code: "INSUFFICIENT_BALANCE",
+                message: "Insufficient balance for this transfer",
+            });
+        }
+        return err;
     }
 
     // The recipient id is a foreign key of points_balances and
@@ -188,36 +223,28 @@ export class PointsService {
         }
     }
 
+    // Both rows are guaranteed to exist and to be locked by lockBalances,
+    // so plain relative updates are race-free here.
     private async applyBalanceDelta(
         tx: TransactionClient,
         senderId: string,
         recipientId: string,
         amount: number,
-        senderCurrentBalance: number,
     ): Promise<void> {
         await tx
-            .insert(schema.pointsBalances)
-            .values({
-                userId: senderId,
-                balance: senderCurrentBalance - amount,
+            .update(schema.pointsBalances)
+            .set({
+                balance: sql`points_balances.balance - ${amount}`,
+                updatedAt: new Date(),
             })
-            .onConflictDoUpdate({
-                target: schema.pointsBalances.userId,
-                set: {
-                    balance: sql`points_balances.balance - ${amount}`,
-                    updatedAt: new Date(),
-                },
-            });
+            .where(eq(schema.pointsBalances.userId, senderId));
         await tx
-            .insert(schema.pointsBalances)
-            .values({ userId: recipientId, balance: amount })
-            .onConflictDoUpdate({
-                target: schema.pointsBalances.userId,
-                set: {
-                    balance: sql`points_balances.balance + ${amount}`,
-                    updatedAt: new Date(),
-                },
-            });
+            .update(schema.pointsBalances)
+            .set({
+                balance: sql`points_balances.balance + ${amount}`,
+                updatedAt: new Date(),
+            })
+            .where(eq(schema.pointsBalances.userId, recipientId));
     }
 
     async reserveServicePayment(p: {
@@ -239,7 +266,20 @@ export class PointsService {
     }
 
     async completeServicePayment(contractId: string): Promise<void> {
-        const settled = await this.db.transaction(async (tx) => {
+        let settled: PointsSettledEvent | null = null;
+        try {
+            settled = await this.settleServicePayment(contractId);
+        } catch (err) {
+            throw this.mapPostgresConcurrencyError(err);
+        }
+        if (!settled) return;
+        this.emitPointsSettled(settled);
+    }
+
+    private async settleServicePayment(
+        contractId: string,
+    ): Promise<PointsSettledEvent | null> {
+        return this.db.transaction(async (tx) => {
             const [txn] = await tx
                 .select()
                 .from(schema.pointsTransactions)
@@ -261,10 +301,11 @@ export class PointsService {
                 throw new BadRequestException("Service payment was cancelled");
             }
 
-            const [senderRow] = await tx.execute<{ balance: number }>(
-                sql`SELECT balance FROM points_balances WHERE user_id = ${txn.senderId} FOR UPDATE`,
-            );
-            const currentBalance = senderRow?.balance ?? 0;
+            const balances = await this.lockBalances(tx, [
+                txn.senderId,
+                txn.recipientId,
+            ]);
+            const currentBalance = balances.get(txn.senderId) ?? 0;
             if (currentBalance - txn.amount < MIN_BALANCE) {
                 throw new BadRequestException({
                     code: "INSUFFICIENT_BALANCE",
@@ -277,20 +318,18 @@ export class PointsService {
                 txn.senderId,
                 txn.recipientId,
                 txn.amount,
-                currentBalance,
             );
             await tx
                 .update(schema.pointsTransactions)
                 .set({ status: "completed", completedAt: new Date() })
                 .where(eq(schema.pointsTransactions.id, txn.id));
             return {
+                contractId,
                 payerId: txn.senderId,
                 payeeId: txn.recipientId,
                 amount: txn.amount,
             };
         });
-        if (!settled) return;
-        this.emitPointsSettled({ contractId, ...settled });
     }
 
     // Best-effort: the settlement is already committed, a notification

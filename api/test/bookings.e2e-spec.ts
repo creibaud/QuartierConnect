@@ -184,7 +184,7 @@ describe("Paid service settlement (e2e)", () => {
             .send({
                 title: "Paid tutoring",
                 description: "One hour",
-                category: "tutoring",
+                category: "other",
                 type: "paid",
                 direction: "offer",
                 duration: 60,

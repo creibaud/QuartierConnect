@@ -22,7 +22,7 @@ import * as schema from "../database/schema";
 import { GeocodingService } from "../geocoding/geocoding.service";
 import { NeighborhoodsService } from "../neighborhoods/neighborhoods.service";
 import type { GeoJsonPolygon } from "../neighborhoods/schemas/neighborhood.schema";
-import { syncLivesIn } from "../social/lives-in.util";
+import { clearLivesIn, syncLivesIn } from "../social/lives-in.util";
 import { NEO4J_DRIVER } from "../social/neo4j/neo4j.provider";
 import { SubmitAddressDto } from "./dto/address.dto";
 
@@ -72,8 +72,13 @@ export class AddressController {
             })
             .where(eq(schema.users.id, req.user.sub));
 
-        if (neighborhoodId)
+        if (neighborhoodId) {
             await syncLivesIn(this.neo4jDriver, req.user.sub, neighborhoodId);
+        } else {
+            // Moved to an uncovered address: drop the stale LIVES_IN so
+            // recommendations stop targeting the previous quartier.
+            await clearLivesIn(this.neo4jDriver, req.user.sub);
+        }
 
         return {
             status: neighborhoodId

@@ -45,7 +45,7 @@ export class Service {
     @Prop({ required: true, enum: ["active", "closed"], default: "active" })
     status: string;
 
-    @Prop({ min: 0 })
+    @Prop({ min: 1 })
     pointsAmount?: number;
 }
 

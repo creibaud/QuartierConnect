@@ -15,6 +15,12 @@ import {
 
 const futureDate = new Date(Date.now() + 86400000).toISOString();
 
+const castBy = (userId: string, choices: string[] = ["yes"]): CastRecord => ({
+    userId,
+    choices,
+    castAt: new Date(),
+});
+
 const mockVote: {
     _id: string;
     title: string;
@@ -44,17 +50,30 @@ const mockVote: {
     save: jest.fn().mockResolvedValue(undefined),
 };
 
+const anonymousVoteWith = (casts: CastRecord[]) => {
+    const vote = {
+        ...mockVote,
+        isAnonymous: true,
+        casts,
+        save: jest.fn(),
+        toObject: jest.fn(),
+    };
+    vote.toObject.mockImplementation(() => ({ ...vote, casts: [...casts] }));
+    return vote;
+};
+
+const queryResolving = <T>(result: T) => ({
+    sort: jest.fn().mockReturnThis(),
+    skip: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    exec: jest.fn().mockResolvedValue(result),
+});
+
 const mockModel = {
     create: jest.fn(),
-    find: jest.fn().mockReturnValue({
-        sort: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue([mockVote]),
-    }),
-    findById: jest.fn().mockReturnValue({
-        exec: jest.fn().mockResolvedValue(mockVote),
-    }),
+    find: jest.fn(),
+    findById: jest.fn(),
+    findOneAndUpdate: jest.fn(),
 };
 
 describe("CommunityVotesService", () => {
@@ -75,7 +94,11 @@ describe("CommunityVotesService", () => {
         jest.clearAllMocks();
         mockVote.casts = [];
         mockVote.status = "open";
+        mockModel.find.mockReturnValue(queryResolving([mockVote]));
         mockModel.findById.mockReturnValue({
+            exec: jest.fn().mockResolvedValue(mockVote),
+        });
+        mockModel.findOneAndUpdate.mockReturnValue({
             exec: jest.fn().mockResolvedValue(mockVote),
         });
     });
@@ -105,20 +128,50 @@ describe("CommunityVotesService", () => {
         );
     });
 
-    it("casts a vote successfully", async () => {
-        mockVote.save.mockResolvedValue(mockVote);
+    it("casts a vote successfully through an atomic update", async () => {
+        const updatedVote = { ...mockVote, casts: [castBy("user1")] };
+        mockModel.findOneAndUpdate.mockReturnValue({
+            exec: jest.fn().mockResolvedValue(updatedVote),
+        });
+
+        const result = await service.cast(
+            "vote1",
+            { choices: ["yes"] },
+            "user1",
+        );
+
+        expect(result.casts).toHaveLength(1);
+        expect(result.casts[0].userId).toBe("user1");
+    });
+
+    it("guards the atomic cast update with status, deadline and duplicate filters", async () => {
         await service.cast("vote1", { choices: ["yes"] }, "user1");
-        expect(mockVote.casts).toHaveLength(1);
-        expect(mockVote.casts[0].userId).toBe("user1");
+
+        expect(mockModel.findOneAndUpdate).toHaveBeenCalledWith(
+            {
+                _id: "vote1",
+                status: "open",
+                endsAt: { $gt: expect.any(Date) },
+                "casts.userId": { $ne: "user1" },
+            },
+            {
+                $push: {
+                    casts: expect.objectContaining({
+                        userId: "user1",
+                        choices: ["yes"],
+                    }),
+                },
+            },
+            { new: true },
+        );
     });
 
     it("rejects duplicate vote", async () => {
-        mockVote.casts = [
-            { userId: "user1", choices: ["yes"], castAt: new Date() },
-        ];
+        mockVote.casts = [castBy("user1")];
         await expect(
             service.cast("vote1", { choices: ["yes"] }, "user1"),
         ).rejects.toThrow(ConflictException);
+        expect(mockModel.findOneAndUpdate).not.toHaveBeenCalled();
     });
 
     it("rejects vote on closed ballot", async () => {
@@ -129,6 +182,7 @@ describe("CommunityVotesService", () => {
         await expect(
             service.cast("vote1", { choices: ["yes"] }, "user2"),
         ).rejects.toThrow(BadRequestException);
+        expect(mockModel.findOneAndUpdate).not.toHaveBeenCalled();
     });
 
     it("rejects binary vote with multiple choices", async () => {
@@ -141,6 +195,152 @@ describe("CommunityVotesService", () => {
         await expect(
             service.cast("vote1", { choices: ["maybe"] }, "user2"),
         ).rejects.toThrow(BadRequestException);
+    });
+
+    it("rejects weighted votes whose weight keys are not vote options", async () => {
+        const weightedVote = {
+            ...mockVote,
+            voteType: CommunityVoteType.WEIGHTED,
+            save: jest.fn(),
+        };
+        mockModel.findById.mockReturnValue({
+            exec: jest.fn().mockResolvedValue(weightedVote),
+        });
+
+        const attempt = service.cast(
+            "vote1",
+            { choices: ["yes"], weights: { ghost: 999 } },
+            "user2",
+        );
+
+        await expect(attempt).rejects.toThrow(BadRequestException);
+        await expect(attempt).rejects.toThrow("Invalid options: ghost");
+        expect(mockModel.findOneAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it("throws ConflictException when a concurrent cast wins the atomic update", async () => {
+        mockModel.findOneAndUpdate.mockReturnValue({
+            exec: jest.fn().mockResolvedValue(null),
+        });
+        mockModel.findById
+            .mockReturnValueOnce({
+                exec: jest.fn().mockResolvedValue(mockVote),
+            })
+            .mockReturnValueOnce({
+                exec: jest.fn().mockResolvedValue({
+                    ...mockVote,
+                    casts: [castBy("user1")],
+                }),
+            });
+
+        const casting = service.cast("vote1", { choices: ["yes"] }, "user1");
+
+        await expect(casting).rejects.toThrow(ConflictException);
+        await expect(casting).rejects.toThrow("You have already voted");
+    });
+
+    it("throws NotFoundException when the vote disappears during the atomic update", async () => {
+        mockModel.findOneAndUpdate.mockReturnValue({
+            exec: jest.fn().mockResolvedValue(null),
+        });
+        mockModel.findById
+            .mockReturnValueOnce({
+                exec: jest.fn().mockResolvedValue(mockVote),
+            })
+            .mockReturnValueOnce({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+        const casting = service.cast("vote1", { choices: ["yes"] }, "user1");
+
+        await expect(casting).rejects.toThrow(NotFoundException);
+        await expect(casting).rejects.toThrow("Vote not found");
+    });
+
+    it("throws BadRequestException when the vote closes during the atomic update", async () => {
+        mockModel.findOneAndUpdate.mockReturnValue({
+            exec: jest.fn().mockResolvedValue(null),
+        });
+        mockModel.findById
+            .mockReturnValueOnce({
+                exec: jest.fn().mockResolvedValue(mockVote),
+            })
+            .mockReturnValueOnce({
+                exec: jest.fn().mockResolvedValue({
+                    ...mockVote,
+                    status: "closed",
+                }),
+            });
+
+        const casting = service.cast("vote1", { choices: ["yes"] }, "user1");
+
+        await expect(casting).rejects.toThrow(BadRequestException);
+        await expect(casting).rejects.toThrow("This vote has ended");
+    });
+
+    it("returns only the caster's ballot after casting on an anonymous vote", async () => {
+        mockModel.findById.mockReturnValue({
+            exec: jest.fn().mockResolvedValue(anonymousVoteWith([])),
+        });
+        mockModel.findOneAndUpdate.mockReturnValue({
+            exec: jest
+                .fn()
+                .mockResolvedValue(
+                    anonymousVoteWith([castBy("user1"), castBy("other-user")]),
+                ),
+        });
+
+        const result = await service.cast(
+            "vote1",
+            { choices: ["yes"] },
+            "user1",
+        );
+
+        expect(result.casts).toHaveLength(1);
+        expect(result.casts[0].userId).toBe("user1");
+    });
+
+    it("hides other voters' ballots on anonymous votes in findAllFor", async () => {
+        const anonymousVote = anonymousVoteWith([
+            castBy("user1"),
+            castBy("other-user"),
+        ]);
+        mockModel.find.mockReturnValue(queryResolving([anonymousVote]));
+
+        const [vote] = await service.findAllFor("user1");
+
+        expect(vote.casts).toHaveLength(1);
+        expect(vote.casts.map((c) => c.userId)).toEqual(["user1"]);
+    });
+
+    it("keeps all casts visible on non-anonymous votes in findAllFor", async () => {
+        const publicVote = {
+            ...mockVote,
+            casts: [castBy("user1"), castBy("other-user")],
+        };
+        mockModel.find.mockReturnValue(queryResolving([publicVote]));
+
+        const [vote] = await service.findAllFor("user1");
+
+        expect(vote.casts).toHaveLength(2);
+        expect(vote.casts.map((c) => c.userId)).toEqual([
+            "user1",
+            "other-user",
+        ]);
+    });
+
+    it("hides other voters' ballots on anonymous votes in findOneFor", async () => {
+        mockModel.findById.mockReturnValue({
+            exec: jest
+                .fn()
+                .mockResolvedValue(
+                    anonymousVoteWith([castBy("user1"), castBy("other-user")]),
+                ),
+        });
+
+        const vote = await service.findOneFor("vote1", "user1");
+
+        expect(vote.casts.map((c) => c.userId)).toEqual(["user1"]);
     });
 
     it("calculates binary vote results", async () => {

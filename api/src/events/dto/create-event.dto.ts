@@ -1,11 +1,22 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 import {
     IsDateString,
+    IsIn,
     IsNotEmpty,
-    IsObject,
     IsOptional,
     IsString,
+    ValidateNested,
 } from "class-validator";
+import { GeoPointDto } from "../../common/dto/geo-point.dto";
+
+export const EVENT_CATEGORIES = [
+    "culture",
+    "sport",
+    "community",
+    "education",
+    "other",
+] as const;
 
 export class CreateEventDto {
     @ApiProperty({
@@ -28,10 +39,9 @@ export class CreateEventDto {
     @ApiProperty({
         description: "Category of the event",
         example: "community",
-        enum: ["culture", "sport", "community", "education", "other"],
+        enum: EVENT_CATEGORIES,
     })
-    @IsString()
-    @IsNotEmpty()
+    @IsIn(EVENT_CATEGORIES)
     category: string;
 
     @ApiProperty({
@@ -63,6 +73,7 @@ export class CreateEventDto {
         example: { type: "Point", coordinates: [2.3522, 48.8566] },
     })
     @IsOptional()
-    @IsObject()
-    location?: { type: "Point"; coordinates: [number, number] };
+    @ValidateNested()
+    @Type(() => GeoPointDto)
+    location?: GeoPointDto;
 }

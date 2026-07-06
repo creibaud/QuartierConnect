@@ -35,14 +35,26 @@ export class CommunityVotesService {
         });
     }
 
-    findAll(page = 1, limit = 20): Promise<CommunityVoteDocument[]> {
+    // Anonymous votes must never expose who voted what: every response
+    // keeps only the requester's own cast (the client derives "has voted"
+    // and "my choices" from it); aggregated totals stay available through
+    // getResults, which exposes no user ids.
+    private sanitize(vote: CommunityVoteDocument, requesterId: string) {
+        if (!vote.isAnonymous) return vote;
+        const plain = vote.toObject<CommunityVote & { _id: unknown }>();
+        plain.casts = plain.casts.filter((c) => c.userId === requesterId);
+        return plain;
+    }
+
+    async findAllFor(requesterId: string, page = 1, limit = 20) {
         const skip = (page - 1) * limit;
-        return this.voteModel
+        const votes = await this.voteModel
             .find()
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
             .exec();
+        return votes.map((vote) => this.sanitize(vote, requesterId));
     }
 
     async findOne(id: string): Promise<CommunityVoteDocument> {
@@ -51,11 +63,11 @@ export class CommunityVotesService {
         return vote;
     }
 
-    async cast(
-        id: string,
-        dto: CastCommunityVoteDto,
-        userId: string,
-    ): Promise<CommunityVoteDocument> {
+    async findOneFor(id: string, requesterId: string) {
+        return this.sanitize(await this.findOne(id), requesterId);
+    }
+
+    async cast(id: string, dto: CastCommunityVoteDto, userId: string) {
         const vote = await this.findOne(id);
 
         if (vote.status === "closed" || new Date() > vote.endsAt) {
@@ -78,14 +90,50 @@ export class CommunityVotesService {
             );
         }
 
-        vote.casts.push({
-            userId,
-            choices: dto.choices,
-            weights: dto.weights,
-            castAt: new Date(),
-        });
+        // Weight keys feed getResults() totals directly, so an unknown key
+        // must be rejected exactly like an unknown choice.
+        const invalidWeightKeys = Object.keys(dto.weights ?? {}).filter(
+            (key) => !vote.options.some((o) => o.id === key),
+        );
+        if (invalidWeightKeys.length > 0) {
+            throw new BadRequestException(
+                `Invalid options: ${invalidWeightKeys.join(", ")}`,
+            );
+        }
 
-        return vote.save();
+        // Atomic push: MongoDB re-checks the open/deadline/duplicate guards
+        // itself, so two concurrent casts by the same user can never record
+        // two ballots.
+        const updated = await this.voteModel
+            .findOneAndUpdate(
+                {
+                    _id: id,
+                    status: "open",
+                    endsAt: { $gt: new Date() },
+                    "casts.userId": { $ne: userId },
+                },
+                {
+                    $push: {
+                        casts: {
+                            userId,
+                            choices: dto.choices,
+                            weights: dto.weights,
+                            castAt: new Date(),
+                        },
+                    },
+                },
+                { new: true },
+            )
+            .exec();
+        if (!updated) {
+            const current = await this.voteModel.findById(id).exec();
+            if (!current) throw new NotFoundException("Vote not found");
+            if (current.casts.some((c) => c.userId === userId)) {
+                throw new ConflictException("You have already voted");
+            }
+            throw new BadRequestException("This vote has ended");
+        }
+        return this.sanitize(updated, userId);
     }
 
     async getResults(id: string): Promise<Record<string, unknown>> {
@@ -93,7 +141,14 @@ export class CommunityVotesService {
 
         if (vote.status === "open" && new Date() > vote.endsAt) {
             vote.status = "closed";
-            await vote.save();
+            // Guarded write (same pattern as the atomic cast): the lazy
+            // auto-close must never clobber a concurrent update.
+            await this.voteModel
+                .updateOne(
+                    { _id: id, status: "open" },
+                    { $set: { status: "closed" } },
+                )
+                .exec();
         }
         const totals: Record<string, number> = {};
 
@@ -128,11 +183,7 @@ export class CommunityVotesService {
         };
     }
 
-    async close(
-        id: string,
-        requesterId: string,
-        requesterRole: string,
-    ): Promise<CommunityVoteDocument> {
+    async close(id: string, requesterId: string, requesterRole: string) {
         const vote = await this.findOne(id);
         if (vote.createdBy !== requesterId && requesterRole !== "admin") {
             throw new ForbiddenException(
@@ -140,7 +191,7 @@ export class CommunityVotesService {
             );
         }
         vote.status = "closed";
-        return vote.save();
+        return this.sanitize(await vote.save(), requesterId);
     }
 
     private validateChoices(

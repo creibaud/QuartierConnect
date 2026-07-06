@@ -270,17 +270,29 @@ export class EventsController {
             };
         if (dto.address !== undefined) {
             changes.address = dto.address;
-            const location = await this.resolveLocation(
-                dto.address,
-                dto.location,
-            );
-            if (location) changes.location = location;
+            // A failed geocoding clears the pin rather than silently keeping
+            // the previous position next to the new address text.
+            changes.location =
+                (await this.resolveLocation(dto.address, dto.location)) ?? null;
         }
 
         const updated = await this.eventModel
-            .findByIdAndUpdate(String(id), { $set: changes }, { new: true })
+            .findByIdAndUpdate(
+                String(id),
+                { $set: changes },
+                { new: true, runValidators: true },
+            )
             .exec();
         if (!updated) throw new NotFoundException("Event not found");
+        // Mirror of the create() sync: recommendations read the event name,
+        // date and quartier from Neo4j, which must follow every edit.
+        void this.socialService.syncEvent(
+            updated._id.toString(),
+            updated.title,
+            updated.date,
+            updated.neighborhoodId?.toString(),
+            updated.createdBy,
+        );
         return updated;
     }
 
