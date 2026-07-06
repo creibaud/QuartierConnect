@@ -70,7 +70,9 @@ test.describe("Admin — Modération incidents", () => {
 
     test("shows status filter selector", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
-        await expect(page.getByRole("combobox")).toBeVisible();
+        await expect(
+            page.getByRole("combobox", { name: /statut/i }),
+        ).toBeVisible();
     });
 
     test("shows table headers for incident list", async ({ page }) => {
@@ -85,7 +87,7 @@ test.describe("Admin — Modération incidents", () => {
 
     test("filters incidents by open status", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
-        await page.getByRole("combobox").click();
+        await page.getByRole("combobox", { name: /statut/i }).click();
         await page.getByRole("option", { name: /ouverts/i }).click();
         await expect(
             page.getByRole("heading", { name: /incidents/i }),

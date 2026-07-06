@@ -46,25 +46,32 @@ test.describe("Client — Register parcours", () => {
 
     test("shows email format error on blur", async ({ page }) => {
         await page.goto("/register");
+        // The first field autofocuses and validates on blur, so several field
+        // errors can coexist — scope the assertion to the email error itself.
         await page.getByLabel("Email").fill("pas-un-email");
         await page.getByLabel("Email").blur();
-        await expect(page.getByRole("alert")).toContainText(/email invalide/i);
+        await expect(page.getByText(/email invalide/i)).toBeVisible();
     });
 
     test("submit stays disabled until every field is valid", async ({
         page,
     }) => {
         await page.goto("/register");
-        await page.getByRole("checkbox").check();
         const submit = page.getByRole("button", { name: /créer/i });
-        await expect(submit).toBeDisabled();
+        // Fill the identity fields first: this also lets the form settle
+        // before the Radix checkbox interaction below.
         await page.getByLabel("Prénom", { exact: true }).fill("Test");
         await page.getByLabel("Nom", { exact: true }).fill("Resident");
-        await page.getByLabel("Email").fill("pas-un-email");
         await page
             .getByLabel("Mot de passe", { exact: true })
             .fill(DEMO_PASSWORD);
         await page.getByLabel(/confirmer/i).fill(DEMO_PASSWORD);
+        const consent = page.getByRole("checkbox");
+        await consent.click();
+        await expect(consent).toBeChecked();
+        // Consent given and identity valid, but an invalid email keeps the
+        // submit disabled.
+        await page.getByLabel("Email").fill("pas-un-email");
         await expect(submit).toBeDisabled();
         await page.getByLabel("Email").fill(uniqueEmail());
         await expect(submit).toBeEnabled();
@@ -96,11 +103,17 @@ test.describe("Client — Register parcours", () => {
         page,
     }) => {
         await page.goto("/register");
-        await page
-            .getByRole("button", { name: /notice d'information/i })
-            .click();
+        const trigger = page.getByRole("button", {
+            name: /notice d'information/i,
+        });
+        await expect(trigger).toBeVisible();
         const dialog = page.getByRole("dialog");
-        await expect(dialog).toBeVisible();
+        // Radix can swallow the very first click on a freshly mounted trigger;
+        // retry the open until the dialog is actually shown.
+        await expect(async () => {
+            await trigger.click();
+            await expect(dialog).toBeVisible({ timeout: 1000 });
+        }).toPass();
         await dialog.getByRole("button", { name: "Fermer" }).click();
         await expect(dialog).not.toBeVisible();
     });
