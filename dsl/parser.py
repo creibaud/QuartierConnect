@@ -1,3 +1,5 @@
+import re
+
 import ply.yacc as yacc
 from lexer import tokens  # noqa: F401
 
@@ -79,7 +81,10 @@ def p_condition_lte(p):
 
 def p_condition_like(p):
     """condition : IDENTIFIER LIKE value"""
-    p[0] = {p[1]: {"$regex": p[3], "$options": "i"}}
+    # LIKE is a literal, case-insensitive substring match. The user value is
+    # escaped so a crafted pattern can never reach MongoDB as an active
+    # regex (catastrophic backtracking / ReDoS).
+    p[0] = {p[1]: {"$regex": re.escape(str(p[3])), "$options": "i"}}
 
 
 def p_value_string(p):

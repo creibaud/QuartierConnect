@@ -2,6 +2,7 @@ import { BadRequestException, PayloadTooLargeException } from "@nestjs/common";
 import {
     ACCEPTED_AUDIO_MIME_TYPES,
     assertAudioSizeWithinLimit,
+    isInlineSafeMimeType,
     MAX_AUDIO_SIZE_BYTES,
     resolveUploadMessageType,
 } from "./message-upload.policy";
@@ -44,6 +45,34 @@ describe("resolveUploadMessageType", () => {
         expect(resolveUploadMessageType("application/pdf")).toBe(
             MessageType.FILE,
         );
+    });
+
+    it("routes SVG to FILE so a script-capable image is never rendered inline", () => {
+        expect(resolveUploadMessageType("image/svg+xml")).toBe(
+            MessageType.FILE,
+        );
+    });
+});
+
+describe("isInlineSafeMimeType", () => {
+    it.each(["image/png", "image/jpeg", "image/webp", "image/gif"])(
+        "allows raster image %s inline",
+        (mimeType) => {
+            expect(isInlineSafeMimeType(mimeType)).toBe(true);
+        },
+    );
+
+    it.each([
+        "text/html",
+        "image/svg+xml",
+        "application/pdf",
+        "application/octet-stream",
+    ])("forces %s to download", (mimeType) => {
+        expect(isInlineSafeMimeType(mimeType)).toBe(false);
+    });
+
+    it("normalizes parameters and case before checking", () => {
+        expect(isInlineSafeMimeType(" IMAGE/PNG ; charset=utf-8")).toBe(true);
     });
 });
 

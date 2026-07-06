@@ -38,6 +38,7 @@ import {
 } from "./dto/messaging-responses.dto";
 import {
     assertAudioSizeWithinLimit,
+    isInlineSafeMimeType,
     resolveUploadMessageType,
 } from "./message-upload.policy";
 import { MessagingGateway } from "./messaging.gateway";
@@ -170,7 +171,10 @@ export class MessagingController {
         }
 
         const fileId = new ObjectId();
-        await new Promise<void>((resolve) => {
+        // The write must reject on failure: without it the request either
+        // hangs or creates a message pointing at a file that was never
+        // stored.
+        await new Promise<void>((resolve, reject) => {
             const stream = this.bucket.openUploadStreamWithId(
                 fileId,
                 file.originalname,
@@ -182,6 +186,7 @@ export class MessagingController {
                     },
                 },
             );
+            stream.on("error", reject);
             stream.end(file.buffer, () => resolve());
         });
 
@@ -233,10 +238,28 @@ export class MessagingController {
             (file.metadata?.contentType as string | undefined) ??
             "application/octet-stream";
         const safeName = file.filename.replace(/[\r\n"]/g, "");
-        res.set({
-            "Content-Type": contentType,
-            "Content-Disposition": `inline; filename="${safeName}"`,
+        // The stored content type is attacker-controlled (client MIME at
+        // upload): only an allowlist renders inline, anything else — HTML,
+        // SVG… — is forced to download so it can never execute in the API
+        // origin.
+        if (isInlineSafeMimeType(contentType)) {
+            res.set({
+                "Content-Type": contentType,
+                "Content-Disposition": `inline; filename="${safeName}"`,
+            });
+        } else {
+            res.set({
+                "Content-Type": "application/octet-stream",
+                "Content-Disposition": `attachment; filename="${safeName}"`,
+            });
+        }
+        const download = this.bucket.openDownloadStream(objectId);
+        // .pipe() does not forward errors; an unhandled 'error' on the read
+        // stream (missing chunks) would crash the process.
+        download.on("error", () => {
+            if (res.headersSent) res.destroy();
+            else res.status(500).end();
         });
-        this.bucket.openDownloadStream(objectId).pipe(res);
+        download.pipe(res);
     }
 }

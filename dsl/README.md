@@ -21,8 +21,9 @@ texte → lexer.py → parser.py (LALR) → compiler.py (liste blanche) → JSON
 
 Deux verbes : `FIND` (documents) et `COUNT` (entier). Les mots réservés
 (`FIND`, `WHERE`, `AND`, `OR`, `LIMIT`, `COUNT`, `LIKE`) sont insensibles à la
-casse. Opérateurs : `=`, `!=`, `>`, `>=`, `<`, `<=`, `LIKE` (regex insensible
-à la casse).
+casse. Opérateurs : `=`, `!=`, `>`, `>=`, `<`, `<=`, `LIKE` (recherche de
+sous-chaîne littérale, insensible à la casse — la valeur est échappée, aucun
+motif regex n'atteint la base).
 
 ```
 FIND incidents
@@ -39,7 +40,11 @@ FIND events WHERE maxAttendees >= 50 LIMIT 10
 
 - Liste blanche stricte : `incidents`, `neighborhoods`, `services`, `events`, `users`
 - Lecture seule : `FIND` et `COUNT` uniquement, aucune opération destructive
-- Longueur de requête limitée (validée côté API) et `limit` plafonné
+- Longueur de requête limitée (validée côté API) et `limit` plafonné à 100
+  (un `FIND` sans `LIMIT` ou avec une valeur excessive est tronqué)
+- Scoping par rôle côté API : un modérateur ne voit que son quartier
+  (incidents, services, événements, utilisateurs) ; seul l'admin interroge
+  toutes les données
 - Une collection hors liste blanche est rejetée avant tout accès à la base
 
 ## Commandes

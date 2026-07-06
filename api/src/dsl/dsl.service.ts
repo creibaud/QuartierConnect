@@ -27,6 +27,20 @@ interface CompiledQuery {
     limit: number | null;
 }
 
+export interface DslRequester {
+    sub: string;
+    role: string;
+    neighborhoodId?: string | null;
+}
+
+// Documented cap (dsl/README.md): a FIND without LIMIT — or with an
+// oversized one — never returns more than this.
+const MAX_DSL_RESULTS = 100;
+
+function clampLimit(limit: number | null): number {
+    return Math.min(limit ?? MAX_DSL_RESULTS, MAX_DSL_RESULTS);
+}
+
 @Injectable()
 export class DslService {
     private readonly logger = new Logger(DslService.name);
@@ -71,7 +85,10 @@ export class DslService {
         return this.dslModule;
     }
 
-    async execute(queryString: string): Promise<unknown> {
+    async execute(
+        queryString: string,
+        requester?: DslRequester,
+    ): Promise<unknown> {
         const dsl = await this.getDslModule();
 
         let compiled: CompiledQuery;
@@ -97,11 +114,32 @@ export class DslService {
             );
         }
 
-        return this.runCompiledQuery(compiled);
+        return this.runCompiledQuery(compiled, requester);
     }
 
-    private async runCompiledQuery(compiled: CompiledQuery): Promise<unknown> {
+    // Moderators are scoped to their quartier exactly like on the REST
+    // endpoints; the DSL must not be a side door around that invariant.
+    // Neighborhoods stay unscoped (public directory data).
+    private isNeighborhoodScoped(requester?: DslRequester): boolean {
+        return requester !== undefined && requester.role !== "admin";
+    }
+
+    private async runCompiledQuery(
+        compiled: CompiledQuery,
+        requester?: DslRequester,
+    ): Promise<unknown> {
         const { type, collection, filter, limit } = compiled;
+        const scoped = this.isNeighborhoodScoped(requester);
+        if (
+            scoped &&
+            !requester?.neighborhoodId &&
+            collection !== "neighborhoods"
+        ) {
+            return type === "count" ? { count: 0 } : [];
+        }
+        const scopedNeighborhoodId = scoped
+            ? (requester?.neighborhoodId as string)
+            : undefined;
 
         switch (collection) {
             case "neighborhoods":
@@ -112,18 +150,41 @@ export class DslService {
                     limit,
                 );
             case "services":
-                return this.runMongo(this.serviceModel, type, filter, limit);
+                return this.runMongo(
+                    this.serviceModel,
+                    type,
+                    this.withNeighborhoodFilter(filter, scopedNeighborhoodId),
+                    limit,
+                );
             case "events":
-                return this.runMongo(this.eventModel, type, filter, limit);
+                return this.runMongo(
+                    this.eventModel,
+                    type,
+                    this.withNeighborhoodFilter(filter, scopedNeighborhoodId),
+                    limit,
+                );
             case "incidents":
-                return this.runIncidents(type, filter, limit);
+                return this.runIncidents(
+                    type,
+                    filter,
+                    limit,
+                    scopedNeighborhoodId,
+                );
             case "users":
-                return this.runUsers(type, filter, limit);
+                return this.runUsers(type, filter, limit, scopedNeighborhoodId);
             default:
                 throw new BadRequestException(
                     `Unknown collection: ${collection}`,
                 );
         }
+    }
+
+    private withNeighborhoodFilter(
+        filter: Record<string, unknown>,
+        neighborhoodId: string | undefined,
+    ): Record<string, unknown> {
+        if (!neighborhoodId) return filter;
+        return { ...filter, neighborhoodId };
     }
 
     private async runMongo(
@@ -135,9 +196,11 @@ export class DslService {
         if (type === "count") {
             return { count: await model.countDocuments(filter) };
         }
-        const query = model.find(filter).lean();
-        if (limit) query.limit(limit);
-        return query.exec() as Promise<unknown>;
+        return model
+            .find(filter)
+            .lean()
+            .limit(clampLimit(limit))
+            .exec() as Promise<unknown>;
     }
 
     private extractEqualityFilter(
@@ -163,6 +226,7 @@ export class DslService {
         type: "find" | "count",
         filter: Record<string, unknown>,
         limit: number | null,
+        neighborhoodId?: string,
     ): Promise<unknown> {
         const status = this.extractEqualityFilter(
             filter,
@@ -173,6 +237,11 @@ export class DslService {
 
         if (status) {
             conditions.push(eq(schema.incidents.status, status));
+        }
+        if (neighborhoodId) {
+            conditions.push(
+                eq(schema.incidents.neighborhoodId, neighborhoodId),
+            );
         }
 
         const where = and(...conditions);
@@ -189,7 +258,7 @@ export class DslService {
             .select()
             .from(schema.incidents)
             .where(where)
-            .limit(limit ?? 100);
+            .limit(clampLimit(limit));
 
         return rows;
     }
@@ -198,9 +267,15 @@ export class DslService {
         type: "find" | "count",
         filter: Record<string, unknown>,
         limit: number | null,
+        neighborhoodId?: string,
     ): Promise<unknown> {
         const role = this.extractEqualityFilter(filter, "role", "users");
-        const where = role ? eq(schema.users.role, role) : undefined;
+        const conditions: ReturnType<typeof eq>[] = [];
+        if (role) conditions.push(eq(schema.users.role, role));
+        if (neighborhoodId) {
+            conditions.push(eq(schema.users.neighborhoodId, neighborhoodId));
+        }
+        const where = conditions.length ? and(...conditions) : undefined;
 
         if (type === "count") {
             const rows = await this.db
@@ -219,7 +294,7 @@ export class DslService {
             })
             .from(schema.users)
             .where(where)
-            .limit(limit ?? 100);
+            .limit(clampLimit(limit));
 
         return rows;
     }
