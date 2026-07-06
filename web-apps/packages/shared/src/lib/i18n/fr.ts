@@ -198,6 +198,7 @@ export default {
         sending: "Envoi…",
         download: "Télécharger",
         uploadError: "Impossible d'envoyer le fichier",
+        sendError: "Impossible d'envoyer le message",
         imageAlt: "Pièce jointe",
         recordVoice: "Enregistrer un message vocal",
         recording: "Enregistrement en cours",
@@ -630,6 +631,8 @@ export default {
             recording: "Enregistrement…",
             vote: "Voter",
             voteRecorded: "Vote enregistré",
+            castError: "Impossible d'enregistrer votre vote",
+            alreadyVoted: "Vous avez déjà voté sur ce scrutin",
             participantCount_one: "{{count}} participant",
             participantCount_other: "{{count}} participants",
             liveResults: "Résultats provisoires",
@@ -786,6 +789,11 @@ export default {
                 "Vous n'avez pas encore de conversation.",
             conversationReady: "Conversation prête",
             unknownError: "Erreur inconnue",
+            createConversationError: "Impossible de créer la conversation",
+            userEmailNotFound: "Aucun voisin ne correspond à cet email",
+            selfConversation:
+                "Vous ne pouvez pas démarrer une conversation avec vous-même",
+            participantsRequired: "Renseignez au moins un participant",
             newConversationDescription:
                 "Démarre une discussion avec un voisin via son email.",
             neighborEmail: "Email du voisin",
@@ -984,6 +992,8 @@ export default {
             emptyDescription:
                 "Les signalements des résidents apparaîtront ici dès qu'ils seront soumis.",
             statusColumn: "Statut",
+            categoryColumn: "Catégorie",
+            allCategories: "Toutes les catégories",
             reportedAt: "Signalé le",
             done: "Terminé",
             statusUpdated: "Statut mis à jour",
@@ -1028,6 +1038,10 @@ export default {
             noPolygonWarning:
                 "Aucun périmètre tracé : le quartier sera créé sans zone.",
             overlapError: "Le tracé chevauche un quartier existant",
+            overlapErrorDetail:
+                "Ajustez le périmètre pour qu'il ne recouvre aucun autre quartier.",
+            submitErrorDetail:
+                "Vérifiez les champs du formulaire puis réessayez.",
             searchPlaceholder: "Rechercher par nom",
         },
         services: {

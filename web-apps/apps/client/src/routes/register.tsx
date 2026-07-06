@@ -6,7 +6,7 @@ import { useHead } from "@unhead/react";
 import { apiPost } from "@workspace/shared/lib/api";
 import { setTokens, type LoginResponse } from "@workspace/shared/lib/auth";
 import { isValidPhone, normalizePhone } from "@workspace/shared/lib/phone";
-import { resolveAuthErrorMessage } from "@/features/auth/lib/server-error";
+import { resolveAuthErrorMessage } from "@workspace/shared/lib/server-error";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
 import { AuthLayout } from "@workspace/ui/components/auth-layout";
 import { Button } from "@workspace/ui/components/button";

@@ -586,7 +586,13 @@ function NeighborhoodDialog({
                                         )}
                             </AlertTitle>
                             <AlertDescription>
-                                {submitError.message}
+                                {isOverlapError(submitError)
+                                    ? t(
+                                          "adminPages.neighborhoods.overlapErrorDetail",
+                                      )
+                                    : t(
+                                          "adminPages.neighborhoods.submitErrorDetail",
+                                      )}
                             </AlertDescription>
                         </Alert>
                     )}

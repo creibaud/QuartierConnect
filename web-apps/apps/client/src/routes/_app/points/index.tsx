@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
     ArrowDown01Icon,
@@ -14,6 +14,7 @@ import {
     usePointsHistory,
     useTransferPoints,
 } from "@workspace/shared/lib/hooks/points.hooks";
+import { useDebouncedValue } from "@workspace/shared/lib/hooks/useDebouncedValue";
 import {
     type UserSearchResult,
     useUserSearch,
@@ -231,17 +232,6 @@ function TransactionRow({
             </span>
         </li>
     );
-}
-
-function useDebouncedValue<T>(value: T, delayMs: number): T {
-    const [debounced, setDebounced] = useState(value);
-
-    useEffect(() => {
-        const timer = setTimeout(() => setDebounced(value), delayMs);
-        return () => clearTimeout(timer);
-    }, [value, delayMs]);
-
-    return debounced;
 }
 
 function RecipientPicker({
