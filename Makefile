@@ -215,7 +215,11 @@ test-e2e-web: ## Tests E2E Playwright (client + admin — nécessite apps sur :3
 
 test-desktop: ## Tests unitaires Java (Maven Surefire, JUnit 5)
 	@echo "$(RUN) Tests Desktop (JUnit)..."
-	@cd desktop-app && ./mvnw test -q
+	@cd desktop-app && if command -v xvfb-run >/dev/null 2>&1; then \
+		xvfb-run -a ./mvnw test -q; \
+	else \
+		./mvnw test -q; \
+	fi
 	@echo "$(OK) Tests Desktop OK"
 
 test-dsl: ## Tests Python DSL (pytest)
