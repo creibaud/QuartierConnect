@@ -232,7 +232,7 @@ describe("EventsController", () => {
         expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
             "evt-id-1",
             { $set: {} },
-            { new: true },
+            { new: true, runValidators: true },
         );
     });
 
@@ -245,7 +245,7 @@ describe("EventsController", () => {
         expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
             "evt-id-1",
             { $set: { neighborhoodId: "n2" } },
-            { new: true },
+            { new: true, runValidators: true },
         );
     });
 
@@ -387,7 +387,45 @@ describe("EventsController", () => {
                     location: { type: "Point", coordinates: [2.35, 48.85] },
                 },
             },
-            { new: true },
+            { new: true, runValidators: true },
+        );
+    });
+
+    it("PATCH /events/:id sets location to null when geocoding the new address fails", async () => {
+        geocoding.geocode.mockResolvedValue(null);
+        await controller.update(
+            "evt-id-1",
+            { address: "adresse introuvable" } as any,
+            authReq() as any,
+        );
+        expect(geocoding.geocode).toHaveBeenCalledWith("adresse introuvable");
+        expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+            "evt-id-1",
+            { $set: { address: "adresse introuvable", location: null } },
+            { new: true, runValidators: true },
+        );
+    });
+
+    it("PATCH /events/:id re-syncs the updated event to Neo4j", async () => {
+        const updatedDate = new Date("2026-07-01");
+        model.findByIdAndUpdate.mockReturnValue({
+            exec: jest.fn().mockResolvedValue({
+                ...mockEvent,
+                title: "Brocante estivale",
+                date: updatedDate,
+            }),
+        });
+        await controller.update(
+            "evt-id-1",
+            { title: "Brocante estivale" } as any,
+            authReq() as any,
+        );
+        expect(socialService.syncEvent).toHaveBeenCalledWith(
+            "evt-id-1",
+            "Brocante estivale",
+            updatedDate,
+            "n1",
+            "user-uuid-1",
         );
     });
 });

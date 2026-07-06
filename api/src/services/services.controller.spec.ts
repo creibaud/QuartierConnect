@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ConflictException,
     ForbiddenException,
     NotFoundException,
@@ -19,6 +20,7 @@ const mockService = {
     description: "Repairs",
     category: "home",
     type: "paid",
+    duration: 60,
     createdBy: "user-uuid-1",
     neighborhoodId: "n1",
 };
@@ -424,7 +426,7 @@ describe("ServicesController", () => {
         expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
             "svc-id-1",
             { $set: {} },
-            { new: true },
+            { new: true, runValidators: true },
         );
     });
 
@@ -437,7 +439,7 @@ describe("ServicesController", () => {
         expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
             "svc-id-1",
             { $set: { neighborhoodId: "n2" } },
-            { new: true },
+            { new: true, runValidators: true },
         );
     });
 
@@ -467,6 +469,61 @@ describe("ServicesController", () => {
             authReq("admin", "other-user") as any,
         );
         expect(result).toEqual(mockService);
+    });
+
+    it("PATCH /services/:id rejects switching to paid without any duration", async () => {
+        model.findById.mockReturnValue({
+            exec: jest.fn().mockResolvedValue({
+                ...mockService,
+                type: "free",
+                duration: undefined,
+            }),
+        });
+        await expect(
+            controller.update("svc-id-1", { type: "paid" }, authReq() as any),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        await expect(
+            controller.update("svc-id-1", { type: "paid" }, authReq() as any),
+        ).rejects.toMatchObject({
+            response: {
+                code: "PAID_SERVICE_REQUIRES_DURATION",
+                message: "A paid service requires a duration",
+            },
+        });
+        expect(model.findByIdAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it("PATCH /services/:id accepts switching to paid with a duration in the same body", async () => {
+        model.findById.mockReturnValue({
+            exec: jest.fn().mockResolvedValue({
+                ...mockService,
+                type: "free",
+                duration: undefined,
+            }),
+        });
+        await controller.update(
+            "svc-id-1",
+            { type: "paid", duration: 30 },
+            authReq() as any,
+        );
+        expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+            "svc-id-1",
+            { $set: { type: "paid", duration: 30 } },
+            { new: true, runValidators: true },
+        );
+    });
+
+    it("PATCH /services/:id runs schema validators on the atomic update", async () => {
+        await controller.update(
+            "svc-id-1",
+            { title: "Updated" },
+            authReq() as any,
+        );
+        expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+            "svc-id-1",
+            { $set: { title: "Updated" } },
+            expect.objectContaining({ runValidators: true }),
+        );
     });
 
     it("DELETE /services/:id allows the owner to remove it", async () => {
@@ -518,7 +575,7 @@ describe("ServicesController", () => {
         expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
             "svc-id-1",
             { $set: { direction: "request" } },
-            { new: true },
+            { new: true, runValidators: true },
         );
     });
 
@@ -666,11 +723,11 @@ describe("ServicesController", () => {
                     location: { type: "Point", coordinates: [2.35, 48.85] },
                 },
             },
-            { new: true },
+            { new: true, runValidators: true },
         );
     });
 
-    it("PATCH /services/:id keeps the stored location when geocode fails", async () => {
+    it("PATCH /services/:id clears the location when geocode fails", async () => {
         geocoding.geocode.mockResolvedValue(null);
         await controller.update(
             "svc-id-1",
@@ -679,7 +736,7 @@ describe("ServicesController", () => {
         );
         const setArg = model.findByIdAndUpdate.mock.calls[0][1].$set;
         expect(setArg.address).toBe("bad");
-        expect(setArg.location).toBeUndefined();
+        expect(setArg.location).toBeNull();
     });
 
     it("GET /services/mine returns own services with responders enriched from Drizzle", async () => {

@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     Body,
     ConflictException,
     Controller,
@@ -346,19 +347,33 @@ export class ServicesController {
             };
         if (dto.address !== undefined) {
             changes.address = dto.address;
-            const location = await this.resolveLocation(
-                dto.address,
-                dto.location,
-            );
-            if (location) changes.location = location;
+            // A failed geocoding clears the pin rather than silently keeping
+            // the previous position next to the new address text.
+            changes.location =
+                (await this.resolveLocation(dto.address, dto.location)) ?? null;
         }
         if (dto.duration !== undefined) changes.duration = dto.duration;
         if (dto.status !== undefined) changes.status = dto.status;
         if (dto.pointsAmount !== undefined)
             changes.pointsAmount = dto.pointsAmount;
 
+        // A paid service without a duration would silently price to the
+        // 1-point floor; enforce the invariant on the effective values.
+        const effectiveType = dto.type ?? service.type;
+        const effectiveDuration = dto.duration ?? service.duration;
+        if (effectiveType === "paid" && !effectiveDuration) {
+            throw new BadRequestException({
+                code: "PAID_SERVICE_REQUIRES_DURATION",
+                message: "A paid service requires a duration",
+            });
+        }
+
         const updated = await this.serviceModel
-            .findByIdAndUpdate(serviceId, { $set: changes }, { new: true })
+            .findByIdAndUpdate(
+                serviceId,
+                { $set: changes },
+                { new: true, runValidators: true },
+            )
             .exec();
         if (updated) {
             void this.socialService.syncService(

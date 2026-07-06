@@ -1,16 +1,28 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 import {
     IsIn,
     IsInt,
     IsNotEmpty,
     IsNumber,
-    IsObject,
     IsOptional,
     IsString,
     Max,
     Min,
     ValidateIf,
+    ValidateNested,
 } from "class-validator";
+import { GeoPointDto } from "../../common/dto/geo-point.dto";
+
+export const SERVICE_CATEGORIES = [
+    "gardening",
+    "handyman",
+    "transport",
+    "shopping",
+    "childcare",
+    "it-support",
+    "other",
+] as const;
 
 export class CreateServiceDto {
     @ApiProperty({
@@ -33,18 +45,9 @@ export class CreateServiceDto {
     @ApiProperty({
         description: "Service category",
         example: "gardening",
-        enum: [
-            "gardening",
-            "handyman",
-            "transport",
-            "shopping",
-            "childcare",
-            "it-support",
-            "other",
-        ],
+        enum: SERVICE_CATEGORIES,
     })
-    @IsString()
-    @IsNotEmpty()
+    @IsIn(SERVICE_CATEGORIES)
     category: string;
 
     @ApiProperty({
@@ -83,8 +86,9 @@ export class CreateServiceDto {
         example: { type: "Point", coordinates: [2.3522, 48.8566] },
     })
     @IsOptional()
-    @IsObject()
-    location?: { type: "Point"; coordinates: [number, number] };
+    @ValidateNested()
+    @Type(() => GeoPointDto)
+    location?: GeoPointDto;
 
     @ApiProperty({
         description: "Service direction: offer or request",
@@ -106,7 +110,12 @@ export class CreateServiceDto {
         example: 60,
         minimum: 1,
     })
-    @ValidateIf((o: CreateServiceDto) => o.type === "paid")
+    // Required when the service is paid, but any provided value must be a
+    // valid duration whatever the type — including partial (PATCH) bodies
+    // where `type` is absent.
+    @ValidateIf(
+        (o: CreateServiceDto) => o.type === "paid" || o.duration !== undefined,
+    )
     @IsInt()
     @Min(1)
     duration?: number;
@@ -123,10 +132,10 @@ export class CreateServiceDto {
     @ApiPropertyOptional({
         description: "Explicit points price (overrides the derived amount)",
         example: 8,
-        minimum: 0,
+        minimum: 1,
     })
     @IsOptional()
     @IsInt()
-    @Min(0)
+    @Min(1)
     pointsAmount?: number;
 }
