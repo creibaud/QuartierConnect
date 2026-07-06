@@ -1,9 +1,9 @@
 # QuartierConnect
 
-Neighborhood community platform — ESGI 3AL2 · Stage 4 (95%)
+Neighborhood community platform — ESGI 3AL2 · Final submission
 
 > **Final submission**: 19 July 2026 · **Instructor**: Frédéric SANANES
-> **v0.2.0** · **736 automated tests** · 7 Docker containers · 3 databases · 4 surfaces
+> **v1.0.2** · **1,100+ automated tests** · 9 Docker containers · 3 databases · 4 surfaces
 
 QuartierConnect connects residents of a neighborhood: report incidents, offer and
 find services, organize events, vote, exchange points, and chat in real time.
@@ -13,7 +13,7 @@ It ships four surfaces from one monorepo:
 | -------------------- | ------------------------------ | ----------------------------------------------- |
 | **Resident client**  | React 19                       | The app residents use day to day                |
 | **Admin back-office**| React 19 + DSL editor          | Moderation, management, MongoDB query console   |
-| **REST API**         | NestJS 11                      | 60+ endpoints, JWT + TOTP, WebSocket            |
+| **REST API**         | NestJS 11                      | 87 endpoints, JWT + TOTP, WebSocket             |
 | **Desktop client**   | JavaFX 21                      | Offline-first companion app (SQLite), plugins   |
 
 ---
@@ -36,7 +36,7 @@ make setup
 2. génère `.env` depuis `.env.example` avec des secrets aléatoires
    (`openssl rand -hex 32`) — un `.env` existant est conservé
    (`make setup SETUP_FORCE=1` pour le régénérer) ;
-3. construit et démarre les 7 services Docker (`docker compose up -d --build`) ;
+3. construit et démarre les 9 services Docker (`docker compose up -d --build`) ;
 4. attend que les bases et l'API soient saines (healthchecks + `/health`,
    5 minutes maximum) ;
 5. importe le jeu de démonstration (`livrables/jeux-essais/import-dataset.sh`
@@ -63,9 +63,9 @@ local development, the desktop app, and the DSL.
 
 | Tool                     | Why                                          | Install                                                   |
 | ------------------------ | -------------------------------------------- | -------------------------------------------------------- |
-| **Docker + Compose**     | Runs the 7 services                          | https://docs.docker.com/get-docker/                      |
+| **Docker + Compose**     | Runs the 9 services                          | https://docs.docker.com/get-docker/                      |
 | **GNU Make**             | Task runner (every command below)            | `sudo apt install make`                                  |
-| **Node.js 20+ & pnpm 9** | API + web apps + seed scripts                | Node from nodejs.org, then `corepack enable` for pnpm    |
+| **Node.js 22+ & pnpm 9** | API + web apps + seed scripts                | Node from nodejs.org, then `corepack enable` for pnpm    |
 | **oathtool**             | Generates the TOTP codes for demo login      | `sudo apt install oathtool` (or any authenticator app)   |
 | **uv**                   | Python package manager — runs the DSL        | https://docs.astral.sh/uv/ (`curl -LsSf … \| sh`)        |
 | **Java 21**              | Desktop app (Maven ships as `./mvnw`)        | Temurin / your distro's `openjdk-21`                     |
@@ -89,21 +89,27 @@ make install              # api + web-apps (pnpm) + dsl (uv sync)
 # 3. (contributors only) enable the shared pre-commit hooks
 make hooks
 
-# 4. Start the 7 Docker services
+# 4. Start the 9 Docker services
 make docker-up
 
 # 5. Create the demo accounts and populate Neo4j
-make seed                 # needs step 2: the seed runs on the host via ts-node
+make seed                 # needs step 2: the seed runs on the host via tsx
 ```
 
 Then open the surfaces:
 
-| Surface               | URL                       |
-| --------------------- | ------------------------- |
-| **Resident client**   | http://localhost          |
-| **Admin back-office** | http://localhost/admin    |
-| **API docs (Scalar)** | http://localhost/api/docs |
-| **Neo4j Browser**     | http://localhost:7474     |
+| Surface                 | URL                       |
+| ----------------------- | ------------------------- |
+| **Resident client**     | http://localhost          |
+| **Admin back-office**   | http://localhost/admin    |
+| **User help site**      | http://localhost/aide     |
+| **Developer docs site** | http://localhost/dev ¹    |
+| **API docs (Scalar)**   | http://localhost/api/docs ¹ |
+| **Neo4j Browser**       | http://localhost:7474     |
+
+> ¹ The developer docs and the Scalar reference sit behind Caddy basic auth.
+> Credentials come from the `DOCS_AUTH_USER` / `DOCS_AUTH_HASH` environment
+> variables (a development default is provided in `docker/docker-compose.yml`).
 
 > First boot pulls and builds images, so `make docker-up` can take a few minutes.
 > Check progress with `make status` and `make docker-logs`.
@@ -169,7 +175,7 @@ make dev-desktop      # JavaFX desktop   (./mvnw javafx:run)
 ## Tests
 
 ```bash
-make test             # All unit tests: API (261) + Web hooks + Desktop (139) + DSL
+make test             # All unit tests: API (529) + Web (147) + Desktop (158) + DSL (21)
 make test-cov         # API unit tests + coverage report (stmts 95.7%, branches 86.1%)
 make test-e2e         # API E2E (Supertest)      — prerequisite: make docker-up
 make test-e2e-web     # Web E2E (Playwright)     — prerequisite: make dev + make docker-up
@@ -195,7 +201,7 @@ java -jar desktop-app/target/quartierconnect-desktop.jar   # run the built JAR
 ## Docker
 
 ```bash
-make docker-up        # Start the 7 services
+make docker-up        # Start the 9 services
 make docker-down      # Stop
 make docker-reset     # Full reset (⚠️ removes volumes — all data lost)
 make docker-logs      # Real-time logs (all services)
@@ -209,8 +215,8 @@ make status           # Service status + a quick API unit-test check
 
 | Symptom                                   | Fix                                                                       |
 | ----------------------------------------- | ------------------------------------------------------------------------ |
-| `make docker-up` hangs or a port is busy  | `make status`, then `make docker-logs`. Ports used: 80, 443, 5000, 5432, 27017, 7474, 7687 (and 3000/3001 in dev). |
-| `make seed` fails or hangs                | Run `make install` first (the seed runs on the host via `ts-node`) and confirm services are healthy with `make status`. |
+| `make docker-up` hangs or a port is busy  | `make status`, then `make docker-logs`. Ports used: 80, 443, 3000-3003, 5000, 5432, 7474, 7687, 27017 (all bound to 127.0.0.1 except 80/443). |
+| `make seed` fails or hangs                | Run `make install` first (the seed runs on the host via `tsx`) and confirm services are healthy with `make status`. |
 | API not reachable at `/api`               | `make docker-logs-api` to read the API logs.                             |
 | Login rejects a valid-looking TOTP        | The code is time-based (30s window). Check your clock and regenerate with `make totp`. |
 | DSL queries error in the admin console    | Ensure `make install` (a.k.a. `make install-dsl`) created `dsl/.venv`; `PYTHON_BIN` must point at it. |
@@ -222,7 +228,7 @@ make status           # Service status + a quick API unit-test check
 
 ```
 api/          NestJS 11 API — auth (JWT+TOTP), REST, WebSocket, MongoDB DSL bridge
-web-apps/     Turbo monorepo — apps/client, apps/admin, packages/{shared,ui}
+web-apps/     Turbo monorepo — apps/{client,admin,docs-user,docs-dev}, packages/{shared,ui}
 dsl/          Python PLY micro-language (the MongoDB query DSL)
 desktop-app/  JavaFX 21 desktop client — offline-first (SQLite), plugin system
 docker/       docker-compose + Caddy reverse proxy (Let's Encrypt HTTPS)
@@ -234,18 +240,38 @@ docs/         Full functional + technical dossier (see table below)
 
 ## Documentation
 
+### Online documentation sites
+
+Two Fumadocs sites ship with the stack (started by `make docker-up`):
+
+| Site                    | URL                    | Audience                                        |
+| ----------------------- | ---------------------- | ----------------------------------------------- |
+| **User help** (`/aide`) | http://localhost/aide  | Residents — public guides for every feature      |
+| **Developer docs** (`/dev`) | http://localhost/dev | Contributors — architecture, DSL, tests, deploy |
+
+The developer site and the Scalar API reference (http://localhost/api/docs) are
+protected by Caddy basic auth: credentials are configured through the
+`DOCS_AUTH_USER` / `DOCS_AUTH_HASH` environment variables (see
+`docker/docker-compose.yml` for the development default).
+
+### Written dossier
+
 | Document                                               | Contents                                                  |
 | ------------------------------------------------------ | --------------------------------------------------------- |
+| [docs/DOSSIER-RENDU.md](docs/DOSSIER-RENDU.md)         | Aggregated submission dossier (all documents in one file) |
 | [docs/RENDU-31-05.md](docs/RENDU-31-05.md)             | Submission dossier — functional + technical, end to end   |
 | [docs/RAPPORT-TECHNIQUE.md](docs/RAPPORT-TECHNIQUE.md) | Full report for the defense — all the algorithms          |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)           | Mermaid diagrams — modules, flows, security               |
 | [docs/DATABASE.md](docs/DATABASE.md)                   | PostgreSQL, MongoDB, Neo4j, SQLite schemas                |
 | [docs/SECURITY.md](docs/SECURITY.md)                   | Argon2id, TOTP, JWT, SSO, SHA-256, GDPR                   |
-| [docs/TEST.md](docs/TEST.md)                           | QA report — 736 tests, coverage, strategy                 |
+| [docs/TEST.md](docs/TEST.md)                           | QA report — 1,100+ tests, coverage, strategy              |
 | [docs/DSL.md](docs/DSL.md)                             | PLY micro-language — grammar, pipeline, security          |
+| [docs/PLUGINS.md](docs/PLUGINS.md)                     | Desktop plugin developer guide                            |
+| [docs/USER_GUIDE.md](docs/USER_GUIDE.md)               | User journeys, surface by surface                         |
 | [docs/GUIDE-SOUTENANCE.md](docs/GUIDE-SOUTENANCE.md)   | Demo scenarios, Q&A, key figures                          |
-| [docs/API.md](docs/API.md)                             | Reference for the 50+ endpoints                           |
+| [docs/API.md](docs/API.md)                             | Reference for the 87 endpoints                            |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)               | VPS deployment + Caddy HTTPS                              |
+| [docs/RUNBOOK.md](docs/RUNBOOK.md)                     | Production incident procedures                            |
 
 ---
 

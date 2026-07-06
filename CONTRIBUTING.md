@@ -7,14 +7,14 @@ ESGI 3AL2 project · Frédéric SANANES · Final submission 19 July 2026
 ## Prerequisites
 
 - Docker + Docker Compose
-- Node.js 20+ · pnpm 9+
+- Node.js 22+ · pnpm 9+
 - Java 21 · Maven (via `./mvnw`)
 - Python 3.12+ · uv
 - Make
 
 ```bash
 make install        # pnpm install (api + web) + uv sync (dsl)
-make docker-up      # 7 services: Caddy, API, Client, Admin, MongoDB, PostgreSQL, Neo4j
+make docker-up      # 9 services: Caddy, API, Client, Admin, Docs user, Docs dev, MongoDB, PostgreSQL, Neo4j
 make seed           # demo accounts + Neo4j graph
 ```
 
@@ -25,15 +25,15 @@ make seed           # demo accounts + Neo4j graph
 | Branch       | Role                                          |
 | ------------ | --------------------------------------------- |
 | `main`       | Production — merge only via an approved PR     |
-| `master`     | Current development                           |
+| `develop`    | Integration — current development             |
 | `feat/<name>`| New feature                                   |
 | `fix/<name>` | Bug fix                                        |
 | `docs/<name>`| Documentation only                            |
 
-Create a branch from `master`:
+Create a branch from `develop`:
 
 ```bash
-git checkout master && git pull
+git checkout develop && git pull
 git checkout -b feat/my-feature
 ```
 
@@ -44,7 +44,7 @@ git checkout -b feat/my-feature
 1. **Write code** in the right surface (see the table below)
 2. **Validate** before every commit: `make validate-fast`
 3. **Commit** with a conventional message
-4. **Open a PR** against `master` — `main` is for releases only
+4. **Open a PR** against `develop` — `main` is for releases only
 
 ### Surfaces and directories
 
@@ -57,6 +57,8 @@ git checkout -b feat/my-feature
 | Shared utilities       | `web-apps/packages/shared/` | TypeScript              |
 | Desktop application    | `desktop-app/`              | Java 21 / JavaFX        |
 | Query DSL              | `dsl/`                      | Python / PLY            |
+| User help site         | `web-apps/apps/docs-user/`  | Fumadocs (Next.js)      |
+| Developer docs site    | `web-apps/apps/docs-dev/`   | Fumadocs (Next.js)      |
 
 ---
 

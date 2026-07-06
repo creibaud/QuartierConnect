@@ -3,7 +3,7 @@ title: Démarrage local
 description: Prérequis, configuration et lancement en local
 ---
 
-Ce guide décrit la mise en route d'une instance QuartierConnect complète sur un poste de développement. La plateforme s'exécute sous forme de **7 conteneurs Docker** orchestrés par Docker Compose : `caddy` (reverse proxy), `client` et `admin` (SPA React servies par Vite), `api` (NestJS + passerelle DSL Python PLY), et les trois bases `mongodb`, `postgres`, `neo4j`.
+Ce guide décrit la mise en route d'une instance QuartierConnect complète sur un poste de développement. La plateforme s'exécute sous forme de **9 conteneurs Docker** orchestrés par Docker Compose : `caddy` (reverse proxy), `client` et `admin` (SPA React servies par Vite), `docs-user` et `docs-dev` (sites de documentation Fumadocs), `api` (NestJS + passerelle DSL Python PLY), et les trois bases `mongo`, `postgres`, `neo4j`.
 
 ## Prérequis
 
@@ -11,10 +11,10 @@ Ce guide décrit la mise en route d'une instance QuartierConnect complète sur u
 |-------|----------------|
 | Docker + Docker Compose v2 | Exécute toute la stack (`docker compose`) |
 | Git | Récupération du dépôt |
-| Node 20 | Runtime des conteneurs `client`, `admin`, `api` |
-| pnpm | Gestionnaire du monorepo (`pnpm --filter`), utile pour le fallback de seed |
+| GNU Make | Orchestration des commandes (`make setup`, `make seed`…) |
+| Node 22 + pnpm 9 | Exécution du seed sur l'hôte (`npx tsx`) |
 
-> Les applications web (`client`, `admin`) et l'API tournent **dans les conteneurs** : Docker et Docker Compose v2 suffisent pour un lancement complet. Node et pnpm ne sont requis que pour exécuter des scripts hors conteneur (par exemple le seed en repli).
+> Les applications web, les sites de documentation et l'API tournent **dans les conteneurs** : Docker et Docker Compose v2 suffisent pour un lancement complet. Node et pnpm ne sont requis que pour exécuter des scripts hors conteneur (le seed notamment).
 
 ## Récupération du dépôt
 
@@ -25,24 +25,26 @@ cd QuartierConnect
 
 ## Configuration du fichier `.env`
 
-Copiez le template fourni à la racine sous le nom `.env`, puis renseignez les secrets :
+Le plus simple est `make setup`, qui vérifie les prérequis, génère `.env` depuis `.env.example` avec des secrets aléatoires, démarre la stack et importe le jeu de démonstration — auquel cas les sections suivantes sont déjà couvertes.
+
+Pour une configuration manuelle, copiez le template fourni **à la racine du dépôt** sous le nom `.env`, puis renseignez les secrets :
 
 ```bash
-cp docker/.env.prod.example .env
+cp .env.example .env
 chmod 600 .env
 ```
 
-Générez chaque valeur avec `openssl rand -base64 32 | tr -d '/+='` et remplissez :
+Générez chaque valeur avec `openssl rand -base64 24` (pas d'espaces ni de `<` `>` dans les mots de passe) et remplissez :
 
-- `JWT_SECRET` (≥ 48 caractères)
-- `MONGO_ROOT_PASSWORD`
-- `POSTGRES_PASSWORD`
-- `NEO4J_PASSWORD` — recopiez la **même** valeur dans `NEO4J_AUTH=neo4j/<password>`
+- `JWT_SECRET`
+- `MONGO_ROOT_PASSWORD` — recopiez la **même** valeur dans `MONGO_URI`
+- `POSTGRES_PASSWORD` — recopiez la **même** valeur dans `POSTGRES_URL`
+- `NEO4J_AUTH=neo4j/<password>` — gardez `NEO4J_USER` / `NEO4J_PASSWORD` synchronisés
 
 Vérifiez qu'aucun placeholder ne subsiste :
 
 ```bash
-grep -E '<(generate|password|same|strong)' .env && echo "⚠ Encore des placeholders" || echo "✓"
+grep 'CHANGE_ME' .env && echo "⚠ Encore des placeholders" || echo "✓"
 ```
 
 > Le mot de passe MongoDB n'est appliqué qu'à l'initialisation d'un volume vierge. Si vous le modifiez après un premier démarrage, MongoDB conservera l'ancien tant que le volume n'est pas recréé.
@@ -52,13 +54,14 @@ grep -E '<(generate|password|same|strong)' .env && echo "⚠ Encore des placehol
 En développement, on utilise uniquement `docker-compose.yml` (Caddy écoute en HTTP sur `:80`, sans TLS ni Let's Encrypt) :
 
 ```bash
-docker compose -f docker/docker-compose.yml up -d --build
+make docker-up-build
+# équivalent : docker compose -f docker/docker-compose.yml --env-file .env up -d --build
 ```
 
-Cette commande construit et démarre les 7 conteneurs, **API et applications web comprises** — il n'y a pas d'étape de démarrage séparée. Vérifiez leur état :
+Cette commande construit et démarre les 9 conteneurs, **API, applications web et sites de documentation compris** — il n'y a pas d'étape de démarrage séparée. Vérifiez leur état :
 
 ```bash
-docker compose -f docker/docker-compose.yml ps
+make status
 ```
 
 Caddy expose un point d'entrée unique et route en interne :
@@ -66,29 +69,26 @@ Caddy expose un point d'entrée unique et route en interne :
 ```
 /          → client:3000
 /admin     → admin:3001
+/aide      → docs-user:3002
+/dev       → docs-dev:3003   (basic auth)
 /api       → api:5000
-/api/docs  → api:5000/docs (Scalar)
+/api/docs  → api:5000/docs (Scalar, basic auth)
 ```
 
-Les applications sont donc accessibles sur `http://localhost/` (résident), `http://localhost/admin` (back office) et l'API sous `http://localhost/api`.
+Les applications sont donc accessibles sur `http://localhost/` (résident), `http://localhost/admin` (back office), `http://localhost/aide` (aide utilisateur) et l'API sous `http://localhost/api`. Le site développeur (`/dev`) et la référence Scalar (`/api/docs`) sont protégés par une authentification basique Caddy : les identifiants proviennent des variables `DOCS_AUTH_USER` / `DOCS_AUTH_HASH` (une valeur par défaut de développement est fournie dans `docker/docker-compose.yml`).
 
 ## Seed des données de démo
 
-Une fois la stack `Up`, injectez les comptes et données de démonstration en exécutant le script dans le conteneur `api` :
+Le seed s'exécute **sur l'hôte** (l'image API ne contient que le code compilé) : installez d'abord les dépendances de l'API, puis lancez le seed complet.
 
 ```bash
-docker exec docker-api-1 sh -c "cd /app && node -r ts-node/register /app/scripts/seed-demo.ts"
+make install-api   # une seule fois (pnpm install dans api/)
+make seed          # migrations Drizzle + comptes démo + graphe Neo4j
 ```
 
-En repli, si l'exécution intra-conteneur échoue, lancez le script via pnpm depuis le monorepo :
+`make seed` enchaîne trois étapes : `db-migrate` (migrations Drizzle sur PostgreSQL), `seed-demo` (comptes alice/bob/admin via `npx tsx scripts/seed-demo.ts`) et `seed-neo4j` (peuplement du graphe depuis MongoDB).
 
-```bash
-API_URL=http://localhost/api \
-PG_CONTAINER=docker-postgres-1 \
-pnpm --filter api exec ts-node scripts/seed-demo.ts
-```
-
-> PostgreSQL est provisionné par `drizzle-kit push`. Si le migrator du bootstrap API rejoue la migration `0000` et plante, insérez une ligne de baseline dans `drizzle.__drizzle_migrations` (voir le RUNBOOK, section migrations).
+> Si le migrator du bootstrap API rejoue la migration `0000` et plante, insérez une ligne de baseline dans `drizzle.__drizzle_migrations` (voir le RUNBOOK, section migrations).
 
 ## Vérification
 

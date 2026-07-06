@@ -11,7 +11,7 @@
         db-migrate seed seed-demo seed-neo4j totp \
         install install-api install-web install-dsl \
         validate validate-fast \
-        hooks \
+        hooks dossier \
         status clean clean-modules info
 
 # ─── Couleurs & Styles ─────────────────────────────────────────────────────────
@@ -35,31 +35,31 @@ help: ## Afficher cette aide
 	@echo "$(BOLD)  QuartierConnect — Commandes disponibles$(RESET)"
 	@echo ""
 	@echo "  $(BOLD)INSTALLATION / RENDU$(RESET)"
-	@grep -E '^(setup|dist):.*?## .*$$' $(MAKEFILE_LIST) \
+	@grep -E '^(setup|dist|dossier):.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "    $(BOLD)%-24s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "  $(BOLD)$(CYAN)DÉVELOPPEMENT$(RESET)"
-	@grep -E '^dev[a-zA-Z_-]*:.*?## .*$$' $(MAKEFILE_LIST) \
+	@grep -E '^dev[a-zA-Z0-9_-]*:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "    $(CYAN)%-24s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "  $(BOLD)$(GREEN)TESTS$(RESET)"
-	@grep -E '^test[a-zA-Z_-]*:.*?## .*$$' $(MAKEFILE_LIST) \
+	@grep -E '^test[a-zA-Z0-9_-]*:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "    $(GREEN)%-24s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "  $(BOLD)$(YELLOW)BUILD$(RESET)"
-	@grep -E '^build[a-zA-Z_-]*:.*?## .*$$' $(MAKEFILE_LIST) \
+	@grep -E '^(build|package)[a-zA-Z0-9_-]*:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "    $(YELLOW)%-24s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
-	@echo "  $(BOLD)$(WHITE)LINT / TYPECHECK$(RESET)"
-	@grep -E '^(lint|typecheck)[a-zA-Z_-]*:.*?## .*$$' $(MAKEFILE_LIST) \
+	@echo "  $(BOLD)$(WHITE)LINT / TYPECHECK / FORMAT$(RESET)"
+	@grep -E '^(lint|typecheck|format)[a-zA-Z0-9_-]*:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "    $(WHITE)%-24s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "  $(BOLD)$(BLUE)DOCKER$(RESET)"
-	@grep -E '^docker[a-zA-Z_-]*:.*?## .*$$' $(MAKEFILE_LIST) \
+	@grep -E '^docker[a-zA-Z0-9_-]*:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "    $(BLUE)%-24s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "  $(BOLD)UTILS$(RESET)"
-	@grep -E '^(db-migrate|seed|totp|install|validate|status|clean|info)[a-zA-Z_-]*:.*?## .*$$' $(MAKEFILE_LIST) \
+	@grep -E '^(db-migrate|seed|totp|install|validate|status|clean|info|hooks)[a-zA-Z0-9_-]*:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "    %-24s %s\n", $$1, $$2}'
 	@echo ""
 
@@ -191,7 +191,7 @@ test: ## Tous les tests unitaires (API + Web + Desktop + DSL)
 	@echo ""
 	@echo "$(OK) $(BOLD)Tous les tests unitaires passent$(RESET)"
 
-test-api: ## Tests unitaires API NestJS (Jest, 236 tests)
+test-api: ## Tests unitaires API NestJS (Jest, 529 tests)
 	@echo "$(RUN) Tests API (Jest)..."
 	@cd api && pnpm run test
 	@echo "$(OK) Tests API OK"
@@ -334,7 +334,7 @@ validate-fast: ## Validation rapide (lint + typecheck + tests unitaires uniqueme
 # ─── Docker ────────────────────────────────────────────────────────────────────
 COMPOSE := docker compose -f docker/docker-compose.yml --env-file .env
 
-docker-up: ## Démarrer les 7 services Docker (Caddy + API + Client + Admin + MongoDB + PostgreSQL + Neo4j)
+docker-up: ## Démarrer les 9 services Docker (Caddy + API + Client + Admin + Docs user + Docs dev + MongoDB + PostgreSQL + Neo4j)
 	@echo "$(RUN) Démarrage des services Docker..."
 	@$(COMPOSE) up -d
 	@echo ""
