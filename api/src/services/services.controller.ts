@@ -150,6 +150,7 @@ export class ServicesController {
         const skip = (pageNum - 1) * limitNum;
         const services = await this.serviceModel
             .find(filter)
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limitNum)
             .lean();

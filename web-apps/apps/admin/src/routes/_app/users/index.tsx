@@ -8,6 +8,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { getCurrentUser } from "@workspace/shared/lib/auth";
 import {
     useInfiniteUsers,
     useUpdateUserRole,
@@ -75,6 +76,7 @@ function UsersPage() {
     const { data, isLoading, isError, fetchNextPage, hasNextPage } =
         useInfiniteUsers();
     const updateRole = useUpdateUserRole();
+    const currentUserId = getCurrentUser()?.sub ?? null;
     const users = data?.pages.flat() ?? [];
 
     const [search, setSearch] = useState("");
@@ -239,7 +241,9 @@ function UsersPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {sorted.map((user) => (
+                                {sorted.map((user) => {
+                                    const isSelf = user.id === currentUserId;
+                                    return (
                                     <TableRow key={user.id}>
                                         <TableCell className="py-2 font-medium">
                                             {user.email}
@@ -261,7 +265,16 @@ function UsersPage() {
                                             ).toLocaleDateString(i18n.language)}
                                         </TableCell>
                                         <TableCell className="py-2 text-right">
-                                            <div className="flex items-center justify-end gap-2">
+                                            <div
+                                                className="flex items-center justify-end gap-2"
+                                                title={
+                                                    isSelf
+                                                        ? t(
+                                                              "adminPages.users.cannotModifySelf",
+                                                          )
+                                                        : undefined
+                                                }
+                                            >
                                                 {user.role !== "banned" && (
                                                     <Select
                                                         value={user.role}
@@ -272,7 +285,8 @@ function UsersPage() {
                                                             )
                                                         }
                                                         disabled={
-                                                            updateRole.isPending
+                                                            updateRole.isPending ||
+                                                            isSelf
                                                         }
                                                     >
                                                         <SelectTrigger className="h-8 w-36 text-xs">
@@ -309,7 +323,8 @@ function UsersPage() {
                                                             size="sm"
                                                             className="h-8 text-xs"
                                                             disabled={
-                                                                updateRole.isPending
+                                                                updateRole.isPending ||
+                                                                isSelf
                                                             }
                                                         >
                                                             <HugeiconsIcon
@@ -393,7 +408,8 @@ function UsersPage() {
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                    );
+                                })}
                             </TableBody>
                         </Table>
 

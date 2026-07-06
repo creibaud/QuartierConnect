@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useRecommendations } from "@workspace/shared/lib/hooks/useRecommendations";
 import { Badge } from "@workspace/ui/components/badge";
 import { Item, ItemGroup, ItemContent, ItemTitle, ItemDescription, ItemActions } from "@workspace/ui/components/item";
-import { EmptyBlock, FeedCard, Rows } from "./feed-card";
+import { EmptyBlock, ErrorBlock, FeedCard, Rows } from "./feed-card";
 
 const TYPE_LABEL: Record<string, string> = {
     service: "pages.dashboard.recoType.service",
@@ -13,7 +13,7 @@ const TYPE_LABEL: Record<string, string> = {
 
 export function RecommendationsCard() {
     const { t } = useTranslation();
-    const { data: recommendations, isLoading } = useRecommendations();
+    const { data: recommendations, isLoading, isError, refetch } = useRecommendations();
     const top = (recommendations ?? []).slice(0, 4);
 
     return (
@@ -24,6 +24,8 @@ export function RecommendationsCard() {
         >
             {isLoading ? (
                 <Rows count={3} />
+            ) : isError ? (
+                <ErrorBlock onRetry={() => refetch()} />
             ) : top.length === 0 ? (
                 <EmptyBlock
                     icon={SparklesIcon}

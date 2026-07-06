@@ -111,7 +111,10 @@ export class PointsService {
         dto: TransferPointsDto,
     ): Promise<TransferResult> {
         if (senderId === dto.recipientId) {
-            throw new BadRequestException("Cannot transfer points to yourself");
+            throw new BadRequestException({
+                code: "SELF_TRANSFER",
+                message: "Cannot transfer points to yourself",
+            });
         }
 
         return this.db.transaction(async (tx) => {
@@ -127,9 +130,10 @@ export class PointsService {
             const currentBalance = senderRow?.balance ?? 0;
 
             if (currentBalance - dto.amount < MIN_BALANCE) {
-                throw new BadRequestException(
-                    `Insufficient balance: would go below ${MIN_BALANCE}`,
-                );
+                throw new BadRequestException({
+                    code: "INSUFFICIENT_BALANCE",
+                    message: "Insufficient balance for this transfer",
+                });
             }
 
             await this.applyBalanceDelta(
@@ -177,7 +181,10 @@ export class PointsService {
             recipient.role === "banned" ||
             recipient.role === "deleted"
         ) {
-            throw new BadRequestException("Recipient does not exist");
+            throw new BadRequestException({
+                code: "RECIPIENT_NOT_FOUND",
+                message: "Recipient does not exist",
+            });
         }
     }
 
@@ -259,9 +266,10 @@ export class PointsService {
             );
             const currentBalance = senderRow?.balance ?? 0;
             if (currentBalance - txn.amount < MIN_BALANCE) {
-                throw new BadRequestException(
-                    `Insufficient balance: would go below ${MIN_BALANCE}`,
-                );
+                throw new BadRequestException({
+                    code: "INSUFFICIENT_BALANCE",
+                    message: "Insufficient balance for this transfer",
+                });
             }
 
             await this.applyBalanceDelta(

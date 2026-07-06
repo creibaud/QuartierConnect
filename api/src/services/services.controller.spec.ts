@@ -42,6 +42,7 @@ describe("ServicesController", () => {
     beforeEach(async () => {
         model = {
             find: jest.fn().mockReturnValue({
+                sort: jest.fn().mockReturnThis(),
                 skip: jest.fn().mockReturnThis(),
                 limit: jest.fn().mockReturnValue({
                     exec: jest.fn().mockResolvedValue([mockService]),
@@ -157,6 +158,7 @@ describe("ServicesController", () => {
 
     it("GET /services with unknown category returns empty array (no 400)", async () => {
         model.find.mockReturnValue({
+            sort: jest.fn().mockReturnThis(),
             skip: jest.fn().mockReturnThis(),
             limit: jest.fn().mockReturnValue({
                 exec: jest.fn().mockResolvedValue([]),

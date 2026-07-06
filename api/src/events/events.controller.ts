@@ -124,7 +124,12 @@ export class EventsController {
         const pageNum = Math.max(1, parseInt(page) || 1);
         const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
         const skip = (pageNum - 1) * limitNum;
-        return this.eventModel.find(filter).skip(skip).limit(limitNum).exec();
+        return this.eventModel
+            .find(filter)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limitNum)
+            .exec();
     }
 
     @Get(":id")

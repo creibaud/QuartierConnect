@@ -598,5 +598,23 @@ describe("API modules (e2e)", () => {
                 .send({ role: "moderator" })
                 .expect(404);
         });
+
+        it("PATCH /users/:id/role forbids an admin from changing their own role", async () => {
+            const res = await request(app.getHttpServer())
+                .patch(`/users/${adminSub}/role`)
+                .set("Authorization", `Bearer ${adminToken}`)
+                .send({ role: "resident" })
+                .expect(403);
+            expect(res.body.code).toBe("CANNOT_MODIFY_SELF");
+        });
+
+        it("PATCH /users/:id/role forbids an admin from banning themselves", async () => {
+            const res = await request(app.getHttpServer())
+                .patch(`/users/${adminSub}/role`)
+                .set("Authorization", `Bearer ${adminToken}`)
+                .send({ role: "banned" })
+                .expect(403);
+            expect(res.body.code).toBe("CANNOT_MODIFY_SELF");
+        });
     });
 });

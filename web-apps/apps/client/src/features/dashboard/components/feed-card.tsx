@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Alert01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -47,6 +48,23 @@ export function Rows({ count = 3 }: { count?: number }) {
             {Array.from({ length: count }).map((_, i) => (
                 <Skeleton key={i} className="h-6 w-full rounded" />
             ))}
+        </div>
+    );
+}
+
+export function ErrorBlock({ onRetry }: { onRetry?: () => void }) {
+    const { t } = useTranslation();
+    return (
+        <div className="border-destructive/40 bg-destructive/5 flex flex-col items-center gap-2 rounded-xl border border-dashed px-4 py-7 text-center">
+            <span className="bg-destructive/10 text-destructive flex size-11 items-center justify-center rounded-full">
+                <HugeiconsIcon icon={Alert01Icon} className="size-5" />
+            </span>
+            <p className="text-sm font-medium">{t("common.loadError")}</p>
+            {onRetry ? (
+                <Button variant="outline" size="sm" onClick={onRetry}>
+                    {t("common.retry")}
+                </Button>
+            ) : null}
         </div>
     );
 }

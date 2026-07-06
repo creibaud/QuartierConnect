@@ -1,4 +1,4 @@
-import { NotFoundException } from "@nestjs/common";
+import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import { UsersController } from "./users.controller";
@@ -62,25 +62,70 @@ describe("UsersController", () => {
         expect(mockDb.select).toHaveBeenCalled();
     });
 
+    const authReq = (sub = "user-uuid-1"): { user: { sub: string } } => ({
+        user: { sub },
+    });
+
     it("PATCH /users/:id/role updates user role", async () => {
         mockDb.returning.mockResolvedValue([
             { ...mockUser, role: "moderator" },
         ]);
-        const result = await controller.updateRole("user-uuid-1", {
-            role: "moderator",
-        });
+        const result = await controller.updateRole(
+            "user-uuid-1",
+            { role: "moderator" },
+            authReq("admin-uuid"),
+        );
         expect(result.role).toBe("moderator");
     });
 
     it("PATCH /users/:id/role throws 404 for unknown user", async () => {
         mockDb.roleLookup.mockResolvedValue([]);
         await expect(
-            controller.updateRole("bad-id", { role: "admin" }),
+            controller.updateRole(
+                "bad-id",
+                { role: "admin" },
+                authReq("admin-uuid"),
+            ),
         ).rejects.toThrow(NotFoundException);
     });
 
-    const authReq = (sub = "user-uuid-1"): { user: { sub: string } } => ({
-        user: { sub },
+    it("PATCH /users/:id/role forbids an admin from changing their own role", async () => {
+        await expect(
+            controller.updateRole(
+                "admin-uuid",
+                { role: "resident" },
+                authReq("admin-uuid"),
+            ),
+        ).rejects.toThrow(ForbiddenException);
+        expect(mockDb.update).not.toHaveBeenCalled();
+    });
+
+    it("PATCH /users/:id/role forbids an admin from banning themselves", async () => {
+        await expect(
+            controller.updateRole(
+                "admin-uuid",
+                { role: "banned" },
+                authReq("admin-uuid"),
+            ),
+        ).rejects.toThrow(ForbiddenException);
+        expect(mockDb.update).not.toHaveBeenCalled();
+    });
+
+    it("PATCH /users/:id/role restores the pre-ban role when reactivating", async () => {
+        mockDb.roleLookup.mockResolvedValue([
+            { role: "banned", previousRole: "moderator" },
+        ]);
+        mockDb.returning.mockResolvedValue([
+            { ...mockUser, role: "moderator" },
+        ]);
+        await controller.updateRole(
+            "user-uuid-1",
+            { role: "resident" },
+            authReq("admin-uuid"),
+        );
+        expect(mockDb.set).toHaveBeenCalledWith(
+            expect.objectContaining({ role: "moderator", previousRole: null }),
+        );
     });
 
     it("GET /users/search returns email matches capped at 10", async () => {
