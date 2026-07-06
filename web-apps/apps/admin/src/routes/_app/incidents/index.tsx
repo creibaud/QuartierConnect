@@ -133,7 +133,12 @@ function AdminIncidentsPage() {
                                 value={categoryFilter}
                                 onValueChange={setCategoryFilter}
                             >
-                                <SelectTrigger className="w-52">
+                                <SelectTrigger
+                                    className="w-52"
+                                    aria-label={t(
+                                        "adminPages.incidents.categoryColumn",
+                                    )}
+                                >
                                     <SelectValue
                                         placeholder={t(
                                             "adminPages.incidents.allCategories",
@@ -161,7 +166,12 @@ function AdminIncidentsPage() {
                                 value={statusFilter}
                                 onValueChange={setStatusFilter}
                             >
-                                <SelectTrigger className="w-44">
+                                <SelectTrigger
+                                    className="w-44"
+                                    aria-label={t(
+                                        "adminPages.incidents.statusColumn",
+                                    )}
+                                >
                                     <SelectValue
                                         placeholder={t(
                                             "adminPages.incidents.allStatuses",
