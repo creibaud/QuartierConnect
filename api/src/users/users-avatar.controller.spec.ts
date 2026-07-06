@@ -30,11 +30,14 @@ function makeDb(avatarUrl: string | null = null) {
 function makeBucket() {
     return {
         openUploadStreamWithId: jest.fn().mockReturnValue({
+            on: jest.fn(),
             end: jest.fn((_buf: unknown, cb: () => void) => cb()),
         }),
         delete: jest.fn().mockResolvedValue(undefined),
         find: jest.fn().mockReturnValue({ toArray: () => Promise.resolve([]) }),
-        openDownloadStream: jest.fn().mockReturnValue({ pipe: jest.fn() }),
+        openDownloadStream: jest
+            .fn()
+            .mockReturnValue({ on: jest.fn(), pipe: jest.fn() }),
     };
 }
 
