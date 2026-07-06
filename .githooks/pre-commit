@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Pre-commit QuartierConnect — applique les règles du CDC §13.1 sur le code stagé
-# et bloque les traces d'attribution automatique dans les messages de commit.
+# et les règles d'hygiène du dépôt (pas de trailer ni de signature dans le contenu livré).
 #
 # Activer une fois par clone :  make hooks
 # Forcer un commit malgré tout :  git commit --no-verify
@@ -28,7 +28,7 @@ fi
 
 added_all=$(git diff --cached -U0 -- $files | grep -E '^\+[^+]' || true)
 if echo "$added_all" | grep -qiE 'co-authored-by|generated with|🤖'; then
-  note "trace d'attribution automatique détectée dans le diff stagé"
+  note "trailer ou signature non autorisé détecté dans le diff stagé"
 fi
 
 if [ "$fail" -ne 0 ]; then

@@ -334,9 +334,7 @@ export class IncidentsController {
               ? dto.incidents.filter(
                     (item) => item.neighborhoodId === req.user.neighborhoodId,
                 )
-              : dto.incidents.filter(
-                    (item) => item.createdBy === req.user.sub,
-                );
+              : dto.incidents.filter((item) => item.createdBy === req.user.sub);
 
         if (allowedItems.length === 0)
             return {

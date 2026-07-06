@@ -211,10 +211,10 @@ export class UsersController {
         let role = dto.role;
         let previousRole = current.previousRole;
         if (dto.role === "banned" && current.role !== "banned") {
-            // Bannissement : mémoriser le rôle courant pour le restaurer plus tard
+            // Banning: remember the current role so it can be restored later
             previousRole = current.role;
         } else if (current.role === "banned" && dto.role !== "banned") {
-            // Réactivation : restaurer le rôle d'origine, pas le rôle par défaut demandé
+            // Reactivation: restore the original role, not the requested default one
             role = current.previousRole ?? dto.role;
             previousRole = null;
         }

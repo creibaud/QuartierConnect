@@ -225,7 +225,7 @@ Sizes: `default` (h-9) / `sm` (h-8) / `lg` (h-10) / `icon` (square).
 
 Rules:
 - One card = **one thing**. If you hesitate over putting 2 subjects, that's 2 cards.
-- No colored left borders (`border-l-4 border-primary`) — AI slop pattern.
+- No colored left borders (`border-l-4 border-primary`) — generic template pattern.
 - No background gradients. Background = `bg-card`.
 
 ### 6.3 Sidebar (`Sidebar` shadcn)
@@ -336,7 +336,7 @@ import { Message01Icon, UserGroupIcon, MapPinIcon } from "@hugeicons/core-free-i
 
 ### Rules
 
-- **No mixing**: all HugeIcons, no Lucide, no emoji as icons (🎉 = AI slop).
+- **No mixing**: all HugeIcons, no Lucide, no emoji as icons (🎉 = visual cliché).
 - Always pair an icon with a visible label or an `aria-label`.
 - No purely decorative icons in headings (just for decoration).
 
@@ -431,9 +431,9 @@ The shadcn `Skeleton` component has its own shimmer. Do not override it.
 
 ---
 
-## 11. Slop blacklist (to be avoided at all costs)
+## 11. Visual anti-patterns (to be avoided at all costs)
 
-These patterns betray AI-generated code and flatten the jury's perception:
+These generic patterns are seen on every template out there and flatten the jury's perception:
 
 1. ❌ Purple/indigo gradient in the background
 2. ❌ 3-column grid of "icon-in-circle + bold title + 2-line desc"
@@ -468,10 +468,10 @@ If a developed page commits 1+ of these patterns, refactor immediately.
 - **Before coding a new page**: re-read §6 (components) + §8 (responsive scope) + §9 (a11y).
 - **Before generating a mockup**: pass a brief that references this DESIGN.md (palette + typography + components).
 - **On every PR**: if a new pattern appears that is not in DESIGN.md, add it in the same PR.
-- **Phase B week 6 audit**: apply the §11 slop blacklist and the §6.4 states framework on all existing pages.
+- **Phase B week 6 audit**: apply the §11 anti-pattern list and the §6.4 states framework on all existing pages.
 
 ---
 
 *Document inferred and calibrated on 4 May 2026 (DD7).*
-*Civic Editorial aesthetic redesign applied on 11 May 2026 (palette + typography + slop blacklist).*
+*Civic Editorial aesthetic redesign applied on 11 May 2026 (palette + typography + anti-pattern list).*
 *Next review: Phase B week 6 (8-14 June) for a full audit and page-by-page corrections.*

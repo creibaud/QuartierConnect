@@ -214,9 +214,7 @@ describe("DslService", () => {
             }),
         });
 
-        const result = await service.execute(
-            'FIND users WHERE role = "admin"',
-        );
+        const result = await service.execute('FIND users WHERE role = "admin"');
         expect(result).toEqual([{ id: "u1", role: "admin" }]);
     });
 

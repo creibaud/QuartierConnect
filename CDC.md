@@ -76,17 +76,19 @@ To build a secure, extensible and resilient (offline-first) collaborative platfo
 
 ## 3. Technical architecture
 
-### 3.1 Overview — 7 Docker containers
+### 3.1 Overview — 9 Docker containers
 
 | #   | Service          | Port(s)    | Role                                           |
 | --- | ---------------- | ---------- | ---------------------------------------------- |
 | 1   | **Caddy**        | 80, 443    | HTTPS reverse proxy, automatic Let's Encrypt   |
 | 2   | **React Client** | 3000       | Resident interface                             |
 | 3   | **React Admin**  | 3001       | Administrator back-office                       |
-| 4   | **NestJS**       | 5000       | REST API + WebSocket + SSO + DSL               |
-| 5   | **MongoDB**      | 27017      | Documents, contracts, media (GridFS), GeoJSON  |
-| 6   | **Neo4j**        | 7474, 7687 | Social graph, recommendation engine            |
-| 7   | **PostgreSQL**   | 5432       | Admin data, Java synchronisation               |
+| 4   | **Docs User**    | 3002       | User help site (Fumadocs, `/aide`)             |
+| 5   | **Docs Dev**     | 3003       | Developer docs site (Fumadocs, `/dev`)         |
+| 6   | **NestJS**       | 5000       | REST API + WebSocket + SSO + DSL               |
+| 7   | **MongoDB**      | 27017      | Documents, contracts, media (GridFS), GeoJSON  |
+| 8   | **Neo4j**        | 7474, 7687 | Social graph, recommendation engine            |
+| 9   | **PostgreSQL**   | 5432       | Admin data, Java synchronisation               |
 
 **Three environments**: `dev` (hot reload), `test` (isolated database, auto seed), `prod` (HTTPS Caddy)
 
@@ -122,49 +124,57 @@ To build a secure, extensible and resilient (offline-first) collaborative platfo
 ```
 api/
   src/
-    auth/           JWT, TOTP, SSO, guards
-    users/          CRUD, roles, GDPR
-    neighborhoods/  GeoJSON, 2dsphere
-    services/       Listings, points
-    contracts/      PDF, signature, GridFS
-    documents/      Audit, metadata
-    social/         Neo4j, recommendations
-    messaging/      WebSocket, media
-    votes/          Pattern Strategy
-    incidents/      PostgreSQL — incidents + alertes
-    points/         PostgreSQL — balances + transactions ACID
-    dsl/            Bridge pythonia
-    i18n/           FR/EN translations
+    auth/            JWT, TOTP, SSO, guards
+    users/           CRUD, roles, GDPR
+    neighborhoods/   GeoJSON, 2dsphere
+    services/        Listings, points
+    bookings/        Service slot bookings
+    events/          Neighbourhood events
+    contracts/       PDF, signature, GridFS
+    documents/       Audit, metadata
+    social/          Neo4j, recommendations
+    geocoding/       Address autocomplete (Nominatim)
+    messaging/       WebSocket, media
+    votes/           Pattern Strategy
+    community-votes/ Neighbourhood-wide polls
+    incidents/       PostgreSQL — incidents + alerts
+    points/          PostgreSQL — balances + ACID transactions
+    dsl/             Bridge pythonia
+    i18n/            FR/EN translations
+    common/          Shared guards, pipes, helpers
+    database/        Drizzle schema + module
 
 web-apps/
   apps/client/      React Client (3000)
   apps/admin/       React Admin (3001)
+  apps/docs-user/   User help site — Fumadocs (3002)
+  apps/docs-dev/    Developer docs site — Fumadocs (3003)
   packages/shared/  lib/api.ts, lib/auth.ts
   packages/ui/      shadcn + Tailwind v4
 
 desktop-app/
-  plugin-api/       PluginInterface interface (separate JAR)
-  plugins/          export-csv, export-pdf, social-graph, calendar
-  src/main/java/
-    MainApp.java
-    LoginView.java
-    MainView.java
-    services/AuthService.java
-    services/ApiService.java
-    services/SyncService.java
-    database/SQLiteDatabase.java
-    plugins/PluginManager.java
-    themes/ThemeManager.java
-  resources/themes/default.css
+  src/main/java/fr/quartierconnect/desktopapp/
+    plugin/         QuartierConnectPlugin interface, PluginRegistry,
+                    built-in plugins (theme, export, notifications,
+                    offline mode, compact mode, language packs)
+    services/       AuthService, ApiService, SyncService, ThreeWayMerger,
+                    TokenVault, SsoCallbackServer, UpdateService
+    database/       SQLite access (offline cache)
+    views/          LoginView, MainView, DashboardView, IncidentsView,
+                    PluginsView, ProfileView
+    ui/             Reusable components + layout
+    i18n/           FR/EN translations
+  src/main/resources/  Themes and assets
 
 dsl/
   lexer.py
   parser.py
   compiler.py
   main.py
+  tests/
 
 docs/               Complete documentation
-scripts/            seed-demo.ts
+scripts/            seed-demo.ts, seed-neo4j.ts, setup.sh, ops helpers
 docker/             Compose + Caddyfile
 ```
 
@@ -616,28 +626,38 @@ dsl/main.py      execute(query_string) → JSON results
 
 ### 11.1 Environment variables
 
+The reference template is `.env.example` at the repository root:
+
 ```env
-MONGO_URI=mongodb://mongodb:27017/quartierconnect
-NEO4J_URI=bolt://neo4j:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=password
-POSTGRES_URI=postgresql://postgres:postgres@postgresql:5432/quartierconnect
-JWT_SECRET=                    # min 32 chars
-JWT_REFRESH_SECRET=            # min 32 chars
-JWT_ACCESS_EXPIRY=15m
-JWT_REFRESH_EXPIRY=7d
-SSO_TOKEN_SECRET=              # min 32 chars
 PORT=5000
-NODE_ENV=development
-FRONTEND_URL=http://localhost:3000
+JWT_SECRET=                    # openssl rand -base64 32
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+CORS_ORIGINS=http://localhost,http://localhost:3000,http://localhost:3001
+MONGO_ROOT_USER=root
+MONGO_ROOT_PASSWORD=
+MONGO_URI=mongodb://root:<password>@localhost:27017/quartierconnect?authSource=admin
+POSTGRES_USER=qc
+POSTGRES_PASSWORD=
+POSTGRES_DB=quartierconnect
+POSTGRES_URL=postgresql://qc:<password>@localhost:5432/quartierconnect
+NEO4J_URI=bolt://localhost:7687
+NEO4J_AUTH=neo4j/<password>
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=                # keep in sync with NEO4J_AUTH
+PYTHON_BIN=./dsl/.venv/bin/python
+DSL_PATH=./dsl
+DEMO_TOTP_SECRET=JBSWY3DPEHPK3PXP
+LOGIN_RATE_LIMIT=5             # attempts / 15 min / IP (higher in dev)
 ```
 
 ### 11.2 Essential commands
 
 ```bash
-docker compose up -d                                # Full dev
-docker compose -f docker-compose.prod.yml up -d    # Prod
-npx ts-node scripts/seed-demo.ts                   # Demo seed
+make docker-up                                      # Full dev (9 services)
+docker compose -f docker/docker-compose.yml \
+  -f docker/docker-compose.prod.yml up -d           # Prod
+make seed                                           # Demo seed (npx tsx)
 cd api && pnpm run start:dev                        # API
 cd web-apps && pnpm run dev                         # Front-end
 cd desktop-app && ./mvnw clean package -q           # Build JAR

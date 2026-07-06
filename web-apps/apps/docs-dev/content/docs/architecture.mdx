@@ -9,8 +9,8 @@ QuartierConnect est une plateforme multi-composants : plusieurs applications act
 
 Le dépôt regroupe quatre briques applicatives, chacune avec sa stack propre.
 
-- **API NestJS** (`api`, Node 20, port `:5000`) — cœur métier exposant une API REST et une passerelle WebSocket. Organisée en modules NestJS (`AuthModule`, `UsersModule`, `IncidentsModule`, `ServicesModule`, `EventsModule`, `PointsModule`, `ContractsModule`, `MessagingModule`, `VotesModule`, `CommunityVotesModule`, `DocumentsModule`, `NeighborhoodsModule`, `SocialModule`, `GeocodingModule`, `DslModule`). Le conteneur `api` embarque en outre la passerelle DSL Python PLY.
-- **Web-apps (Turbo)** — deux SPA React servies par Vite : le **client** résident (`:3000`) et l'**admin** back office (`:3001`). Le monorepo web partage des packages, dont le composant cartographique `<Map>` (`packages/ui`) autour de `react-leaflet`, et des helpers géo (`packages/shared`).
+- **API NestJS** (`api`, Node 22, port `:5000`) — cœur métier exposant une API REST et une passerelle WebSocket. Organisée en 16 modules NestJS (`AuthModule`, `UsersModule`, `IncidentsModule`, `ServicesModule`, `BookingsModule`, `EventsModule`, `PointsModule`, `ContractsModule`, `MessagingModule`, `VotesModule`, `CommunityVotesModule`, `DocumentsModule`, `NeighborhoodsModule`, `SocialModule`, `GeocodingModule`, `DslModule`). Le conteneur `api` embarque en outre la passerelle DSL Python PLY.
+- **Web-apps (Turbo)** — deux SPA React servies par Vite : le **client** résident (`:3000`) et l'**admin** back office (`:3001`), plus deux sites de documentation Fumadocs : l'aide utilisateur `docs-user` (`:3002`) et la documentation développeur `docs-dev` (`:3003`). Le monorepo web partage des packages, dont le composant cartographique `<Map>` (`packages/ui`) autour de `react-leaflet`, et des helpers géo (`packages/shared`).
 - **Application desktop JavaFX** — distribuée en fat JAR, destinée aux admins et modérateurs. Elle communique avec l'API en HTTP REST, dispose d'un mode hors ligne, d'un système de plugins et d'un cache SQLite local.
 - **DSL** — un langage de requête compilé par un pipeline Python PLY (lexer → parser LALR → compilateur avec liste blanche de collections → requête MongoDB exécutée via Motor async), exposé par l'API via `DslModule`.
 
@@ -35,11 +35,13 @@ Caddy (`:80`/`:443`) est le seul point d'entrée HTTP/HTTPS. Il termine le TLS (
 ```
 /       → client:3000
 /admin  → admin:3001
+/aide   → docs-user:3002
+/dev    → docs-dev:3003   (basic auth DOCS_AUTH_USER / DOCS_AUTH_HASH)
 /api    → api:5000   (retire le préfixe /api)
-/api/docs → api:5000/docs (Scalar)
+/api/docs → api:5000/docs (Scalar, basic auth)
 ```
 
-La stack tourne sur sept conteneurs (`caddy`, `client`, `admin`, `api`, `mongodb`, `postgres`, `neo4j`). En production, seuls les ports **22, 80 et 443** sont exposés à Internet ; les trois bases sont liées à `127.0.0.1`, accessibles uniquement via le réseau Docker interne. Le WebSocket (messagerie Socket.io) passe par le même `/api` avec bascule `wss://`.
+La stack tourne sur neuf conteneurs (`caddy`, `client`, `admin`, `docs-user`, `docs-dev`, `api`, `mongo`, `postgres`, `neo4j`). En production, seuls les ports **22, 80 et 443** sont exposés à Internet ; les autres services sont liés à `127.0.0.1`, accessibles uniquement via le réseau Docker interne. Le WebSocket (messagerie Socket.io) passe par le même `/api` avec bascule `wss://`.
 
 ## Flux principaux
 

@@ -7,10 +7,6 @@ export interface PointsTransactionLike {
     senderName?: string | null;
 }
 
-export function formatEventDate(date: string | number | Date, locale?: string): string {
-    return new Date(date).toLocaleDateString(locale, { day: "numeric", month: "short" });
-}
-
 export function formatPointsDelta(received: boolean, amount: number): string {
     return `${received ? "+" : "−"}${Math.abs(amount)}`;
 }

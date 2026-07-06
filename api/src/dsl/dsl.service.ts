@@ -88,9 +88,7 @@ export class DslService {
                 const detail = message
                     .replace(/.*(?:SyntaxError|ValueError):\s*/, "")
                     .trim();
-                throw new BadRequestException(
-                    detail || "Requête DSL invalide",
-                );
+                throw new BadRequestException(detail || "Requête DSL invalide");
             }
             throw new BadRequestException(
                 message.trim()
