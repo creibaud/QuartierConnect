@@ -30,13 +30,15 @@ Le dépôt regroupe les surfaces web, l'API, le bureau natif et le DSL. Les prin
 | `packages/ui/src/components/map.tsx` | Composant `<Map>` partagé (react-leaflet) |
 | `packages/shared/src/lib/geo.ts` | Helpers géo (`centroidOf`, `pointToLatLng`, `latLngToPoint`) |
 
-Côté runtime, la stack tourne sur **7 conteneurs** : `caddy` (reverse proxy HTTPS + Let's Encrypt), `client` (SPA React résident, `:3000`), `admin` (SPA React back office, `:3001`), `api` (NestJS `:5000`, embarque la passerelle DSL Python PLY), `mongodb` (`:27017`), `postgres` (`:5432`) et `neo4j` (`:7474`/`:7687`).
+Côté runtime, la stack tourne sur **9 conteneurs** : `caddy` (reverse proxy HTTPS + Let's Encrypt), `client` (SPA React résident, `:3000`), `admin` (SPA React back office, `:3001`), `docs-user` (aide utilisateur Fumadocs, `:3002`), `docs-dev` (documentation développeur Fumadocs, `:3003`), `api` (NestJS `:5000`, embarque la passerelle DSL Python PLY), `mongo` (`:27017`), `postgres` (`:5432`) et `neo4j` (`:7474`/`:7687`).
 
 Le routage Caddy est le suivant :
 
 ```
 /          → client:3000
 /admin     → admin:3001
+/aide      → docs-user:3002
+/dev       → docs-dev:3003
 /api       → api:5000
 /api/docs  → api:5000/docs (Scalar)
 ```
