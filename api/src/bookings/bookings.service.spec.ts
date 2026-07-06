@@ -533,7 +533,8 @@ describe("BookingsService.cancel", () => {
             cancelContract: jest.fn().mockResolvedValue(undefined),
         };
         const points: any = {
-            cancelServicePayment: jest.fn().mockResolvedValue(undefined),
+            cancelServicePayment: jest.fn().mockResolvedValue(true),
+            isServicePaymentCompleted: jest.fn(),
         };
         const emitter = makeEmitter();
         const svc = new BookingsService(
@@ -544,8 +545,14 @@ describe("BookingsService.cancel", () => {
             emitter as any,
         );
         const result = await svc.cancel("b1", "initiator");
-        expect(contracts.cancelContract).toHaveBeenCalledWith("c1");
+        // The payment is voided first, then the contract is cancelled.
         expect(points.cancelServicePayment).toHaveBeenCalledWith("c1");
+        expect(contracts.cancelContract).toHaveBeenCalledWith("c1");
+        expect(
+            points.cancelServicePayment.mock.invocationCallOrder[0],
+        ).toBeLessThan(contracts.cancelContract.mock.invocationCallOrder[0]);
+        // A voided pending payment short-circuits the completed-settlement guard.
+        expect(points.isServicePaymentCompleted).not.toHaveBeenCalled();
         expect(result).toBe(claimed);
         expect(emitter.emit).toHaveBeenCalledWith(
             "booking.cancelled",
@@ -553,10 +560,7 @@ describe("BookingsService.cancel", () => {
         );
     });
 
-    it("reverts to completed and rethrows when the contract turned fully-signed during cancel", async () => {
-        const fullySignedFailure = new BadRequestException(
-            "A fully-signed contract cannot be cancelled",
-        );
+    it("reverts to completed and rejects when the settlement won the cancel race", async () => {
         const bookingModel: any = {
             findById: jest.fn().mockResolvedValue(
                 pendingBooking({
@@ -573,10 +577,13 @@ describe("BookingsService.cancel", () => {
             updateOne: jest.fn().mockResolvedValue(undefined),
         };
         const contracts: any = {
-            cancelContract: jest.fn().mockRejectedValue(fullySignedFailure),
+            cancelContract: jest.fn(),
         };
+        // No pending row was voided (the final signature settled it first) and
+        // the payment reads as completed: the settlement won the race.
         const points: any = {
-            cancelServicePayment: jest.fn(),
+            cancelServicePayment: jest.fn().mockResolvedValue(false),
+            isServicePaymentCompleted: jest.fn().mockResolvedValue(true),
         };
         const emitter = makeEmitter();
         const svc = new BookingsService(
@@ -586,20 +593,77 @@ describe("BookingsService.cancel", () => {
             points,
             emitter as any,
         );
-        await expect(svc.cancel("b1", "owner")).rejects.toBe(
-            fullySignedFailure,
+        const error = await rejectionOf(svc.cancel("b1", "owner"));
+        expect(error).toBeInstanceOf(BadRequestException);
+        expect(error.message).toBe(
+            "A fully-signed contract cannot be cancelled",
         );
         expect(bookingModel.findOneAndUpdate).toHaveBeenCalledWith(
             { _id: "b1", status: { $in: [BookingStatus.ACCEPTED] } },
             { $set: { status: BookingStatus.CANCELLED } },
             { new: true },
         );
+        expect(points.cancelServicePayment).toHaveBeenCalledWith("c1");
+        expect(points.isServicePaymentCompleted).toHaveBeenCalledWith("c1");
         expect(bookingModel.updateOne).toHaveBeenCalledWith(
             { _id: "b1", status: BookingStatus.CANCELLED },
             { $set: { status: BookingStatus.COMPLETED } },
         );
-        expect(points.cancelServicePayment).not.toHaveBeenCalled();
+        // The settlement already moved the money: the contract is never cancelled.
+        expect(contracts.cancelContract).not.toHaveBeenCalled();
         expect(emitter.emit).not.toHaveBeenCalled();
+    });
+
+    it("cancels the contract and voids a still-pending payment when cancel won the race", async () => {
+        const claimed: any = pendingBooking({
+            status: BookingStatus.CANCELLED,
+            contractId: "c1",
+            pointsAmount: 2,
+        });
+        const bookingModel: any = {
+            findById: jest.fn().mockResolvedValue(
+                pendingBooking({
+                    status: BookingStatus.ACCEPTED,
+                    contractId: "c1",
+                    pointsAmount: 2,
+                }),
+            ),
+            findOneAndUpdate: jest.fn().mockResolvedValue(claimed),
+            updateOne: jest.fn(),
+        };
+        const contracts: any = {
+            cancelContract: jest.fn().mockResolvedValue(undefined),
+        };
+        // A pending payment still existed, so the cancel voids it and wins the
+        // race: the completed-settlement guard is short-circuited.
+        const points: any = {
+            cancelServicePayment: jest.fn().mockResolvedValue(true),
+            isServicePaymentCompleted: jest.fn(),
+        };
+        const emitter = makeEmitter();
+        const svc = new BookingsService(
+            bookingModel,
+            makeService(paidService()) as any,
+            contracts,
+            points,
+            emitter as any,
+        );
+        const result = await svc.cancel("b1", "initiator");
+        expect(points.cancelServicePayment).toHaveBeenCalledWith("c1");
+        expect(points.isServicePaymentCompleted).not.toHaveBeenCalled();
+        expect(contracts.cancelContract).toHaveBeenCalledWith("c1");
+        // The booking stays cancelled — no revert to completed.
+        expect(bookingModel.updateOne).not.toHaveBeenCalled();
+        expect(result).toBe(claimed);
+        expect(result.status).toBe(BookingStatus.CANCELLED);
+        expect(emitter.emit).toHaveBeenCalledWith(
+            "booking.cancelled",
+            expect.objectContaining({
+                bookingId: "b1",
+                actorId: "initiator",
+                amount: 2,
+            }),
+        );
     });
 
     it.each([

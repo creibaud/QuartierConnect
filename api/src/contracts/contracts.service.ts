@@ -47,6 +47,13 @@ import {
 
 const PDF_MAGIC_BYTES = "%PDF-";
 
+// Only a contract still in progress may be reconciled to fully-signed; a
+// cancelled contract is terminal and must never be revived.
+const HEALABLE_CONTRACT_STATUSES = [
+    ContractStatus.DRAFT,
+    ContractStatus.PARTIAL,
+];
+
 @Injectable()
 export class ContractsService {
     private readonly logger = new Logger(ContractsService.name);
@@ -83,7 +90,7 @@ export class ContractsService {
 
         if (
             contract.bookingId &&
-            contract.status !== ContractStatus.FULLY_SIGNED &&
+            HEALABLE_CONTRACT_STATUSES.includes(contract.status) &&
             (await this.pointsService.isServicePaymentCompleted(
                 String(contract._id),
             ))
@@ -92,12 +99,13 @@ export class ContractsService {
             if (!contract.signedAt) contract.signedAt = new Date();
             try {
                 // Guarded write so this read-path reconciliation can never
-                // clobber a status written concurrently.
+                // clobber a concurrent status change, and never revive a
+                // cancelled contract.
                 await this.contractModel
                     .updateOne(
                         {
                             _id: contract._id,
-                            status: { $ne: ContractStatus.FULLY_SIGNED },
+                            status: { $in: HEALABLE_CONTRACT_STATUSES },
                         },
                         {
                             $set: {

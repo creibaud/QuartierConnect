@@ -262,21 +262,33 @@ export class BookingsService {
             throw new BadRequestException("Booking cannot be cancelled");
         }
         if (claimed.contractId) {
-            try {
-                await this.contractsService.cancelContract(claimed.contractId);
-            } catch (err) {
-                // The contract turned fully-signed while we were cancelling:
-                // the money already moved, so surface the completed state
-                // instead of leaving a cancelled booking behind.
+            const contractId = claimed.contractId;
+            // Void the pending payment FIRST: that guarded UPDATE is the
+            // atomic arbiter against a concurrent final signature settling the
+            // same row. If nothing was voided and the payment is completed,
+            // the settlement won the race — the money already moved, so the
+            // booking must complete rather than cancel (a fully-signed
+            // contract with a paid settlement can never be cancelled).
+            const paymentVoided =
+                await this.pointsService.cancelServicePayment(contractId);
+            if (
+                !paymentVoided &&
+                (await this.pointsService.isServicePaymentCompleted(contractId))
+            ) {
                 await this.bookingModel
                     .updateOne(
                         { _id: bookingId, status: BookingStatus.CANCELLED },
                         { $set: { status: BookingStatus.COMPLETED } },
                     )
                     .catch(() => undefined);
-                throw err;
+                throw new BadRequestException(
+                    "A fully-signed contract cannot be cancelled",
+                );
             }
-            await this.pointsService.cancelServicePayment(claimed.contractId);
+            // The payment is cancelled (or was never pending): a concurrent
+            // signature can no longer settle, so the contract is still in a
+            // cancellable state.
+            await this.contractsService.cancelContract(contractId);
         }
         this.eventEmitter.emit(BOOKING_CANCELLED_EVENT, {
             bookingId: String(claimed._id),

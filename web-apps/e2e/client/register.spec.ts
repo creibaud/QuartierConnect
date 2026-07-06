@@ -46,11 +46,24 @@ test.describe("Client — Register parcours", () => {
 
     test("shows email format error on blur", async ({ page }) => {
         await page.goto("/register");
-        // The first field autofocuses and validates on blur, so several field
-        // errors can coexist — scope the assertion to the email error itself.
+        // Field errors are validated per field, so several can coexist — scope
+        // the assertion to the email error itself.
         await page.getByLabel("Email").fill("pas-un-email");
         await page.getByLabel("Email").blur();
         await expect(page.getByText(/email invalide/i)).toBeVisible();
+    });
+
+    test("a single cold click toggles consent without a layout shift", async ({
+        page,
+    }) => {
+        // Regression guard: validating the autofocused first field used to
+        // insert an error node that shifted the layout mid-click, so the very
+        // first click on the checkbox was swallowed.
+        await page.goto("/register");
+        const consent = page.getByRole("checkbox");
+        await expect(consent).not.toBeChecked();
+        await consent.click();
+        await expect(consent).toBeChecked();
     });
 
     test("submit stays disabled until every field is valid", async ({
@@ -58,20 +71,19 @@ test.describe("Client — Register parcours", () => {
     }) => {
         await page.goto("/register");
         const submit = page.getByRole("button", { name: /créer/i });
-        // Fill the identity fields first: this also lets the form settle
-        // before the Radix checkbox interaction below.
+        // A single click on the freshly loaded page toggles consent (the form
+        // reserves the error line height, so validation never shifts it).
+        const consent = page.getByRole("checkbox");
+        await consent.click();
+        await expect(consent).toBeChecked();
+        await expect(submit).toBeDisabled();
         await page.getByLabel("Prénom", { exact: true }).fill("Test");
         await page.getByLabel("Nom", { exact: true }).fill("Resident");
+        await page.getByLabel("Email").fill("pas-un-email");
         await page
             .getByLabel("Mot de passe", { exact: true })
             .fill(DEMO_PASSWORD);
         await page.getByLabel(/confirmer/i).fill(DEMO_PASSWORD);
-        const consent = page.getByRole("checkbox");
-        await consent.click();
-        await expect(consent).toBeChecked();
-        // Consent given and identity valid, but an invalid email keeps the
-        // submit disabled.
-        await page.getByLabel("Email").fill("pas-un-email");
         await expect(submit).toBeDisabled();
         await page.getByLabel("Email").fill(uniqueEmail());
         await expect(submit).toBeEnabled();
@@ -107,13 +119,11 @@ test.describe("Client — Register parcours", () => {
             name: /notice d'information/i,
         });
         await expect(trigger).toBeVisible();
+        // A single cold click opens the dialog: the reserved error line means
+        // no layout shift steals the click.
+        await trigger.click();
         const dialog = page.getByRole("dialog");
-        // Radix can swallow the very first click on a freshly mounted trigger;
-        // retry the open until the dialog is actually shown.
-        await expect(async () => {
-            await trigger.click();
-            await expect(dialog).toBeVisible({ timeout: 1000 });
-        }).toPass();
+        await expect(dialog).toBeVisible();
         await dialog.getByRole("button", { name: "Fermer" }).click();
         await expect(dialog).not.toBeVisible();
     });
