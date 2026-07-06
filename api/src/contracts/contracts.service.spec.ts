@@ -212,7 +212,9 @@ describe("ContractsService", () => {
             expect(mockContractModel.updateOne).toHaveBeenCalledWith(
                 {
                     _id: "ct-1",
-                    status: { $ne: ContractStatus.FULLY_SIGNED },
+                    status: {
+                        $in: [ContractStatus.DRAFT, ContractStatus.PARTIAL],
+                    },
                 },
                 {
                     $set: {
@@ -252,6 +254,28 @@ describe("ContractsService", () => {
 
             expect(result.status).toBe(ContractStatus.PARTIAL);
             expect(mockContractModel.updateOne).not.toHaveBeenCalled();
+        });
+
+        it("does not resurrect a CANCELLED contract even when the service payment already completed", async () => {
+            const contract = {
+                ...mockContractDoc,
+                status: ContractStatus.CANCELLED,
+                bookingId: "booking-1",
+            };
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(contract),
+            });
+            mockPointsService.isServicePaymentCompleted.mockResolvedValueOnce(
+                true,
+            );
+
+            const result = await service.findOne("ct-1", "user-1");
+
+            expect(result.status).toBe(ContractStatus.CANCELLED);
+            expect(mockContractModel.updateOne).not.toHaveBeenCalled();
+            expect(
+                mockPointsService.isServicePaymentCompleted,
+            ).not.toHaveBeenCalled();
         });
 
         it("enforces access control before any heal — a non-party never triggers the payment query", async () => {

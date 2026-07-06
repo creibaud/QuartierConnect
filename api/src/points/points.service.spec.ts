@@ -333,4 +333,22 @@ describe("PointsService", () => {
             });
         });
     });
+
+    describe("cancelServicePayment", () => {
+        it("returns true when a pending payment was voided", async () => {
+            const voided = makeTerminal([{ id: "txn-1" }]);
+            db.set.mockReturnValue(voided);
+            const result = await service.cancelServicePayment("contract-1");
+            expect(result).toBe(true);
+            expect(voided.returning).toHaveBeenCalled();
+        });
+
+        it("returns false when no pending payment matched", async () => {
+            const nothingVoided = makeTerminal([]);
+            db.set.mockReturnValue(nothingVoided);
+            const result = await service.cancelServicePayment("contract-1");
+            expect(result).toBe(false);
+            expect(nothingVoided.returning).toHaveBeenCalled();
+        });
+    });
 });

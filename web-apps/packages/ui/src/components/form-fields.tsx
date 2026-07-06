@@ -17,10 +17,17 @@ function extractErrorMessage(error: unknown): string {
 
 function FieldError({ errors }: { errors: unknown[] }) {
     const first = errors[0];
-    if (!first) return null;
+    // Always reserve one line of height so showing an error never shifts the
+    // layout (a shift mid-click used to make the click miss its target). The
+    // `alert` role is only set when there is a message, so an empty
+    // placeholder is never matched as an alert.
     return (
-        <p role="alert" className="text-destructive text-sm">
-            {extractErrorMessage(first)}
+        <p
+            className="text-destructive min-h-5 text-sm"
+            role={first ? "alert" : undefined}
+            aria-live="polite"
+        >
+            {first ? extractErrorMessage(first) : null}
         </p>
     );
 }
