@@ -347,6 +347,70 @@ describe("MessagingGateway", () => {
                 }),
             ).rejects.toThrow(WsException);
         });
+
+        it("trims the content before persisting", async () => {
+            const socket = { ...makeSocket(), userId: "user-1" };
+            mockMessagingService.sendMessage.mockResolvedValue({
+                _id: "msg-1",
+            });
+
+            await gateway.handleSendMessage(socket as any, {
+                conversationId: "conv-1",
+                content: "  hi  ",
+            });
+
+            expect(mockMessagingService.sendMessage).toHaveBeenCalledWith(
+                "conv-1",
+                "user-1",
+                "hi",
+                MessageType.TEXT,
+            );
+        });
+
+        it("rejects a missing conversationId", async () => {
+            const socket = { ...makeSocket(), userId: "user-1" };
+
+            await expect(
+                gateway.handleSendMessage(socket as any, { content: "hi" }),
+            ).rejects.toThrow(WsException);
+            expect(mockMessagingService.sendMessage).not.toHaveBeenCalled();
+        });
+
+        it("rejects a non-string content", async () => {
+            const socket = { ...makeSocket(), userId: "user-1" };
+
+            await expect(
+                gateway.handleSendMessage(socket as any, {
+                    conversationId: "conv-1",
+                    content: 42,
+                }),
+            ).rejects.toThrow(WsException);
+            expect(mockMessagingService.sendMessage).not.toHaveBeenCalled();
+        });
+
+        it("rejects an empty or whitespace-only content", async () => {
+            const socket = { ...makeSocket(), userId: "user-1" };
+
+            await expect(
+                gateway.handleSendMessage(socket as any, {
+                    conversationId: "conv-1",
+                    content: "   ",
+                }),
+            ).rejects.toThrow(WsException);
+            expect(mockMessagingService.sendMessage).not.toHaveBeenCalled();
+        });
+
+        it("rejects a content longer than 4000 characters", async () => {
+            const socket = { ...makeSocket(), userId: "user-1" };
+
+            await expect(
+                gateway.handleSendMessage(socket as any, {
+                    conversationId: "conv-1",
+                    content: "a".repeat(4001),
+                }),
+            ).rejects.toThrow(WsException);
+            expect(mockMessagingService.sendMessage).not.toHaveBeenCalled();
+        });
     });
 
     describe("typing", () => {

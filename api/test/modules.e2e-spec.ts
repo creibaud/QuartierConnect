@@ -241,6 +241,24 @@ describe("New modules (e2e)", () => {
                 .set("Authorization", `Bearer ${userToken}`)
                 .expect(404);
         });
+
+        it("GET /messaging/conversations/:id/messages returns 400 for a non-numeric page", async () => {
+            await request(app.getHttpServer())
+                .get(
+                    `/messaging/conversations/${conversationId}/messages?page=abc`,
+                )
+                .set("Authorization", `Bearer ${userToken}`)
+                .expect(400);
+        });
+
+        it("GET /messaging/conversations/:id/messages returns 400 for page 0", async () => {
+            await request(app.getHttpServer())
+                .get(
+                    `/messaging/conversations/${conversationId}/messages?page=0`,
+                )
+                .set("Authorization", `Bearer ${userToken}`)
+                .expect(400);
+        });
     });
 
     // ─── Votes ────────────────────────────────────────────────────────────────

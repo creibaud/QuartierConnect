@@ -8,6 +8,7 @@ import {
     UnfoldMoreIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { apiPost, assetUrl } from "@workspace/shared/lib/api";
 import { clearTokens, getCurrentUser } from "@workspace/shared/lib/auth";
@@ -53,6 +54,7 @@ export function NavUser() {
     const { t, locale, setLocale } = useLocale();
     const { isMobile } = useSidebar();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const { theme, setTheme } = useTheme();
     const user = getCurrentUser();
     const { data: profile } = useMyProfile();
@@ -82,6 +84,7 @@ export function NavUser() {
     async function handleLogout() {
         await apiPost("/auth/logout", {}).catch(() => undefined);
         clearTokens();
+        queryClient.clear();
         navigate({ to: "/login" });
     }
 
@@ -157,7 +160,7 @@ export function NavUser() {
                                 <HugeiconsIcon
                                     icon={THEME_ICON[theme] ?? MonitorDotIcon}
                                 />
-                                Thème
+                                {t("common.theme.label")}
                             </DropdownMenuSubTrigger>
                             <DropdownMenuSubContent>
                                 <DropdownMenuRadioGroup
@@ -170,17 +173,17 @@ export function NavUser() {
                                 >
                                     <DropdownMenuRadioItem value="light">
                                         <HugeiconsIcon icon={Sun01Icon} />
-                                        Clair
+                                        {t("common.theme.light")}
                                     </DropdownMenuRadioItem>
                                     <DropdownMenuRadioItem value="dark">
                                         <HugeiconsIcon icon={Moon01Icon} />
-                                        Sombre
+                                        {t("common.theme.dark")}
                                     </DropdownMenuRadioItem>
                                     <DropdownMenuRadioItem value="system">
                                         <HugeiconsIcon
                                             icon={MonitorDotIcon}
                                         />
-                                        Système
+                                        {t("common.theme.system")}
                                     </DropdownMenuRadioItem>
                                 </DropdownMenuRadioGroup>
                             </DropdownMenuSubContent>

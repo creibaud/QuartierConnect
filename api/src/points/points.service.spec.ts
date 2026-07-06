@@ -68,13 +68,20 @@ describe("PointsService", () => {
         mockTx = {
             execute: jest
                 .fn()
-                .mockResolvedValue([{ id: "bal-1", balance: 100 }]),
+                .mockResolvedValue([
+                    { id: "bal-1", role: "resident", balance: 100 },
+                ]),
             update: jest.fn().mockReturnThis(),
             set: jest.fn().mockReturnThis(),
             where: jest.fn().mockResolvedValue(undefined),
             insert: jest.fn().mockReturnThis(),
             values: jest.fn().mockReturnThis(),
             onConflictDoUpdate: jest.fn().mockResolvedValue(undefined),
+            returning: jest
+                .fn()
+                .mockResolvedValue([
+                    { id: "tx-1", senderId: "sender-id", amount: 20 },
+                ]),
         };
 
         ({ db } = buildMockDb([
@@ -192,8 +199,46 @@ describe("PointsService", () => {
             expect(mockTx.insert).toHaveBeenCalled();
         });
 
+        it("returns the created transaction and both updated balances", async () => {
+            const result = await service.transfer("sender-id", {
+                recipientId: "recv-id",
+                amount: 20,
+            });
+            expect(result.transaction).toEqual(
+                expect.objectContaining({ id: "tx-1" }),
+            );
+            expect(result.senderBalance).toBe(80);
+            expect(result.recipientBalance).toBe(100);
+        });
+
+        it("throws BadRequestException when the recipient does not exist", async () => {
+            mockTx.execute.mockResolvedValueOnce([]);
+            await expect(
+                service.transfer("sender-id", {
+                    recipientId: "ghost-id",
+                    amount: 10,
+                }),
+            ).rejects.toThrow("Recipient does not exist");
+            expect(mockTx.insert).not.toHaveBeenCalled();
+        });
+
+        it("throws BadRequestException when the recipient is banned", async () => {
+            mockTx.execute.mockResolvedValueOnce([
+                { id: "recv-id", role: "banned" },
+            ]);
+            await expect(
+                service.transfer("sender-id", {
+                    recipientId: "recv-id",
+                    amount: 10,
+                }),
+            ).rejects.toThrow("Recipient does not exist");
+            expect(mockTx.insert).not.toHaveBeenCalled();
+        });
+
         it("throws BadRequestException when balance would go below -10", async () => {
-            mockTx.execute.mockResolvedValue([{ id: "bal-1", balance: 5 }]);
+            mockTx.execute
+                .mockResolvedValueOnce([{ id: "recv-id", role: "resident" }])
+                .mockResolvedValueOnce([{ id: "bal-1", balance: 5 }]);
             await expect(
                 service.transfer("sender-id", {
                     recipientId: "recv-id",
@@ -203,7 +248,9 @@ describe("PointsService", () => {
         });
 
         it("treats missing balance row as 0 and rejects when amount exceeds limit", async () => {
-            mockTx.execute.mockResolvedValue([]);
+            mockTx.execute
+                .mockResolvedValueOnce([{ id: "recv-id", role: "resident" }])
+                .mockResolvedValueOnce([]);
             await expect(
                 service.transfer("sender-id", {
                     recipientId: "recv-id",

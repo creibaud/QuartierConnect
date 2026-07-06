@@ -1,12 +1,13 @@
 import { useState } from "react";
-import QRCode from "react-qr-code";
-import { useHead } from "@unhead/react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import QRCode from "react-qr-code";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useHead } from "@unhead/react";
 import { apiPost } from "@workspace/shared/lib/api";
 import { setTokens, type LoginResponse } from "@workspace/shared/lib/auth";
 import { isValidPhone, normalizePhone } from "@workspace/shared/lib/phone";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
+import { AuthLayout } from "@workspace/ui/components/auth-layout";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Checkbox } from "@workspace/ui/components/checkbox";
@@ -23,7 +24,6 @@ import { Spinner } from "@workspace/ui/components/spinner";
 import { useAppForm } from "@workspace/ui/lib/form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { AuthLayout } from "@workspace/ui/components/auth-layout";
 
 interface RegisterResponse {
     otpauthUrl: string;
@@ -41,7 +41,7 @@ function ConsentNoticeDialog() {
                     {t("pages.register.consentNoticeLink")}
                 </button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent closeLabel={t("common.close")}>
                 <DialogHeader>
                     <DialogTitle>
                         {t("pages.register.consentNoticeTitle")}
@@ -64,17 +64,25 @@ function RegisterPage() {
     useHead({ title: t("pages.register.pageTitle") });
     const navigate = useNavigate();
 
+    const requiredSchema = z
+        .string()
+        .trim()
+        .min(1, t("auth.validation.required"));
+    const emailSchema = z.string().email(t("auth.validation.invalidEmail"));
+    const phoneSchema = z
+        .string()
+        .refine((value) => !value.trim() || isValidPhone(value), {
+            message: t("auth.validation.phoneInvalid"),
+        });
+    const passwordSchema = z.string().min(8, t("auth.validation.passwordMin"));
+
     const registerSchema = z
         .object({
-            firstName: z.string().min(1, t("auth.validation.required")),
-            lastName: z.string().min(1, t("auth.validation.required")),
-            email: z.string().email(t("auth.validation.invalidEmail")),
-            phone: z
-                .string()
-                .refine((value) => !value.trim() || isValidPhone(value), {
-                    message: t("auth.validation.phoneInvalid"),
-                }),
-            password: z.string().min(8, t("auth.validation.passwordMin")),
+            firstName: requiredSchema,
+            lastName: requiredSchema,
+            email: emailSchema,
+            phone: phoneSchema,
+            password: passwordSchema,
             confirmPassword: z.string(),
             consent: z.boolean().refine((value) => value, {
                 message: t("auth.validation.consentRequired"),
@@ -180,36 +188,63 @@ function RegisterPage() {
                             className="space-y-4"
                         >
                             <div className="grid grid-cols-2 gap-3">
-                                <registerForm.AppField name="firstName">
+                                <registerForm.AppField
+                                    name="firstName"
+                                    validators={{
+                                        onBlur: requiredSchema,
+                                        onChange: requiredSchema,
+                                    }}
+                                >
                                     {(field) => (
                                         <field.TextField
                                             label={t(
                                                 "pages.register.firstName",
                                             )}
-                                            placeholder="Alice"
+                                            placeholder="Camille"
                                             autoFocus
+                                            autoComplete="given-name"
                                         />
                                     )}
                                 </registerForm.AppField>
-                                <registerForm.AppField name="lastName">
+                                <registerForm.AppField
+                                    name="lastName"
+                                    validators={{
+                                        onBlur: requiredSchema,
+                                        onChange: requiredSchema,
+                                    }}
+                                >
                                     {(field) => (
                                         <field.TextField
                                             label={t("pages.register.lastName")}
-                                            placeholder="Martin"
+                                            placeholder="Dupont"
+                                            autoComplete="family-name"
                                         />
                                     )}
                                 </registerForm.AppField>
                             </div>
-                            <registerForm.AppField name="email">
+                            <registerForm.AppField
+                                name="email"
+                                validators={{
+                                    onBlur: emailSchema,
+                                    onChange: emailSchema,
+                                }}
+                            >
                                 {(field) => (
                                     <field.TextField
                                         label={t("auth.email")}
                                         type="email"
-                                        placeholder="alice@demo.fr"
+                                        placeholder="prenom@exemple.fr"
+                                        autoComplete="email"
                                     />
                                 )}
                             </registerForm.AppField>
-                            <registerForm.AppField name="phone">
+                            <registerForm.AppField
+                                name="phone"
+                                validators={{
+                                    onBlur: phoneSchema,
+                                    onChange: phoneSchema,
+                                }}
+                            >
                                 {(field) => (
                                     <field.TextField
                                         label={t(
@@ -217,10 +252,17 @@ function RegisterPage() {
                                         )}
                                         type="tel"
                                         placeholder="+33612345678"
+                                        autoComplete="tel"
                                     />
                                 )}
                             </registerForm.AppField>
-                            <registerForm.AppField name="password">
+                            <registerForm.AppField
+                                name="password"
+                                validators={{
+                                    onBlur: passwordSchema,
+                                    onChange: passwordSchema,
+                                }}
+                            >
                                 {(field) => (
                                     <field.TextField
                                         label={t("auth.password")}
@@ -228,16 +270,37 @@ function RegisterPage() {
                                         placeholder={t(
                                             "auth.validation.passwordMin",
                                         )}
+                                        autoComplete="new-password"
                                     />
                                 )}
                             </registerForm.AppField>
-                            <registerForm.AppField name="confirmPassword">
+                            <registerForm.AppField
+                                name="confirmPassword"
+                                validators={{
+                                    onChangeListenTo: ["password"],
+                                    onChange: ({ value, fieldApi }) =>
+                                        value ===
+                                        fieldApi.form.getFieldValue("password")
+                                            ? undefined
+                                            : t(
+                                                  "auth.validation.passwordMismatch",
+                                              ),
+                                    onBlur: ({ value, fieldApi }) =>
+                                        value ===
+                                        fieldApi.form.getFieldValue("password")
+                                            ? undefined
+                                            : t(
+                                                  "auth.validation.passwordMismatch",
+                                              ),
+                                }}
+                            >
                                 {(field) => (
                                     <field.TextField
                                         label={t(
                                             "pages.register.confirmPassword",
                                         )}
                                         type="password"
+                                        autoComplete="new-password"
                                     />
                                 )}
                             </registerForm.AppField>
@@ -276,15 +339,16 @@ function RegisterPage() {
                                 selector={(s) =>
                                     [
                                         s.isSubmitting,
-                                        s.values.consent,
+                                        registerSchema.safeParse(s.values)
+                                            .success,
                                     ] as const
                                 }
                             >
-                                {([isSubmitting, consent]) => (
+                                {([isSubmitting, isFormValid]) => (
                                     <Button
                                         type="submit"
                                         className="w-full"
-                                        disabled={isSubmitting || !consent}
+                                        disabled={isSubmitting || !isFormValid}
                                     >
                                         {isSubmitting ? (
                                             <Spinner className="mr-2" />
@@ -354,7 +418,7 @@ function RegisterPage() {
                                     {t("pages.register.secretLabel")}
                                 </p>
                                 <div className="flex items-center gap-2 rounded-md border px-3 py-2">
-                                    <code className="text-foreground flex-1 break-all font-mono text-sm tracking-widest">
+                                    <code className="text-foreground flex-1 font-mono text-sm tracking-widest break-all">
                                         {totpSecret}
                                     </code>
                                     <Button

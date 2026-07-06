@@ -14,6 +14,25 @@ test("redirects unauthenticated user to /login", async ({ page }) => {
     await expect(page).toHaveURL(/\/login/);
 });
 
+test("shows email format error on blur", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill("pas-un-email");
+    await page.getByLabel("Email").blur();
+    await expect(page.getByRole("alert")).toContainText(/email invalide/i);
+});
+
+test("login inputs expose autocomplete hints", async ({ page }) => {
+    await page.goto("/login");
+    await expect(page.getByLabel("Email")).toHaveAttribute(
+        "autocomplete",
+        "email",
+    );
+    await expect(page.getByLabel("Mot de passe")).toHaveAttribute(
+        "autocomplete",
+        "current-password",
+    );
+});
+
 test.describe("Client — Login parcours", () => {
     let testEmail: string;
     let testSecret: string;

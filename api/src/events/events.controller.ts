@@ -34,7 +34,7 @@ import { UpdateEventDto } from "./dto/update-event.dto";
 import { Event, EventDocument } from "./schemas/event.schema";
 
 interface AuthRequest {
-    user: { sub: string; role: string };
+    user: { sub: string; role: string; neighborhoodId?: string | null };
 }
 
 @ApiTags("Events")
@@ -46,6 +46,19 @@ export class EventsController {
         private readonly socialService: SocialService,
         private readonly geocoding: GeocodingService,
     ) {}
+
+    // Residents AND moderators only reach events in their own quartier;
+    // admins moderate across every neighborhood (same rule as services).
+    private assertNeighborhoodScope(
+        event: { neighborhoodId?: string | null },
+        req: AuthRequest,
+    ): void {
+        if (req.user.role === "admin") return;
+        const eventNeighborhood = event.neighborhoodId?.toString() ?? null;
+        if (eventNeighborhood !== (req.user.neighborhoodId ?? null)) {
+            throw new ForbiddenException("Event outside your neighborhood");
+        }
+    }
 
     private async resolveLocation(
         address?: string,
@@ -60,10 +73,12 @@ export class EventsController {
     }
 
     @Get()
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
     @ApiOperation({
         summary: "List events",
         description:
-            "Returns community events, filterable by category and date (YYYY-MM-DD format — returns all events for the day).",
+            "Returns community events scoped to the caller's neighborhood (admins see every neighborhood), filterable by category and date (YYYY-MM-DD format — returns all events for the day).",
     })
     @ApiQuery({
         name: "category",
@@ -80,13 +95,24 @@ export class EventsController {
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
     @ApiResponse({ status: 200, type: [EventDto] })
+    @ApiResponse({ status: 401, description: "Not authenticated" })
     findAll(
         @Query("category") category?: string,
         @Query("date") date?: string,
         @Query("page") page = "1",
         @Query("limit") limit = "20",
+        // Default required by TS1016 (a required param can't follow the optional
+        // @Query params); harmless because the neighborhood guard below rejects it.
+        @Request() req: AuthRequest = { user: { sub: "", role: "" } },
     ) {
+        // Only admins list across all neighborhoods; residents AND moderators
+        // are scoped to their own. A scoped caller without a neighborhood gets
+        // nothing — otherwise Mongoose would strip `neighborhoodId: undefined`
+        // and leak every neighborhood's events (same rule as services).
+        const isAdmin = req.user.role === "admin";
+        if (!isAdmin && !req.user.neighborhoodId) return [];
         const filter: Record<string, unknown> = {};
+        if (!isAdmin) filter.neighborhoodId = req.user.neighborhoodId;
         if (category) filter.category = String(category);
         if (date) {
             const from = new Date(date);
@@ -102,6 +128,8 @@ export class EventsController {
     }
 
     @Get(":id")
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
     @ApiOperation({ summary: "Event details" })
     @ApiParam({
         name: "id",
@@ -109,10 +137,16 @@ export class EventsController {
         example: "664f1a2b3c4d5e6f7a8b9c0e",
     })
     @ApiResponse({ status: 200, type: EventDto })
+    @ApiResponse({ status: 401, description: "Not authenticated" })
+    @ApiResponse({
+        status: 403,
+        description: "Event outside the caller's neighborhood",
+    })
     @ApiResponse({ status: 404, description: "Event not found" })
-    async findOne(@Param("id") id: string) {
+    async findOne(@Param("id") id: string, @Request() req: AuthRequest) {
         const event = await this.eventModel.findById(id).exec();
         if (!event) throw new NotFoundException("Event not found");
+        this.assertNeighborhoodScope(event, req);
         return event;
     }
 
@@ -122,15 +156,22 @@ export class EventsController {
     @ApiOperation({
         summary: "Create an event",
         description:
-            "Creates a community event. `createdBy` is automatically populated from the JWT.",
+            "Creates a community event. `createdBy` is automatically populated from the JWT. For non-admin callers the provided `neighborhoodId` is ignored and replaced by the caller's own neighborhood.",
     })
     @ApiResponse({ status: 201, type: EventDto, description: "Event created" })
     @ApiResponse({ status: 401, description: "Not authenticated" })
     async create(@Body() dto: CreateEventDto, @Request() req: AuthRequest) {
         const location = await this.resolveLocation(dto.address, dto.location);
+        // Anti-spoofing: only admins may target another quartier; residents
+        // and moderators always publish into their own.
+        const neighborhoodId =
+            req.user.role === "admin"
+                ? (dto.neighborhoodId ?? req.user.neighborhoodId ?? undefined)
+                : (req.user.neighborhoodId ?? undefined);
         const created = await this.eventModel.create({
             ...dto,
             location,
+            neighborhoodId,
             createdBy: req.user.sub,
         });
         void this.socialService.syncEvent(
@@ -180,7 +221,11 @@ export class EventsController {
     @Patch(":id")
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    @ApiOperation({ summary: "Update an event" })
+    @ApiOperation({
+        summary: "Update an event",
+        description:
+            "The owner or an admin can update it. `neighborhoodId` changes are admin-only and silently ignored otherwise.",
+    })
     @ApiParam({ name: "id", description: "MongoDB ID of the event" })
     @ApiResponse({
         status: 200,
@@ -209,7 +254,9 @@ export class EventsController {
             changes.description = dto.description;
         if (dto.category !== undefined) changes.category = dto.category;
         if (dto.date !== undefined) changes.date = dto.date;
-        if (dto.neighborhoodId !== undefined)
+        // Only admins may move an event to another quartier; the field is
+        // silently ignored for everyone else (anti-spoofing).
+        if (dto.neighborhoodId !== undefined && req.user.role === "admin")
             changes.neighborhoodId = dto.neighborhoodId;
         if (dto.location !== undefined)
             changes.location = {

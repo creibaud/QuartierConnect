@@ -3,10 +3,22 @@ import { execFileSync } from "child_process";
 
 const BASE_URL = process.env.API_URL ?? "http://localhost:5000";
 const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? "Demo1234!";
-const DEMO_TOTP_SECRET = process.env.DEMO_TOTP_SECRET ?? "JBSWY3DPEHPK3PXP";
+const DEMO_TOTP_SECRET = requireDemoTotpSecret();
 const PG_CONTAINER = process.env.PG_CONTAINER ?? "docker-postgres-1";
 const PG_USER = process.env.POSTGRES_USER ?? "qc";
 const PG_DB = process.env.POSTGRES_DB ?? "quartierconnect";
+
+/** No hardcoded fallback: seeding with a publicly known TOTP secret would
+ *  silently weaken the demo accounts' second factor. */
+function requireDemoTotpSecret(): string {
+  const secret = process.env.DEMO_TOTP_SECRET;
+  if (secret) return secret;
+  console.error(
+    "DEMO_TOTP_SECRET manquant : définir un secret base32 dans l'environnement " +
+      "(voir .env.example) avant de lancer le seed.",
+  );
+  process.exit(1);
+}
 
 const ACCOUNTS = [
   {

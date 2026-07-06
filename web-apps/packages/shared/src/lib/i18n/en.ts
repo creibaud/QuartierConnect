@@ -18,6 +18,12 @@ export default {
         loadMore: "Load more",
         optional: "optional",
         loadError: "Unable to load data",
+        theme: {
+            label: "Theme",
+            light: "Light",
+            dark: "Dark",
+            system: "System",
+        },
     },
     auth: {
         login: "Log in",

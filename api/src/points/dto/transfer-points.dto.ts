@@ -1,5 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsInt, IsOptional, IsString, IsUUID, Min } from "class-validator";
+import { IsInt, IsOptional, IsString, IsUUID, Max, Min } from "class-validator";
+
+export const MAX_TRANSFER_AMOUNT = 100_000;
 
 export class TransferPointsDto {
     @ApiProperty({
@@ -10,12 +12,14 @@ export class TransferPointsDto {
     recipientId: string;
 
     @ApiProperty({
-        description: "Number of points to transfer (minimum 1)",
+        description: `Number of points to transfer (integer, 1 to ${MAX_TRANSFER_AMOUNT})`,
         example: 10,
         minimum: 1,
+        maximum: MAX_TRANSFER_AMOUNT,
     })
     @IsInt()
     @Min(1)
+    @Max(MAX_TRANSFER_AMOUNT)
     amount: number;
 
     @ApiProperty({

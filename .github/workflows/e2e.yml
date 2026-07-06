@@ -106,9 +106,12 @@ jobs:
           pnpm exec drizzle-kit migrate
 
       - name: Seed des comptes démo
+        # DEMO_TOTP_SECRET : le script n'a plus de fallback, la valeur doit
+        # correspondre à celle du .env de CI (conteneur api) ci-dessus.
         run: |
           cd api && pnpm install --frozen-lockfile
           API_URL=http://localhost/api PG_CONTAINER=docker-postgres-1 \
+            DEMO_TOTP_SECRET=JBSWY3DPEHPK3PXP \
             pnpm exec tsx ../scripts/seed-demo.ts || echo "Seed failed"
 
       - name: Setup Python

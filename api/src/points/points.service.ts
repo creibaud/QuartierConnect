@@ -28,6 +28,12 @@ export type PointsTransactionWithEmails = schema.PointsTransaction & {
     recipientName: string | null;
 };
 
+export type TransferResult = {
+    transaction: schema.PointsTransaction;
+    senderBalance: number;
+    recipientBalance: number;
+};
+
 @Injectable()
 export class PointsService {
     constructor(
@@ -100,12 +106,17 @@ export class PointsService {
         }));
     }
 
-    async transfer(senderId: string, dto: TransferPointsDto): Promise<void> {
+    async transfer(
+        senderId: string,
+        dto: TransferPointsDto,
+    ): Promise<TransferResult> {
         if (senderId === dto.recipientId) {
             throw new BadRequestException("Cannot transfer points to yourself");
         }
 
-        await this.db.transaction(async (tx) => {
+        return this.db.transaction(async (tx) => {
+            await this.assertRecipientExists(tx, dto.recipientId);
+
             const [senderRow] = await tx.execute<{
                 id: string;
                 balance: number;
@@ -129,13 +140,45 @@ export class PointsService {
                 currentBalance,
             );
 
-            await tx.insert(schema.pointsTransactions).values({
-                senderId,
-                recipientId: dto.recipientId,
-                amount: dto.amount,
-                note: dto.note,
-            });
+            const [transaction] = await tx
+                .insert(schema.pointsTransactions)
+                .values({
+                    senderId,
+                    recipientId: dto.recipientId,
+                    amount: dto.amount,
+                    note: dto.note,
+                })
+                .returning();
+
+            const [recipientRow] = await tx.execute<{ balance: number }>(
+                sql`SELECT balance FROM points_balances WHERE user_id = ${dto.recipientId}`,
+            );
+
+            return {
+                transaction,
+                senderBalance: currentBalance - dto.amount,
+                recipientBalance: recipientRow?.balance ?? dto.amount,
+            };
         });
+    }
+
+    // The recipient id is a foreign key of points_balances and
+    // points_transactions: an unknown or deactivated account must be rejected
+    // with a 400 before any write, instead of surfacing a raw FK violation.
+    private async assertRecipientExists(
+        tx: TransactionClient,
+        recipientId: string,
+    ): Promise<void> {
+        const [recipient] = await tx.execute<{ id: string; role: string }>(
+            sql`SELECT id, role FROM users WHERE id = ${recipientId}`,
+        );
+        if (
+            !recipient ||
+            recipient.role === "banned" ||
+            recipient.role === "deleted"
+        ) {
+            throw new BadRequestException("Recipient does not exist");
+        }
     }
 
     private async applyBalanceDelta(

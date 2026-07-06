@@ -12,6 +12,7 @@ import {
     UploadedFile,
     UseGuards,
     UseInterceptors,
+    ValidationPipe,
 } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
 import { FileInterceptor } from "@nestjs/platform-express";
@@ -21,7 +22,6 @@ import {
     ApiConsumes,
     ApiOperation,
     ApiParam,
-    ApiQuery,
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
@@ -29,6 +29,7 @@ import { Response } from "express";
 import { GridFSBucket, ObjectId } from "mongodb";
 import { Connection } from "mongoose";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { PaginationQueryDto } from "../common/dto/pagination-query.dto";
 import { CreateConversationDto } from "./dto/create-conversation.dto";
 import {
     ConversationDto,
@@ -116,20 +117,22 @@ export class MessagingController {
         description: "Messages sorted from newest to oldest.",
     })
     @ApiParam({ name: "id", description: "MongoDB ID of the conversation" })
-    @ApiQuery({ name: "page", required: false, example: "1" })
-    @ApiQuery({ name: "limit", required: false, example: "50" })
     @ApiResponse({ status: 200, type: [MessageDto] })
+    @ApiResponse({
+        status: 400,
+        description: "Invalid pagination (page must be >= 1, limit 1 to 100)",
+    })
     getMessages(
         @Param("id") id: string,
         @Request() req: AuthRequest,
-        @Query("page") page = "1",
-        @Query("limit") limit = "50",
+        @Query(new ValidationPipe({ transform: true, whitelist: true }))
+        pagination: PaginationQueryDto,
     ) {
         return this.messagingService.getMessages(
             id,
             req.user.sub,
-            parseInt(page),
-            parseInt(limit),
+            pagination.page ?? 1,
+            pagination.limit ?? 50,
         );
     }
 
