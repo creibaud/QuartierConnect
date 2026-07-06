@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_app")({
         if (user.role !== "admin") {
             throw redirect({
                 to: "/login",
-                search: { forbidden: true, redirect: undefined },
+                search: { forbidden: true },
             });
         }
     },

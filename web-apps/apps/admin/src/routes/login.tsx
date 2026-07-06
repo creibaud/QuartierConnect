@@ -25,7 +25,11 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 export const Route = createFileRoute("/login")({
-    validateSearch: (search: Record<string, unknown>) => ({
+    // `redirect` must stay optional in the derived search type so the
+    // existing navigations passing only `forbidden` keep compiling.
+    validateSearch: (
+        search: Record<string, unknown>,
+    ): { forbidden: boolean; redirect?: string } => ({
         forbidden: search.forbidden === true,
         redirect: sanitizeRedirectPath(search.redirect),
     }),

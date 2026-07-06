@@ -21,7 +21,11 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 export const Route = createFileRoute("/login")({
-    validateSearch: (search: Record<string, unknown>) => ({
+    // `redirect` must stay optional in the derived search type so the
+    // existing navigations without a search object keep compiling.
+    validateSearch: (
+        search: Record<string, unknown>,
+    ): { redirect?: string } => ({
         redirect: sanitizeRedirectPath(search.redirect),
     }),
     component: LoginPage,
