@@ -1,6 +1,7 @@
 import {
     Body,
     Controller,
+    ForbiddenException,
     Get,
     Inject,
     NotFoundException,
@@ -194,10 +195,22 @@ export class UsersController {
     })
     @ApiResponse({
         status: 403,
-        description: "Insufficient role (admin required)",
+        description:
+            "Insufficient role (admin required), or the admin is trying to change their own role or ban themselves (code CANNOT_MODIFY_SELF)",
     })
     @ApiResponse({ status: 404, description: "User not found" })
-    async updateRole(@Param("id") id: string, @Body() dto: UpdateRoleDto) {
+    async updateRole(
+        @Param("id") id: string,
+        @Body() dto: UpdateRoleDto,
+        @Request() req: AuthRequest,
+    ) {
+        if (id === req.user.sub) {
+            throw new ForbiddenException({
+                code: "CANNOT_MODIFY_SELF",
+                message: "You cannot change your own role or ban yourself",
+            });
+        }
+
         const [current] = await this.db
             .select({
                 role: schema.users.role,

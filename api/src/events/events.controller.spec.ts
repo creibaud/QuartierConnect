@@ -32,6 +32,7 @@ describe("EventsController", () => {
     beforeEach(async () => {
         model = {
             find: jest.fn().mockReturnValue({
+                sort: jest.fn().mockReturnThis(),
                 skip: jest.fn().mockReturnThis(),
                 limit: jest.fn().mockReturnValue({
                     exec: jest.fn().mockResolvedValue([mockEvent]),
