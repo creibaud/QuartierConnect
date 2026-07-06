@@ -9,6 +9,8 @@
 - [ ] `make validate` : lint + typecheck + tests + build tous verts
 - [ ] `make build-desktop` : JAR présent dans `desktop-app/target/`
 - [ ] `make docker-up-build` puis `make status` : 9 services `Up (healthy)`
+- [ ] `DEMO_TOTP_SECRET` renseigné dans `.env` (obligatoire : le seed échoue sans lui,
+      et `make totp` doit utiliser le même secret)
 - [ ] `make seed` : comptes démo + graphe Neo4j peuplés
 - [ ] `curl http://localhost/api/health` → `status:"ok"` (mongo, postgres, neo4j up)
 - [ ] `./scripts/smoke-test.sh http://localhost` : tout vert

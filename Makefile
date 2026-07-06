@@ -377,8 +377,9 @@ seed: db-migrate seed-demo seed-neo4j ## Seed complet : migrations + comptes dé
 
 seed-demo: ## Créer les 3 comptes démo (alice/bob/admin) dans PostgreSQL + MongoDB
 	@echo "$(RUN) Seed démo (alice / bob / admin)..."
-	@cd api && npx tsx ../scripts/seed-demo.ts
-	@echo "$(OK) Comptes créés — TOTP secret : JBSWY3DPEHPK3PXP"
+	@cd api && DEMO_TOTP_SECRET=$$(grep ^DEMO_TOTP_SECRET ../.env | cut -d= -f2-) \
+	           npx tsx ../scripts/seed-demo.ts
+	@echo "$(OK) Comptes créés — code TOTP courant : make totp"
 
 seed-neo4j: ## Peupler Neo4j avec les nœuds depuis MongoDB (quartiers, services, événements)
 	@echo "$(RUN) Seed Neo4j..."
