@@ -117,8 +117,19 @@ function makeDb(pending: Txn | null, senderBalance: number) {
                     }
                     spies.txnUpdateSet(changes);
                     spies.txnUpdateWhere(condition);
-                    if (state.txn) Object.assign(state.txn, changes);
-                    return undefined;
+                    // The guarded UPDATE only voids a still-pending row; capture
+                    // that match before the assignment mutates the status so
+                    // RETURNING reflects whether a row was actually flipped.
+                    const matchedPending = state.txn?.status === "pending";
+                    if (matchedPending && state.txn) {
+                        Object.assign(state.txn, changes);
+                    }
+                    return {
+                        returning: () =>
+                            matchedPending && state.txn
+                                ? [{ id: state.txn.id }]
+                                : [],
+                    };
                 },
             }),
         };
@@ -391,7 +402,7 @@ describe("PointsService settlement", () => {
         expect(emitter.emit).not.toHaveBeenCalled();
     });
 
-    it("cancelServicePayment updates the transaction with a pending-guarded WHERE", async () => {
+    it("cancelServicePayment voids the pending row and returns true with a pending-guarded WHERE", async () => {
         const db = makeDb(
             {
                 id: "t1",
@@ -406,7 +417,7 @@ describe("PointsService settlement", () => {
         const emitter = makeEmitter();
         const svc = new PointsService(db, emitter);
 
-        await expect(svc.cancelServicePayment("c1")).resolves.toBeUndefined();
+        await expect(svc.cancelServicePayment("c1")).resolves.toBe(true);
 
         expect(spies.updateTable).toHaveBeenCalledWith(
             schema.pointsTransactions,

@@ -356,11 +356,12 @@ export class PointsService {
         return txn?.status === "completed";
     }
 
-    async cancelServicePayment(contractId: string): Promise<void> {
-        // Idempotent no-op when no pending row matches: cancelling an absent
-        // or already-settled payment is safe (unlike completeServicePayment,
-        // which throws NotFoundException when the payment is missing).
-        await this.db
+    // Returns true when a pending payment was actually voided. The guarded
+    // UPDATE and completeServicePayment's row lock arbitrate the cancel-vs-
+    // settle race: exactly one flips the row, so a `false` here means the
+    // settlement won (the money already moved) — the caller must not cancel.
+    async cancelServicePayment(contractId: string): Promise<boolean> {
+        const rows = await this.db
             .update(schema.pointsTransactions)
             .set({ status: "cancelled" })
             .where(
@@ -369,6 +370,8 @@ export class PointsService {
                     eq(schema.pointsTransactions.type, "service_payment"),
                     eq(schema.pointsTransactions.status, "pending"),
                 ),
-            );
+            )
+            .returning({ id: schema.pointsTransactions.id });
+        return rows.length > 0;
     }
 }
