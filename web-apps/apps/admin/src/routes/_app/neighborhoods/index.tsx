@@ -556,6 +556,18 @@ function NeighborhoodDialog({
                         </p>
                     )}
 
+                    {!geometry && !initial && (
+                        <Alert>
+                            <HugeiconsIcon
+                                icon={Alert01Icon}
+                                className="size-4"
+                            />
+                            <AlertDescription>
+                                {t("adminPages.neighborhoods.noPolygonWarning")}
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
                     {submitError && (
                         <Alert variant="destructive">
                             <HugeiconsIcon
