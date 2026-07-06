@@ -58,6 +58,13 @@ GET /incidents?page=1&limit=20
 
 La pagination s'applique notamment aux utilisateurs, incidents, quartiers, votes communautaires, messages, historique de points et transactions.
 
+### Filtres additionnels
+
+Certains endpoints de liste acceptent des paramètres supplémentaires, appliqués **côté serveur** — le filtrage porte donc sur l'ensemble des données, pas seulement sur la page déjà chargée :
+
+- `GET /incidents?since=<ISO>` — synchronisation delta : ne renvoie que les incidents modifiés après l'horodatage ISO fourni (comparaison sur `updatedAt`). Utilisé par le pull incrémental du client bureautique. Une valeur non parsable renvoie `400`.
+- `GET /users?search=<sous-chaîne>&role=<rôle>` (admin) — filtre les comptes par sous-chaîne d'email (insensible à la casse) et par rôle, avec tri par date de création (`createdAt`). Un `role` inconnu est ignoré.
+
 ## Rôles et autorisations
 
 La hiérarchie des rôles est `resident` → `moderator` → `admin`, à laquelle s'ajoute l'état `banned`. Les autorisations sont appliquées par les gardes `JwtAuthGuard` et `RolesGuard`, pilotées par le décorateur `@Roles` sur chaque route.
@@ -71,8 +78,8 @@ La hiérarchie des rôles est `resident` → `moderator` → `admin`, à laquell
 
 Points saillants du modèle d'autorisation :
 
-- **resident** — accès authentifié standard. Le périmètre est cloisonné au quartier : les résidents ne voient que les incidents et services de leur propre quartier.
-- **moderator** — mêmes limites de quartier qu'un résident, plus la modération : `PATCH /incidents/:id/status`, `DELETE /incidents/:id` et l'exécution de requêtes `POST /dsl/query`.
+- **resident** — accès authentifié standard, cloisonné au quartier. Un résident voit les services de son quartier et les incidents de catégorie `neighborhood` de son quartier (même s'il n'en est pas l'auteur), plus **ses propres** signalements de modération (`reporting`, `bug`). Les signalements de modération d'autrui sont masqués de la liste, et `GET /incidents/:id` renvoie **404** (et non 403) sur un tel signalement, afin de ne jamais en révéler l'existence.
+- **moderator** — mêmes limites de quartier qu'un résident (borné à son propre quartier), mais **toutes catégories d'incidents comprises**, plus la modération : `PATCH /incidents/:id/status`, `DELETE /incidents/:id` et l'exécution de requêtes `POST /dsl/query` (elles aussi scopées à son quartier).
 - **admin** — périmètre global (liste l'ensemble des quartiers, services et incidents) et accès à l'administration : `GET /users`, `PATCH /users/:id/role`, gestion des quartiers, `GET /stats`.
 - **banned** — état de compte bloquant. Le bannissement mémorise le rôle courant (`previousRole`) afin de le restaurer lors d'une réactivation.
 

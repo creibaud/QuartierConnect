@@ -24,11 +24,12 @@ Pour un service payant, le parcours se déroule ainsi :
 2. Un voisin intéressé **répond** à votre annonce, puis demande une **réservation**.
    Le nombre de points est calculé automatiquement à partir du barème du service.
 3. Vous **acceptez** la réservation : un **contrat** est alors généré automatiquement.
-4. Une fois le contrat signé par les deux parties et la prestation réalisée, le
-   **transfert de points scelle l'échange**.
+4. Les deux parties **signent** le contrat. Le **transfert de points** se déclenche
+   **automatiquement dès la dernière signature** et scelle l'échange.
 
-C'est ce transfert final qui crédite votre solde. À l'inverse, lorsque vous êtes le
-demandeur d'un service payant, ce même mécanisme débite vos points au profit du voisin
+C'est cette signature finale qui crédite votre solde : les points bougent dès que le
+contrat est complet, sans étape supplémentaire à valider. À l'inverse, lorsque vous êtes
+le demandeur d'un service payant, ce même mécanisme débite vos points au profit du voisin
 qui vous a aidé.
 
 ## Consulter votre solde et votre historique
@@ -69,12 +70,25 @@ voisin. Votre **solde** et votre **historique** sont aussitôt mis à jour, et
 l'opération apparaît dans vos transactions en tant que points envoyés. De son côté, le
 destinataire voit le mouvement apparaître comme des points reçus.
 
+### Si le transfert n'aboutit pas
+
+Un transfert peut être refusé. Dans ce cas, **aucun point ne quitte votre compte** et un
+message vous en explique la raison :
+
+- **« Solde insuffisant pour ce transfert »** : le montant demandé dépasse ce dont vous
+  disposez. Vérifiez votre solde et réessayez avec un montant plus bas.
+- **« Vous ne pouvez pas vous transférer des points »** : vous avez saisi votre propre
+  compte comme destinataire. Choisissez un autre voisin.
+- **« Ce destinataire n'existe pas »** : le compte visé n'est plus disponible.
+- **« Impossible de transférer les points »** : un incident temporaire a interrompu
+  l'opération. Réessayez dans un instant.
+
 ## En résumé
 
 | Action | Où cela se passe | Effet sur votre solde |
 |--------|------------------|------------------------|
-| Réaliser un service payant | Réservations et Contrats | Crédité après la prestation |
-| Payer un service | Réservations et Contrats | Débité après la prestation |
+| Réaliser un service payant | Réservations et Contrats | Crédité à la dernière signature du contrat |
+| Payer un service | Réservations et Contrats | Débité à la dernière signature du contrat |
 | Consulter solde et historique | Tableau de bord et page Points | Aucun |
 | Transférer des points | Page Points | Débité immédiatement |
 

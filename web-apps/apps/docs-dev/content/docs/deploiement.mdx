@@ -14,6 +14,8 @@ Cette page décrit la mise en production de QuartierConnect sur un VPS Linux (Ub
 
 Le serveur est durci en amont : user non-root `deploy`, SSH root et authentification par mot de passe désactivés, UFW (80/443/22 uniquement), fail2ban (jails **SSH** et **caddy-auth**), et un cron quotidien installé depuis `ops/`.
 
+Le durcissement descend jusqu'aux conteneurs applicatifs : les quatre images web (`client`, `admin`, `docs-user`, `docs-dev`) tournent en **utilisateur non-root** (`USER appuser` dans chaque `Dockerfile`), de sorte qu'aucun process front ne s'exécute en `root` dans le réseau Docker.
+
 ## Build et démarrage
 
 La stack de production se lance en superposant deux fichiers Compose (le fichier de base plus le patch prod) :

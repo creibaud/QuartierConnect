@@ -60,6 +60,15 @@ Le payload contient `sub`, `email`, `role`, `jti`, `iat` et `exp`. Le jeton refr
 
 `'unsafe-inline'` a été retiré des routes client, admin et API ; seules les routes `/docs` et `/scalar` (UI Scalar tierce) le conservent dans `script-src`. Les applications React reposent sur des nonces implicites via Vite.
 
+## Service des fichiers utilisateur
+
+Les fichiers uploadés par les utilisateurs — pièces jointes de messagerie et avatars — sont stockés dans MongoDB GridFS puis servis par l'API. Le type MIME étant déclaré par le client à l'upload, il est traité comme **non fiable** au moment de servir le fichier :
+
+- **Allowlist inline** — seule une liste blanche est servie avec `Content-Disposition: inline` : images matricielles (`png`, `jpeg`, `webp`, `gif`) et audios (`webm`, `ogg`, `mpeg`, `mp4`). Tout le reste — **HTML, SVG**, texte… — est forcé en `Content-Disposition: attachment` et servi en `application/octet-stream`. Un SVG envoyé en messagerie est d'ailleurs classé comme pièce jointe (`FILE`), jamais comme image inline.
+- **Avatars** — toujours servis en `attachment`, et uniquement avec un type matriciel de la liste blanche (à défaut, `image/jpeg` est imposé).
+
+Un fichier HTML ou SVG piégé ne peut donc plus être ouvert et exécuté dans le contexte de l'origine API : cette mesure neutralise le XSS stocké via les uploads.
+
 ## Limitation de débit
 
 Un `ThrottlerGuard` global limite chaque IP à **100 requêtes / 15 minutes** (`ThrottlerModule.forRoot([{ ttl: 900000, limit: 100 }])`). Des routes sensibles ont des limites spécifiques :
@@ -71,7 +80,30 @@ Un `ThrottlerGuard` global limite chaque IP à **100 requêtes / 15 minutes** (`
 
 ## Autorisation basée sur les rôles
 
-La hiérarchie est `resident → moderator → admin`, avec `banned` comme état terminal (401 à la connexion). Le `RolesGuard` **relit le rôle depuis la base** à chaque refresh — aucune confiance n'est accordée au seul JWT, si bien qu'un bannissement prend effet immédiatement. Chaque contrôleur vérifie en outre la propriété de la ressource (`createdBy === req.user.sub`).
+La hiérarchie est `resident → moderator → admin`, avec `banned` comme état terminal (401 à la connexion). Le `RolesGuard` **relit le rôle depuis la base** à chaque refresh — aucune confiance n'est accordée au seul JWT, si bien qu'un bannissement prend effet immédiatement. Au-delà des rôles, plusieurs contrôleurs appliquent un **cloisonnement par quartier** et un contrôle de propriété de la ressource (`createdBy === req.user.sub`).
+
+### Confidentialité des incidents de modération
+
+La visibilité des incidents ne se résume pas à un contrôle de propriété. Un résident voit **tous** les incidents de catégorie `neighborhood` de son quartier — même sans en être l'auteur — mais **ne voit pas** les signalements de modération (`reporting`, `bug`) d'autrui : ils sont filtrés de la liste. Surtout, `GET /incidents/:id` renvoie **404** (et non 403) sur un signalement étranger, afin de ne jamais révéler son existence. Un modérateur voit toutes les catégories, mais reste borné à son propre quartier ; seul l'admin est global.
+
+### Périmètre et injection du DSL
+
+Le DSL de modération (`POST /dsl/query`) est ouvert aux rôles `moderator` et `admin`, mais l'accès n'est pas global pour autant :
+
+- **Scoping quartier** — tout appelant non-admin est borné à son `neighborhoodId` sur les collections `incidents`, `services`, `events` et `users` ; seule `neighborhoods` reste publique. Un modérateur sans quartier reçoit un résultat vide. Le DSL ne peut donc pas servir de porte dérobée pour lire d'autres quartiers.
+- **Plafond de résultats** — toute requête `FIND` est plafonnée à **100 résultats**, avec ou sans `LIMIT` explicite.
+- **`LIKE` échappé** — l'opérateur `LIKE` compile vers une recherche de **sous-chaîne littérale échappée** (la valeur passe par `re.escape`), et non vers un motif regex actif : les métacaractères sont traités littéralement, ce qui neutralise l'injection regex et le ReDoS.
+
+### Anonymat des votes de communauté
+
+Pour un vote marqué `isAnonymous`, l'API ne renvoie **jamais** les bulletins des autres votants : chaque réponse ne conserve que le bulletin de l'appelant (le client en dérive « a voté » et « mes choix »). Les totaux agrégés restent disponibles, sans aucun identifiant d'utilisateur. Un votant ne peut donc pas reconstituer qui a voté quoi.
+
+## Contrôle de concurrence — soldes de points
+
+Le transfert de points s'exécute dans une transaction PostgreSQL qui verrouille **les deux** lignes de solde (émetteur et destinataire) dans un ordre déterministe (tri par `user_id`, `SELECT … FOR UPDATE`). Cet ordre fixe élimine l'interblocage croisé de deux transferts A→B et B→A simultanés. Les erreurs Postgres résiduelles sont converties en réponses `400` exploitables plutôt qu'en `500` :
+
+- `40P01` (deadlock détecté) → `{ code: "CONCURRENT_UPDATE" }`
+- `23514` (contrainte `CHECK` de solde) → `{ code: "INSUFFICIENT_BALANCE" }`
 
 ## RGPD — Protection des données
 
