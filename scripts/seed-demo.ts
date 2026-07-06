@@ -80,22 +80,41 @@ function totp(secret: string): string {
   return code.toString().padStart(6, "0");
 }
 
-function pgQuery(sql: string): string {
+function pgQuery(sql: string, vars: Record<string, string> = {}): string {
   // execFileSync (no shell) + SQL piped via stdin: container/db names and the
   // query are passed as literal args/input, so nothing can break out into a
-  // shell command.
+  // shell command. Values are bound as psql variables (-v) and referenced as
+  // :'name' in the SQL: psql does the quoting itself, so no value is ever
+  // interpolated into the statement (an apostrophe in a secret used to break
+  // the query).
+  const varArgs = Object.entries(vars).flatMap(([name, value]) => [
+    "-v",
+    `${name}=${value}`,
+  ]);
   return execFileSync(
     "docker",
-    ["exec", "-i", PG_CONTAINER, "psql", "-U", PG_USER, "-d", PG_DB, "-t"],
+    [
+      "exec",
+      "-i",
+      PG_CONTAINER,
+      "psql",
+      "-U",
+      PG_USER,
+      "-d",
+      PG_DB,
+      "-t",
+      ...varArgs,
+    ],
     { input: sql, encoding: "utf8" },
   ).trim();
 }
 
 function normalizeTotpSecret(email: string): void {
   try {
-    pgQuery(
-      `UPDATE users SET totp_secret='${DEMO_TOTP_SECRET}' WHERE email='${email}'`,
-    );
+    pgQuery(`UPDATE users SET totp_secret=:'secret' WHERE email=:'email'`, {
+      secret: DEMO_TOTP_SECRET,
+      email,
+    });
   } catch {
     console.warn(
       `  ! Could not normalize TOTP secret for ${email} — is Docker running?`,
@@ -106,7 +125,10 @@ function normalizeTotpSecret(email: string): void {
 function promoteRole(email: string, role: string): void {
   if (role === "resident") return;
   try {
-    pgQuery(`UPDATE users SET role='${role}' WHERE email='${email}'`);
+    pgQuery(`UPDATE users SET role=:'role' WHERE email=:'email'`, {
+      role,
+      email,
+    });
     console.log(`  → role set to "${role}"`);
   } catch {
     console.warn(`  ! Could not set role "${role}" — is Docker running?`);
@@ -125,13 +147,13 @@ function grantWelcomeCredit(email: string): void {
     WITH credited AS (
       INSERT INTO points_transactions
         (sender_id, recipient_id, amount, note, type, status, created_at, completed_at)
-      SELECT admin.id, u.id, ${WELCOME_CREDIT_POINTS}, '${WELCOME_CREDIT_NOTE}',
+      SELECT admin.id, u.id, :'points'::int, :'note',
              'bonus', 'completed', u.created_at, u.created_at
       FROM users u, users admin
-      WHERE u.email = '${email}' AND admin.email = 'admin@demo.fr'
+      WHERE u.email = :'email' AND admin.email = 'admin@demo.fr'
         AND NOT EXISTS (
           SELECT 1 FROM points_transactions t
-          WHERE t.recipient_id = u.id AND t.note = '${WELCOME_CREDIT_NOTE}'
+          WHERE t.recipient_id = u.id AND t.note = :'note'
         )
       RETURNING recipient_id, amount
     )
@@ -140,7 +162,11 @@ function grantWelcomeCredit(email: string): void {
     ON CONFLICT (user_id) DO UPDATE
     SET balance = points_balances.balance + excluded.balance, updated_at = now()`;
   try {
-    pgQuery(sql);
+    pgQuery(sql, {
+      points: String(WELCOME_CREDIT_POINTS),
+      note: WELCOME_CREDIT_NOTE,
+      email,
+    });
     console.log(
       `  → crédit de bienvenue (+${WELCOME_CREDIT_POINTS} pts) assuré`,
     );
@@ -599,7 +625,13 @@ async function assignNeighborhoodToResidents(
     if (role === "admin") continue;
     try {
       pgQuery(
-        `UPDATE users SET address='Centre du quartier, Paris', address_lat=${nbh.lat}, address_lng=${nbh.lng}, neighborhood_id='${nbh.id}' WHERE email='${email}'`,
+        `UPDATE users SET address='Centre du quartier, Paris', address_lat=:'lat'::float8, address_lng=:'lng'::float8, neighborhood_id=:'nbh' WHERE email=:'email'`,
+        {
+          lat: String(nbh.lat),
+          lng: String(nbh.lng),
+          nbh: nbh.id,
+          email,
+        },
       );
       process.stdout.write(`  → ${email} assigned to neighborhood ${nbh.id}\n`);
     } catch {

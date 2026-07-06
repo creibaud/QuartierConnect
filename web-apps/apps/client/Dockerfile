@@ -19,5 +19,10 @@ RUN pnpm --filter client run build
 FROM caddy:2-alpine
 COPY --from=builder /app/apps/client/dist /srv
 COPY apps/client/Caddyfile /etc/caddy/Caddyfile
+# Non-root: the port is > 1024 and caddy only writes under /data and
+# /config (XDG dirs), so root brings nothing but risk.
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
+    && chown -R appuser:appgroup /data /config
+USER appuser
 EXPOSE 3000
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]
