@@ -442,7 +442,7 @@ export class ServicesController {
         // Deleting a booked service would orphan its contract and payment
         // (cancel/accept would 404); the caller must settle bookings first.
         const activeBookings = await this.bookingModel.countDocuments({
-            serviceId: service._id,
+            serviceId: service._id.toString(),
             status: { $in: [BookingStatus.PENDING, BookingStatus.ACCEPTED] },
         });
         if (activeBookings > 0) {
