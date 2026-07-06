@@ -5,7 +5,7 @@ description: Syntaxe et exécution du langage de requêtes
 
 ## À quoi sert le DSL
 
-Le DSL de QuartierConnect est un **micro-langage de requête** qui permet aux administrateurs d'interroger les collections MongoDB sans écrire de code. Il est exposé via `POST /dsl/query` et consommé depuis le panneau d'administration React.
+Le DSL de QuartierConnect est un **micro-langage de requête** qui permet aux modérateurs et aux administrateurs d'interroger les collections de l'application sans écrire de code. Il est exposé via `POST /dsl/query` et consommé depuis le panneau d'administration React. Un **modérateur** n'accède qu'aux données de son propre quartier ; seul l'**administrateur** interroge l'ensemble des données.
 
 Le choix d'un DSL plutôt que de MongoDB brut répond à trois objectifs :
 
@@ -41,12 +41,12 @@ condition : IDENTIFIER EQ  value        → {field: value}
           | IDENTIFIER GTE value        → {field: {'$gte': value}}
           | IDENTIFIER LT  value        → {field: {'$lt': value}}
           | IDENTIFIER LTE value        → {field: {'$lte': value}}
-          | IDENTIFIER LIKE value       → {field: {'$regex': v, '$options': 'i'}}
+          | IDENTIFIER LIKE value       → {field: {'$regex': re.escape(v), '$options': 'i'}}
 
 value : STRING | NUMBER | IDENTIFIER
 ```
 
-Les opérateurs de comparaison disponibles sont donc `=`, `!=`, `>`, `>=`, `<`, `<=` et `LIKE` (recherche insensible à la casse via `$regex`). Les valeurs sont des chaînes (`'open'`, `"Paris"`), des nombres (`42`, `3.14`) ou des identifiants. Les espaces, tabulations et retours à la ligne sont ignorés.
+Les opérateurs de comparaison disponibles sont donc `=`, `!=`, `>`, `>=`, `<`, `<=` et `LIKE`. `LIKE` est une recherche de **sous-chaîne littérale** insensible à la casse : la valeur est échappée par `re.escape` avant d'être passée en `$regex`, si bien que les métacaractères (`.`, `*`, `[`, `(`, …) sont traités **littéralement** et non comme un motif — ce n'est donc pas une expression régulière active (protection anti-ReDoS). Les valeurs sont des chaînes (`'open'`, `"Paris"`), des nombres (`42`, `3.14`) ou des identifiants. Les espaces, tabulations et retours à la ligne sont ignorés.
 
 ### Exemples
 
@@ -70,7 +70,10 @@ FIND services WHERE type = 'free' OR type = 'exchange'
 → db.services.find({$or:[{type:'free'},{type:'exchange'}]})
 
 FIND services WHERE title LIKE 'garden'
-→ db.services.find({title:{$regex:'garden',$options:'i'}})
+→ db.services.find({title:{$regex:'garden',$options:'i'}})   # sous-chaîne littérale
+
+FIND services WHERE title LIKE 'a.b'
+→ db.services.find({title:{$regex:'a\.b',$options:'i'}})      # métacaractères échappés
 
 FIND events WHERE maxAttendees >= 50 LIMIT 10
 → db.events.find({maxAttendees:{$gte:50}}).limit(10)
@@ -80,12 +83,13 @@ FIND events WHERE maxAttendees >= 50 LIMIT 10
 
 Le pipeline est linéaire, du texte au résultat JSON :
 
-1. **Requête HTTP** — `DslController` reçoit le `POST /dsl/query`, protégé par `JwtAuthGuard` + `RolesGuard` avec `@Roles('admin')`. `DslService` valide d'abord la **longueur (≤ 500 caractères)**.
+1. **Requête HTTP** — `DslController` reçoit le `POST /dsl/query`, protégé par `JwtAuthGuard` + `RolesGuard` avec `@Roles('moderator', 'admin')`. Le DTO `DslQueryDto` borne la **longueur de la requête à 500 caractères** (`@MaxLength(500)`). Le `req.user` (rôle + `neighborhoodId`) est transmis au service, qui s'en sert pour le scoping par quartier.
 2. **Lexer** (`dsl/lexer.py`) — découpe le texte en tokens (`FIND`, `IDENTIFIER`, `WHERE`, `STRING`…).
 3. **Parser** (`dsl/parser.py`) — grammaire **LALR(1)** produisant un AST sous forme de `dict` Python (`type`, `collection`, `filter`, `limit`).
 4. **Compilateur** (`dsl/compiler.py`) — valide la collection contre une **liste blanche** et renvoie l'AST.
-5. **Exécution** (`dsl/main.py`) — via **Motor** (MongoDB async) : `find()` pour un `find`, `count_documents()` pour un `count`.
-6. **Retour** — le résultat JSON (liste de documents ou entier) remonte par pythonia jusqu'à NestJS, qui répond `200 { results: [...], count: N }`.
+5. **Sérialisation de l'AST** (`dsl/main.py`) — `main.py` renvoie l'AST compilé **en JSON** via pythonia ; le code Python n'accède plus à aucune base (il n'y a plus de Motor).
+6. **Exécution** (NestJS `DslService`) — c'est le service Node qui exécute la requête : **Mongoose** pour `neighborhoods`, `services` et `events`, **Drizzle/PostgreSQL** pour `incidents` et `users`. Le service applique ici le **scoping par quartier** (pour tout demandeur non-admin) et **plafonne à 100 résultats** (`MAX_DSL_RESULTS`).
+7. **Retour** — le résultat remonte à NestJS : un tableau de documents pour un `find`, `{ count: N }` pour un `count`.
 
 ### AST généré
 
@@ -99,19 +103,32 @@ Le pipeline est linéaire, du texte au résultat JSON :
 }
 ```
 
-### Exécution côté Python
+### Compilation côté Python
+
+Le Python ne fait plus que **compiler** : `main.py` renvoie l'AST sérialisé, sans jamais toucher à une base de données.
 
 ```python
-async def execute(query_string: str) -> list | int:
-    ast = compile_query(query_string)
-    if ast['type'] == 'find':
-        cursor = db[ast['collection']].find(ast['filter'])
-        if ast.get('limit'):
-            cursor = cursor.limit(ast['limit'])
-        return await cursor.to_list(length=1000)
-    elif ast['type'] == 'count':
-        return await db[ast['collection']].count_documents(ast['filter'])
+def execute(query_string: str) -> str:
+    # Compile et renvoie l'AST en JSON — aucune exécution MongoDB ici.
+    result = compile_query(query_string)
+    return json.dumps(result)
 ```
+
+### Exécution et scoping côté NestJS
+
+`DslService` désérialise l'AST puis exécute la requête selon la collection, en appliquant le **plafond de 100 résultats** et le **scoping par quartier** pour tout demandeur non-admin.
+
+```ts
+// dsl.service.ts
+const MAX_DSL_RESULTS = 100; // plafond réel, appliqué par clampLimit
+
+// neighborhoods        → Mongoose (public, jamais scopé)
+// services / events    → Mongoose + filtre { neighborhoodId } si non-admin
+// incidents / users    → Drizzle/PostgreSQL + filtre neighborhoodId si non-admin
+// Un non-admin sans neighborhoodId reçoit un résultat vide (sauf neighborhoods).
+```
+
+> Le point d'application du scoping est ici, dans NestJS — pas dans le Python. Un modérateur ne peut donc pas contourner le cloisonnement par quartier via le DSL.
 
 ## Sécurité et garde-fous
 
@@ -119,9 +136,11 @@ async def execute(query_string: str) -> list | int:
 |---------|-----------|
 | Collections arbitraires | Liste blanche stricte : `incidents`, `neighborhoods`, `services`, `events`, `users` |
 | Opérations destructives | `FIND` et `COUNT` uniquement — aucun `DELETE`/`UPDATE`/`INSERT` |
-| Injections MongoDB | Les valeurs passent par le moteur — aucune concaténation |
-| Accès non autorisé | Route protégée par `@Roles('admin')` |
-| Ressources excessives | `limit(1000)` maximum par requête |
+| Injections (Mongo / SQL) | Les valeurs passent par le moteur (Mongoose ou requêtes Drizzle paramétrées) — aucune concaténation |
+| ReDoS via `LIKE` | La valeur est échappée par `re.escape` : `LIKE` est une sous-chaîne littérale, jamais un motif regex actif |
+| Accès non autorisé | Route protégée par `@Roles('moderator', 'admin')` |
+| Fuite inter-quartiers | Un modérateur est scopé à son `neighborhoodId` (services, events, incidents, users) ; seul l'admin est global, `neighborhoods` reste public |
+| Ressources excessives | 100 résultats maximum par requête (`MAX_DSL_RESULTS`, appliqué côté NestJS) |
 
 ## Erreurs courantes
 

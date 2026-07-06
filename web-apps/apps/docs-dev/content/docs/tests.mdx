@@ -19,19 +19,19 @@ Chaque test respecte les principes **F.I.R.S.T.** :
 
 | Suite | Outil | Tests | Cible make |
 |-------|-------|-------|------------|
-| API — unitaires | Jest | 527 (46 `.spec.ts`) | `make test-api` |
-| API — end-to-end | Jest + Supertest | 173 (13 `.e2e-spec.ts`) | `make test-e2e` |
-| Web — unitaires | Vitest | 147 | `make test-web` |
-| Web — end-to-end | Playwright | 94 (21 fichiers) | `make test-e2e-web` |
-| Desktop — unit./intégration | JUnit 5 | 158 (21 classes) | `make test-desktop` |
-| DSL — unitaires | pytest | 21 | `make test-dsl` |
-| **Total** | | **1120** | `make test` |
+| API — unitaires | Jest | 678 (49 `.spec.ts`) | `make test-api` |
+| API — end-to-end | Jest + Supertest | 199 (13 `.e2e-spec.ts`) | `make test-e2e` |
+| Web — unitaires | Vitest | 127 (25 fichiers) | `make test-web` |
+| Web — end-to-end | Playwright | 127 (27 fichiers) | `make test-e2e-web` |
+| Desktop — unit./intégration | JUnit 5 + TestFX | 163 (23 classes) | `make test-desktop` |
+| DSL — unitaires | pytest | 22 (2 fichiers) | `make test-dsl` |
+| **Total** | | **1316** | `make test` |
 
 La cible `make test` enchaîne les tests unitaires des quatre composants (API, Web, Desktop, DSL). Les tests end-to-end, qui nécessitent des services démarrés, disposent de cibles dédiées. La cible `make validate` exécute l'ensemble en séquence : lint, typecheck, tests unitaires + couverture, e2e API, e2e Web, desktop, DSL, puis build de production.
 
 ## Tests unitaires — API (Jest)
 
-Les 527 tests unitaires couvrent la logique métier des 16 modules NestJS, avec les dépendances externes (bases de données, passerelles) remplacées par des doublures. Ils sont répartis entre contrôleurs (validation d'entrée, gardes, mapping de réponse) et services (règles métier).
+Les 678 tests unitaires couvrent la logique métier des 16 modules NestJS, avec les dépendances externes (bases de données, passerelles) remplacées par des doublures. Ils sont répartis entre contrôleurs (validation d'entrée, gardes, mapping de réponse) et services (règles métier), et couvrent les invariants renforcés récemment : atomicité de la signature de contrat et du règlement, saga des réservations (accept/decline/cancel), verrouillage ordonné des soldes de points, cloisonnement des incidents et des votes par quartier, et validation des DTO service/événement.
 
 Domaines couverts, entre autres :
 
@@ -49,7 +49,7 @@ Le rapport de couverture est généré dans `api/coverage/lcov-report/index.html
 
 ## Tests end-to-end — API (Supertest)
 
-Les 173 tests end-to-end démarrent l'application NestJS complète et émettent de vraies requêtes HTTP via Supertest, contre des bases de données réelles (MongoDB et PostgreSQL). Ils valident l'intégration bout en bout : routage, validation, persistance et sérialisation des réponses.
+Les 199 tests end-to-end démarrent l'application NestJS complète et émettent de vraies requêtes HTTP via Supertest, contre des bases de données réelles (MongoDB et PostgreSQL). Ils valident l'intégration bout en bout : routage, validation, persistance et sérialisation des réponses.
 
 Le flux critique d'authentification est vérifié dans `auth.e2e-spec.ts`, qui couvre : l'inscription avec renvoi de l'`otpauthUrl` (le secret TOTP n'est jamais exposé directement), le refus sans consentement RGPD (`400`) et sur email déjà pris (`409`), la connexion valide retournant la paire de jetons JWT (`200`), le rejet d'un mauvais mot de passe ou code TOTP (`401`), la limitation de débit après 5 échecs (`429`), le rafraîchissement et la révocation de jeton, le parcours SSO du client lourd, et le rejet d'un jeton expiré.
 
@@ -60,7 +60,7 @@ make test-e2e
 
 ## Tests unitaires — Web (Vitest)
 
-Les 147 tests Vitest portent sur le code mutualisé du monorepo, dans les paquets `@workspace/shared` et `@workspace/ui`, partagés par le client et l'admin :
+Les 127 tests Vitest (25 fichiers) portent sur le code mutualisé du monorepo, dans les paquets `@workspace/shared` (112 tests) et `@workspace/ui` (15 tests), partagés par le client et l'admin :
 
 - **Fonctions pures** (`packages/shared/src/lib`) : `geo.test.ts`, `phone.test.ts`, `pricing.test.ts`, `contract-import.test.ts`.
 - **Hooks de données** (`packages/shared/src/lib/hooks/__tests__`) : hooks React Query pour incidents, services, réservations, événements, points, votes, messagerie, quartiers, statistiques, contrats, profil et administration des utilisateurs.
@@ -72,7 +72,7 @@ make test-web
 
 ## Tests end-to-end — Web (Playwright)
 
-Les 94 tests Playwright pilotent le client (`:3000`) et l'admin (`:3001`) dans un navigateur réel, contre l'API (`:5000`). Ils sont répartis entre `web-apps/e2e/client` (11 fichiers) et `web-apps/e2e/admin` (9 fichiers), plus une baseline de refonte.
+Les 127 tests Playwright pilotent le client (`:3000`) et l'admin (`:3001`) dans un navigateur réel, contre l'API (`:5000`). Ils sont répartis entre `web-apps/e2e/client` (16 fichiers) et `web-apps/e2e/admin` (10 fichiers), plus une baseline de refonte (`redesign-baseline.spec.ts`, dont les assertions verrouillent l'apparence). La couverture a été étendue par les vagues d'audit récentes, qui ont ajouté 27 flux end-to-end (détail des incidents, réservations, contrats, votes, recommandations, comptes…).
 
 Le parcours critique **connexion + TOTP** est couvert côté client dans `login.spec.ts` : redirection d'un utilisateur non authentifié vers `/login`, affichage de l'étape TOTP après identifiants valides, message d'erreur sur mauvais mot de passe, et connexion complète (mot de passe puis code TOTP à 6 chiffres généré dynamiquement) menant à l'onboarding d'adresse.
 
@@ -85,6 +85,25 @@ make dev          # terminal 1 : bases + API + client + admin
 make test-e2e-web # terminal 2
 ```
 
+## Tests — Desktop (JUnit 5 / TestFX)
+
+Les 163 tests du client bureautique JavaFX se répartissent en 23 classes exécutées par Maven Surefire : services hors ligne, dépôt SQLite, fusion three-way de la synchronisation, coffre de jetons (`TokenVault`), système de plugins, et pull paginé des incidents (`SyncServicePullTest`, qui vérifie que le pull ne supprime plus au-delà de 100 éléments).
+
+La classe `LoginViewSmokeTest` s'appuie sur **TestFX** (`testfx-core`, `testfx-junit5`) : elle instancie le vrai toolkit JavaFX et pilote l'écran de connexion (3 tests de fumée). Comme elle démarre une interface graphique, elle exige un serveur d'affichage — sur un runner sans écran, `make test-desktop` et le job CI encapsulent donc l'exécution dans `xvfb-run` (display virtuel Xvfb) :
+
+```bash
+make test-desktop   # xvfb-run -a ./mvnw test si xvfb-run est présent
+```
+
+> Sans display disponible (`DISPLAY` non défini et `xvfb-run` absent), les tests TestFX échouent au démarrage du toolkit. Le `Makefile` retombe sur un `./mvnw test` direct uniquement quand un affichage est déjà accessible.
+
 ## Intégration continue
 
-Les suites sont exécutées automatiquement en intégration continue sur les branches `main` et `develop` ainsi que sur les pull requests. La cible `make validate` reproduit localement l'intégralité du pipeline (lint des 4 composants, typecheck TypeScript, tests unitaires API avec couverture, e2e API, e2e Web, desktop, DSL, puis build de production) : elle permet de valider une contribution dans les mêmes conditions que la CI avant de la pousser.
+Les tests **unitaires** (API Jest, Web Vitest, Desktop JUnit sous `xvfb-run`, DSL pytest) plus le lint, le typecheck et le build sont exécutés automatiquement par `ci.yml` sur les branches `main` et `develop` ainsi que sur chaque pull request.
+
+Les tests **end-to-end** vivent dans un workflow séparé (`.github/workflows/e2e.yml`) au coût plus élevé :
+
+- **Sur pull request** — seul un sous-ensemble de fumée de 3 specs est joué (`client/login`, `client/points`, `admin/services`), pour un retour rapide.
+- **En nightly** (`cron` à 3 h), **sur tag `v*.*.*`** et en **`workflow_dispatch`** — la suite Playwright complète puis les e2e API Supertest sont exécutées intégralement, avec une alerte Discord « E2E nightly KO » en cas d'échec.
+
+La cible `make validate` reproduit localement l'intégralité du pipeline (lint des 4 composants, typecheck TypeScript, tests unitaires API avec couverture, e2e API, e2e Web, desktop, DSL, puis build de production) : elle permet de valider une contribution dans les mêmes conditions que la CI, suite e2e complète comprise, avant de la pousser.

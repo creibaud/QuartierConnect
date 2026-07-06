@@ -10,12 +10,12 @@ QuartierConnect répartit ses données sur **quatre** bases : PostgreSQL pour le
 ORM : **Drizzle ORM** (TypeScript), source de vérité `api/src/database/schema.ts`. **5 tables** : `users`, `incidents`, `points_balances`, `points_transactions`, `revoked_tokens`.
 
 - **`users`** — identité et sécurité. `email` unique et normalisé en minuscules, `password_hash` en **Argon2id** (jamais bcrypt), `totp_secret` base32 (RFC 6238), `refresh_token_hash` (rotation stricte, `NULL` si déconnecté). `role` suit la machine à états `resident → moderator → admin`, `banned` étant terminal mais réversible ; à un bannissement, le rôle courant est copié dans `previous_role` puis restauré à la réactivation. `address_lat` / `address_lng` sont géocodés via Nominatim (OpenStreetMap).
-- **`incidents`** — `status` suit `open → in_progress → resolved` (transitions validées côté API). Suppression **logique** via `deleted_at` (tombstone) pour propager les suppressions vers le client bureautique hors ligne. Index sur `status` et `deleted_at`.
+- **`incidents`** — `status` suit `open → in_progress → resolved` (transitions validées côté API). `category` (`neighborhood` par défaut, sinon `reporting` ou `bug`) et `neighborhood_id` gouvernent la **visibilité** : un résident ne voit que les incidents `neighborhood` de son quartier plus ses propres signalements `reporting`/`bug`, un modérateur voit tout son quartier, l'admin voit tout. Suppression **logique** via `deleted_at` (tombstone) pour propager les suppressions vers le client bureautique hors ligne ; `updated_at` alimente la **synchro delta** (`GET /incidents?since=<ISO>`, filtre `updated_at > since`) du pull paginé du client bureautique. Index sur `status` et `deleted_at`.
 - **`points_balances`** — un solde unique par utilisateur (`user_id` UNIQUE), avec une contrainte `CHECK (balance >= -10)` garantie **au niveau de la base**, pas seulement en applicatif.
 - **`points_transactions`** — `type` (`service_payment` | `bonus` | `correction`) et `status` (`pending` | `completed` | `cancelled`) contrôlés par `CHECK`. Un `service_payment` référence un `contract_id` MongoDB.
 - **`revoked_tokens`** — liste de révocation par `jti` du JWT. Le `JwtAuthGuard` rejette tout token d'accès dont le `jti` y figure ; `expires_at` permet la purge des entrées expirées.
 
-Le transfert de points s'exécute dans une **transaction PostgreSQL** : verrou `SELECT ... FOR UPDATE` sur le solde émetteur, vérification du seuil `-10`, puis mises à jour `ON CONFLICT` des deux soldes.
+Le transfert de points s'exécute dans une **transaction PostgreSQL**. Les deux lignes de solde (émetteur et destinataire) sont d'abord créées si besoin (`onConflictDoNothing`), puis **verrouillées dans un ordre déterministe** — tri par `user_id`, `... WHERE user_id IN (...) ORDER BY user_id FOR UPDATE` — ce qui élimine l'interblocage croisé `A→B ‖ B→A`. Le service vérifie ensuite le seuil `-10` avant d'appliquer les deltas. Les erreurs PostgreSQL sont mappées en réponses `400` : `40P01` (deadlock détecté) → `{ code: CONCURRENT_UPDATE }`, violation du `CHECK (balance >= -10)` — `23514` → `{ code: INSUFFICIENT_BALANCE }`.
 
 ## MongoDB — documents flexibles
 
@@ -48,6 +48,8 @@ Points clés :
 L'endpoint de recommandation combine par union quatre sources classées (`RECOMMENDATIONS_QUERY`) : `serviceInNeighborhood` (score 3), `upcomingEventNearby` (score 2), `sharedInterests` (`3 + peerCount`) et `reliableNeighbor` (`4 + helpCount + sharedEvents`). Les résultats sont triés par score décroissant, dédupliqués par `type + name` et limités à 10.
 
 Résilience : chaque écriture passe par `withRetry` (3 tentatives, backoff 100/200/400 ms). Une panne de Neo4j ne bloque jamais l'API ; les lectures retombent alors sur une liste vide.
+
+Cohérence des relations de localisation. À un changement de quartier, `LIVES_IN` (`syncUser`), `LOCATED_IN` (`syncService`) et `HELD_IN` (`syncEvent`) sont réécrites en **delete-then-merge** — `OPTIONAL MATCH (x)-[old]->(other) WHERE other <> n DELETE old MERGE (x)-[...]->(n)` — ce qui garantit une relation de localisation **unique** et supprime les relations multiples après un déménagement. Côté PostgreSQL, la **suppression d'un quartier** remet le `neighborhood_id` de ses résidents à `NULL` (ils repassent alors par l'onboarding adresse), et l'**agrandissement d'un polygone** au `PATCH` réassigne les résidents restés « pending » désormais couverts par la nouvelle géométrie.
 
 ## SQLite — cache du client bureautique
 
