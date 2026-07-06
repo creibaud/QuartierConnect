@@ -335,16 +335,13 @@ function TransferForm() {
     const [amount, setAmount] = useState("");
     const [note, setNote] = useState("");
     const transferPoints = useTransferPoints();
-    const { data: balance } = usePointBalance();
 
     const parsedAmount = Number(amount);
-    const currentBalance = balance?.balance ?? 0;
     const isValid =
         recipient !== null &&
         Number.isInteger(parsedAmount) &&
         parsedAmount >= 1 &&
-        parsedAmount <= MAX_TRANSFER_AMOUNT &&
-        parsedAmount <= currentBalance;
+        parsedAmount <= MAX_TRANSFER_AMOUNT;
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
