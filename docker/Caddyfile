@@ -64,8 +64,7 @@
 		reverse_proxy api:5000
 	}
 	handle_path /telechargements/* {
-		root * /srv/downloads
-		file_server
+		redir https://github.com/creibaud/QuartierConnect/releases/latest/download{http.request.uri.path} 302
 	}
 	handle /admin* {
 		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.cartocdn.com; media-src 'self' blob:; connect-src 'self' ws: wss: https://*.cartocdn.com; font-src 'self' data:; worker-src blob:; frame-src 'self' blob:; frame-ancestors 'none'"

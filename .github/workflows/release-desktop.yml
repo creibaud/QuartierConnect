@@ -61,13 +61,13 @@ jobs:
 
             ### Installateurs natifs
             Téléchargez le paquet correspondant à votre système ci-dessous :
-            - **Linux** : `.deb` → `sudo apt install ./QuartierConnect_*.deb`
-            - **Windows** : `.msi` → double-clic
-            - **macOS** : `.dmg` → glisser dans Applications
+            - **Linux** : `quartierconnect-linux.deb` → `sudo apt install ./quartierconnect-linux.deb` (résout les dépendances ; `dpkg -i` ne le fait pas)
+            - **Windows** : `quartierconnect-windows.msi` → double-clic
+            - **macOS** : `quartierconnect-macos.dmg` → glisser dans Applications
 
             ### Sans installation (JAR)
             ```bash
-            wget https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.tag || github.ref_name }}/quartierconnect-desktop.jar
+            wget https://github.com/${{ github.repository }}/releases/latest/download/quartierconnect-desktop.jar
             java -jar quartierconnect-desktop.jar
             ```
 
@@ -84,14 +84,20 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          # Build the .deb on 22.04: 24.04's dpkg-shlibdeps emits time64 names
+          # (libasound2t64) that don't exist on 22.04/Debian, making the package
+          # uninstallable there. 22.04 emits the portable pre-t64 names.
+          - os: ubuntu-22.04
             type: deb
+            asset: quartierconnect-linux.deb
             script: bash desktop-app/packaging/jpackage-build.sh deb
           - os: macos-latest
             type: dmg
+            asset: quartierconnect-macos.dmg
             script: bash desktop-app/packaging/jpackage-build.sh dmg
           - os: windows-latest
             type: msi
+            asset: quartierconnect-windows.msi
             script: desktop-app/packaging/jpackage-build.ps1
 
     steps:
@@ -158,11 +164,17 @@ jobs:
           QC_SERVER_URL: ${{ vars.QC_SERVER_URL }}
         run: ${{ matrix.script }}
 
+      # Publish under a stable, version-less name so the web app can link to
+      # releases/latest/download/<asset> without knowing the version.
+      - name: Renommer en nom stable
+        shell: bash
+        run: mv desktop-app/target/installer/*.${{ matrix.type }} "desktop-app/target/installer/${{ matrix.asset }}"
+
       - name: Attacher l'installateur à la release
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          files: desktop-app/target/installer/*.${{ matrix.type }}
+          files: desktop-app/target/installer/${{ matrix.asset }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

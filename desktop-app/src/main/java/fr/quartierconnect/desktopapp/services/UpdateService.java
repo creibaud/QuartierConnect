@@ -32,7 +32,7 @@ public class UpdateService {
 
     private static final Logger LOG = Logger.getLogger(UpdateService.class.getName());
 
-    private static final String CURRENT_VERSION = "1.0.0";
+    private static final String CURRENT_VERSION = resolvePackagedVersion();
     private static final long CHECK_INTERVAL_HOURS = 24;
     private static final String REPOSITORY = "creibaud/QuartierConnect";
     private static final String LATEST_RELEASE_API =
@@ -70,6 +70,15 @@ public class UpdateService {
 
     public static String currentVersion() {
         return CURRENT_VERSION;
+    }
+
+    /**
+     * Version of the running app. jpackage installers inject the real release
+     * version as {@code jpackage.app-version}; the bare jar has no such property.
+     */
+    private static String resolvePackagedVersion() {
+        String packaged = System.getProperty("jpackage.app-version");
+        return (packaged != null && !packaged.isBlank()) ? packaged : "1.0.0";
     }
 
     /** Latest newer version found by checks so far, if any. */
