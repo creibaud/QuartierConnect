@@ -207,6 +207,11 @@ test.describe("Client — Réservations", () => {
             .getByRole("button", { name: "Réserver", exact: true })
             .click();
 
+        await page
+            .getByRole("alertdialog")
+            .getByRole("button", { name: "Réserver", exact: true })
+            .click();
+
         await expect(
             page.getByText("Demande de réservation envoyée"),
         ).toBeVisible();
