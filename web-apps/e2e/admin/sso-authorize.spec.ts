@@ -1,6 +1,6 @@
 import { execSync } from "child_process";
 import { randomUUID } from "crypto";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Route } from "@playwright/test";
 import {
     apiLogin,
     apiRegister,
@@ -85,13 +85,16 @@ test.describe("Admin — SSO desktop (consentement)", () => {
         page,
     }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
-        await page.route("http://localhost:59999/**", (route) =>
+        // The page rewrites the loopback callback host to 127.0.0.1 before
+        // redirecting, so intercept that host (localhost kept for robustness).
+        const fulfillCallback = (route: Route) =>
             route.fulfill({
                 status: 200,
                 contentType: "text/html",
                 body: "<h1>Callback desktop</h1>",
-            }),
-        );
+            });
+        await page.route("http://127.0.0.1:59999/**", fulfillCallback);
+        await page.route("http://localhost:59999/**", fulfillCallback);
         await injectTokens(
             page,
             "http://localhost:3001",
