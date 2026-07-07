@@ -200,7 +200,7 @@ public class LoginView {
             }
 
             int    port         = server.getPort();
-            String callbackUrl  = "http://localhost:" + port + "/cb";
+            String callbackUrl  = "http://" + SsoCallbackServer.LOOPBACK_HOST + ":" + port + "/cb";
             String authorizeUrl = webBaseUrl() + "/sso/authorize"
                     + "?state="    + URLEncoder.encode(state,       StandardCharsets.UTF_8)
                     + "&redirect=" + URLEncoder.encode(callbackUrl, StandardCharsets.UTF_8);

@@ -23,13 +23,26 @@ interface SsoTokenResponse {
     expiresIn: number;
 }
 
+// The desktop app listens on an OS-assigned loopback port and redirects here.
+// Only loopback hosts over http are allowed as callbacks.
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost"]);
+
 function isValidRedirect(url: string): boolean {
     try {
         const parsed = new URL(url);
-        return parsed.hostname === "localhost" && parsed.protocol === "http:";
+        return LOOPBACK_HOSTS.has(parsed.hostname) && parsed.protocol === "http:";
     } catch {
         return false;
     }
+}
+
+// The desktop callback server binds the IPv4 loopback. Browsers resolving
+// "localhost" may prefer ::1 (IPv6) and miss it, so force 127.0.0.1 — this also
+// repairs already-installed desktops that still send a "localhost" callback.
+function toLoopbackCallback(url: string): string {
+    const parsed = new URL(url);
+    parsed.hostname = "127.0.0.1";
+    return parsed.toString();
 }
 
 export const Route = createFileRoute("/sso/authorize")({
@@ -79,7 +92,7 @@ function SsoAuthorizePage() {
                 surface: "java-desktop",
                 state: ssoState,
             });
-            window.location.href = `${redirect}?token=${data.ssoToken}&state=${encodeURIComponent(ssoState)}`;
+            window.location.href = `${toLoopbackCallback(redirect)}?token=${data.ssoToken}&state=${encodeURIComponent(ssoState)}`;
         } catch {
             toast.error(t("adminPages.sso.tokenError"));
             setApproving(false);
@@ -205,7 +218,7 @@ function SsoAuthorizePage() {
                                 variant="outline"
                                 className="w-full"
                                 onClick={() => {
-                                    window.location.href = `${redirect}?error=access_denied&state=${encodeURIComponent(ssoState)}`;
+                                    window.location.href = `${toLoopbackCallback(redirect)}?error=access_denied&state=${encodeURIComponent(ssoState)}`;
                                 }}
                             >
                                 {t("adminPages.sso.deny")}

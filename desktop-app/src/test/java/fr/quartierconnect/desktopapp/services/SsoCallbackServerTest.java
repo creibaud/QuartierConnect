@@ -21,7 +21,7 @@ class SsoCallbackServerTest {
 
     private HttpResponse<String> get(int port, String path) throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:" + port + path))
+                .uri(URI.create("http://" + SsoCallbackServer.LOOPBACK_HOST + ":" + port + path))
                 .GET()
                 .build();
         return HTTP.send(req, HttpResponse.BodyHandlers.ofString());
@@ -137,7 +137,7 @@ class SsoCallbackServerTest {
         int port = server.getPort();
 
         // Simulate a browser probe: bare TCP connect, closed right away
-        try (java.net.Socket probe = new java.net.Socket("localhost", port)) {
+        try (java.net.Socket probe = new java.net.Socket(SsoCallbackServer.LOOPBACK_HOST, port)) {
             // no data sent
         }
 
