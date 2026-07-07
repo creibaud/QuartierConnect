@@ -11,7 +11,7 @@
         db-migrate seed seed-demo seed-neo4j totp \
         install install-api install-web install-dsl \
         validate validate-fast \
-        hooks dossier \
+        hooks \
         status clean clean-modules info
 
 # ─── Couleurs & Styles ─────────────────────────────────────────────────────────
@@ -35,7 +35,7 @@ help: ## Afficher cette aide
 	@echo "$(BOLD)  QuartierConnect — Commandes disponibles$(RESET)"
 	@echo ""
 	@echo "  $(BOLD)INSTALLATION / RENDU$(RESET)"
-	@grep -E '^(setup|dist|dossier):.*?## .*$$' $(MAKEFILE_LIST) \
+	@grep -E '^(setup|dist):.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "    $(BOLD)%-24s$(RESET) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "  $(BOLD)$(CYAN)DÉVELOPPEMENT$(RESET)"
@@ -96,10 +96,7 @@ status: ## Vérifier l'état des services Docker
 setup: ## Installation complète en une commande (prérequis + .env + Docker + démo)
 	@SETUP_FORCE="$(SETUP_FORCE)" ./scripts/setup.sh
 
-dossier: ## Assembler tous les documents du rendu en un seul Markdown (docs/DOSSIER-RENDU.md)
-	@echo "$(RUN) Assemblage du dossier de rendu..."
-	@bash scripts/build-dossier.sh
-	@echo "$(OK) Dossier assemblé. PDF : dist/DOSSIER-RENDU.pdf (déjà généré) ou reconvertir depuis docs/DOSSIER-RENDU.md"
+
 
 dist: ## Archive de rendu dans dist/ (sources zip + JAR desktop + jeux d'essai)
 	@echo "$(RUN) $(BOLD)Construction de l'archive de rendu...$(RESET)"

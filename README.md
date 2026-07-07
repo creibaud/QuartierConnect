@@ -254,23 +254,21 @@ protected by Caddy basic auth: credentials are configured through the
 `DOCS_AUTH_USER` / `DOCS_AUTH_HASH` environment variables (see
 `docker/docker-compose.yml` for the development default).
 
-### Written dossier
+### Written reports
+
+The full technical documentation (architecture, databases, API, security, DSL,
+plugins, tests, deployment) lives in the **`/dev`** site, and the user guides in
+**`/aide`**. The academic reports remain as Markdown:
 
 | Document                                               | Contents                                                  |
 | ------------------------------------------------------ | --------------------------------------------------------- |
-| [docs/DOSSIER-RENDU.md](docs/DOSSIER-RENDU.md)         | Aggregated submission dossier (all documents in one file) |
-| [docs/RENDU-31-05.md](docs/RENDU-31-05.md)             | Submission dossier — functional + technical, end to end   |
+| [docs/CDC.md](docs/CDC.md)                             | Full requirements specification                           |
+| [docs/SYNTHESE.md](docs/SYNTHESE.md)                   | Synthesis — approach, architecture, critical analysis     |
 | [docs/RAPPORT-TECHNIQUE.md](docs/RAPPORT-TECHNIQUE.md) | Full report for the defense — all the algorithms          |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)           | Mermaid diagrams — modules, flows, security               |
-| [docs/DATABASE.md](docs/DATABASE.md)                   | PostgreSQL, MongoDB, Neo4j, SQLite schemas                |
-| [docs/SECURITY.md](docs/SECURITY.md)                   | Argon2id, TOTP, JWT, SSO, SHA-256, GDPR                   |
-| [docs/TEST.md](docs/TEST.md)                           | QA report — 1,100+ tests, coverage, strategy              |
-| [docs/DSL.md](docs/DSL.md)                             | PLY micro-language — grammar, pipeline, security          |
-| [docs/PLUGINS.md](docs/PLUGINS.md)                     | Desktop plugin developer guide                            |
-| [docs/USER_GUIDE.md](docs/USER_GUIDE.md)               | User journeys, surface by surface                         |
+| [docs/RAPPORT-ETAPE2.md](docs/RAPPORT-ETAPE2.md)       | Milestone 2 report                                        |
+| [docs/RAPPORT-ETAPE3.md](docs/RAPPORT-ETAPE3.md)       | Milestone 3 report                                        |
+| [docs/RENDU-31-05.md](docs/RENDU-31-05.md)             | 31 May submission — functional + technical, end to end    |
 | [docs/GUIDE-SOUTENANCE.md](docs/GUIDE-SOUTENANCE.md)   | Demo scenarios, Q&A, key figures                          |
-| [docs/API.md](docs/API.md)                             | Reference for the 87 endpoints                            |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)               | VPS deployment + Caddy HTTPS                              |
 | [docs/RUNBOOK.md](docs/RUNBOOK.md)                     | Production incident procedures                            |
 
 ---

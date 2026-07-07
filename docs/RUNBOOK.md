@@ -1,6 +1,6 @@
 # RUNBOOK — Incidents Production QuartierConnect
 
-> Procédures de résolution d'incidents en production. Distinct de [`DEPLOYMENT.md`](DEPLOYMENT.md) (setup) — ce fichier couvre **ce qui casse une fois en prod**.
+> Procédures de résolution d'incidents en production. Distinct de la page « Déploiement » du site `/dev` (setup) — ce fichier couvre **ce qui casse une fois en prod**.
 
 **Réflexe avant tout** : lancer le diagnostic global.
 
@@ -314,7 +314,7 @@ Base provisionnée par `drizzle-kit push` (table `drizzle.__drizzle_migrations` 
 
 ## Journal des drills de restauration
 
-> À remplir après chaque test de restauration (cf. DEPLOYMENT.md §9).
+> À remplir après chaque test de restauration (cf. la page « Déploiement » du site `/dev`).
 
 | Date | Base testée | Temps de restauration | Résultat | Opérateur |
 |------|-------------|----------------------|----------|-----------|

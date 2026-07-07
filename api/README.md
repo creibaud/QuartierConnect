@@ -35,7 +35,7 @@ Interactive Scalar reference (auto-generated from the Swagger decorators):
 
 - http://localhost/api/docs (via Caddy) or http://localhost:5000/docs (direct)
 
-A static reference also lives in [`docs/API.md`](../docs/API.md).
+The full API reference lives on the developer docs site (`/dev`) and in Scalar (`/api/docs`).
 
 ## Tests
 
@@ -52,4 +52,4 @@ make test-e2e           # E2E (Supertest) — needs make docker-up
 - Input is validated at the boundary with `class-validator` DTOs + a global
   `ValidationPipe({ whitelist: true })`, and user-supplied values are coerced
   to strings before they reach Mongoose filters (no NoSQL operator injection).
-- See [`docs/SECURITY.md`](../docs/SECURITY.md) for the full threat model.
+- See the "Sécurité" page on the developer docs site (`/dev`) for the full threat model.

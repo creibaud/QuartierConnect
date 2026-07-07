@@ -64,5 +64,5 @@ Depuis la racine du dépôt : `make install-dsl`, `make test-dsl`, `make lint-ds
 L'API consomme ce répertoire via les variables `PYTHON_BIN`
 (`./dsl/.venv/bin/python`) et `DSL_PATH` (`./dsl`) définies dans `.env`.
 
-Documentation détaillée : `docs/DSL.md` et la page « Le DSL » du site
-développeur (`http://localhost/dev`).
+Documentation détaillée : la page « Le DSL » du site développeur
+(`http://localhost/dev`).
