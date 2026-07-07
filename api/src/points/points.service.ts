@@ -163,9 +163,7 @@ export class PointsService {
         }
     }
 
-    // Locks both balance rows in a deterministic (sorted) order so crossed
-    // transfers (A→B ‖ B→A) can never deadlock, and inserts missing rows
-    // first so the FOR UPDATE actually serializes first-time senders.
+    // Lock both balance rows in sorted order to avoid deadlocks, inserting missing rows first.
     private async lockBalances(
         tx: TransactionClient,
         userIds: [string, string],
@@ -181,9 +179,7 @@ export class PointsService {
         return new Map(rows.map((row) => [row.user_id, row.balance]));
     }
 
-    // Postgres can still abort a transaction under extreme concurrency
-    // (deadlock detector) or through the balance CHECK constraint; both must
-    // surface as actionable 4xx responses instead of raw 500s.
+    // Map deadlock and balance CHECK violations to 4xx instead of raw 500s.
     private mapPostgresConcurrencyError(err: unknown): unknown {
         const code = (err as { code?: string })?.code;
         if (code === "40P01") {
@@ -201,9 +197,7 @@ export class PointsService {
         return err;
     }
 
-    // The recipient id is a foreign key of points_balances and
-    // points_transactions: an unknown or deactivated account must be rejected
-    // with a 400 before any write, instead of surfacing a raw FK violation.
+    // Reject an unknown or deactivated recipient before any write.
     private async assertRecipientExists(
         tx: TransactionClient,
         recipientId: string,
@@ -223,8 +217,7 @@ export class PointsService {
         }
     }
 
-    // Both rows are guaranteed to exist and to be locked by lockBalances,
-    // so plain relative updates are race-free here.
+    // Rows are already locked by lockBalances, so relative updates are race-free.
     private async applyBalanceDelta(
         tx: TransactionClient,
         senderId: string,
@@ -332,8 +325,7 @@ export class PointsService {
         });
     }
 
-    // Best-effort: the settlement is already committed, a notification
-    // failure must never surface to the caller.
+    // Best-effort: settlement is already committed, so swallow notification failures.
     private emitPointsSettled(event: PointsSettledEvent): void {
         try {
             this.eventEmitter.emit(POINTS_SETTLED_EVENT, event);
@@ -356,10 +348,7 @@ export class PointsService {
         return txn?.status === "completed";
     }
 
-    // Returns true when a pending payment was actually voided. The guarded
-    // UPDATE and completeServicePayment's row lock arbitrate the cancel-vs-
-    // settle race: exactly one flips the row, so a `false` here means the
-    // settlement won (the money already moved) — the caller must not cancel.
+    // True when a pending payment was voided; false means settlement already won the race.
     async cancelServicePayment(contractId: string): Promise<boolean> {
         const rows = await this.db
             .update(schema.pointsTransactions)

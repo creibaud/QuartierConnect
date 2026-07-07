@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useSwipeable } from "react-swipeable";
 import {
     Add01Icon,
     Calendar01Icon,
@@ -9,11 +11,13 @@ import {
     Location01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useSwipeable } from "react-swipeable";
 import { createFileRoute } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
 import { formatAddress } from "@workspace/shared/lib/address";
-import { centroidOf, pointInPolygon, pointToLatLng } from "@workspace/shared/lib/geo";
+import {
+    centroidOf,
+    pointInPolygon,
+    pointToLatLng,
+} from "@workspace/shared/lib/geo";
 import {
     useCreateEvent,
     useEventInterest,
@@ -23,7 +27,6 @@ import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hook
 import type { Event } from "@workspace/shared/lib/types";
 import { Button } from "@workspace/ui/components/button";
 import { Calendar } from "@workspace/ui/components/calendar";
-import { calendarLocaleFor } from "@workspace/ui/lib/calendar-locales";
 import {
     Card,
     CardContent,
@@ -33,6 +36,13 @@ import {
 } from "@workspace/ui/components/card";
 import { DataState } from "@workspace/ui/components/data-state";
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@workspace/ui/components/dialog";
+import {
     Empty,
     EmptyContent,
     EmptyDescription,
@@ -40,6 +50,8 @@ import {
     EmptyMedia,
     EmptyTitle,
 } from "@workspace/ui/components/empty";
+import { Input } from "@workspace/ui/components/input";
+import { Label } from "@workspace/ui/components/label";
 import {
     Map,
     MapControls,
@@ -47,14 +59,6 @@ import {
     MarkerCluster,
     NeighborhoodPolygon,
 } from "@workspace/ui/components/map";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@workspace/ui/components/dialog";
-import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
 import { PageHeader } from "@workspace/ui/components/page-header";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Textarea } from "@workspace/ui/components/textarea";
@@ -67,6 +71,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from "@workspace/ui/components/tooltip";
+import { calendarLocaleFor } from "@workspace/ui/lib/calendar-locales";
 import { toast } from "sonner";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { EventCard } from "@/features/events/components/event-card";
@@ -159,13 +164,9 @@ function EventsPage() {
                 <DataState
                     loading={isLoading}
                     error={isError ? true : undefined}
-                    isEmpty={
-                        viewMode === "list" && events.length === 0
-                    }
+                    isEmpty={viewMode === "list" && events.length === 0}
                     onRetry={() => void refetch()}
-                    skeleton={
-                        <Skeleton className="h-72 w-full rounded-xl" />
-                    }
+                    skeleton={<Skeleton className="h-72 w-full rounded-xl" />}
                     empty={
                         <Empty className="border">
                             <EmptyHeader>
@@ -313,8 +314,7 @@ function SwipeView({ events }: { events: Event[] }) {
         interest.mutate(
             { eventId: current._id, source: "swipe" },
             {
-                onError: () =>
-                    toast.error(t("pages.events.participateError")),
+                onError: () => toast.error(t("pages.events.participateError")),
             },
         );
         toast.success(t("pages.events.interested"));
@@ -456,7 +456,9 @@ function CreateEventDialog({
     const [description, setDescription] = useState("");
     const [date, setDate] = useState("");
     const [address, setAddress] = useState("");
-    const [picked, setPicked] = useState<{ lat: number; lng: number } | null>(null);
+    const [picked, setPicked] = useState<{ lat: number; lng: number } | null>(
+        null,
+    );
     const [category, setCategory] = useState("other");
     const { data: myLocation } = useMyLocation();
     const createEvent = useCreateEvent();
@@ -472,7 +474,13 @@ function CreateEventDialog({
                 category,
                 address: address.trim() || undefined,
                 location: picked
-                    ? { type: "Point" as const, coordinates: [picked.lng, picked.lat] as [number, number] }
+                    ? {
+                          type: "Point" as const,
+                          coordinates: [picked.lng, picked.lat] as [
+                              number,
+                              number,
+                          ],
+                      }
                     : undefined,
             },
             {
@@ -496,6 +504,9 @@ function CreateEventDialog({
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{t("pages.events.create")}</DialogTitle>
+                    <DialogDescription>
+                        {t("pages.events.createDescription")}
+                    </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
@@ -531,13 +542,26 @@ function CreateEventDialog({
                             <AddressAutocomplete
                                 id="evt-address"
                                 value={address}
-                                onChange={(text) => { setAddress(text); setPicked(null); }}
-                                onSelect={(s) => { setAddress(s.label); setPicked({ lat: s.lat, lng: s.lng }); }}
-                                placeholder={t("pages.events.locationPlaceholder")}
+                                onChange={(text) => {
+                                    setAddress(text);
+                                    setPicked(null);
+                                }}
+                                onSelect={(s) => {
+                                    setAddress(s.label);
+                                    setPicked({ lat: s.lat, lng: s.lng });
+                                }}
+                                placeholder={t(
+                                    "pages.events.locationPlaceholder",
+                                )}
                             />
-                            {picked && myLocation?.neighborhood?.geometry &&
-                                !pointInPolygon(picked.lat, picked.lng, myLocation.neighborhood.geometry) && (
-                                    <p className="text-amber-600 dark:text-amber-500 text-xs">
+                            {picked &&
+                                myLocation?.neighborhood?.geometry &&
+                                !pointInPolygon(
+                                    picked.lat,
+                                    picked.lng,
+                                    myLocation.neighborhood.geometry,
+                                ) && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-500">
                                         {t("address.outsideQuartier")}
                                     </p>
                                 )}
@@ -633,7 +657,7 @@ function MapView({ events }: { events: Event[] }) {
                                             <p className="font-medium">
                                                 {evt.title}
                                             </p>
-                                            <p className="text-xs text-muted-foreground">
+                                            <p className="text-muted-foreground text-xs">
                                                 {new Date(
                                                     evt.date,
                                                 ).toLocaleString(i18n.language)}

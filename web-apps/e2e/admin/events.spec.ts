@@ -29,7 +29,7 @@ test.describe("Admin — Événements (CRUD)", () => {
             adminRefreshToken = tokens.refreshToken;
             apiAvailable = true;
         } catch (err) {
-            // API or Docker not available — API-dependent tests will be skipped
+            // API or Docker not available
         }
     });
 

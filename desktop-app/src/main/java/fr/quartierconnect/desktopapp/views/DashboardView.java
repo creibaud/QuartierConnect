@@ -66,7 +66,7 @@ public class DashboardView {
     private final Label lastSyncLabel   = new Label(I18n.get("time.never"));
     private final Label dirtyLabel      = new Label("—");
 
-    // Barre de répartition — proportions liées à la largeur réelle du conteneur
+    // Breakdown bar — segment widths bound to the live container width
     private final HBox barContainer = new HBox(0);
     private final Region openBar       = new Region();
     private final Region inProgressBar = new Region();
@@ -92,7 +92,6 @@ public class DashboardView {
         return root;
     }
 
-    /** Recharge les cartes de statistiques, la barre de répartition et la liste récente depuis le stockage local. */
     public void refresh() {
         loadAsync();
     }
@@ -109,7 +108,7 @@ public class DashboardView {
         lastSyncLabel.setText(TimeFormatter.formatElapsed(syncService.getLastSyncEpoch()));
     }
 
-    // ── Mise en page ─────────────────────────────────────────────────────────
+    // ── Layout ───────────────────────────────────────────────────────────────
 
     private VBox buildLayout() {
         VBox scrollContent = new VBox(0,
@@ -244,8 +243,6 @@ public class DashboardView {
         conflictBar.setStyle("-fx-background-color: -color-danger-emphasis; -fx-background-radius: 0 4 4 0;");
         conflictBar.setPrefHeight(6);
 
-        // Lier la largeur de chaque segment à la largeur réelle du conteneur × son ratio
-        // garantit des proportions correctes quel que soit le moment où la mise en page s'exécute
         openBar.prefWidthProperty().bind(barContainer.widthProperty().multiply(openRatio));
         inProgressBar.prefWidthProperty().bind(barContainer.widthProperty().multiply(inProgressRatio));
         resolvedBar.prefWidthProperty().bind(barContainer.widthProperty().multiply(resolvedRatio));
@@ -328,7 +325,7 @@ public class DashboardView {
         return section;
     }
 
-    // ── Chargement des données ───────────────────────────────────────────────
+    // ── Data loading ─────────────────────────────────────────────────────────
 
     private void loadAsync() {
         new Thread(() -> {

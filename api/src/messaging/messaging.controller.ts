@@ -171,9 +171,7 @@ export class MessagingController {
         }
 
         const fileId = new ObjectId();
-        // The write must reject on failure: without it the request either
-        // hangs or creates a message pointing at a file that was never
-        // stored.
+        // Reject on write failure so we never persist a message pointing at a missing file.
         await new Promise<void>((resolve, reject) => {
             const stream = this.bucket.openUploadStreamWithId(
                 fileId,
@@ -238,10 +236,7 @@ export class MessagingController {
             (file.metadata?.contentType as string | undefined) ??
             "application/octet-stream";
         const safeName = file.filename.replace(/[\r\n"]/g, "");
-        // The stored content type is attacker-controlled (client MIME at
-        // upload): only an allowlist renders inline, anything else — HTML,
-        // SVG… — is forced to download so it can never execute in the API
-        // origin.
+        // Stored MIME is client-supplied: only allowlisted types render inline, the rest download.
         if (isInlineSafeMimeType(contentType)) {
             res.set({
                 "Content-Type": contentType,
@@ -254,8 +249,7 @@ export class MessagingController {
             });
         }
         const download = this.bucket.openDownloadStream(objectId);
-        // .pipe() does not forward errors; an unhandled 'error' on the read
-        // stream (missing chunks) would crash the process.
+        // pipe() does not forward read-stream errors, which would otherwise crash the process.
         download.on("error", () => {
             if (res.headersSent) res.destroy();
             else res.status(500).end();

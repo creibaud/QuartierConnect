@@ -120,7 +120,7 @@ describe("POST /services", () => {
         expect(booking.body.status).toBe("pending");
         expect(booking.body.pointsAmount).toBe(2); // base(60)=2 * multiplier 1
 
-        // Alice accepts → booking accepted, contract created.
+        // Alice accepts the booking.
         const accepted = await request(app.getHttpServer())
             .post(`/bookings/${booking.body._id}/accept`)
             .set("Authorization", `Bearer ${aliceToken}`)

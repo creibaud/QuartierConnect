@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Rollback : revient à un commit précédent et reconstruit la stack.
+# Roll back to a previous commit and rebuild the stack.
 #
-#   Usage : ./scripts/rollback.sh <sha>
+#   Usage: ./scripts/rollback.sh <sha>
 #
-# Appelé par deploy.yml lorsque le smoke test échoue après un déploiement.
-# Doit être exécuté depuis la racine du dépôt déployé sur le VPS.
+# Called by deploy.yml when the post-deploy smoke test fails.
+# Must run from the root of the deployed repo on the VPS.
 set -euo pipefail
 
 TARGET_SHA="${1:?Usage: rollback.sh <sha>}"

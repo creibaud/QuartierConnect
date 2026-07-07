@@ -17,8 +17,7 @@ class ThreeWayMergerTest {
     @BeforeEach
     void setUp() { merger = new ThreeWayMerger(); }
 
-    // ── Repli LWW (base null = première synchro) ──────────────────────────────
-
+    // null base means first sync: fall back to last-writer-wins
     @Nested
     class LwwFallback {
 
@@ -48,8 +47,6 @@ class ThreeWayMergerTest {
         }
     }
 
-    // ── Aucun changement ──────────────────────────────────────────────────────
-
     @Nested
     class NoChanges {
 
@@ -76,8 +73,6 @@ class ThreeWayMergerTest {
             assertFalse(result.hasConflict());
         }
     }
-
-    // ── Seul le local a changé ────────────────────────────────────────────────
 
     @Nested
     class OnlyLocalChanged {
@@ -133,8 +128,6 @@ class ThreeWayMergerTest {
         }
     }
 
-    // ── Seul le distant a changé ──────────────────────────────────────────────
-
     @Nested
     class OnlyRemoteChanged {
 
@@ -188,8 +181,6 @@ class ThreeWayMergerTest {
         }
     }
 
-    // ── Même changement des deux côtés ────────────────────────────────────────
-
     @Nested
     class BothSideSameChange {
 
@@ -231,8 +222,6 @@ class ThreeWayMergerTest {
             assertEquals("resolved", result.status());
         }
     }
-
-    // ── Vrais conflits ────────────────────────────────────────────────────────
 
     @Nested
     class TrueConflicts {
@@ -331,8 +320,6 @@ class ThreeWayMergerTest {
         }
     }
 
-    // ── Gestion des champs null ───────────────────────────────────────────────
-
     @Nested
     class NullFields {
 
@@ -384,8 +371,6 @@ class ThreeWayMergerTest {
             assertTrue(result.conflictFields().contains("description"));
         }
     }
-
-    // ── Record MergeResult ────────────────────────────────────────────────────
 
     @Nested
     class MergeResultRecord {

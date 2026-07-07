@@ -39,7 +39,7 @@ test.describe("Admin — Login parcours", () => {
             savedAdminRefreshToken = tokens.refreshToken;
             apiAvailable = true;
         } catch (err) {
-            // API or Docker not available — API-dependent tests will be skipped
+            // API or Docker not available
         }
     });
 

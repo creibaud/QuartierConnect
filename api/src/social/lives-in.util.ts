@@ -1,8 +1,6 @@
 import { Driver } from "neo4j-driver";
 
-// Delete-then-merge: a user lives in exactly one neighborhood, so any
-// previous LIVES_IN relationship pointing elsewhere is removed in the same
-// query (a plain MERGE would let a mover accumulate one per move).
+// A user lives in exactly one neighborhood: drop any previous LIVES_IN before merging.
 export async function syncLivesIn(
     driver: Driver,
     userId: string,
@@ -27,8 +25,7 @@ export async function syncLivesIn(
     }
 }
 
-// Covers the move to an uncovered address: the Postgres assignment is
-// nulled, so the graph must drop the stale LIVES_IN as well.
+// Address became uncovered: drop the stale LIVES_IN to match the nulled assignment.
 export async function clearLivesIn(
     driver: Driver,
     userId: string,

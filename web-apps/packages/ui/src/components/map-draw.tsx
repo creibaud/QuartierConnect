@@ -25,7 +25,7 @@ import {
 } from "@workspace/ui/components/tooltip";
 import { useMap } from "@workspace/ui/components/ui/map";
 
-/** Voisinage terracotta (light primary, oklch(0.5 0.14 42) as hex). */
+/** Neighborhood terracotta (light primary, oklch(0.5 0.14 42) as hex). */
 const SHAPE_COLOR = "#a24112";
 const VERTEX_COLOR = "#ffffff";
 const COORDINATE_PRECISION = 9;
@@ -55,8 +55,7 @@ function roundPolygon(geometry: GeoJSON.Polygon): GeoJSON.Polygon {
 function createDrawModes() {
     return [
         new TerraDrawPolygonMode({
-            // Escape must stay free for the surrounding dialog; the toolbar
-            // covers cancel/delete, Enter (or clicking the first point) closes.
+            // Leave Escape for the dialog; toolbar covers cancel/delete.
             keyEvents: { cancel: null, finish: "Enter" },
             styles: {
                 fillColor: SHAPE_COLOR,
@@ -130,11 +129,7 @@ function polygonFeatureIds(draw: TerraDraw) {
         .filter((id) => id !== undefined);
 }
 
-/**
- * Polygon draw/edit toolbar for the mapcn (MapLibre) map, backed by terra-draw.
- * Render it inside a `<Map>`. Emits plain GeoJSON polygons through the
- * `onCreate` / `onEdit` / `onDelete` callbacks.
- */
+/** Polygon draw/edit toolbar backed by terra-draw. Render inside a `<Map>`. */
 export function DrawControl({
     mode,
     initialGeometry,
@@ -248,8 +243,7 @@ export function DrawControl({
             try {
                 if (draw.enabled) draw.stop();
             } catch {
-                // The map style may already have dropped terra-draw's layers
-                // (theme switch or map teardown) — nothing left to clean up.
+                // Layers may already be gone (theme switch or map teardown).
             }
         };
     }, [map, isLoaded, mode]);

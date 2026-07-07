@@ -40,13 +40,13 @@ describe("ContractsController", () => {
         controller = module.get<ContractsController>(ContractsController);
     });
 
-    const authReq = { user: { sub: "user-1" } };
+    const authReq = { user: { sub: "user-1", role: "resident" } };
 
     it("findAll returns user contracts", async () => {
         mockService.findAll.mockResolvedValue([mockContract]);
         const result = await controller.findAll(authReq as any);
         expect(result).toHaveLength(1);
-        expect(mockService.findAll).toHaveBeenCalledWith("user-1");
+        expect(mockService.findAll).toHaveBeenCalledWith("user-1", "resident");
     });
 
     it("findOne returns contract for valid access", async () => {

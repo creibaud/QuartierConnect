@@ -43,8 +43,7 @@ export const Route = createFileRoute("/_app")({
     beforeLoad: async ({ location }) => {
         const user = await ensureAuthenticated();
         if (!user) {
-            // Remember the requested page so the login form can come back
-            // to it instead of always landing on the dashboard.
+            // Remember the requested page so login can return to it.
             throw redirect({
                 to: "/login",
                 search: { redirect: location.href },
@@ -72,8 +71,7 @@ export const Route = createFileRoute("/_app")({
 
 function useActiveSectionTitleKey(): string {
     const { pathname } = useLocation();
-    // Two-pass: exact match wins over prefix so /services/mine resolves
-    // to nav.myServices rather than nav.services.
+    // Exact match wins over prefix so /services/mine beats /services.
     const active =
         clientNavItems.find((item) => pathname === item.to) ??
         clientNavItems.find((item) => pathname.startsWith(`${item.to}/`));

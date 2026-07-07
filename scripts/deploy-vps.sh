@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Déploiement manuel sûr depuis le VPS :
-#   capture du SHA → backup → pull → rebuild → smoke test → rollback auto si KO.
+# Manual deploy from the VPS:
+#   capture SHA → backup → pull → rebuild → smoke test → auto rollback on failure.
 #
-#   Usage : ./scripts/deploy-vps.sh [branche|tag]   (défaut : main)
+#   Usage: ./scripts/deploy-vps.sh [branch|tag]   (default: main)
 #
-# Équivalent local du workflow deploy.yml. À exécuter depuis la racine du dépôt.
+# Local equivalent of the deploy.yml workflow. Run from the repo root.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -27,21 +27,21 @@ notify() {
 PREV_SHA="$(git rev-parse HEAD)"
 echo "▶ Déploiement de '${REF}' (rollback possible vers ${PREV_SHA:0:8})"
 
-# 1. Backup pré-déploiement (best effort)
+# 1. Pre-deploy backup (best effort)
 if [ -x ./scripts/backup-all.sh ]; then
   echo "▶ Backup pré-déploiement…"
   ./scripts/backup-all.sh || echo "⚠ Backup KO — on continue le déploiement"
 fi
 
-# 2. Récupération de la référence cible
+# 2. Fetch the target ref
 git fetch --all --tags --prune
 git checkout --force "$REF"
 git pull --ff-only origin "$REF" 2>/dev/null || true
 
-# 3. Rebuild + redémarrage
+# 3. Rebuild + restart
 $COMPOSE up -d --build --remove-orphans
 
-# 4. Smoke test → rollback automatique si KO
+# 4. Smoke test → automatic rollback on failure
 if ./scripts/smoke-test.sh "$DOMAIN"; then
   echo "✓ Déploiement OK sur ${REF}"
   notify "🟢 Deploy OK : ${REF} → ${DOMAIN}"

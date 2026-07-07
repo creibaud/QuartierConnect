@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Model } from "mongoose";
 import { Driver } from "neo4j-driver";
@@ -58,6 +58,9 @@ export class GdprExportService {
                 id: schema.users.id,
                 email: schema.users.email,
                 role: schema.users.role,
+                firstName: schema.users.firstName,
+                lastName: schema.users.lastName,
+                avatarUrl: schema.users.avatarUrl,
                 phone: schema.users.phone,
                 createdAt: schema.users.createdAt,
             })
@@ -74,10 +77,16 @@ export class GdprExportService {
             .from(schema.pointsBalances)
             .where(eq(schema.pointsBalances.userId, userId));
 
+        // Both sent and received movements belong in the export.
         const transactions = await this.db
             .select()
             .from(schema.pointsTransactions)
-            .where(eq(schema.pointsTransactions.senderId, userId));
+            .where(
+                or(
+                    eq(schema.pointsTransactions.senderId, userId),
+                    eq(schema.pointsTransactions.recipientId, userId),
+                ),
+            );
 
         return {
             profile: profile ?? null,

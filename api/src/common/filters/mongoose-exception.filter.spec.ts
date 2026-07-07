@@ -30,7 +30,7 @@ describe("MongooseExceptionFilter", () => {
         expect(json).toHaveBeenCalledWith({
             statusCode: 400,
             error: "Bad Request",
-            message: "Invalid value provided for parameter '_id'",
+            message: "Invalid value provided for the identifier",
         });
     });
 

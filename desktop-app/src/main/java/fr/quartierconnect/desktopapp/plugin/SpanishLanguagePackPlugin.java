@@ -4,10 +4,7 @@ import fr.quartierconnect.desktopapp.i18n.I18n;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-/**
- * Pack de langue espagnol intégré — un pack d'exemple qui ajoute l'espagnol aux langues
- * disponibles de l'application. Les clés non traduites retombent sur l'anglais.
- */
+/** Built-in Spanish language pack. Untranslated keys fall back to English. */
 public class SpanishLanguagePackPlugin extends AbstractLanguagePackPlugin {
 
     private static final Locale SPANISH = Locale.forLanguageTag("es");

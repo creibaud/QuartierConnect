@@ -77,13 +77,8 @@ public class SsoCallbackServer {
     }
 
     /**
-     * Démarre un ServerSocket simple sur un port attribué par l'OS et accepte les connexions
-     * dans un thread démon. Ignore silencieusement les connexions de sondage vides (par exemple la
-     * pré-connexion de Chrome) et continue d'accepter jusqu'à ce que le future soit résolu.
-     *
-     * @param expectedState l'état UUID généré par le client avant l'ouverture du navigateur
-     * @param future        résolu avec le jeton SSO en cas de succès, échoué en cas d'erreur
-     * @return le SsoCallbackServer en cours d'exécution (l'appelant doit appeler stop() après usage)
+     * Listens on an OS-assigned loopback port in a daemon thread until the future resolves.
+     * Empty probe connections (e.g. Chrome pre-connect) are ignored. Caller must stop() the server.
      */
     public static SsoCallbackServer startCallbackServer(
             String expectedState,
@@ -114,14 +109,7 @@ public class SsoCallbackServer {
         return callbackServer;
     }
 
-    /**
-     * Bloque jusqu'à la réception du callback SSO ou l'écoulement de 5 minutes.
-     * Arrête toujours le serveur, même en cas de délai dépassé ou d'exception.
-     *
-     * @param server le serveur de callback en cours d'exécution
-     * @param future le future résolu par le gestionnaire de callback
-     * @return le jeton SSO
-     */
+    /** Blocks until the SSO callback arrives or 5 minutes elapse; always stops the server. */
     public static String waitForSsoCallback(
             SsoCallbackServer server,
             CompletableFuture<String> future) throws Exception {
@@ -143,7 +131,7 @@ public class SsoCallbackServer {
 
             String requestLine = reader.readLine();
             if (requestLine == null || requestLine.isBlank()) {
-                return; // Sondage du navigateur — connexion vide, à ignorer silencieusement
+                return; // browser probe, ignore
             }
 
             String[] parts = requestLine.split(" ");

@@ -42,6 +42,5 @@ export const clientNavGroups: NavGroup[] = [
     },
 ];
 
-// Derived flat list — keeps routes/_app.tsx (title lookup) working.
-// Includes /services/mine alongside all other routes.
+// Flattened item list for route title lookup.
 export const clientNavItems: NavItem[] = clientNavGroups.flatMap((g) => g.items);

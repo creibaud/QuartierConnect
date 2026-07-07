@@ -3,9 +3,7 @@ import { useTranslation } from "react-i18next";
 import { apiBlob } from "@workspace/shared/lib/api";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 
-// The PDF is embedded through an <iframe> pointing at a local blob: the browser
-// renders its own native viewer (pagination, zoom, fit, rotate, print, download,
-// thumbnails) right inside the app, with no custom toolbar.
+// Blob-backed iframe so the browser's native PDF viewer handles rendering.
 export function ContractPdfViewer({ contractId }: { contractId: string }) {
     const { t } = useTranslation();
     const [url, setUrl] = useState<string | null>(null);
@@ -14,8 +12,7 @@ export function ContractPdfViewer({ contractId }: { contractId: string }) {
     useEffect(() => {
         let objectUrl: string | null = null;
         let cancelled = false;
-        // Reset to the loading state each time the contract changes so a stale
-        // PDF or error never lingers while the new blob is fetched.
+        // Reset to loading state when the contract changes.
         // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset-on-change
         setUrl(null);
         setError(false);

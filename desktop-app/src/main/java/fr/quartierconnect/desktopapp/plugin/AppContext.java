@@ -4,10 +4,7 @@ import fr.quartierconnect.desktopapp.database.IncidentRepository;
 import fr.quartierconnect.desktopapp.ui.components.ToastManager;
 import javafx.scene.Scene;
 
-/**
- * Fournit aux plugins un accès contrôlé aux services de l'application et à la scène principale.
- * Transmis à {@link PluginRegistry#register(QuartierConnectPlugin, AppContext)}.
- */
+/** Controlled access to app services and the main scene, handed to plugins on registration. */
 public final class AppContext {
 
     private final Scene scene;

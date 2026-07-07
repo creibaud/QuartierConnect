@@ -73,21 +73,20 @@ describe("API modules (e2e)", () => {
 
         const admin = await registerAndLogin(app, adminEmail);
 
-        // Decode subs from JWT
         const decodeJwt = (token: string): Record<string, string> =>
             JSON.parse(
                 Buffer.from(token.split(".")[1], "base64url").toString(),
             ) as Record<string, string>;
         userSub = decodeJwt(userToken).sub;
 
-        // Promote admin via Drizzle (users are in PostgreSQL, not MongoDB)
+        // users live in Postgres, not Mongo
         const db = module.get<PostgresJsDatabase<typeof schema>>(DRIZZLE_TOKEN);
         await db
             .update(schema.users)
             .set({ role: "admin" })
             .where(eq(schema.users.email, adminEmail));
 
-        // Re-login as admin to get token with admin role
+        // re-login so the token carries the admin role
         const adminLoginRes = await request(app.getHttpServer())
             .post("/auth/login")
             .send({
@@ -103,8 +102,6 @@ describe("API modules (e2e)", () => {
     afterAll(async () => {
         await app.close();
     });
-
-    // ─── Neighborhoods ───────────────────────────────────────────────────────────
 
     describe("Neighborhoods", () => {
         let neighborhoodId: string;
@@ -170,8 +167,6 @@ describe("API modules (e2e)", () => {
             expect(res.body.success).toBe(true);
         });
     });
-
-    // ─── Services ────────────────────────────────────────────────────────────────
 
     describe("Services", () => {
         let serviceId: string;
@@ -270,8 +265,6 @@ describe("API modules (e2e)", () => {
         });
     });
 
-    // ─── Events ──────────────────────────────────────────────────────────────────
-
     describe("Events", () => {
         let eventId: string;
         const futureDate = new Date(
@@ -360,8 +353,6 @@ describe("API modules (e2e)", () => {
             expect(res1.body.interested).toBe(res2.body.interested);
         });
     });
-
-    // ─── Incidents ───────────────────────────────────────────────────────────────
 
     describe("Incidents", () => {
         let incidentId: string;
@@ -497,7 +488,7 @@ describe("API modules (e2e)", () => {
                 })
                 .expect(201);
 
-            // The e2e user has no neighborhood, so the forced value is null.
+            // e2e user has no neighborhood, so the forced value is null
             expect(res.body[0].neighborhoodId).toBeNull();
         });
 
@@ -521,8 +512,6 @@ describe("API modules (e2e)", () => {
                 .expect(404);
         });
     });
-
-    // ─── Points ──────────────────────────────────────────────────────────────────
 
     describe("Points", () => {
         it("GET /points/balance returns 401 without token", async () => {
@@ -556,8 +545,6 @@ describe("API modules (e2e)", () => {
             expect(res.body.message).toMatch(/insufficient/i);
         });
     });
-
-    // ─── Users (admin) ───────────────────────────────────────────────────────────
 
     describe("Users (admin)", () => {
         it("GET /users returns 403 for non-admin", async () => {

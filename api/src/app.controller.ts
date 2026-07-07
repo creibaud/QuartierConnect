@@ -6,7 +6,7 @@ import {
     ApiTags,
 } from "@nestjs/swagger";
 import { SkipThrottle } from "@nestjs/throttler";
-import { and, count, eq, isNull } from "drizzle-orm";
+import { and, count, inArray, isNull } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { HealthResponseDto, StatsResponseDto } from "./app.dto";
 import { Roles } from "./auth/decorators/roles.decorator";
@@ -91,7 +91,10 @@ export class AppController {
                         .from(schema.incidents)
                         .where(
                             and(
-                                eq(schema.incidents.status, "open"),
+                                inArray(schema.incidents.status, [
+                                    "open",
+                                    "in_progress",
+                                ]),
                                 isNull(schema.incidents.deletedAt),
                             ),
                         );

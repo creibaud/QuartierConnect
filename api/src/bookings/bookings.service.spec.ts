@@ -2,12 +2,9 @@ import { BadRequestException, ForbiddenException } from "@nestjs/common";
 import { BookingsService } from "./bookings.service";
 import { BookingStatus } from "./schemas/service-booking.schema";
 
-// A syntactically valid Mongo ObjectId so request()'s isValidObjectId guard
-// passes (the mocked findById returns the stubbed service regardless of value).
+// A syntactically valid Mongo ObjectId so the isValidObjectId guard passes.
 const SERVICE_ID = "664f1a2b3c4d5e6f7a8b9c0d";
 
-// Captures the rejection of a promise for inspection, failing the test if it
-// unexpectedly resolves.
 const rejectionOf = (p: Promise<unknown>): Promise<Error> =>
     p.then(
         () => {
@@ -579,8 +576,7 @@ describe("BookingsService.cancel", () => {
         const contracts: any = {
             cancelContract: jest.fn(),
         };
-        // No pending row was voided (the final signature settled it first) and
-        // the payment reads as completed: the settlement won the race.
+        // Nothing was voided and the payment reads completed: settlement won.
         const points: any = {
             cancelServicePayment: jest.fn().mockResolvedValue(false),
             isServicePaymentCompleted: jest.fn().mockResolvedValue(true),
@@ -634,8 +630,7 @@ describe("BookingsService.cancel", () => {
         const contracts: any = {
             cancelContract: jest.fn().mockResolvedValue(undefined),
         };
-        // A pending payment still existed, so the cancel voids it and wins the
-        // race: the completed-settlement guard is short-circuited.
+        // A pending payment still exists, so cancel voids it and wins the race.
         const points: any = {
             cancelServicePayment: jest.fn().mockResolvedValue(true),
             isServicePaymentCompleted: jest.fn(),

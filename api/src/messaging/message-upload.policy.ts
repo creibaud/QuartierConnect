@@ -10,9 +10,7 @@ export const ACCEPTED_AUDIO_MIME_TYPES: readonly string[] = [
 
 export const MAX_AUDIO_SIZE_BYTES = 5 * 1024 * 1024;
 
-// MIME types safe to serve inline from the API origin. SVG is deliberately
-// absent (it can embed scripts), as is anything text/* or HTML-adjacent:
-// everything else downloads as an attachment.
+// MIME types safe to serve inline; SVG and text/HTML are excluded (script-capable).
 export const INLINE_SAFE_MIME_TYPES: readonly string[] = [
     "image/png",
     "image/jpeg",
@@ -31,8 +29,7 @@ export function resolveUploadMessageType(mimeType: string): MessageType {
         assertAcceptedAudioMimeType(baseMimeType);
         return MessageType.AUDIO;
     }
-    // SVG is routed to FILE: served as an attachment (script-capable), it
-    // would only render as a broken inline image bubble.
+    // SVG serves as an attachment (script-capable), never inline.
     if (baseMimeType === "image/svg+xml") return MessageType.FILE;
     if (baseMimeType.startsWith("image/")) return MessageType.IMAGE;
     return MessageType.FILE;

@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class IncidentRepositoryTest {
 
-    // Maintenue ouverte pour que la base en mémoire nommée survive entre les connexions.
+    // Kept open so the named in-memory DB survives across connections.
     @SuppressWarnings("unused")
     private static Connection keepAlive;
 
@@ -23,8 +23,7 @@ class IncidentRepositoryTest {
         SQLiteDatabase.initialize();
     }
 
-    // Chaque test utilise un remote ID globalement unique pour éviter les interférences entre tests
-    // sans recourir à DELETE (qui exigerait une gestion du cycle de vie de la base entre classes).
+    // Each test uses a unique remote ID so tests don't interfere with each other.
 
     @Test
     void updateBase_storesAncestorSnapshot() throws SQLException {

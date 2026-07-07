@@ -77,7 +77,7 @@ public class IncidentsView {
 
     public VBox getRoot() { return root; }
 
-    // ── Actualisation ────────────────────────────────────────────────────────
+    // ── Refresh ──────────────────────────────────────────────────────────────
 
     public void refresh() {
         new Thread(() -> {
@@ -104,7 +104,7 @@ public class IncidentsView {
         }, "incidents-refresh").start();
     }
 
-    // ── Mise en page ─────────────────────────────────────────────────────────
+    // ── Layout ───────────────────────────────────────────────────────────────
 
     private VBox buildLayout() {
         Label pageTitle = new Label(I18n.get("incidents.title"));
@@ -270,10 +270,9 @@ public class IncidentsView {
         conflictBanner.setManaged(true);
     }
 
-    // ── Tableau ──────────────────────────────────────────────────────────────
+    // ── Table ────────────────────────────────────────────────────────────────
 
     private void buildTable() {
-        // N°
         TableColumn<IncidentRepository.Incident, String> idxCol = new TableColumn<>("#");
         idxCol.setPrefWidth(34);
         idxCol.setMinWidth(34);
@@ -288,7 +287,6 @@ public class IncidentsView {
             }
         });
 
-        // Statut
         TableColumn<IncidentRepository.Incident, String> statusCol = new TableColumn<>(I18n.get("incidents.col.status"));
         statusCol.setPrefWidth(95);
         statusCol.setMinWidth(95);
@@ -302,7 +300,6 @@ public class IncidentsView {
             }
         });
 
-        // Titre + description
         TableColumn<IncidentRepository.Incident, IncidentRepository.Incident> titleCol = new TableColumn<>(I18n.get("incidents.col.title"));
         titleCol.setCellValueFactory(c -> new javafx.beans.property.SimpleObjectProperty<>(c.getValue()));
         titleCol.setCellFactory(col -> new TableCell<>() {
@@ -334,7 +331,6 @@ public class IncidentsView {
             }
         });
 
-        // État de synchronisation
         TableColumn<IncidentRepository.Incident, IncidentRepository.Incident> syncCol = new TableColumn<>(I18n.get("incidents.col.syncState"));
         syncCol.setPrefWidth(90);
         syncCol.setMinWidth(90);
@@ -351,7 +347,6 @@ public class IncidentsView {
             }
         });
 
-        // Date
         TableColumn<IncidentRepository.Incident, String> dateCol = new TableColumn<>(I18n.get("incidents.col.modified"));
         dateCol.setPrefWidth(82);
         dateCol.setMinWidth(82);

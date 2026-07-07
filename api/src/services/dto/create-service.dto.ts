@@ -110,9 +110,7 @@ export class CreateServiceDto {
         example: 60,
         minimum: 1,
     })
-    // Required when the service is paid, but any provided value must be a
-    // valid duration whatever the type — including partial (PATCH) bodies
-    // where `type` is absent.
+    // Required for paid services; still validate any provided value regardless of type.
     @ValidateIf(
         (o: CreateServiceDto) => o.type === "paid" || o.duration !== undefined,
     )

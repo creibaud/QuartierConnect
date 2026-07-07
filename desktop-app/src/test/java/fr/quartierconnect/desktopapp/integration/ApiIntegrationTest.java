@@ -28,17 +28,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
- * Tests d'intégration des services desktop face à une API en fonctionnement.
- *
- * Conditions d'exécution :
- *   - l'API doit être joignable sur http://localhost:5000
- *   - MongoDB + PostgreSQL doivent être démarrés (docker compose up -d)
- *
- * Ces tests s'exécutent pendant `mvn test` mais s'auto-ignorent via assumeTrue lorsque l'API
- * est injoignable, si bien qu'ils ne bloquent jamais la phase standard de tests unitaires.
- *
- * Pour les lancer explicitement sur une URL non par défaut :
- *   mvn test -Dapi.url=http://localhost:5000
+ * Integration tests for the desktop services against a running API.
+ * Requires the stack on http://localhost:5000 (override with -Dapi.url);
+ * skips itself via assumeTrue when the API is down, so plain `mvn test` stays green.
  */
 @Tag("integration")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -51,13 +43,9 @@ class ApiIntegrationTest {
             .connectTimeout(Duration.ofSeconds(3))
             .build();
 
-    // État partagé entre les tests ordonnés
+    // shared across ordered tests
     private static String accessToken;
     private static String totpSecret;
-
-    // -----------------------------------------------------------------------
-    // Contrôle préalable : ignorer tous les tests si l'API est injoignable
-    // -----------------------------------------------------------------------
 
     @BeforeAll
     static void setupAndSkipIfApiDown() throws Exception {
@@ -66,7 +54,7 @@ class ApiIntegrationTest {
 
         System.setProperty("api.url", API);
 
-        // Enregistrer un nouvel utilisateur pour cette exécution de tests
+        // register a fresh user for this run
         String email = "integration_" + UUID.randomUUID().toString().substring(0, 8) + "@test.fr";
         String regBody = JSON.writeValueAsString(Map.of("email", email, "password", DEMO_PASSWORD));
 
@@ -85,13 +73,8 @@ class ApiIntegrationTest {
 
         assertFalse(accessToken.isEmpty(), "Login must return a valid access token");
 
-        // Injecter dans le singleton AuthService
         injectAccessToken(accessToken);
     }
-
-    // -----------------------------------------------------------------------
-    // Auth : validité du jeton
-    // -----------------------------------------------------------------------
 
     @Test
     @Order(1)
@@ -103,13 +86,9 @@ class ApiIntegrationTest {
     @Test
     @Order(2)
     void authService_getCurrentUserEmail_notNull() {
-        // l'e-mail est intégré dans le payload JWT
+        // email comes from the JWT payload
         assertNotNull(AuthService.getInstance().getCurrentUserEmail());
     }
-
-    // -----------------------------------------------------------------------
-    // NeighborhoodsService
-    // -----------------------------------------------------------------------
 
     @Test
     @Order(3)
@@ -117,12 +96,8 @@ class ApiIntegrationTest {
         NeighborhoodsService service = new NeighborhoodsService();
         List<NeighborhoodsService.NeighborhoodSummary> result = service.fetchNeighborhoods();
         assertNotNull(result, "fetchNeighborhoods must not return null");
-        // Le résultat peut être vide (aucun quartier initialisé) mais ne doit pas lever d'exception
+        // may be empty, must not throw
     }
-
-    // -----------------------------------------------------------------------
-    // EventsService
-    // -----------------------------------------------------------------------
 
     @Test
     @Order(4)
@@ -132,10 +107,6 @@ class ApiIntegrationTest {
         assertNotNull(result, "fetchEvents must not return null");
     }
 
-    // -----------------------------------------------------------------------
-    // ContractsService
-    // -----------------------------------------------------------------------
-
     @Test
     @Order(5)
     void contractsService_fetchContracts_returnsList() {
@@ -144,17 +115,12 @@ class ApiIntegrationTest {
         assertNotNull(result, "fetchContracts must not return null");
     }
 
-    // -----------------------------------------------------------------------
-    // StatisticsService
-    // -----------------------------------------------------------------------
-
     @Test
     @Order(6)
     void statisticsService_fetchStats_remoteValuesPresent() throws Exception {
         StatisticsService service = new StatisticsService();
         StatisticsService.Stats stats = service.computeStats();
         assertNotNull(stats, "fetchStats must not return null");
-        // Les compteurs distants viennent de l'API — au moins non négatifs
         if (stats.remoteUsers() != null) {
             assertTrue(stats.remoteUsers() >= 0);
         }
@@ -163,22 +129,14 @@ class ApiIntegrationTest {
         }
     }
 
-    // -----------------------------------------------------------------------
-    // Rafraîchissement du jeton
-    // -----------------------------------------------------------------------
-
     @Test
     @Order(7)
     void authService_refreshAccessToken_succeedsWithValidRefreshToken() {
-        // Le jeton de rafraîchissement n'est pas stocké dans AuthService après notre injection manuelle.
-        // Ce test vérifie que refreshAccessToken() retourne false proprement (aucun jeton de rafraîchissement)
-        // au lieu de lever une exception — le vrai flux de rafraîchissement est testé dans auth.e2e-spec.ts.
+        // manual token injection stores no refresh token, so the call must fail cleanly rather than throw
         assertDoesNotThrow(() -> AuthService.getInstance().refreshAccessToken());
     }
 
-    // -----------------------------------------------------------------------
-    // Utilitaires
-    // -----------------------------------------------------------------------
+    // helpers
 
     private static boolean isApiReachable() {
         try {

@@ -10,8 +10,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Agrège les statistiques locales (SQLite) et distantes (API).
- * Les statistiques distantes nécessitent un jeton d'authentification valide ; repli sur le local seul en cas d'échec.
+ * Aggregates local (SQLite) and remote (API) statistics.
+ * Remote stats require a valid token; falls back to local-only on failure.
  */
 public class StatisticsService {
 
@@ -50,7 +50,7 @@ public class StatisticsService {
                 }
             }
         } catch (SQLException e) {
-            // base locale indisponible — conserver les zéros
+            // local db unavailable, keep zeros
         }
 
         Integer remoteUsers = null, remoteIncidents = null;
@@ -66,7 +66,7 @@ public class StatisticsService {
                 remoteNeighborhoods = readCounter(root, "neighborhoods");
                 remoteActiveIncidents = readCounter(root, "activeIncidents");
             } catch (Exception e) {
-                // API injoignable ou jeton non-admin — statistiques distantes indisponibles
+                // API unreachable or non-admin token
                 LOG.log(Level.FINE, "Remote stats unavailable", e);
             }
         }
@@ -78,7 +78,7 @@ public class StatisticsService {
         );
     }
 
-    /** L'API renvoie {@code null} pour un compteur dont la base est hors service — conserver null, pas 0. */
+    /** The API returns {@code null} for a counter whose backing store is down — keep null, not 0. */
     static Integer readCounter(JsonNode root, String field) {
         JsonNode node = root.get(field);
         return node != null && node.isNumber() ? node.intValue() : null;

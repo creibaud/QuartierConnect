@@ -81,9 +81,7 @@ def p_condition_lte(p):
 
 def p_condition_like(p):
     """condition : IDENTIFIER LIKE value"""
-    # LIKE is a literal, case-insensitive substring match. The user value is
-    # escaped so a crafted pattern can never reach MongoDB as an active
-    # regex (catastrophic backtracking / ReDoS).
+    # LIKE is a literal case-insensitive substring match, never an active regex.
     p[0] = {p[1]: {"$regex": re.escape(str(p[3])), "$options": "i"}}
 
 

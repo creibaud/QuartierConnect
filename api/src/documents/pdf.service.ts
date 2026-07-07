@@ -37,8 +37,7 @@ export interface PdfBox {
     height: number;
 }
 
-// Zones are normalized (0..1) with a TOP-LEFT origin; pdf-lib draws from the
-// BOTTOM-LEFT corner, hence y_pdf = pageHeight * (1 - y - h).
+// Zones use a top-left origin; pdf-lib draws from bottom-left, hence the y flip.
 export function normalizedZoneToPdfBox(
     zone: Pick<SignatureZone, "x" | "y" | "w" | "h">,
     pageWidth: number,
@@ -289,9 +288,8 @@ export class PdfService {
         return Buffer.from(await doc.save());
     }
 
-    // Stamps every zone of the current signer (multi-page, several zones per
-    // signer). `signature` zones get the full mark plus a dated caption;
-    // `initials` zones get a reduced mark (scaled image or cursive initials).
+    // Stamps every zone of the signer: signature zones get a dated caption,
+    // initials zones a reduced mark.
     async stampSignatureAtZones(
         pdf: Buffer,
         zones: SignatureZone[],
@@ -431,9 +429,8 @@ export class PdfService {
         });
     }
 
-    // Draws the hand-drawn signature PNG above the signing line, preserving
-    // its aspect ratio. Degenerate images (e.g. a stretched 1x1 pixel would
-    // render as a solid box) are rejected so the typed fallback takes over.
+    // Draws the signature PNG above the line, preserving aspect ratio; degenerate
+    // images are rejected so the typed fallback takes over.
     private async tryDrawSignatureImage(
         doc: PDFDocument,
         page: PDFPage,

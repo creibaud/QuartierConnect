@@ -76,8 +76,7 @@ function UsersPage() {
     const { t, i18n } = useTranslation();
     const [search, setSearch] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
-    // Server-side filtering: a client-side filter would only ever search the
-    // pages already loaded, missing any user beyond them.
+    // Filter server-side; the client only holds the loaded pages.
     const debouncedSearch = useDebouncedValue(search.trim(), 300);
     const { data, isLoading, isError, fetchNextPage, hasNextPage } =
         useInfiniteUsers(

@@ -71,12 +71,7 @@ interface MapProps {
     scrollWheelZoom?: boolean;
 }
 
-/**
- * Thin wrapper over the mapcn MapLibre Map.
- *
- * Public API keeps `center: [lat, lng]` (Leaflet order).
- * The swap to MapLibre's `[lng, lat]` happens here so consumers are unchanged.
- */
+/** Thin wrapper over the mapcn MapLibre Map. Keeps `center: [lat, lng]` (Leaflet order). */
 export const Map = forwardRef<MapRef, MapProps>(function Map(
     { center, zoom = 13, className, children, scrollWheelZoom = true },
     ref,
@@ -196,10 +191,7 @@ interface NeighborhoodPolygonProps {
     label?: string;
 }
 
-/**
- * Renders a GeoJSON polygon fill + outline.
- * GeoJSON coordinates are already [lng, lat] and are passed through unchanged.
- */
+/** Renders a GeoJSON polygon fill + outline. Coordinates are already [lng, lat]. */
 export function NeighborhoodPolygon({
     geometry,
     color = "#16a34a",
@@ -224,11 +216,7 @@ interface MarkerClusterProps {
     maxClusterRadius?: number;
 }
 
-/**
- * Passthrough wrapper. The maps in this app have few markers so client-side
- * clustering is not required. The prop signature is preserved so consumers
- * compile without changes.
- */
+/** Passthrough wrapper — too few markers to need clustering; signature kept for compat. */
 export function MarkerCluster({ children }: MarkerClusterProps) {
     return <>{children}</>;
 }
@@ -268,17 +256,11 @@ interface MapControlsProps {
     home?: LatLng | null;
     /** Neighborhood polygon for the "fit to neighborhood" button. */
     fitGeometry?: GeoJSON.Polygon | null;
-    /**
-     * On mount, request the browser geolocation (prompting permission) and
-     * center on the live position; fall back to `home` if denied/unavailable.
-     */
+    /** On mount, geolocate and center on the live position; fall back to `home`. */
     autoLocate?: boolean;
 }
 
-/**
- * Three-button overlay (locate / home / neighborhood) portaled into the
- * MapLibre container so it floats at top-right over the map.
- */
+/** Locate / home / neighborhood overlay, portaled into the map container. */
 export function MapControls({
     home,
     fitGeometry,
@@ -459,11 +441,7 @@ export function MapControls({
 
 // ─── useFitBounds ──────────────────────────────────────────────────────────
 
-/**
- * Returns a ref to attach to `<Map ref={...}>`. On mount, fits the map to
- * the bounding box of the given [lat, lng] positions.
- * Coordinates are swapped to [lng, lat] before passing to MapLibre.
- */
+/** Returns a ref for `<Map>`; fits the map to the bbox of the given [lat, lng] positions. */
 export function useFitBounds(positions: LatLng[]): RefObject<MapRef | null> {
     const ref = useRef<MapRef | null>(null);
 

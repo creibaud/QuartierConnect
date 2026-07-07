@@ -6,11 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Teste la logique de StatisticsService de façon isolée.
- * Les chemins dépendant de la base sont couverts par SyncServiceTest (base en mémoire partagée).
- * Ici, on vérifie les invariants du record Stats et le comportement remote-null sans base active.
- */
+/** Stats record invariants and remote-null behaviour; DB-backed paths are covered in SyncServiceTest. */
 class StatisticsServiceTest {
 
     @Test

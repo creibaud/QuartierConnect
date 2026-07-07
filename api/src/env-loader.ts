@@ -1,9 +1,7 @@
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
-// Load .env before any module decorators run.
-// @Throttle reads LOGIN_RATE_LIMIT at class-definition time, before ConfigModule.forRoot()
-// has a chance to populate process.env via dotenv.
+// Load .env before decorators run: @Throttle reads env at class-definition time.
 function loadEnvFile(filePath: string): void {
     try {
         const content = readFileSync(filePath, "utf-8");
@@ -14,7 +12,7 @@ function loadEnvFile(filePath: string): void {
             }
         }
     } catch {
-        // File not found — skip silently
+        // No .env file — skip
     }
 }
 

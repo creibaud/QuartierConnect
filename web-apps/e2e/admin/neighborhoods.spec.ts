@@ -12,8 +12,7 @@ test.use({ baseURL: process.env.PLAYWRIGHT_BASE_URL_ADMIN ?? "http://localhost:3
 const API = "http://localhost:5000";
 const TEST_PREFIXES = ["Quartier E2E", "Quartier Edit", "Quartier Delete"];
 
-/** Remove neighborhoods left over by prior CRUD runs so the paginated list
- *  never fills up with test data. */
+/** Delete leftover test neighborhoods so the paginated list stays clean. */
 async function deleteTestNeighborhoods(accessToken: string): Promise<void> {
     const res = await fetch(`${API}/neighborhoods?limit=200`);
     if (!res.ok) return;
@@ -50,7 +49,7 @@ test.describe("Admin — Quartiers (CRUD)", () => {
             await deleteTestNeighborhoods(adminAccessToken);
             apiAvailable = true;
         } catch (err) {
-            // API or Docker not available — API-dependent tests will be skipped
+            // API or Docker not available
         }
     });
 

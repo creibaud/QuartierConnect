@@ -265,7 +265,7 @@ public class PluginsView {
         return new VBox(row);
     }
 
-    // ── Réanalyse ───────────────────────────────────────────────────────────
+    // ── Rescan ──────────────────────────────────────────────────────────────
 
     private void rescanPluginsDirectory() {
         PluginRegistry registry = PluginRegistry.getInstance();
@@ -312,7 +312,7 @@ public class PluginsView {
                 .count();
     }
 
-    /** Les plugins intégrés partagent le class loader de l'application ; les plugins JAR vivent dans leur propre URLClassLoader. */
+    /** Built-in plugins share the app class loader; JAR plugins get their own URLClassLoader. */
     private static boolean isExternal(QuartierConnectPlugin plugin) {
         return plugin.getClass().getClassLoader() != PluginsView.class.getClassLoader();
     }

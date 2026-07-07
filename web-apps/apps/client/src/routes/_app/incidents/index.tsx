@@ -21,6 +21,7 @@ import { DataState } from "@workspace/ui/components/data-state";
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from "@workspace/ui/components/dialog";
@@ -344,6 +345,9 @@ function CreateIncidentDialog({
                     <DialogTitle className="text-xl">
                         {t("incidents.new")}
                     </DialogTitle>
+                    <DialogDescription>
+                        {t("incidents.newDescription")}
+                    </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
