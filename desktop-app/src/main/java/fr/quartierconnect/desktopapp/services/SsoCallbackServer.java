@@ -20,6 +20,14 @@ public class SsoCallbackServer {
 
     private static final String CALLBACK_PATH = "/cb";
 
+    /**
+     * IPv4 loopback literal. Binding here (rather than the ambiguous
+     * {@code getLoopbackAddress()}) keeps the listen address in lockstep with the
+     * {@code http://127.0.0.1:<port>/cb} redirect: a browser resolving "localhost"
+     * may prefer IPv6 (::1) and miss an IPv4-only socket (RFC 8252 §7.3).
+     */
+    public static final String LOOPBACK_HOST = "127.0.0.1";
+
     private static final String SUCCESS_HTML = """
             <!DOCTYPE html>
             <html lang="en">
@@ -84,7 +92,7 @@ public class SsoCallbackServer {
             String expectedState,
             CompletableFuture<String> future) throws IOException {
 
-        ServerSocket serverSocket = new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
+        ServerSocket serverSocket = new ServerSocket(0, 0, InetAddress.getByName(LOOPBACK_HOST));
         SsoCallbackServer callbackServer = new SsoCallbackServer(serverSocket);
 
         Thread thread = new Thread(() -> {
