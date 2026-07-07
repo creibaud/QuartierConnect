@@ -16,6 +16,41 @@ Le serveur est durci en amont : user non-root `deploy`, SSH root et authentifica
 
 Le durcissement descend jusqu'aux conteneurs applicatifs : les quatre images web (`client`, `admin`, `docs-user`, `docs-dev`) tournent en **utilisateur non-root** (`USER appuser` dans chaque `Dockerfile`), de sorte qu'aucun process front ne s'exécute en `root` dans le réseau Docker.
 
+## Topologie de production
+
+Neuf conteneurs Docker tournent sur l'hôte : **Caddy** en frontal, cinq conteneurs applicatifs (`api`, `client`, `admin`, `docs-user`, `docs-dev`) et trois bases (`mongo`, `postgres`, `neo4j`). **Seul Caddy** publie des ports sur l'interface publique (`0.0.0.0:80` et `:443`) ; tous les autres services sont publiés sur `127.0.0.1` uniquement (voir `docker-compose.yml`), donc injoignables depuis l'extérieur du VPS. Couplé à UFW qui n'ouvre que **22 / 80 / 443**, cela réduit la surface d'attaque à SSH et à Caddy.
+
+<Mermaid
+  chart={`flowchart TB
+  navigateur["Navigateur<br/>résident / admin"]
+  subgraph vps["VPS OVH — UFW ouvre 22 / 80 / 443"]
+    caddy["caddy<br/>seul exposé : 0.0.0.0:80 + 443<br/>TLS Let's Encrypt"]
+    subgraph loopback["Applicatifs — publiés sur 127.0.0.1"]
+      api["api : 5000"]
+      client["client : 3000"]
+      admin["admin : 3001"]
+      docsuser["docs-user : 3002"]
+      docsdev["docs-dev : 3003"]
+    end
+    subgraph bases["Bases de données — publiées sur 127.0.0.1"]
+      mongo["mongo : 27017"]
+      postgres["postgres : 5432"]
+      neo4j["neo4j : 7687 / 7474"]
+    end
+  end
+  navigateur -->|"HTTPS 443"| caddy
+  caddy --> api
+  caddy --> client
+  caddy --> admin
+  caddy --> docsuser
+  caddy --> docsdev
+  api --> mongo
+  api --> postgres
+  api --> neo4j`}
+/>
+
+Les limites mémoire du patch prod (`docker-compose.prod.yml`) dimensionnent chaque conteneur pour un VPS de 4 à 8 Go : `api` 512 Mo, `mongo` 768 Mo, `neo4j` 1280 Mo (heap JVM épinglé à 512 Mo + pagecache 256 Mo pour respecter la limite cgroup), `postgres` 512 Mo, `caddy` 128 Mo, les fronts 64 à 192 Mo. Chaque service porte `restart: unless-stopped` et des logs `json-file` bornés (10 Mo × 3).
+
 ## Build et démarrage
 
 La stack de production se lance en superposant deux fichiers Compose (le fichier de base plus le patch prod) :
@@ -39,7 +74,23 @@ Le smoke test vérifie `/api/health` (dont l'état de chaque base), le client, `
 
 ## Caddy
 
-Caddy fait office de reverse proxy et de terminaison TLS. Il obtient et **renouvelle automatiquement** les certificats Let's Encrypt (~30 j avant expiration) via le challenge HTTP-01 sur le port 80. La configuration vit dans `Caddyfile.prod`.
+Caddy fait office de reverse proxy et de terminaison TLS. Il obtient et **renouvelle automatiquement** les certificats Let's Encrypt (~30 j avant expiration) via le challenge HTTP-01 sur le port 80. La configuration vit dans `docker/Caddyfile`, monté en bind-mount dans le conteneur.
+
+Caddy route les requêtes par **préfixe de chemin** vers le conteneur adéquat et applique à chaque site une CSP dédiée. Les chemins `/docs*`, `/scalar*`, `/api/docs*`, `/api/scalar*` et le site `/dev*` sont protégés par `basic_auth` (identifiants `DOCS_AUTH_USER` / `DOCS_AUTH_HASH`) ; les autres sont publics.
+
+<Mermaid
+  chart={`flowchart LR
+  req["Requête HTTPS<br/>quartierconnect.fr"]
+  caddy["Caddy<br/>reverse proxy + TLS"]
+  req --> caddy
+  caddy -->|"/api/*"| api["api : 5000"]
+  caddy -->|"/docs* /scalar* (auth)"| api
+  caddy -->|"/telechargements/*"| files["file_server<br/>/srv/downloads"]
+  caddy -->|"/admin*"| admin["admin : 3001"]
+  caddy -->|"/aide*"| docsuser["docs-user : 3002"]
+  caddy -->|"/dev* (auth)"| docsdev["docs-dev : 3003"]
+  caddy -->|"défaut"| client["client : 3000"]`}
+/>
 
 Points d'attention issus du runbook :
 
@@ -52,6 +103,15 @@ Rechargement à chaud sans interruption :
 
 ```bash
 docker exec docker-caddy-1 caddy reload --config /etc/caddy/Caddyfile
+```
+
+> **Piège du bind-mount.** Le `Caddyfile` étant monté depuis l'hôte, un déploiement qui le modifie n'est pas forcément pris en compte : `up -d --build` ne recrée pas le conteneur (Compose ne compare pas le contenu des bind-mounts) et, le fichier étant remplacé par un **nouvel inode**, un `caddy reload` peut continuer à servir l'ancienne version. Pour garantir la prise en compte, forcer la recréation :
+
+```bash
+docker compose \
+  -f docker/docker-compose.yml \
+  -f docker/docker-compose.prod.yml \
+  up -d --force-recreate caddy
 ```
 
 Les certificats Caddy sont sauvegardés une fois par semaine et restaurables ; le volume `quartierconnect_caddy_data` les contient.
@@ -80,6 +140,21 @@ Déploiement manuel depuis le VPS :
 ```
 
 Le script capture le SHA courant, `git pull`, rebuild, smoke test, puis **rollback automatique si le test échoue**. En automatique, `deploy.yml` se déclenche sur un tag `v*.*.*` (reviewers requis) ou en `workflow_dispatch`.
+
+<Mermaid
+  chart={`flowchart TB
+  start["deploy-vps.sh main"]
+  sha["Capture du SHA courant<br/>(point de rollback)"]
+  backup["Backup pré-déploiement<br/>backup-all.sh"]
+  pull["git fetch + checkout --force<br/>+ pull --ff-only"]
+  build["docker compose up -d<br/>--build --remove-orphans"]
+  smoke{"smoke-test.sh<br/>réussi ?"}
+  ok["Notification Discord<br/>déploiement validé"]
+  rollback["rollback.sh vers le SHA précédent<br/>Notification Discord"]
+  start --> sha --> backup --> pull --> build --> smoke
+  smoke -->|"oui"| ok
+  smoke -->|"non"| rollback`}
+/>
 
 Rollback ciblé :
 

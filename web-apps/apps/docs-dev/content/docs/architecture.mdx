@@ -5,6 +5,31 @@ description: Monorepo, API, bases de données et application desktop
 
 QuartierConnect est une plateforme multi-composants : plusieurs applications actives et trois bases de données serveur, orchestrées via Docker Compose, plus un cache SQLite embarqué dans le client bureautique. L'API est le seul composant à établir des connexions sortantes vers Internet (l'API de géocodage Nominatim / OpenStreetMap).
 
+<Mermaid
+  chart={`flowchart TB
+  subgraph clients[Clients]
+    web["Client résident<br/>(React / Vite)"]
+    admin["Back-office admin<br/>(React / Vite)"]
+    desk["Application desktop<br/>(JavaFX + cache SQLite)"]
+  end
+  caddy["Caddy<br/>(reverse proxy, HTTPS)"]
+  api["API NestJS<br/>(REST + WebSocket)"]
+  dsl["Passerelle DSL<br/>(Python PLY)"]
+  pg[("PostgreSQL<br/>ACID")]
+  mongo[("MongoDB<br/>documents + GridFS")]
+  neo[("Neo4j<br/>graphe social")]
+  nomi["Nominatim / OSM<br/>(géocodage)"]
+  web --> caddy
+  admin --> caddy
+  desk --> caddy
+  caddy --> api
+  api --> dsl
+  api --> pg
+  api --> mongo
+  api --> neo
+  api -.-> nomi`}
+/>
+
 ## Le monorepo
 
 Le dépôt regroupe quatre briques applicatives, chacune avec sa stack propre.
@@ -13,6 +38,27 @@ Le dépôt regroupe quatre briques applicatives, chacune avec sa stack propre.
 - **Web-apps (Turbo)** — deux SPA React servies par Vite : le **client** résident (`:3000`) et l'**admin** back office (`:3001`), plus deux sites de documentation Fumadocs : l'aide utilisateur `docs-user` (`:3002`) et la documentation développeur `docs-dev` (`:3003`). Le monorepo web partage des packages, dont le composant cartographique `<Map>` (`packages/ui`) autour de `react-leaflet`, et des helpers géo (`packages/shared`).
 - **Application desktop JavaFX** — distribuée en fat JAR, destinée aux admins et modérateurs. Elle communique avec l'API en HTTP REST, dispose d'un mode hors ligne, d'un système de plugins et d'un cache SQLite local.
 - **DSL** — un langage de requête compilé par un pipeline Python PLY (lexer → parser LALR → compilateur avec liste blanche de collections) qui produit un AST validé. L'exécution n'a pas lieu côté Python : c'est le `DslService` de l'API qui interroge les bases — **Mongoose** pour `neighborhoods`/`services`/`events`, **Drizzle/PostgreSQL** pour `incidents` et `users` — en appliquant le cloisonnement par quartier des modérateurs et un plafond de 100 résultats. Exposé par l'API via `DslModule`.
+
+Ces modules ne sont pas isolés : ils s'appuient sur un socle transverse déclaré une seule fois dans `AppModule`. Le `ThrottlerGuard` est monté en `APP_GUARD` global (fenêtre de 15 min, 1000 requêtes), le `MongooseExceptionFilter` en `APP_FILTER` global, et `main.ts` enregistre un `ValidationPipe` global en mode `whitelist` (tout champ absent du DTO est supprimé de la requête). `ConfigModule` (global), `EventEmitterModule` et `I18nModule` (langue de repli `fr`) complètent ce socle. Les migrations Drizzle sont appliquées automatiquement au démarrage, avant l'ouverture du port d'écoute.
+
+Regroupés par domaine fonctionnel, les 16 modules métier se répartissent ainsi. `GeocodingModule` n'est pas monté directement dans `AppModule` : il est ré-importé par `Users`, `Services` et `Events`, qui en ont besoin pour valider les adresses.
+
+<Mermaid
+  chart={`flowchart TB
+  api["API NestJS<br/>16 modules métier"]
+  ident["Identité et accès<br/>AuthModule<br/>UsersModule"]
+  signal["Signalements<br/>IncidentsModule<br/>VotesModule"]
+  entraide["Entraide et paiement<br/>ServicesModule<br/>BookingsModule<br/>ContractsModule<br/>PointsModule"]
+  quartier["Vie de quartier<br/>EventsModule<br/>NeighborhoodsModule<br/>CommunityVotesModule"]
+  comm["Communication et social<br/>MessagingModule<br/>SocialModule"]
+  transverse["Transverses<br/>GeocodingModule<br/>DslModule<br/>DocumentsModule"]
+  api --> ident
+  api --> signal
+  api --> entraide
+  api --> quartier
+  api --> comm
+  api --> transverse`}
+/>
 
 ## Les trois bases de données
 
@@ -53,3 +99,31 @@ La stack tourne sur neuf conteneurs (`caddy`, `client`, `admin`, `docs-user`, `d
 - **Signature de contrat** — chaque signature revendique son emplacement via un `findOneAndUpdate` conditionnel (statut `draft`/`partial` re-vérifié en base), ce qui interdit toute double signature ou toute résurrection d'un contrat annulé. La signature qui complète le contrat déclenche le règlement des points **avant** la bascule en `fully_signed` : un contrat de service entièrement signé ne peut jamais exister sans paiement, et un échec de règlement retire la signature poussée.
 - **Réservation de service (saga)** — `accept`/`decline`/`cancel` s'exécutent par revendication atomique du statut : un seul `accept` concurrent gagne, avec compensation (annulation du contrat et du paiement en attente) si l'étape suivante échoue. En cas de course annulation-vs-règlement, si le règlement l'emporte la réservation passe `COMPLETED` plutôt qu'annulée — l'état « annulé + payé » est donc inatteignable. Le transfert de points sous-jacent verrouille les deux soldes dans un ordre déterministe pour éliminer les interblocages croisés.
 - **Cycle de requête** — Caddy → Helmet → ThrottlerGuard → `JwtAuthGuard` (contrôle du `jti` révoqué) → `ValidationPipe` → contrôleur → service → base.
+
+Chaque requête traverse la même chaîne de responsabilité avant d'atteindre la logique métier. Caddy termine le TLS et retire le préfixe `/api` ; Helmet applique le durcissement HTTP applicatif (la majorité des en-têtes de sécurité — CSP, HSTS, `X-Frame-Options`, `Referrer-Policy`, `X-Content-Type-Options` — sont désactivés côté API car Caddy possède le bord et les pose) ; le `ThrottlerGuard` global plafonne le débit à 1000 requêtes par fenêtre de 15 min ; le `JwtAuthGuard` vérifie la signature du token **et** l'absence du `jti` dans `revoked_tokens`, si bien qu'un token révoqué à la déconnexion est refusé même s'il n'a pas encore expiré ; enfin le `ValidationPipe` nettoie le corps de la requête (mode `whitelist`) avant de la remettre au contrôleur.
+
+<Mermaid
+  chart={`sequenceDiagram
+  participant Cli as Client
+  participant Cad as Caddy
+  participant Hel as Helmet
+  participant Thr as ThrottlerGuard
+  participant Jwt as JwtAuthGuard
+  participant Val as ValidationPipe
+  participant Ctl as Contrôleur
+  participant Svc as Service
+  participant Db as Base
+  Cli->>Cad: Requête HTTPS
+  Cad->>Hel: Proxy vers API, préfixe /api retiré
+  Hel->>Thr: En-têtes durcis
+  Note over Thr: Plafond 1000 requêtes / 15 min
+  Thr->>Jwt: Débit sous la limite
+  Note over Jwt: Rejet si jti présent dans revoked_tokens
+  Jwt->>Val: JWT valide, jti actif
+  Val->>Ctl: DTO validé, champs hors liste supprimés
+  Ctl->>Svc: Appel métier
+  Svc->>Db: Requête ou transaction
+  Db-->>Svc: Résultat
+  Svc-->>Ctl: Données
+  Ctl-->>Cli: Réponse JSON`}
+/>

@@ -34,6 +34,22 @@ Chaque contrat porte un **statut** qui vous indique où il en est :
 | Entièrement signé | Toutes les parties ont signé : le contrat est finalisé. |
 | Annulé | Le contrat n'est plus actif. |
 
+Ces statuts se suivent toujours dans le même ordre : un contrat commence en brouillon, puis avance à mesure que les signatures s'ajoutent, jusqu'à être entièrement signé. Une annulation reste possible tant qu'il n'est pas finalisé.
+
+<Mermaid
+  chart={`stateDiagram-v2
+  state "Brouillon" as Brouillon
+  state "Partiellement signé" as Partiel
+  state "Entièrement signé" as Complet
+  state "Annulé" as Annule
+  [*] --> Brouillon
+  Brouillon --> Partiel : une partie signe
+  Partiel --> Complet : dernière signature
+  Brouillon --> Annule : annulation
+  Partiel --> Annule : annulation
+  Complet --> [*]`}
+/>
+
 Depuis la fiche d'un contrat, vous pouvez **consulter le document PDF** à tout moment. Un **journal d'audit immuable** accompagne chaque contrat : il trace chaque événement, notamment l'empreinte SHA-256 du document et les signatures. Ce journal ne peut pas être modifié, ce qui garantit la traçabilité de l'accord.
 
 ## Signer un contrat électroniquement
@@ -44,9 +60,37 @@ La signature se déroule dans une boîte de dialogue guidée, en **trois étapes
 2. **Tracé** : vous dessinez votre signature manuscrite dans la zone prévue à cet effet.
 3. **Validation forte** : vous confirmez en saisissant votre **code TOTP à six chiffres**, généré par votre application d'authentification.
 
+Ces trois étapes s'enchaînent dans l'ordre, sans que vous puissiez en sauter une :
+
+<Mermaid
+  chart={`flowchart LR
+  lecture["Étape 1<br/>Lecture des termes"]
+  trace["Étape 2<br/>Tracé de votre signature manuscrite"]
+  code["Étape 3<br/>Confirmation par code à six chiffres"]
+  lecture --> trace
+  trace --> code`}
+/>
+
 > Cette dernière étape est une sécurité importante : votre code à usage unique confirme que c'est bien vous qui signez.
 
-Une fois que **toutes les parties signataires** ont apposé leur signature, le contrat bascule automatiquement au statut **entièrement signé**.
+Une fois que **toutes les parties signataires** ont apposé leur signature, le contrat bascule automatiquement au statut **entièrement signé**. L'ordre des signataires n'a pas d'importance : chacun signe quand il le souhaite, et c'est la **dernière signature** qui scelle l'accord.
+
+Voici le parcours complet, de la création du contrat à sa version finale conservée pour vous :
+
+<Mermaid
+  chart={`flowchart LR
+  genere(["Contrat généré"])
+  moi["Je signe<br/>tracé + code à six chiffres"]
+  autre["L'autre partie signe<br/>à son tour"]
+  signe(["Contrat entièrement signé"])
+  archive["PDF consultable<br/>journal d'audit horodaté"]
+  genere --> moi
+  moi --> autre
+  autre --> signe
+  signe --> archive`}
+/>
+
+À chaque étape, l'événement est inscrit dans le **journal d'audit** avec son horodatage : vous gardez ainsi une trace fiable et vérifiable de qui a signé, et quand.
 
 > Dès cette bascule, le **transfert de points est réglé**. À partir de là, la réservation
 > correspondante **ne peut plus être annulée** : le paiement étant effectué, l'échange

@@ -5,6 +5,20 @@ description: Inscription, double authentification (TOTP) et rattachement au quar
 
 Bienvenue sur QuartierConnect, l'espace en ligne de votre quartier. Cette page vous accompagne pas à pas pour créer votre compte, sécuriser votre connexion et rejoindre votre quartier. Prenez le temps qu'il vous faut : chaque étape est simple.
 
+## Vue d'ensemble
+
+La mise en route suit toujours le même parcours : vous créez votre compte, vous activez la double authentification en scannant un QR code, puis vous renseignez votre adresse pour être rattaché à votre quartier. Le schéma ci-dessous résume ce chemin.
+
+<Mermaid chart={`
+flowchart TD
+    A["Créer le compte<br/>(profil + consentement RGPD)"] --> B["Activer la double<br/>authentification (TOTP)"]
+    B --> C["Scanner le QR code<br/>avec votre téléphone"]
+    C --> D["Saisir le premier<br/>code à six chiffres"]
+    D --> E["Se connecter<br/>(e-mail, mot de passe, code)"]
+    E --> F["Renseigner votre adresse"]
+    F --> G["Rattachement au quartier"]
+`} />
+
 ## Étape 1 : créer votre compte
 
 L'inscription se fait en deux temps sur la page d'inscription. La première partie consiste à renseigner votre profil.
@@ -43,6 +57,12 @@ Une fois votre compte créé, la connexion se déroule en deux étapes simples :
 1. Saisissez votre **adresse e-mail** et votre **mot de passe**.
 2. Saisissez le **code à six chiffres** affiché sur votre application d'authentification.
 
+<Mermaid chart={`
+flowchart LR
+    A["E-mail<br/>et mot de passe"] --> B["Code à six chiffres<br/>de l'application"]
+    B --> C["Connexion réussie"]
+`} />
+
 Si vos identifiants sont erronés ou si le code n'est pas valide, un message d'erreur explicite s'affiche pour vous aider à corriger.
 
 ## Étape 4 : rejoindre votre quartier
@@ -53,6 +73,15 @@ Renseignez votre adresse en vous aidant des suggestions proposées. Deux cas de 
 
 - **Votre adresse est dans un quartier couvert.** Votre compte est automatiquement rattaché à ce quartier, et vous accédez aussitôt à votre tableau de bord.
 - **Votre adresse est reconnue mais hors de tout quartier couvert.** Vous êtes alors dirigé vers un écran « couverture en attente ». Votre adresse est enregistrée pour que l'équipe d'administration puisse étendre la couverture à votre zone.
+
+Le schéma ci-dessous illustre ces deux cas de figure.
+
+<Mermaid chart={`
+flowchart TD
+    A["Saisie de votre adresse<br/>(avec autocomplétion)"] --> B{"Adresse dans un<br/>quartier couvert ?"}
+    B -->|"Oui"| C["Rattachement automatique<br/>et accès au tableau de bord"]
+    B -->|"Non"| D["Écran couverture en attente<br/>adresse enregistrée pour l'équipe"]
+`} />
 
 Dans tous les cas, vous pouvez **corriger votre adresse à tout moment** si vous vous êtes trompé ou si vous déménagez.
 

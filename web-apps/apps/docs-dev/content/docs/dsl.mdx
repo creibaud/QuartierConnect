@@ -91,6 +91,36 @@ Le pipeline est linéaire, du texte au résultat JSON :
 6. **Exécution** (NestJS `DslService`) — c'est le service Node qui exécute la requête : **Mongoose** pour `neighborhoods`, `services` et `events`, **Drizzle/PostgreSQL** pour `incidents` et `users`. Le service applique ici le **scoping par quartier** (pour tout demandeur non-admin) et **plafonne à 100 résultats** (`MAX_DSL_RESULTS`).
 7. **Retour** — le résultat remonte à NestJS : un tableau de documents pour un `find`, `{ count: N }` pour un `count`.
 
+Le schéma ci-dessous résume ce pipeline : le contrôle d'accès et l'exécution vivent dans NestJS, tandis que la passerelle Python se limite à transformer le texte en AST validé. Aucune base n'est touchée côté Python.
+
+<Mermaid
+  chart={`flowchart TB
+  txt["Texte de la requete<br/>(max 500 caracteres)"]
+  guard["DslController<br/>JwtAuthGuard + RolesGuard"]
+  subgraph py["Passerelle Python (PLY)"]
+    lexer["lexer.py<br/>tokenisation"]
+    parser["parser.py<br/>grammaire LALR(1)"]
+    compiler["compiler.py<br/>liste blanche collections"]
+  end
+  ast["AST serialise en JSON<br/>renvoye via pythonia"]
+  service["DslService (NestJS)<br/>scoping quartier + plafond 100"]
+  mongo[("Mongoose<br/>neighborhoods, services, events")]
+  pg[("Drizzle / PostgreSQL<br/>incidents, users")]
+  result["Resultat JSON<br/>documents ou count"]
+  txt --> guard
+  guard --> lexer
+  lexer --> parser
+  parser --> compiler
+  compiler --> ast
+  ast --> service
+  service --> mongo
+  service --> pg
+  mongo --> result
+  pg --> result`}
+/>
+
+La frontière est nette : `lexer.py`, `parser.py` et `compiler.py` ne font que produire un `dict` Python sérialisé en JSON (voir `main.py`, `execute` renvoie `json.dumps(result)`). Le `DslService` désérialise ce JSON en `CompiledQuery`, choisit le moteur d'après la collection, ajoute le filtre `neighborhoodId` pour tout demandeur non-admin, puis borne la sortie via `clampLimit` (`Math.min(limit ?? 100, 100)`).
+
 ### AST généré
 
 ```python
@@ -141,6 +171,33 @@ const MAX_DSL_RESULTS = 100; // plafond réel, appliqué par clampLimit
 | Accès non autorisé | Route protégée par `@Roles('moderator', 'admin')` |
 | Fuite inter-quartiers | Un modérateur est scopé à son `neighborhoodId` (services, events, incidents, users) ; seul l'admin est global, `neighborhoods` reste public |
 | Ressources excessives | 100 résultats maximum par requête (`MAX_DSL_RESULTS`, appliqué côté NestJS) |
+
+Ces garde-fous forment une chaîne : chaque étape peut rejeter la requête, et seules celles qui franchissent tous les contrôles atteignent une lecture paramétrée. Le rôle est vérifié par le `RolesGuard` (403), le verbe et la collection par la grammaire puis le compilateur (400), tandis que le scoping, l'échappement de `LIKE` et le plafond sont des transformations appliquées côté NestJS avant l'accès au moteur.
+
+<Mermaid
+  chart={`flowchart TB
+  req["Requete DSL entrante"]
+  role{"Role autorise?<br/>moderator ou admin"}
+  verb{"Verbe FIND ou COUNT?"}
+  wl{"Collection dans<br/>la liste blanche?"}
+  scope["Scoping par quartier<br/>si non-admin"]
+  like["LIKE echappe par re.escape<br/>sous-chaine litterale"]
+  cap["Plafond 100 resultats<br/>via clampLimit"]
+  ok["Lecture parametree<br/>Mongoose ou Drizzle"]
+  reject["Rejet<br/>403 ou 400"]
+  req --> role
+  role -- non --> reject
+  role -- oui --> verb
+  verb -- autre --> reject
+  verb -- oui --> wl
+  wl -- non --> reject
+  wl -- oui --> scope
+  scope --> like
+  like --> cap
+  cap --> ok`}
+/>
+
+Deux points méritent d'être soulignés. D'abord, la **lecture seule** n'est pas une règle ajoutée mais une propriété de la grammaire : le lexer ne connaît que `FIND`, `COUNT`, `WHERE`, `AND`, `OR`, `LIMIT` et `LIKE` ; un mot comme `DELETE` produit donc une `SyntaxError` avant tout accès. Ensuite, les collections adossées à PostgreSQL (`incidents`, `users`) n'acceptent qu'une **égalité simple** sur un champ contrôlé (`status`, `role`) via `extractEqualityFilter` — tout filtre plus riche est rejeté par un `BadRequestException`, ce qui interdit d'injecter des opérateurs Mongo (`$gt`, `$regex`, `$or`) dans une requête SQL.
 
 ## Erreurs courantes
 

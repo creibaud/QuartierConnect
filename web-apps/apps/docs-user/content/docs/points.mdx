@@ -8,6 +8,26 @@ remercier un voisin qui vous rend service et de régler les prestations proposé
 le quartier. Cette page vous explique comment les gagner, où consulter votre solde et
 votre historique, et comment en transférer à un voisin.
 
+En un coup d'œil, les points circulent toujours selon le même cycle : vous en **gagnez**
+en rendant service, ils alimentent votre **solde**, puis vous les **dépensez** pour régler
+une prestation ou vous les **transférez** directement à un voisin. À son tour, ce voisin
+pourra les faire revenir dans le quartier.
+
+<Mermaid
+  chart={`flowchart LR
+  gagner["Vous rendez<br/>un service payant"]
+  solde(["Votre solde<br/>de points"])
+  payer["Vous payez<br/>un service reçu"]
+  transfert["Vous remerciez<br/>un voisin (transfert)"]
+  voisin(["Un voisin<br/>du quartier"])
+
+  gagner -->|"Points reçus"| solde
+  solde -->|"Points dépensés"| payer
+  solde -->|"Points envoyés"| transfert
+  transfert --> voisin
+  voisin -.->|"À son tour"| gagner`}
+/>
+
 ## Comment gagne-t-on des points ?
 
 Vous gagnez des points lorsqu'un voisin fait appel à vous et que l'échange se conclut.
@@ -69,6 +89,21 @@ Dès la validation, les points quittent votre compte pour rejoindre celui de vot
 voisin. Votre **solde** et votre **historique** sont aussitôt mis à jour, et
 l'opération apparaît dans vos transactions en tant que points envoyés. De son côté, le
 destinataire voit le mouvement apparaître comme des points reçus.
+
+Un transfert n'a donc que deux issues possibles : soit il aboutit et les points changent
+de compte, soit il est refusé et **aucun point ne bouge**.
+
+<Mermaid
+  chart={`flowchart LR
+  vous["Vous<br/>solde débité"]
+  controle{"Transfert<br/>validé ?"}
+  voisin["Votre voisin<br/>solde crédité"]
+  echec["Aucun point ne bouge<br/>message d'explication"]
+
+  vous --> controle
+  controle -->|"Oui"| voisin
+  controle -->|"Refusé"| echec`}
+/>
 
 ### Si le transfert n'aboutit pas
 

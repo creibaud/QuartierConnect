@@ -7,6 +7,23 @@ La page **Messages** est votre messagerie en temps réel avec les habitants de v
 quartier. Elle vous permet de garder le contact, de vous entraider et d'organiser la
 vie du voisinage, le tout au même endroit. Voici comment vous en servir au quotidien.
 
+En un coup d'œil, voici le fil d'une conversation, du moment où vous choisissez un
+voisin jusqu'aux messages qui s'échangent en temps réel :
+
+<Mermaid
+  chart={`flowchart LR
+  demarrer(["Choisir un voisin<br/>par adresse e-mail"]) --> conv["Ouvrir la<br/>conversation"]
+  conv --> texte["Écrire<br/>un message"]
+  conv --> photo["Joindre une photo<br/>ou un fichier"]
+  conv --> vocal["Enregistrer un<br/>message vocal"]
+  texte --> direct(["Messages échangés<br/>en temps réel"])
+  photo --> direct
+  vocal --> direct`}
+/>
+
+Chaque format (texte, pièce jointe, message vocal) part de la même conversation et
+rejoint le même fil, qui se met à jour en direct pour vous comme pour votre voisin.
+
 ## Démarrer une conversation
 
 Pour écrire à un voisin, vous démarrez une nouvelle conversation. La recherche se fait
@@ -42,6 +59,22 @@ reçue.
 > message vous prévient que le texte n'est pas parti, et ce que vous aviez saisi **reste
 > dans la zone de saisie**. Vous n'avez qu'à réessayer : rien de ce que vous écrivez n'est
 > perdu en silence.
+
+Concrètement, un message texte n'est marqué comme envoyé qu'une fois la confirmation
+reçue ; sinon, vous êtes prévenu et vous pouvez réessayer sans avoir à ressaisir votre
+texte :
+
+<Mermaid
+  chart={`flowchart LR
+  ecrire["Vous écrivez<br/>et envoyez"] --> attente{"Confirmation<br/>de réception ?"}
+  attente -->|Oui| ok(["Message envoyé"])
+  attente -->|Non| echec["Vous êtes prévenu<br/>le texte reste dans la saisie"]
+  echec --> ecrire`}
+/>
+
+Ce fonctionnement ne concerne que les **messages texte** : c'est cette confirmation qui
+garantit qu'un message n'est jamais considéré comme parti tant qu'il n'a pas bien été
+reçu.
 
 ## Suivre vos échanges en direct
 

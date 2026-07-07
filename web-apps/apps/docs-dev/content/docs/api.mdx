@@ -28,7 +28,58 @@ Authorization: Bearer <accessToken>
 
 Le jeton d'accès (15 min) est accompagné d'un **refresh token** de 7 jours, déposé dans un cookie `qc_rt` **httpOnly** (`SameSite=strict`, `Secure` en production). Le renouvellement se fait via `POST /auth/refresh`, avec **rotation** du refresh token : l'ancien est invalidé à chaque échange. À la déconnexion (`POST /auth/logout`), le hash du refresh token est effacé en base et le jeton d'accès courant est révoqué via une liste de JTI bloqués.
 
+La méthode `AuthService.login` enchaîne **trois vérifications** côté serveur avant d'émettre la paire de jetons : l'existence du compte (et l'absence de bannissement), le mot de passe (haché en **Argon2**), puis le code **TOTP** protégé contre le rejeu. Le refresh token n'est jamais stocké en clair — seul son hash Argon2 est conservé sur la ligne utilisateur PostgreSQL (`refreshTokenHash`), et l'`accessToken` embarque un `jti` unique pour la révocation.
+
+<Mermaid
+  chart={`sequenceDiagram
+  participant C as Client
+  participant Ctrl as Controller
+  participant Svc as AuthService
+  participant Totp as TotpService
+  participant DB as PostgreSQL
+  C->>Ctrl: POST /auth/login (email, mot de passe, code TOTP)
+  Ctrl->>Svc: login(dto)
+  Svc->>DB: SELECT utilisateur par email
+  Note over Svc,DB: Étape 1 — compte existant et rôle non banni
+  Svc->>Svc: argon2.verify(mot de passe)
+  Note over Svc: Étape 2 — échec renvoie 401 INVALID_PASSWORD
+  Svc->>Totp: verify(secret, code TOTP)
+  Note over Totp: Étape 3 — anti-rejeu : un code déjà consommé est refusé (TTL 90 s)
+  Totp-->>Svc: code valide
+  Svc->>DB: stocke le hash Argon2 du refresh token
+  Svc-->>Ctrl: accessToken 15 min + refreshToken 7 j
+  Ctrl-->>C: 200 + cookie qc_rt httpOnly (SameSite strict)`}
+/>
+
+La garde anti-rejeu vit dans `TotpService` : chaque couple `secret:code` accepté est mémorisé pendant 90 secondes, si bien qu'un code intercepté ne peut être rejoué même s'il reste dans sa fenêtre de validité de 30 s. La vérification `speakeasy` utilise `window: 1` (tolérance d'un pas de temps pour la dérive d'horloge).
+
 > Un mode SSO à jeton unique (`POST /auth/sso/generate` puis `POST /auth/sso/exchange`, TTL 5 min) permet d'ouvrir une session sur le client lourd JavaFX sans re-saisir les identifiants. Le paramètre optionnel `state` (protection CSRF de type PKCE) est vérifié lors de l'échange.
+
+### Rotation du refresh token
+
+`TokenService.rotateRefreshToken` opère sous **transaction PostgreSQL** avec un verrou de ligne `SELECT ... FOR UPDATE`. Ce verrou protège contre une course **TOCTOU** (*time-of-check to time-of-use*) : si deux requêtes `POST /auth/refresh` arrivent avec le même token, une seule franchit la vérification. La première invalide le hash (`refreshTokenHash = null`) dans la même transaction ; la seconde, débloquée après le `COMMIT`, ne trouve plus de hash et échoue en `401 TOKEN_REVOKED`. Un compte redevenu `banned` entre-temps est également rejeté (`ACCOUNT_BANNED`). Une nouvelle paire n'est signée qu'après la validation, et son hash est réenregistré hors transaction.
+
+<Mermaid
+  chart={`sequenceDiagram
+  participant C as Client
+  participant Ctrl as Controller
+  participant Tok as TokenService
+  participant DB as PostgreSQL
+  C->>Ctrl: POST /auth/refresh (cookie qc_rt ou corps)
+  Ctrl->>Tok: rotateRefreshToken(token)
+  Tok->>Tok: jwtService.verify — sinon 401 TOKEN_INVALID
+  Tok->>DB: BEGIN puis SELECT ... FOR UPDATE
+  Note over Tok,DB: Verrou de ligne — anti-TOCTOU : une seule rotation concurrente passe
+  Tok->>Tok: argon2.verify(hash stocké, token)
+  Note over Tok: hash absent ou invalide — 401 TOKEN_REVOKED
+  Tok->>DB: UPDATE refreshTokenHash = null (invalide le précédent)
+  Tok->>DB: COMMIT
+  Tok->>DB: enregistre le hash du nouveau refresh token
+  Tok-->>Ctrl: nouvelle paire — access 15 min + refresh 7 j
+  Ctrl-->>C: 200 + nouveau cookie qc_rt`}
+/>
+
+Le token de renouvellement est lu en priorité dans le cookie `qc_rt`, avec repli sur le corps de requête (`refreshToken`) pour la compatibilité du client bureautique JavaFX qui ne gère pas les cookies.
 
 ### MFA TOTP sur les actions sensibles
 
@@ -84,6 +135,25 @@ Points saillants du modèle d'autorisation :
 - **banned** — état de compte bloquant. Le bannissement mémorise le rôle courant (`previousRole`) afin de le restaurer lors d'une réactivation.
 
 > La colonne « Rôle requis » de la référence Scalar reflète les gardes réellement appliqués sur chaque route.
+
+Les familles d'endpoints se répartissent selon la garde appliquée. Chaque niveau hérite des accès du niveau inférieur, suivant la hiérarchie `resident` → `moderator` → `admin` :
+
+<Mermaid
+  chart={`flowchart LR
+  root["API REST — 86 routes, 16 modules"]
+  pub["Public (sans jeton)"]
+  auth["Authentifié — JwtAuthGuard"]
+  mod["moderator / admin — RolesGuard"]
+  adm["admin — RolesGuard"]
+  root --> pub
+  root --> auth
+  auth --> mod
+  mod --> adm
+  pub --> p1["register, login, refresh, sso/exchange"]
+  auth --> a1["users/me, incidents, messages,<br/>contracts, votes, sso/generate, logout"]
+  mod --> m1["PATCH incidents/:id/status,<br/>DELETE incidents/:id, POST dsl/query"]
+  adm --> d1["GET users, PATCH users/:id/role,<br/>quartiers, GET stats"]`}
+/>
 
 ## Conventions
 

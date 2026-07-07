@@ -7,6 +7,26 @@ description: Tests unitaires, end-to-end et intégration continue
 
 La stratégie de tests de QuartierConnect suit le modèle de la **pyramide de tests** : une large base de tests unitaires rapides, une couche intermédiaire de tests d'intégration et de tests end-to-end de l'API, et un sommet plus réduit de tests end-to-end pilotant les interfaces réelles dans un navigateur.
 
+<Mermaid
+  chart={`flowchart TB
+  subgraph sommet["Sommet — e2e sur interfaces réelles (lents, peu nombreux)"]
+    pw["Playwright<br/>127 tests (navigateur)"]
+    tfx["JUnit 5 + TestFX<br/>163 tests (toolkit JavaFX)"]
+  end
+  subgraph milieu["Milieu — intégration et e2e API"]
+    st["Jest + Supertest<br/>199 tests (HTTP + bases réelles)"]
+  end
+  subgraph base["Base — unitaires rapides (en mémoire, doublures)"]
+    jest["Jest<br/>678 tests (API)"]
+    vitest["Vitest<br/>127 tests (Web)"]
+    pytest["pytest<br/>22 tests (DSL)"]
+  end
+  sommet -.->|"repose sur"| milieu
+  milieu -.->|"repose sur"| base`}
+/>
+
+La base regroupe **827 tests unitaires** rapides (678 API + 127 Web + 22 DSL), la couche intermédiaire **199 tests** end-to-end de l'API, et le sommet **290 tests** pilotant des interfaces réelles (127 Playwright + 163 TestFX), soit **1316 tests** au total.
+
 Chaque test respecte les principes **F.I.R.S.T.** :
 
 - **Fast** — exécution en mémoire, sans dépendance réseau.
@@ -103,7 +123,28 @@ Les tests **unitaires** (API Jest, Web Vitest, Desktop JUnit sous `xvfb-run`, DS
 
 Les tests **end-to-end** vivent dans un workflow séparé (`.github/workflows/e2e.yml`) au coût plus élevé :
 
-- **Sur pull request** — seul un sous-ensemble de fumée de 3 specs est joué (`client/login`, `client/points`, `admin/services`), pour un retour rapide.
+- **Sur pull request** — seul un sous-ensemble de fumée de 3 specs est joué (`client/login`, `client/points`, `admin/services`), et uniquement si la PR touche `web-apps/`, `api/`, `scripts/`, `docker/` ou le workflow lui-même, pour un retour rapide.
 - **En nightly** (`cron` à 3 h), **sur tag `v*.*.*`** et en **`workflow_dispatch`** — la suite Playwright complète puis les e2e API Supertest sont exécutées intégralement, avec une alerte Discord « E2E nightly KO » en cas d'échec.
+
+<Mermaid
+  chart={`flowchart TB
+  ev["Événement Git<br/>(push main/develop, PR, tag v*.*.*, cron, dispatch)"]
+  ev --> ci
+  subgraph ci["ci.yml — sur push et PR"]
+    direction LR
+    apiJob["API<br/>Jest + couverture"]
+    webJob["Web<br/>Vitest"]
+    deskJob["Desktop<br/>JUnit sous xvfb-run"]
+    dslJob["DSL<br/>pytest"]
+    valJob["make validate-fast"]
+  end
+  ci --> ok["CI Success<br/>(garde de branch protection)"]
+  ev --> trig{"e2e.yml"}
+  trig -->|"pull request (paths web/api)"| smoke["Fumée : 3 specs<br/>login, points, services"]
+  trig -->|"cron 3h / tag v*.*.* / dispatch"| full["Suite Playwright complète<br/>+ e2e API Supertest"]
+  full -.->|"échec"| discord["Alerte Discord"]`}
+/>
+
+Dans `ci.yml`, les cinq jobs (`api`, `web`, `desktop`, `dsl`, `make-validate`) tournent en parallèle ; le job de synthèse `ci-success` échoue si l'un d'eux échoue ou est annulé, ce qui en fait la garde unique pour la branch protection. Le job desktop lance ses tests via `xvfb-run -a ./mvnw -B test` pour fournir un display virtuel au toolkit JavaFX piloté par TestFX.
 
 La cible `make validate` reproduit localement l'intégralité du pipeline (lint des 4 composants, typecheck TypeScript, tests unitaires API avec couverture, e2e API, e2e Web, desktop, DSL, puis build de production) : elle permet de valider une contribution dans les mêmes conditions que la CI, suite e2e complète comprise, avant de la pousser.

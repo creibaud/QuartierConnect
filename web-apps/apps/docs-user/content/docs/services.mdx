@@ -59,10 +59,47 @@ Pour un service **payant**, vous pouvez aller plus loin qu'une simple réponse e
 
 > **Bon à savoir :** la signature du contrat se fait dans une boîte de dialogue en trois étapes (lecture des termes, tracé de votre signature manuscrite, puis confirmation par votre code à six chiffres). Le contrat retenu passe au statut « entièrement signé » une fois toutes les parties ayant signé.
 
+Ces trois étapes se suivent toujours dans le même ordre :
+
+<Mermaid
+  chart={`flowchart LR
+  lecture["Étape 1<br/>Lecture des termes"]
+  trace["Étape 2<br/>Tracé de votre signature manuscrite"]
+  code["Étape 3<br/>Confirmation par code à six chiffres"]
+  lecture --> trace
+  trace --> code`}
+/>
+
+Le transfert de points ne se déclenche qu'une fois cette dernière étape validée par **les deux** parties : personne ne peut être débité tant que le contrat n'est pas entièrement signé.
+
 ## En résumé
 
 Le parcours complet d'une entraide payante suit toujours le même fil :
 
 **offre publiée → réponse d'un voisin → demande de réservation → acceptation → contrat → signature → transfert de points.**
+
+Le même parcours, illustré étape par étape :
+
+<Mermaid
+  chart={`flowchart TD
+  annonce(["Un voisin publie<br/>un service payant (offre)"])
+  reserve["Un voisin intéressé<br/>demande la réservation"]
+  points["Les points sont calculés<br/>automatiquement selon le barème"]
+  decision{"Le propriétaire<br/>accepte la demande ?"}
+  refus["Demande refusée ou annulée<br/>aucun point échangé"]
+  contrat["Un contrat est généré<br/>automatiquement"]
+  signature["Les deux parties<br/>signent le contrat"]
+  transfert(["Points transférés<br/>dès la dernière signature"])
+
+  annonce --> reserve
+  reserve --> points
+  points --> decision
+  decision -->|Non| refus
+  decision -->|Oui| contrat
+  contrat --> signature
+  signature --> transfert`}
+/>
+
+Un service **gratuit** ou un **échange** s'arrête plus tôt : il n'y a ni calcul de points, ni contrat, ni transfert. La réponse d'un voisin suffit alors à mettre l'entraide en route.
 
 De la simple annonce gratuite au service réglé en points avec contrat signé, la page Services vous accompagne à chaque étape pour rendre l'entraide entre voisins simple et sûre.

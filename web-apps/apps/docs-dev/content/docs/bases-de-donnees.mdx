@@ -5,6 +5,31 @@ description: PostgreSQL, MongoDB, Neo4j et migrations
 
 QuartierConnect répartit ses données sur **quatre** bases : PostgreSQL pour le relationnel ACID, MongoDB pour les documents et binaires flexibles, Neo4j pour le graphe social, et un cache SQLite embarqué dans le client bureautique JavaFX.
 
+Vue d'ensemble de la répartition : chaque donnée a **une** base propriétaire côté serveur, et le client bureautique n'en détient qu'un cache local synchronisé.
+
+<Mermaid
+  chart={`flowchart TB
+  api["API NestJS<br/>(source de vérité serveur)"]
+  desk["Client bureautique<br/>JavaFX (hors ligne)"]
+  pg[("PostgreSQL<br/>relationnel ACID")]
+  mongo[("MongoDB<br/>documents + GridFS")]
+  neo[("Neo4j<br/>graphe social")]
+  sqlite[("SQLite<br/>cache local")]
+  pgOwns["users, incidents<br/>points_balances<br/>points_transactions<br/>revoked_tokens"]
+  mongoOwns["neighborhoods, services<br/>events, contracts<br/>conversations, messages<br/>votes, documents"]
+  neoOwns["User, Neighborhood<br/>Service, Event<br/>+ relations sociales"]
+  sqliteOwns["incidents (cache)<br/>sync_log, session"]
+  api --> pg
+  api --> mongo
+  api --> neo
+  desk --> sqlite
+  pg --> pgOwns
+  mongo --> mongoOwns
+  neo --> neoOwns
+  sqlite --> sqliteOwns
+  sqlite -.->|"synchro delta"| api`}
+/>
+
 ## PostgreSQL — relationnel ACID
 
 ORM : **Drizzle ORM** (TypeScript), source de vérité `api/src/database/schema.ts`. **5 tables** : `users`, `incidents`, `points_balances`, `points_transactions`, `revoked_tokens`.
@@ -16,6 +41,38 @@ ORM : **Drizzle ORM** (TypeScript), source de vérité `api/src/database/schema.
 - **`revoked_tokens`** — liste de révocation par `jti` du JWT. Le `JwtAuthGuard` rejette tout token d'accès dont le `jti` y figure ; `expires_at` permet la purge des entrées expirées.
 
 Le transfert de points s'exécute dans une **transaction PostgreSQL**. Les deux lignes de solde (émetteur et destinataire) sont d'abord créées si besoin (`onConflictDoNothing`), puis **verrouillées dans un ordre déterministe** — tri par `user_id`, `... WHERE user_id IN (...) ORDER BY user_id FOR UPDATE` — ce qui élimine l'interblocage croisé `A→B ‖ B→A`. Le service vérifie ensuite le seuil `-10` avant d'appliquer les deltas. Les erreurs PostgreSQL sont mappées en réponses `400` : `40P01` (deadlock détecté) → `{ code: CONCURRENT_UPDATE }`, violation du `CHECK (balance >= -10)` — `23514` → `{ code: INSUFFICIENT_BALANCE }`.
+
+Séquence complète d'un transfert de points, entièrement dans une transaction PostgreSQL. Les verrous de solde sont pris dans un ordre déterministe (tri par `user_id`) pour éliminer l'interblocage croisé, la garde applicative vérifie le seuil `-10`, et la contrainte `CHECK` en base sert de dernier rempart si une écriture concurrente passait entre les mailles.
+
+<Mermaid
+  chart={`sequenceDiagram
+  participant C as Client
+  participant S as PointsService
+  participant PG as PostgreSQL
+  C->>S: POST /points/transfer (recipientId, amount)
+  S->>S: rejette l'auto-transfert (SELF_TRANSFER)
+  S->>PG: BEGIN transaction
+  S->>PG: SELECT role FROM users WHERE id = destinataire
+  Note over S: destinataire banni ou supprimé, renvoie 400 RECIPIENT_NOT_FOUND
+  S->>PG: INSERT soldes manquants (onConflictDoNothing)
+  S->>PG: SELECT soldes WHERE user_id IN (a, b) ORDER BY user_id FOR UPDATE
+  Note over S,PG: verrous pris dans l'ordre du user_id (anti-deadlock A vers B et B vers A)
+  PG-->>S: soldes verrouillés
+  alt solde suffisant après débit
+    S->>PG: UPDATE émetteur moins montant, destinataire plus montant
+    Note over PG: contrainte CHECK (balance minimum -10) garantie en base
+    S->>PG: INSERT points_transactions
+    S->>PG: COMMIT
+    PG-->>S: OK
+    S-->>C: 200 (soldes à jour)
+  else solde insuffisant
+    S->>PG: ROLLBACK
+    S-->>C: 400 INSUFFICIENT_BALANCE
+  end
+  Note over S: erreurs Postgres mappées en 400 (40P01 CONCURRENT_UPDATE, 23514 INSUFFICIENT_BALANCE)`}
+/>
+
+Le même chemin verrouillé sert au règlement des paiements de service (`settleServicePayment`) : la ligne `points_transactions` de type `service_payment` est verrouillée en `FOR UPDATE`, l'opération est **idempotente** (un statut déjà `completed` sort sans double débit) et un statut `cancelled` est refusé.
 
 ## MongoDB — documents flexibles
 
@@ -44,6 +101,23 @@ Points clés :
 ## Neo4j — graphe social
 
 Écritures **exclusivement** via `SocialService` (`api/src/social/social.service.ts`), en **fire-and-forget**. Labels : `User`, `Neighborhood`, `Service`, `Event`. Relations : `LIVES_IN`, `LOCATED_IN`, `HELD_IN`, `INTERESTED_IN`, `ATTENDING`, `NOT_INTERESTED_IN`, `HELPED` (porte `serviceId` et `points`).
+
+Le modèle de graphe reste volontairement simple : quatre labels de nœuds et six relations orientées. Les relations de localisation (`LIVES_IN`, `LOCATED_IN`, `HELD_IN`) pointent toutes vers un `Neighborhood` ; l'intérêt pour un événement s'exprime via `INTERESTED_IN` ou `ATTENDING` (plus `NOT_INTERESTED_IN` pour un rejet explicite) ; l'entraide entre voisins est portée par `HELPED`, dont les propriétés `serviceId` et `points` alimentent le score de « voisin fiable ».
+
+<Mermaid
+  chart={`flowchart LR
+  U["User"]
+  V["User<br/>(voisin)"]
+  N["Neighborhood"]
+  S["Service"]
+  E["Event"]
+  U -->|LIVES_IN| N
+  S -->|LOCATED_IN| N
+  E -->|HELD_IN| N
+  U -->|INTERESTED_IN| E
+  U -->|ATTENDING| E
+  U -->|"HELPED (serviceId, points)"| V`}
+/>
 
 L'endpoint de recommandation combine par union quatre sources classées (`RECOMMENDATIONS_QUERY`) : `serviceInNeighborhood` (score 3), `upcomingEventNearby` (score 2), `sharedInterests` (`3 + peerCount`) et `reliableNeighbor` (`4 + helpCount + sharedEvents`). Les résultats sont triés par score décroissant, dédupliqués par `type + name` et limités à 10.
 

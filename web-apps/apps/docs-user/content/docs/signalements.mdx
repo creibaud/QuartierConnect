@@ -22,6 +22,24 @@ signalement se compose de quatre éléments :
 
 Une fois ces informations renseignées, votre signalement est enregistré.
 
+En un coup d'œil, voici le parcours complet, de votre signalement jusqu'à sa
+résolution : vous choisissez, vous localisez, vous décrivez, puis vous suivez son
+avancement.
+
+<Mermaid
+  chart={`flowchart LR
+  debut(["Un souci<br/>dans le quartier"]) --> cat["Choisir<br/>une catégorie"]
+  cat --> loc["Placer un point<br/>sur la carte"]
+  loc --> desc["Ajouter un titre<br/>et une description"]
+  desc --> ouvert["Statut :<br/>ouvert"]
+  ouvert --> encours["Statut :<br/>en cours"]
+  encours --> resolu["Statut :<br/>résolu"]`}
+/>
+
+Les trois premières étapes vous appartiennent : elles composent la création du
+signalement. Les statuts, eux, évoluent ensuite sans action de votre part (voir plus
+bas).
+
 ### Choisir la bonne catégorie
 
 La catégorie n'est pas une simple étiquette : elle décide **qui peut voir votre
@@ -40,6 +58,20 @@ habitants, puisqu'il concerne la vie commune.
 > n'apparaissent **pas** dans la liste publique du quartier. Seuls vous, leur auteur, et
 > les modérateurs y avez accès. Vous ne voyez donc jamais les signalements de modération
 > déposés par les autres habitants, et ils ne voient pas les vôtres.
+
+Autrement dit, la catégorie que vous choisissez décide directement qui aura accès à
+votre signalement :
+
+<Mermaid
+  chart={`flowchart TB
+  sig["Votre signalement"] --> choix{"Quelle<br/>catégorie ?"}
+  choix -->|"Problème de quartier"| tous["Visible par<br/>tout le quartier"]
+  choix -->|"Signalement (modération)"| prive["Visible par vous<br/>et les modérateurs"]
+  choix -->|"Bug technique"| prive`}
+/>
+
+Dans le doute, souvenez-vous de la règle simple : un **problème de quartier** est
+public, tout le reste reste **privé**.
 
 ### Choisir le bon emplacement
 
@@ -65,6 +97,23 @@ Chaque incident possède un **statut** qui indique où en est son traitement. Ce
 Vous n'avez rien à faire pour faire évoluer ce statut vous-même : ce sont les
 modérateurs de votre quartier qui assurent le suivi des incidents et font passer chaque
 signalement d'un état à l'autre à mesure qu'il progresse.
+
+Voici comment un signalement chemine d'un statut à l'autre, et qui déclenche chaque
+étape :
+
+<Mermaid
+  chart={`stateDiagram-v2
+  state "Ouvert" as ouvert
+  state "En cours" as encours
+  state "Résolu" as resolu
+  [*] --> ouvert
+  ouvert --> encours : un modérateur prend en charge
+  encours --> resolu : problème traité sur le terrain
+  resolu --> [*]`}
+/>
+
+Un signalement suit toujours ce sens de lecture, de gauche à droite : il ne revient pas
+en arrière une fois résolu.
 
 ## Suivre l'avancement
 
