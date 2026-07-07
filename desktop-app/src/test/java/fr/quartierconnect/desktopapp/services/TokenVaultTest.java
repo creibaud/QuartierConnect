@@ -6,10 +6,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests de la persistance des jetons par TokenVault.
- * Dans les environnements CI/test, le trousseau de l'OS (SecretService/Keychain) est indisponible,
- * TokenVault se rabat donc sur un stockage en mémoire — c'est précisément ce que l'on teste ici.
- * Le chemin en mémoire exerce la même API publique que le chemin du trousseau.
+ * TokenVault persistence tests. Under CI the OS keychain is unavailable, so this
+ * exercises the in-memory fallback through the same public API.
  */
 class TokenVaultTest {
 
@@ -77,7 +75,7 @@ class TokenVaultTest {
 
     @Test
     void saveTokens_withBothNull_loadTokensReturnsNull() {
-        // Enregistrer des null explicites revient à effacer — aucun jeton à retourner
+        // saving explicit nulls is equivalent to clearing
         vault.saveTokens(null, null);
 
         assertNull(vault.loadTokens());

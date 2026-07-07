@@ -16,8 +16,7 @@ const PG_CONTAINER = process.env.PG_CONTAINER ?? "docker-postgres-1";
 const PG_USER = process.env.POSTGRES_USER ?? "qc";
 const PG_DB = process.env.POSTGRES_DB ?? "quartierconnect";
 
-// duration 60 min → 2 points (round(60/30) × multiplier 1, cf. pricing.ts);
-// 20 points cover the escrow reserved when the owner accepts.
+// A 60 min offer costs 2 points; 20 covers the escrow reserved on accept.
 const BOOKER_POINTS_CREDIT = 20;
 
 test.use({ baseURL: BASE_URL });
@@ -82,9 +81,7 @@ async function createPaidService(
     return service._id;
 }
 
-/** Credit points in Postgres, mirroring the seed's grantWelcomeCredit pattern
- *  (ledger transaction from admin@demo.fr + balance upsert). No-op without
- *  docker — accept only reserves a pending payment, so tests stay green. */
+/** Credit points directly in Postgres; no-op when docker is unavailable. */
 function creditPoints(email: string, amount: number): void {
     const sql =
         "WITH credited AS (" +
@@ -105,7 +102,7 @@ function creditPoints(email: string, amount: number): void {
             { stdio: "pipe" },
         );
     } catch {
-        // docker/psql unavailable (e.g. local run) — escrow stays pending anyway
+        // docker/psql unavailable; escrow stays pending
     }
 }
 
@@ -149,8 +146,7 @@ test.describe("Client — Réservations", () => {
         try {
             const providerEmail = uniqueEmail();
             const providerSecret = await apiRegister(providerEmail);
-            // Address BEFORE login: the JWT must carry the neighborhood so the
-            // created service lands in (and is listed from) e2e-neighborhood.
+            // Assign the address before login so the JWT carries the neighborhood.
             assignAddress(providerEmail);
             const providerTokens = await apiLogin(
                 providerEmail,
@@ -176,7 +172,7 @@ test.describe("Client — Réservations", () => {
             apiAvailable = true;
         } catch (err) {
             if (!isConnectionError(err)) throw err;
-            // API not running — API-dependent tests will be skipped
+            // API not running, dependent tests are skipped
         }
     });
 

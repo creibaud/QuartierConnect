@@ -45,7 +45,7 @@ test.describe("Client — Login parcours", () => {
             apiAvailable = true;
         } catch (err) {
             if (!isConnectionError(err)) throw err;
-            // API not running — API-dependent tests will be skipped
+            // API not running
         }
     });
 
@@ -83,7 +83,7 @@ test.describe("Client — Login parcours", () => {
         await page
             .getByLabel(/code totp/i)
             .pressSequentially(currentTotp(testSecret));
-        // Freshly-registered user has no address → the gate sends them to onboarding
+        // New user has no address → gate routes to onboarding
         await expect(page).toHaveURL(/\/onboarding\/address/);
     });
 });

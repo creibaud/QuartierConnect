@@ -8,8 +8,7 @@ const PG_CONTAINER = process.env.PG_CONTAINER ?? "docker-postgres-1";
 const PG_USER = process.env.POSTGRES_USER ?? "qc";
 const PG_DB = process.env.POSTGRES_DB ?? "quartierconnect";
 
-/** Give a registered user an address + neighborhood directly in Postgres so they
- *  pass the client address gate (mirrors scripts/seed-demo.ts). No-op without docker. */
+/** Set a user's address + neighborhood in Postgres so they pass the address gate. */
 export function assignAddress(email: string): void {
     try {
         execSync(
@@ -17,12 +16,11 @@ export function assignAddress(email: string): void {
             { stdio: "pipe" },
         );
     } catch {
-        // docker/psql unavailable (e.g. local run) — gate-dependent tests will fail visibly
+        // docker/psql unavailable — gate-dependent tests will fail visibly
     }
 }
 
-/** Give a registered user an address that no neighborhood polygon covers, so
- *  the gate routes them to /onboarding/pending. Twin of assignAddress. */
+/** Set an address no neighborhood covers, so the gate routes to /onboarding/pending. */
 export function assignUncoveredAddress(email: string): void {
     try {
         execSync(
@@ -30,12 +28,12 @@ export function assignUncoveredAddress(email: string): void {
             { stdio: "pipe" },
         );
     } catch {
-        // docker/psql unavailable (e.g. local run) — gate-dependent tests will fail visibly
+        // docker/psql unavailable — gate-dependent tests will fail visibly
     }
 }
 
-/** RFC 6238 TOTP — pure Node crypto, no external dependency.
- *  @param timeOffsetSeconds — shift the clock by N seconds (e.g. -30 = previous window)
+/** RFC 6238 TOTP using Node crypto.
+ *  @param timeOffsetSeconds shift the clock by N seconds (e.g. -30 = previous window)
  */
 export function currentTotp(secret: string, timeOffsetSeconds = 0): string {
     const base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -75,7 +73,7 @@ export function uniqueEmail(): string {
     return `e2e_${Date.now()}_${Math.random().toString(36).slice(2, 6)}@test.fr`;
 }
 
-/** Returns true when the error is a network/connection error (API not running). */
+/** True when the error is a network failure (API not running). */
 export function isConnectionError(err: unknown): boolean {
     return (
         err instanceof TypeError &&
@@ -99,8 +97,8 @@ export async function apiRegister(email: string): Promise<string> {
 }
 
 /** Login via API and return tokens.
- *  @param timeOffsetSeconds — shift the TOTP clock (e.g. -30 for previous window)
- *  @param password — override after a password-change test
+ *  @param timeOffsetSeconds shift the TOTP clock (e.g. -30 for previous window)
+ *  @param password override after a password-change test
  */
 export async function apiLogin(
     email: string,
@@ -124,16 +122,14 @@ export async function apiLogin(
     return res.json() as Promise<{ accessToken: string; refreshToken: string }>;
 }
 
-/** Inject JWT tokens into localStorage so the app considers the user authenticated.
- *  Keys must match packages/shared/src/lib/auth.ts: qc_access_token / qc_refresh_token
- */
+/** Inject JWT tokens into localStorage. Keys must match packages/shared/src/lib/auth.ts. */
 export async function injectTokens(
     page: import("@playwright/test").Page,
     baseUrl: string,
     accessToken: string,
     refreshToken: string,
 ) {
-    // Navigate to the login page (no auth redirect) so localStorage is writable at the right origin
+    // /login has no auth redirect, so localStorage is writable at the right origin
     await page.goto(`${baseUrl}/login`);
     await page.evaluate(
         ({ at, rt }: { at: string; rt: string }) => {

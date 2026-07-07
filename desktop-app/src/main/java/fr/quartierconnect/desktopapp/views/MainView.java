@@ -183,7 +183,7 @@ public class MainView {
         }
     }
 
-    // ── Déconnexion ─────────────────────────────────────────────────────────
+    // ── Logout ──────────────────────────────────────────────────────────────
 
     private void logout() {
         topBar.shutdown();
@@ -199,7 +199,7 @@ public class MainView {
         });
     }
 
-    // ── Utilitaires ─────────────────────────────────────────────────────────
+    // ── Helpers ─────────────────────────────────────────────────────────────
 
     private static String extractInitials(String email) {
         if (email == null || email.isBlank()) return "?";

@@ -30,15 +30,14 @@ test.describe("Client — Compte (/settings)", () => {
             secret = await apiRegister(email);
             // Pass the address gate so the user can reach /settings
             assignAddress(email);
-            // -30 consumes the previous TOTP window and keeps the current one
-            // free for the password-change test (replay guard).
+            // -30 frees the current TOTP window for the password-change test.
             const tokens = await apiLogin(email, secret, -30);
             accessToken = tokens.accessToken;
             refreshToken = tokens.refreshToken;
             apiAvailable = true;
         } catch (err) {
             if (!isConnectionError(err)) throw err;
-            // API not running — API-dependent tests will be skipped
+            // API not running, dependent tests are skipped
         }
     });
 
@@ -100,8 +99,7 @@ test.describe("Client — Compte (/settings)", () => {
 
         await expect(page.getByText("Mot de passe mis à jour.")).toBeVisible();
 
-        // The next TOTP window (+30s) is accepted by the server (window: 1)
-        // and was never consumed, so the replay guard cannot reject it.
+        // Next TOTP window (+30s) was never consumed, so the replay guard accepts it.
         const tokens = await apiLogin(
             email,
             secret,
@@ -109,7 +107,7 @@ test.describe("Client — Compte (/settings)", () => {
             NEW_PASSWORD,
         );
         expect(tokens.accessToken).toBeTruthy();
-        // This re-login rotated the refresh token — keep later tests valid.
+        // Re-login rotated the refresh token; keep it for later tests.
         accessToken = tokens.accessToken;
         refreshToken = tokens.refreshToken;
     });
@@ -119,9 +117,7 @@ test.describe("Client — Compte (/settings)", () => {
     }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
 
-        // On 401 the client retries once after a cookie-based token refresh;
-        // without a valid qc_rt cookie it would clear the session and
-        // redirect to /login before the error toast can be asserted.
+        // A valid qc_rt cookie lets the 401 retry refresh instead of logging out.
         await page
             .context()
             .addCookies([{ name: "qc_rt", value: refreshToken, url: BASE_URL }]);

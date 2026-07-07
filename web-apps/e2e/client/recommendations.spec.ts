@@ -68,7 +68,7 @@ test.describe("Client — Recommandations", () => {
             apiAvailable = true;
         } catch (err) {
             if (!isConnectionError(err)) throw err;
-            // API not running — API-dependent tests will be skipped
+            // API not running
         }
     });
 

@@ -49,7 +49,7 @@ test.describe("Client — Détail d'un incident", () => {
             apiAvailable = !!incidentId;
         } catch (err) {
             if (!isConnectionError(err)) throw err;
-            // API not running — API-dependent tests will be skipped
+            // API not running, dependent tests are skipped
         }
     });
 
@@ -85,7 +85,7 @@ test.describe("Client — Détail d'un incident", () => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         await page.goto(`/incidents/${incidentId}`);
         await page.waitForLoadState("networkidle");
-        // Vote buttons render an icon + the count; match the button carrying a digit
+        // Vote buttons show an icon and a count; match the one carrying a digit
         await expect(
             page.getByRole("button").filter({ hasText: /\d/ }).first(),
         ).toBeVisible({ timeout: 10000 });
@@ -95,7 +95,7 @@ test.describe("Client — Détail d'un incident", () => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         await page.goto(`/incidents/${incidentId}`);
         await page.waitForLoadState("networkidle");
-        // Navigate back to the list via the sidebar nav link (an <a>, unlike the breadcrumb <span>)
+        // Use the sidebar nav link (an <a>), not the breadcrumb span
         await page.locator('a[href="/incidents"]').first().click();
         await expect(page).toHaveURL(/\/incidents$/);
     });

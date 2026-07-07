@@ -13,7 +13,7 @@ const BASE_URL = "http://localhost:3000";
 
 test.use({ baseURL: BASE_URL });
 
-/** Silence the debounced Nominatim autocomplete so tests never hit geocoding. */
+/** Stub Nominatim autocomplete so tests never hit the network. */
 async function stubGeocodingSearch(page: Page) {
     await page.route("**/api/geocoding/search**", (route) =>
         route.fulfill({ json: [] }),
@@ -59,7 +59,7 @@ test.describe("Client — Onboarding : gate d'adresse", () => {
             apiAvailable = true;
         } catch (err) {
             if (!isConnectionError(err)) throw err;
-            // API not running — API-dependent tests will be skipped
+            // API not running
         }
     });
 
@@ -150,7 +150,7 @@ test.describe("Client — Onboarding : adresse hors couverture", () => {
             apiAvailable = true;
         } catch (err) {
             if (!isConnectionError(err)) throw err;
-            // API not running — API-dependent tests will be skipped
+            // API not running
         }
     });
 

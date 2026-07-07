@@ -24,13 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Smoke tests for the JavaFX login screen. They drive the real toolkit under a
- * virtual display (Xvfb in CI) and stay fully offline — ApiService.isReachable
- * returns false instantly in offline mode — so no network, browser, or SSO
- * callback is ever involved. Interactions fire on the FX thread rather than
- * moving a robot mouse, which keeps them deterministic.
- */
+/** Offline smoke tests for the JavaFX login screen. */
 class LoginViewSmokeTest {
 
     private final FxRobot robot = new FxRobot();
@@ -101,8 +95,7 @@ class LoginViewSmokeTest {
 
     @Test
     void continuingOfflineNavigatesToMainView() throws Exception {
-        // A resumable session with an expired access token + an API that is
-        // down (offline mode) is what makes the login offer the offline button.
+        // Expired token plus offline API makes the login offer the offline button.
         SQLiteDatabase.saveSession("demo@quartier.fr");
         TokenVault.getInstance().saveTokens(
                 buildJwt("demo@quartier.fr",
@@ -111,7 +104,7 @@ class LoginViewSmokeTest {
 
         showLogin();
 
-        // The startup thread flips the offline button visible asynchronously.
+        // Startup thread reveals the offline button asynchronously.
         WaitForAsyncUtils.waitFor(5, TimeUnit.SECONDS,
                 () -> robot.lookup(".login-btn-ghost").tryQuery()
                         .map(node -> node.isVisible()).orElse(false));
@@ -119,8 +112,7 @@ class LoginViewSmokeTest {
         WaitForAsyncUtils.asyncFx(
                 () -> robot.lookup(".login-btn-ghost").queryButton().fire());
 
-        // Reaching MainView swaps the scene root: the sidebar appears and the
-        // login button is gone.
+        // MainView swaps the scene root: sidebar in, login button gone.
         WaitForAsyncUtils.waitFor(5, TimeUnit.SECONDS,
                 () -> robot.lookup(".app-sidebar").tryQuery().isPresent()
                         && robot.lookup(".login-btn-primary").tryQuery().isEmpty());

@@ -28,7 +28,7 @@ test.describe("Client — Dashboard", () => {
             apiAvailable = true;
         } catch (err) {
             if (!isConnectionError(err)) throw err;
-            // API not running — API-dependent tests will be skipped
+            // API not running, dependent tests are skipped
         }
     });
 
@@ -51,7 +51,7 @@ test.describe("Client — Dashboard", () => {
 
     test("logout redirects to /login", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
-        // Logout lives in the nav-user dropdown: open it (trigger shows the email), then click the menuitem
+        // Logout is in the nav-user dropdown; open it, then click the menuitem
         await page.getByRole("button").filter({ hasText: testEmail }).click();
         await page
             .getByRole("menuitem", { name: /déconnexion|déconnecter|logout/i })

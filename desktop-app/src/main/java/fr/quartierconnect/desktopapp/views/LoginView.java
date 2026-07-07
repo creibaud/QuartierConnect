@@ -55,7 +55,7 @@ public class LoginView {
         return root;
     }
 
-    // ── Mise en page ─────────────────────────────────────────────────────────
+    // ── Layout ───────────────────────────────────────────────────────────────
 
     private StackPane buildLayout() {
         ImageView logoImg = new ImageView();
@@ -118,7 +118,7 @@ public class LoginView {
         return bg;
     }
 
-    /** Le logo est noir sur fond transparent — le blanchir uniquement lorsqu'un thème sombre est actif. */
+    /** Logo art is black on transparent; whiten it only under a dark theme. */
     private static void bindLogoTintToTheme(ImageView logo) {
         ColorAdjust whiten = new ColorAdjust();
         whiten.setBrightness(1.0);
@@ -128,7 +128,7 @@ public class LoginView {
                     .otherwise((Effect) null));
     }
 
-    // ── Logique métier ───────────────────────────────────────────────────────
+    // ── Business logic ───────────────────────────────────────────────────────
 
     private void checkStartupSession() {
         new Thread(() -> {

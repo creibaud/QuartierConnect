@@ -29,7 +29,7 @@ class AuthServiceTest {
 
     @Test
     void clearSession_removesTokens() {
-        // Construire manuellement un JWT non expiré (header.payload.signature)
+        // build a non-expired JWT by hand (header.payload.signature)
         String header = Base64.getUrlEncoder().withoutPadding()
                 .encodeToString("{\"alg\":\"HS256\",\"typ\":\"JWT\"}".getBytes());
         long futureExp = (System.currentTimeMillis() / 1000L) + 3600;
@@ -37,8 +37,7 @@ class AuthServiceTest {
                 .encodeToString(("{\"sub\":\"abc\",\"email\":\"test@test.fr\",\"exp\":" + futureExp + "}").getBytes());
         String fakeJwt = header + "." + payload + ".fakesig";
 
-        // Injection par simulation d'un résultat de login via réflexion pour définir le champ,
-        // faute de setter pour accessToken — on vérifie clearSession à la place
+        // no setter for accessToken, so just verify clearSession here
         auth.clearSession();
         assertFalse(auth.isAuthenticated());
         assertNull(auth.getAccessToken());

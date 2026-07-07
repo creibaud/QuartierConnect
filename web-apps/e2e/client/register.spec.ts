@@ -46,8 +46,7 @@ test.describe("Client — Register parcours", () => {
 
     test("shows email format error on blur", async ({ page }) => {
         await page.goto("/register");
-        // Field errors are validated per field, so several can coexist — scope
-        // the assertion to the email error itself.
+        // Scope to the email error; other field errors can coexist.
         await page.getByLabel("Email").fill("pas-un-email");
         await page.getByLabel("Email").blur();
         await expect(page.getByText(/email invalide/i)).toBeVisible();
@@ -56,9 +55,7 @@ test.describe("Client — Register parcours", () => {
     test("a single cold click toggles consent without a layout shift", async ({
         page,
     }) => {
-        // Regression guard: validating the autofocused first field used to
-        // insert an error node that shifted the layout mid-click, so the very
-        // first click on the checkbox was swallowed.
+        // The reserved error line keeps the first click from being swallowed.
         await page.goto("/register");
         const consent = page.getByRole("checkbox");
         await expect(consent).not.toBeChecked();
@@ -71,8 +68,7 @@ test.describe("Client — Register parcours", () => {
     }) => {
         await page.goto("/register");
         const submit = page.getByRole("button", { name: /créer/i });
-        // A single click on the freshly loaded page toggles consent (the form
-        // reserves the error line height, so validation never shifts it).
+        // One click toggles consent; the reserved error line prevents a shift.
         const consent = page.getByRole("checkbox");
         await consent.click();
         await expect(consent).toBeChecked();
@@ -119,8 +115,7 @@ test.describe("Client — Register parcours", () => {
             name: /notice d'information/i,
         });
         await expect(trigger).toBeVisible();
-        // A single cold click opens the dialog: the reserved error line means
-        // no layout shift steals the click.
+        // One click opens the dialog; the reserved error line prevents a shift.
         await trigger.click();
         const dialog = page.getByRole("dialog");
         await expect(dialog).toBeVisible();
@@ -143,8 +138,7 @@ test.describe("Client — Register parcours", () => {
         await expect(page.getByTestId("totp-qr")).toBeVisible({
             timeout: 20000,
         });
-        // Two i18n strings start with "Scannez" (QR heading + hint) — scope to
-        // the first so strict mode doesn't flag the 2-element match.
+        // Two strings start with "Scannez"; scope to the first for strict mode.
         await expect(page.getByText(/scannez/i).first()).toBeVisible();
     });
 

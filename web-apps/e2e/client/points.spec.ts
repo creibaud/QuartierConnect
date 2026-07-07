@@ -40,7 +40,7 @@ test.describe("Client — Points", () => {
             apiAvailable = true;
         } catch (err) {
             if (!isConnectionError(err)) throw err;
-            // API not running — API-dependent tests will be skipped
+            // API not running
         }
     });
 
@@ -81,7 +81,7 @@ test.describe("Client — Points", () => {
             .fill(recipientEmail);
         await page.getByRole("option", { name: recipientEmail }).click();
 
-        // Trigger now shows the resolved email instead of a UUID.
+        // Trigger shows the resolved email, not a UUID.
         await expect(
             page.getByRole("combobox").filter({ hasText: recipientEmail }),
         ).toBeVisible();
@@ -92,7 +92,7 @@ test.describe("Client — Points", () => {
             .getByRole("button", { name: "Transférer", exact: true })
             .click();
 
-        // Success toast + history row shows the recipient's email, not a UUID.
+        // History row shows the recipient's email, not a UUID.
         await expect(page.getByText(/points transférés/i)).toBeVisible();
         await expect(
             page.getByText(new RegExp(`Envoyé à\\s*${recipientEmail}`)),

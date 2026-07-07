@@ -24,7 +24,7 @@ test.describe("Client — Services map", () => {
             refreshToken = tokens.refreshToken;
             apiAvailable = true;
         } catch {
-            // API not running — tests will skip
+            // API not running
         }
     });
 
@@ -41,10 +41,8 @@ test.describe("Client — Services map", () => {
         await page.goto("/services");
         await expect(page).toHaveURL(/\/services/);
 
-        // The Leaflet map renders only when the resident's neighborhood has a
-        // polygon. The e2e resident may be assigned to a geometry-less
-        // neighborhood, so assert the page rendered, then verify the map's OSM
-        // attribution only when a map is actually shown.
+        // The map renders only for a neighborhood with a polygon; check the OSM
+        // attribution only when a map actually appears.
         await expect(
             page.getByRole("heading", { name: /services/i }),
         ).toBeVisible();
