@@ -1,5 +1,10 @@
 package fr.quartierconnect.desktopapp.database;
 
+import fr.quartierconnect.desktopapp.util.HostOs;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -10,9 +15,53 @@ import java.time.Instant;
 
 public class SQLiteDatabase {
 
-    /** Re-read on each call so a test-set sqlite.url wins regardless of class-load order. */
+    private static final String APP_DIR_NAME = "QuartierConnect";
+    private static final String DB_FILE_NAME = "quartierconnect.db";
+
+    /**
+     * Re-read on each call so a test-set {@code sqlite.url} wins regardless of class-load
+     * order. Without an override the file lives under the per-user data directory: an
+     * installed app runs from a read-only location (e.g. {@code C:\Program Files}) where a
+     * relative path would fail to create for a standard, non-elevated user.
+     */
     private static String dbUrl() {
-        return System.getProperty("sqlite.url", "jdbc:sqlite:quartierconnect.db");
+        String override = System.getProperty("sqlite.url");
+        if (override != null && !override.isBlank()) {
+            return override;
+        }
+        return "jdbc:sqlite:" + databaseFile();
+    }
+
+    private static Path databaseFile() {
+        Path dir = userDataDirectory();
+        try {
+            Files.createDirectories(dir);
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot create application data directory: " + dir, e);
+        }
+        return dir.resolve(DB_FILE_NAME);
+    }
+
+    /** Per-user, writable data directory for the host OS. */
+    private static Path userDataDirectory() {
+        String home = System.getProperty("user.home");
+        return switch (HostOs.detect()) {
+            case WINDOWS -> {
+                String appData = System.getenv("APPDATA");
+                Path base = (appData != null && !appData.isBlank())
+                        ? Paths.get(appData)
+                        : Paths.get(home, "AppData", "Roaming");
+                yield base.resolve(APP_DIR_NAME);
+            }
+            case MAC -> Paths.get(home, "Library", "Application Support", APP_DIR_NAME);
+            default -> {
+                String xdg = System.getenv("XDG_DATA_HOME");
+                Path base = (xdg != null && !xdg.isBlank())
+                        ? Paths.get(xdg)
+                        : Paths.get(home, ".local", "share");
+                yield base.resolve(APP_DIR_NAME);
+            }
+        };
     }
 
     /** Cached session for offline resume. Email only — tokens live in the OS keychain via TokenVault. */
