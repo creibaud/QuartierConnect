@@ -66,8 +66,7 @@ export class ServicesController {
         private readonly geocoding: GeocodingService,
     ) {}
 
-    // Residents AND moderators only reach services in their own quartier;
-    // admins moderate across every neighborhood (same rule as findAll).
+    // Residents and moderators are scoped to their own neighborhood; admins moderate all.
     private assertNeighborhoodScope(
         service: { neighborhoodId?: string | null },
         req: AuthRequest,
@@ -126,22 +125,16 @@ export class ServicesController {
         @Query("direction") direction?: string,
         @Query("page") page = "1",
         @Query("limit") limit = "20",
-        // Default required by TS1016 (a required param can't follow the optional
-        // @Query params); harmless because the neighborhood guard below rejects it.
+        // Default satisfies TS1016 (a required param can't follow optional @Query params).
         @Request() req: AuthRequest = { user: { sub: "", role: "" } },
     ) {
-        // Only admins list across all neighborhoods (the admin app lists through
-        // this same endpoint); residents AND moderators are scoped to their own.
-        // A scoped caller without a neighborhood gets nothing — otherwise Mongoose
-        // would strip `neighborhoodId: undefined` and leak every neighborhood's
-        // services.
+        // Scoped callers without a neighborhood get nothing: an undefined filter
+        // would leak every neighborhood's services.
         const isAdmin = req.user.role === "admin";
         if (!isAdmin && !req.user.neighborhoodId) return [];
         const filter: Record<string, unknown> = {};
         if (!isAdmin) filter.neighborhoodId = req.user.neighborhoodId;
-        // Guard against NoSQL injection: Express/qs can parse a crafted query
-        // string (e.g. ?category[$ne]=) into an object. Only accept strings so
-        // an attacker cannot smuggle Mongo operators into the filter.
+        // Only accept strings so a crafted query (?category[$ne]=) can't inject Mongo operators.
         if (typeof category === "string") filter.category = category;
         if (typeof type === "string") filter.type = type;
         if (typeof direction === "string") filter.direction = direction;
@@ -225,12 +218,17 @@ export class ServicesController {
     @ApiOperation({ summary: "Services the current user has responded to" })
     @ApiResponse({ status: 200, type: [ServiceDto] })
     async findResponded(@Request() req: AuthRequest) {
+        // Scope to the caller's neighborhood.
+        const isAdmin = req.user.role === "admin";
+        if (!isAdmin && !req.user.neighborhoodId) return [];
         const responses = await this.responseModel
             .find({ responderId: req.user.sub })
             .lean();
         const ids = responses.map((r) => r.serviceId);
         if (!ids.length) return [];
-        return this.serviceModel.find({ _id: { $in: ids } }).lean();
+        const filter: Record<string, unknown> = { _id: { $in: ids } };
+        if (!isAdmin) filter.neighborhoodId = req.user.neighborhoodId;
+        return this.serviceModel.find(filter).lean();
     }
 
     @Get(":id")
@@ -272,8 +270,7 @@ export class ServicesController {
     @ApiResponse({ status: 401, description: "Not authenticated" })
     async create(@Body() dto: CreateServiceDto, @Request() req: AuthRequest) {
         const location = await this.resolveLocation(dto.address, dto.location);
-        // Anti-spoofing: only admins may target another quartier; residents
-        // and moderators always publish into their own.
+        // Only admins may target another neighborhood; others publish into their own.
         const neighborhoodId =
             req.user.role === "admin"
                 ? (dto.neighborhoodId ?? req.user.neighborhoodId ?? undefined)
@@ -334,8 +331,7 @@ export class ServicesController {
         if (dto.category !== undefined) changes.category = dto.category;
         if (dto.type !== undefined) changes.type = dto.type;
         if (dto.direction !== undefined) changes.direction = dto.direction;
-        // Only admins may move a service to another quartier; the field is
-        // silently ignored for everyone else (anti-spoofing).
+        // Only admins may move a service to another neighborhood; ignored otherwise.
         if (dto.neighborhoodId !== undefined && req.user.role === "admin")
             changes.neighborhoodId = dto.neighborhoodId;
         if (dto.pointsMultiplier !== undefined)
@@ -347,8 +343,7 @@ export class ServicesController {
             };
         if (dto.address !== undefined) {
             changes.address = dto.address;
-            // A failed geocoding clears the pin rather than silently keeping
-            // the previous position next to the new address text.
+            // Failed geocoding clears the pin rather than keeping the stale position.
             changes.location =
                 (await this.resolveLocation(dto.address, dto.location)) ?? null;
         }
@@ -357,8 +352,7 @@ export class ServicesController {
         if (dto.pointsAmount !== undefined)
             changes.pointsAmount = dto.pointsAmount;
 
-        // A paid service without a duration would silently price to the
-        // 1-point floor; enforce the invariant on the effective values.
+        // A paid service needs a duration, otherwise it prices to the 1-point floor.
         const effectiveType = dto.type ?? service.type;
         const effectiveDuration = dto.duration ?? service.duration;
         if (effectiveType === "paid" && !effectiveDuration) {
@@ -455,8 +449,7 @@ export class ServicesController {
                 "You can only delete your own services",
             );
         }
-        // Deleting a booked service would orphan its contract and payment
-        // (cancel/accept would 404); the caller must settle bookings first.
+        // Active bookings must be settled first to avoid orphaning contracts and payments.
         const activeBookings = await this.bookingModel.countDocuments({
             serviceId: service._id.toString(),
             status: { $in: [BookingStatus.PENDING, BookingStatus.ACCEPTED] },

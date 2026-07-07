@@ -9,8 +9,7 @@ import type { User } from "../types";
 
 export function useInfiniteUsers(limit = 20, search = "", role = "") {
     return useInfiniteQuery({
-        // search/role are part of the key so changing a filter restarts the
-        // pagination from page 1 with server-side filtering.
+        // Filters live in the key so changing one restarts pagination.
         queryKey: ["admin", "users", search, role],
         queryFn: ({ pageParam }: { pageParam: number }) =>
             apiGet<User[]>(

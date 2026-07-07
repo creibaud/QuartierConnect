@@ -18,3 +18,4 @@ desktop-app/dependency-reduced-pom.xml
 /dist/
 docs/DOSSIER-RENDU.md
 docker/downloads/
+.gstack/

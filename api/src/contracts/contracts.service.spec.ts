@@ -93,8 +93,7 @@ describe("ContractsService", () => {
         mockContractDoc.signatures = [];
         mockContractDoc.status = ContractStatus.DRAFT;
 
-        // Deterministic defaults for the atomic-write paths; individual tests
-        // queue their own results with mockReturnValueOnce.
+        // Deterministic defaults for the atomic-write paths; tests override per-case.
         mockContractModel.findOneAndUpdate.mockReturnValue({
             exec: jest.fn().mockResolvedValue(null),
         });
@@ -106,8 +105,7 @@ describe("ContractsService", () => {
         mockDocs.getCurrentPdf.mockResolvedValue(null);
         mockDocs.storePdf.mockResolvedValue({ fileId: "f", sha256: "h" });
 
-        // Default Drizzle chain: `.limit(...)` serves the TOTP lookup, while
-        // awaiting the chain directly (no `.limit`) serves name resolution.
+        // .limit(...) serves the TOTP lookup; awaiting the chain serves name resolution.
         mockDb.select.mockReturnValue({
             from: jest.fn().mockReturnValue({
                 where: jest.fn().mockReturnValue({
@@ -392,8 +390,7 @@ describe("ContractsService", () => {
             hash: `hash-${userId}`,
         });
 
-        // Queues the document returned by the next atomic findOneAndUpdate
-        // (first call = signature claim, second = FULLY_SIGNED flip/rollback).
+        // Queues the document returned by the next atomic findOneAndUpdate.
         const queueAtomicWriteResult = (doc: unknown) =>
             mockContractModel.findOneAndUpdate.mockReturnValueOnce({
                 exec: jest.fn().mockResolvedValue(doc),
@@ -549,8 +546,7 @@ describe("ContractsService", () => {
                 signatures: [signatureOf("user-1")],
                 status: ContractStatus.PARTIAL,
             };
-            // Pre-claim read races ahead of the first submit; the atomic
-            // claim (default: null) then loses and the re-read sees it.
+            // Pre-claim read races ahead; the atomic claim loses, the re-read sees it.
             mockContractModel.findById
                 .mockReturnValueOnce({
                     exec: jest.fn().mockResolvedValue(beforeClaim),
@@ -911,8 +907,7 @@ describe("ContractsService", () => {
             };
             mockTotpService.verify.mockReturnValue(true);
 
-            // First signer: their post-push document only holds their own
-            // signature, so no settlement and no flip happen.
+            // First signer: post-push document holds only their signature.
             mockContractModel.findById.mockReturnValueOnce({
                 exec: jest
                     .fn()
@@ -925,8 +920,7 @@ describe("ContractsService", () => {
             });
             const first = await service.sign("ct-1", "user-1", "123456");
 
-            // Second signer raced the first: their pre-claim read predates
-            // the first signature, but the post-push document holds both.
+            // Second signer raced the first: pre-claim read predates the first signature.
             mockContractModel.findById.mockReturnValueOnce({
                 exec: jest
                     .fn()

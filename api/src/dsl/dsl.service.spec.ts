@@ -14,8 +14,7 @@ jest.mock("pythonia", () => ({
     python: jest.fn().mockResolvedValue({ execute: mockExecute }),
 }));
 
-// find(...).lean().limit(n).exec() — the limit spy is exposed so tests can
-// assert the documented 100-result cap.
+// limit spy is exposed so tests can assert the 100-result cap
 const mongoQuery = (docs: unknown[] = []) => {
     const limit = jest.fn().mockReturnValue({
         exec: () => Promise.resolve(docs),

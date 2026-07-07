@@ -3,7 +3,11 @@ import { useTranslation } from "react-i18next";
 import { Add01Icon, CustomerServiceIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
-import { centroidOf, pointInPolygon, pointToLatLng } from "@workspace/shared/lib/geo";
+import {
+    centroidOf,
+    pointInPolygon,
+    pointToLatLng,
+} from "@workspace/shared/lib/geo";
 import {
     useCreateService,
     useInfiniteServices,
@@ -23,6 +27,7 @@ import { DataState } from "@workspace/ui/components/data-state";
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from "@workspace/ui/components/dialog";
@@ -91,8 +96,7 @@ export function ServicesPage() {
     const services = data?.pages.flat() ?? [];
     const servicesWithCoords = services.filter((s) => s.location);
 
-    // Focus the map on the user's OWN neighborhood — the same source as the
-    // account "Mon quartier" card — so it never disagrees with their profile.
+    // Focus the map on the user's own neighborhood.
     const focusedNeighborhood = myLocation?.neighborhood ?? null;
 
     function canManage(service: Service): boolean {
@@ -151,8 +155,7 @@ export function ServicesPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {/* isolate: a new stacking context so Leaflet's high
-                                z-indexes stay below the nav and sidebar */}
+                            {/* isolate: keep Leaflet's z-indexes below the nav and sidebar */}
                             <div className="relative isolate">
                                 <Map
                                     center={centroidOf(
@@ -352,7 +355,10 @@ function ServiceFormDialog({
     const [address, setAddress] = useState(initial?.address ?? "");
     const [picked, setPicked] = useState<{ lat: number; lng: number } | null>(
         initial?.location
-            ? { lat: initial.location.coordinates[1], lng: initial.location.coordinates[0] }
+            ? {
+                  lat: initial.location.coordinates[1],
+                  lng: initial.location.coordinates[0],
+              }
             : null,
     );
     const { data: myLocation } = useMyLocation();
@@ -381,7 +387,10 @@ function ServiceFormDialog({
                     : undefined,
             address: address.trim() || undefined,
             location: picked
-                ? { type: "Point" as const, coordinates: [picked.lng, picked.lat] as [number, number] }
+                ? {
+                      type: "Point" as const,
+                      coordinates: [picked.lng, picked.lat] as [number, number],
+                  }
                 : undefined,
         };
         if (initial) {
@@ -415,6 +424,9 @@ function ServiceFormDialog({
                             ? t("pages.services.editTitle")
                             : t("pages.services.createTitle")}
                     </DialogTitle>
+                    <DialogDescription>
+                        {t("pages.services.dialogDescription")}
+                    </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
@@ -519,20 +531,18 @@ function ServiceFormDialog({
                                 )}
                                 required
                             />
-                            {typeof duration === "number" &&
-                                duration >= 1 && (
-                                    <p className="text-muted-foreground text-xs">
-                                        {t("pages.services.pointsCost", {
-                                            count: computeServicePoints({
-                                                duration,
-                                                pointsMultiplier:
-                                                    initial?.pointsMultiplier,
-                                                pointsAmount:
-                                                    initial?.pointsAmount,
-                                            }),
-                                        })}
-                                    </p>
-                                )}
+                            {typeof duration === "number" && duration >= 1 && (
+                                <p className="text-muted-foreground text-xs">
+                                    {t("pages.services.pointsCost", {
+                                        count: computeServicePoints({
+                                            duration,
+                                            pointsMultiplier:
+                                                initial?.pointsMultiplier,
+                                            pointsAmount: initial?.pointsAmount,
+                                        }),
+                                    })}
+                                </p>
+                            )}
                         </div>
                     )}
                     <div className="space-y-2">
@@ -542,16 +552,27 @@ function ServiceFormDialog({
                         <AddressAutocomplete
                             id="svc-address"
                             value={address}
-                            onChange={(text) => { setAddress(text); setPicked(null); }}
-                            onSelect={(s) => { setAddress(s.label); setPicked({ lat: s.lat, lng: s.lng }); }}
+                            onChange={(text) => {
+                                setAddress(text);
+                                setPicked(null);
+                            }}
+                            onSelect={(s) => {
+                                setAddress(s.label);
+                                setPicked({ lat: s.lat, lng: s.lng });
+                            }}
                             placeholder={t("pages.services.addressPlaceholder")}
                         />
                         <p className="text-muted-foreground text-xs">
                             {t("pages.services.addressMapHint")}
                         </p>
-                        {picked && myLocation?.neighborhood?.geometry &&
-                            !pointInPolygon(picked.lat, picked.lng, myLocation.neighborhood.geometry) && (
-                                <p className="text-amber-600 dark:text-amber-500 text-xs">
+                        {picked &&
+                            myLocation?.neighborhood?.geometry &&
+                            !pointInPolygon(
+                                picked.lat,
+                                picked.lng,
+                                myLocation.neighborhood.geometry,
+                            ) && (
+                                <p className="text-xs text-amber-600 dark:text-amber-500">
                                     {t("address.outsideQuartier")}
                                 </p>
                             )}

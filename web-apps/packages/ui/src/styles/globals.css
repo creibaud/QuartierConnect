@@ -9,7 +9,9 @@
 @source "../**/*.{ts,tsx}";
 
 @theme inline {
-    --font-heading: "Hanken Grotesk Variable", "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-heading:
+        "Hanken Grotesk Variable", "Hanken Grotesk", -apple-system,
+        BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -48,7 +50,9 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
-    --font-sans: "Hanken Grotesk Variable", "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-sans:
+        "Hanken Grotesk Variable", "Hanken Grotesk", -apple-system,
+        BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 :root {
@@ -130,16 +134,21 @@
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
     }
-    h1, h2, h3, h4, h5, h6 {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
         font-family: var(--font-heading);
         font-feature-settings: "ss01", "ss02";
         letter-spacing: -0.015em;
     }
-  .maplibregl-popup-content {
-    @apply bg-transparent! shadow-none! p-0! rounded-none!;
+    .maplibregl-popup-content {
+        @apply rounded-none! bg-transparent! p-0! shadow-none!;
     }
-  .maplibregl-popup-tip {
-    @apply hidden!;
+    .maplibregl-popup-tip {
+        @apply hidden!;
     }
 }
 
@@ -169,7 +178,10 @@
     line-height: 1 !important;
     text-indent: 0 !important;
     text-decoration: none !important;
-    transition: background-color 0.15s, color 0.15s, border-color 0.15s !important;
+    transition:
+        background-color 0.15s,
+        color 0.15s,
+        border-color 0.15s !important;
 }
 
 .leaflet-control-zoom a:hover {
@@ -185,4 +197,21 @@
 
 .dark .leaflet-control-zoom a {
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3) !important;
+}
+
+/* ── Scrollbar helpers for the message-scroller viewport ── */
+@utility scrollbar-thin {
+    scrollbar-width: thin;
+}
+
+@utility scrollbar-gutter-stable {
+    scrollbar-gutter: stable;
+}
+
+@utility scrollbar-thumb-transparent {
+    scrollbar-color: transparent transparent;
+}
+
+@utility scrollbar-track-transparent {
+    scrollbar-color: transparent transparent;
 }

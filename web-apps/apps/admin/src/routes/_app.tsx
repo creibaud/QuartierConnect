@@ -29,8 +29,7 @@ export const Route = createFileRoute("/_app")({
     beforeLoad: async ({ location }) => {
         const user = await ensureAuthenticated();
         if (!user) {
-            // Remember the requested page so the login form can come back
-            // to it instead of always landing on the dashboard.
+            // Remember the requested page so login can return to it.
             throw redirect({
                 to: "/login",
                 search: { forbidden: false, redirect: location.href },

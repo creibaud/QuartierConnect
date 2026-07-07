@@ -10,6 +10,9 @@ import {
     ContractPdfStoreAction,
 } from "./schemas/document.schema";
 
+// Collapse "viewed" audit entries logged within this window into one.
+const VIEW_DEDUP_WINDOW_MS = 10_000;
+
 @Injectable()
 export class ContractDocumentsService {
     private bucketInstance: GridFSBucket | undefined;
@@ -95,8 +98,21 @@ export class ContractDocumentsService {
             userId,
             at: new Date(),
         };
+        // Atomic dedup: skip when this user already logged a view in the window.
+        const dedupCutoff = new Date(Date.now() - VIEW_DEDUP_WINDOW_MS);
         await this.docModel.updateOne(
-            { contractId },
+            {
+                contractId,
+                auditLog: {
+                    $not: {
+                        $elemMatch: {
+                            action: "viewed",
+                            userId,
+                            at: { $gte: dedupCutoff },
+                        },
+                    },
+                },
+            },
             { $push: { auditLog: entry } },
         );
         return {

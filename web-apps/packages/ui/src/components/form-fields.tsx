@@ -17,10 +17,8 @@ function extractErrorMessage(error: unknown): string {
 
 function FieldError({ errors }: { errors: unknown[] }) {
     const first = errors[0];
-    // Always reserve one line of height so showing an error never shifts the
-    // layout (a shift mid-click used to make the click miss its target). The
-    // `alert` role is only set when there is a message, so an empty
-    // placeholder is never matched as an alert.
+    // Reserve one line of height so errors never shift the layout; role=alert
+    // only when a message is present.
     return (
         <p
             className="text-destructive min-h-5 text-sm"

@@ -51,6 +51,8 @@ export default {
             invalidCredentials: "Email ou mot de passe incorrect",
             invalidTotp: "Code TOTP invalide",
             loginFailed: "Erreur de connexion",
+            tooManyAttempts:
+                "Trop de tentatives de connexion. Réessayez dans quelques minutes.",
             emailExists: "Cette adresse email est déjà utilisée",
             registerFailed: "Erreur lors de l'inscription",
             invalidTotpCheckApp: "Code invalide. Vérifiez votre application.",
@@ -115,6 +117,8 @@ export default {
     incidents: {
         title: "Incidents",
         new: "Signaler un incident",
+        newDescription:
+            "Décrivez le problème et localisez-le sur la carte du quartier.",
         status: {
             open: "Ouvert",
             in_progress: "En cours",
@@ -415,8 +419,7 @@ export default {
             emailUpdateRejected:
                 "Adresse, mot de passe ou code de vérification refusé.",
             phoneCardTitle: "Téléphone",
-            phoneDescription:
-                "Numéro utilisé pour vous contacter (optionnel).",
+            phoneDescription: "Numéro utilisé pour vous contacter (optionnel).",
             phoneNotSet: "Aucun numéro renseigné",
             changePhone: "Modifier le téléphone",
             phoneLabel: "Numéro de téléphone",
@@ -603,6 +606,18 @@ export default {
             reserve: "Réserver",
             bookingRequested: "Demande de réservation envoyée",
             bookingError: "Réservation impossible",
+            dialogDescription:
+                "Décrivez le service que vous proposez ou recherchez.",
+            confirmReserveTitle: "Confirmer la réservation",
+            confirmReserveDescription:
+                "Ce service coûte {{points}} points, débités à la signature du contrat. Confirmer la demande ?",
+            bookingErrors: {
+                alreadyBooked:
+                    "Vous avez déjà une réservation en cours pour ce service.",
+                notPaid: "Ce service n'est pas payant.",
+                closed: "Ce service n'est plus disponible.",
+                ownService: "Vous ne pouvez pas réserver votre propre service.",
+            },
             mine: {
                 title: "Mes services",
                 description: "Gérez vos annonces et vos réponses.",
@@ -823,6 +838,8 @@ export default {
             title: "Événements",
             description: "Les rendez-vous et animations de votre quartier.",
             create: "Créer un événement",
+            createDescription:
+                "Renseignez le titre, la date et le lieu de votre événement.",
             viewCalendar: "Vue calendrier",
             viewList: "Vue liste",
             viewSwipe: "Découverte (swipe)",
@@ -859,8 +876,7 @@ export default {
             registered: "Inscrit",
             participants_one: "{{count}} participant",
             participants_other: "{{count}} participants",
-            participateError:
-                "Impossible d'enregistrer votre participation",
+            participateError: "Impossible d'enregistrer votre participation",
             viewDetails: "Voir le détail de l'événement",
         },
     },

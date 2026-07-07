@@ -47,8 +47,7 @@ export class EventsController {
         private readonly geocoding: GeocodingService,
     ) {}
 
-    // Residents AND moderators only reach events in their own quartier;
-    // admins moderate across every neighborhood (same rule as services).
+    // Non-admins are scoped to their own quartier; admins see all.
     private assertNeighborhoodScope(
         event: { neighborhoodId?: string | null },
         req: AuthRequest,
@@ -101,14 +100,11 @@ export class EventsController {
         @Query("date") date?: string,
         @Query("page") page = "1",
         @Query("limit") limit = "20",
-        // Default required by TS1016 (a required param can't follow the optional
-        // @Query params); harmless because the neighborhood guard below rejects it.
+        // Default required by TS1016: a required param can't follow optional @Query params.
         @Request() req: AuthRequest = { user: { sub: "", role: "" } },
     ) {
-        // Only admins list across all neighborhoods; residents AND moderators
-        // are scoped to their own. A scoped caller without a neighborhood gets
-        // nothing — otherwise Mongoose would strip `neighborhoodId: undefined`
-        // and leak every neighborhood's events (same rule as services).
+        // Scoped caller without a neighborhood gets nothing: an undefined
+        // neighborhoodId filter would be stripped and leak every neighborhood.
         const isAdmin = req.user.role === "admin";
         if (!isAdmin && !req.user.neighborhoodId) return [];
         const filter: Record<string, unknown> = {};
@@ -167,8 +163,7 @@ export class EventsController {
     @ApiResponse({ status: 401, description: "Not authenticated" })
     async create(@Body() dto: CreateEventDto, @Request() req: AuthRequest) {
         const location = await this.resolveLocation(dto.address, dto.location);
-        // Anti-spoofing: only admins may target another quartier; residents
-        // and moderators always publish into their own.
+        // Anti-spoofing: only admins may target another quartier.
         const neighborhoodId =
             req.user.role === "admin"
                 ? (dto.neighborhoodId ?? req.user.neighborhoodId ?? undefined)
@@ -259,8 +254,7 @@ export class EventsController {
             changes.description = dto.description;
         if (dto.category !== undefined) changes.category = dto.category;
         if (dto.date !== undefined) changes.date = dto.date;
-        // Only admins may move an event to another quartier; the field is
-        // silently ignored for everyone else (anti-spoofing).
+        // Anti-spoofing: only admins may move an event to another quartier.
         if (dto.neighborhoodId !== undefined && req.user.role === "admin")
             changes.neighborhoodId = dto.neighborhoodId;
         if (dto.location !== undefined)
@@ -270,8 +264,7 @@ export class EventsController {
             };
         if (dto.address !== undefined) {
             changes.address = dto.address;
-            // A failed geocoding clears the pin rather than silently keeping
-            // the previous position next to the new address text.
+            // Failed geocoding clears the pin rather than keeping a stale position.
             changes.location =
                 (await this.resolveLocation(dto.address, dto.location)) ?? null;
         }
@@ -284,8 +277,7 @@ export class EventsController {
             )
             .exec();
         if (!updated) throw new NotFoundException("Event not found");
-        // Mirror of the create() sync: recommendations read the event name,
-        // date and quartier from Neo4j, which must follow every edit.
+        // Keep the Neo4j projection in sync after every edit.
         void this.socialService.syncEvent(
             updated._id.toString(),
             updated.title,

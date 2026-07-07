@@ -13,9 +13,7 @@ import { SidebarMenuButton } from "@workspace/ui/components/sidebar";
 
 type LogoProps = { className?: string };
 
-// Logos de marque officiels : chemins Simple Icons pour Apple, Linux (Tux) et
-// OpenJDK. Windows n'est pas dans Simple Icons (marque déposée) : tracé classique
-// de la fenêtre à quatre volets.
+// Simple Icons paths, except Windows (trademarked) which uses a classic glyph.
 const WINDOWS_PATH =
     "M0 3.449 9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.801";
 const APPLE_PATH =

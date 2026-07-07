@@ -232,8 +232,7 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
         vote.voteType === "multiple_choice" || vote.voteType === "weighted";
 
     const showResults = hasVoted || isClosed;
-    // Anonymous votes only carry the requester's own cast, so displayed
-    // totals must come from the aggregated results endpoint.
+    // Anonymous votes only carry your own cast; totals come from the results endpoint.
     const { data: apiResults } = useQuery({
         queryKey: ["community-votes", vote._id, "results"],
         queryFn: () =>
@@ -262,9 +261,7 @@ function VoteCard({ vote }: { vote: CommunityVote }) {
                 queryKey: ["community-votes"],
             });
         },
-        // The backend replies in raw English; only the 409 (already voted)
-        // carries meaning worth relaying, everything else gets a generic
-        // localized message.
+        // Only the 409 (already voted) maps to a specific message; the rest are generic.
         onError: (err: Error & { status?: number }) =>
             toast.error(
                 err.status === 409

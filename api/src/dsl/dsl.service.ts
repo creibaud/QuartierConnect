@@ -33,8 +33,6 @@ export interface DslRequester {
     neighborhoodId?: string | null;
 }
 
-// Documented cap (dsl/README.md): a FIND without LIMIT — or with an
-// oversized one — never returns more than this.
 const MAX_DSL_RESULTS = 100;
 
 function clampLimit(limit: number | null): number {
@@ -117,9 +115,7 @@ export class DslService {
         return this.runCompiledQuery(compiled, requester);
     }
 
-    // Moderators are scoped to their quartier exactly like on the REST
-    // endpoints; the DSL must not be a side door around that invariant.
-    // Neighborhoods stay unscoped (public directory data).
+    // Non-admins are scoped to their own quartier; neighborhoods stay public.
     private isNeighborhoodScoped(requester?: DslRequester): boolean {
         return requester !== undefined && requester.role !== "admin";
     }

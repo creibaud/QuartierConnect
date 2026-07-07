@@ -25,9 +25,7 @@ interface AuthRequest {
     user: { sub: string };
 }
 
-// Half-size of the soft bias box, in degrees (~5 km) around the caller's home —
-// roughly their neighborhood, so nearby streets outrank same-named ones in
-// other cities (bias only: farther addresses still appear, ranked lower).
+// Half-size (deg, ~5 km) of the soft bias box around the caller's home.
 const VIEWBOX_HALF_DEG = 0.05;
 
 function buildViewbox(lat: number, lng: number): string {
@@ -76,7 +74,7 @@ export class GeocodingController {
         const query = (q ?? "").trim();
         if (query.length < 3) return [];
 
-        // Soft geographic bias from the caller's stored home coordinates.
+        // Soft bias from the caller's stored home coordinates.
         const [me] = await this.db
             .select({
                 lat: schema.users.addressLat,

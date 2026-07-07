@@ -7,8 +7,7 @@ const MIN_INTERVAL_MS = 1100; // honor the ~1 req/s usage policy
 export interface SearchOptions {
     /** Preferred label language (i18n locale, e.g. "fr" | "en"). */
     lang?: string;
-    /** Soft geographic bias `minLon,minLat,maxLon,maxLat` (NOT bounded — results
-        outside still appear, just ranked lower). */
+    /** Soft geographic bias box `minLon,minLat,maxLon,maxLat` (not bounded). */
     viewbox?: string;
 }
 
@@ -56,8 +55,7 @@ export class GeocodingService {
             "accept-language": opts.lang || "fr",
             q: query,
         });
-        // Soft bias only — no `bounded`/`countrycodes`, so the user can still
-        // find addresses outside their area.
+        // Soft bias only — no `bounded`/`countrycodes`.
         if (opts.viewbox) params.set("viewbox", opts.viewbox);
         const url = `${ENDPOINT}?${params.toString()}`;
         try {

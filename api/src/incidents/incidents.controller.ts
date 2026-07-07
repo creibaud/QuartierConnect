@@ -56,8 +56,7 @@ export class IncidentsController {
         private readonly db: PostgresJsDatabase<typeof schema>,
     ) {}
 
-    // Residents AND moderators only reach incidents in their own quartier;
-    // admins moderate across every neighborhood.
+    // Non-admins are scoped to their own quartier; admins see all.
     private assertNeighborhoodScope(
         incident: { neighborhoodId: string | null },
         req: AuthRequest,
@@ -74,9 +73,7 @@ export class IncidentsController {
         return req.user.role === "admin" || req.user.role === "moderator";
     }
 
-    // Moderation categories (reporting, bug) are confidential: a resident
-    // only ever sees neighborhood incidents plus their own submissions.
-    // 404 (not 403) so the existence of a report is never revealed.
+    // Moderation categories are confidential; 404 (not 403) hides their existence.
     private assertCategoryVisibility(
         incident: { category: string; createdBy: string },
         req: AuthRequest,
@@ -130,16 +127,14 @@ export class IncidentsController {
         @Query("page") page = "1",
         @Query("limit") limit = "20",
         @Query("since") since?: string,
-        // Default required by TS1016 (a required param can't follow optional
-        // @Query params); the neighborhood guard below rejects an empty role.
+        // Default required by TS1016: a required param can't follow optional @Query params.
         @Request() req: AuthRequest = { user: { sub: "", role: "" } },
     ) {
         const pageNum = Math.max(1, parseInt(page) || 1);
         const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
         const skip = (pageNum - 1) * limitNum;
 
-        // Only admins moderate across all neighborhoods; residents AND
-        // moderators see only their own quartier's incidents.
+        // Non-admins see only their own quartier's incidents.
         const isAdmin = req.user.role === "admin";
         if (!isAdmin && !req.user.neighborhoodId) return [];
 
@@ -153,8 +148,7 @@ export class IncidentsController {
             );
         }
         if (!this.canModerate(req)) {
-            // Moderation categories stay confidential: residents see the
-            // quartier's incidents plus their own reporting/bug submissions.
+            // Residents see neighborhood incidents plus their own submissions.
             const visible = or(
                 eq(schema.incidents.category, "neighborhood"),
                 eq(schema.incidents.createdBy, req.user.sub),
@@ -172,8 +166,7 @@ export class IncidentsController {
             conditions.push(eq(schema.incidents.status, status));
         }
         if (since) {
-            // Promised by the CDC for the desktop delta sync; a full pull is
-            // simply the same query without the parameter.
+            // Delta sync for the desktop client; a full pull omits this parameter.
             const sinceDate = new Date(since);
             if (Number.isNaN(sinceDate.getTime())) {
                 throw new BadRequestException(`Invalid since: ${since}`);
@@ -232,8 +225,7 @@ export class IncidentsController {
     })
     @ApiResponse({ status: 401, description: "Not authenticated" })
     create(@Body() dto: CreateIncidentDto, @Request() req: AuthRequest) {
-        // Anti-spoofing: only admins may target another quartier; residents
-        // and moderators always report into their own.
+        // Anti-spoofing: only admins may target another quartier.
         const neighborhoodId =
             req.user.role === "admin"
                 ? (dto.neighborhoodId ?? req.user.neighborhoodId ?? null)
@@ -374,9 +366,7 @@ export class IncidentsController {
         const isAdmin = req.user.role === "admin";
         const isModerator = req.user.role === "moderator";
         const canModerate = isAdmin || isModerator;
-        // Admins moderate every neighborhood; moderators only their own quartier;
-        // residents only their own incidents. Out-of-scope items fall into
-        // skippedIds so the client keeps them pending (see response shape below).
+        // Scope items by role; out-of-scope items go to skippedIds.
         const allowedItems = isAdmin
             ? dto.incidents
             : isModerator
@@ -392,9 +382,8 @@ export class IncidentsController {
                 skippedIds: dto.incidents.map((item) => item.id),
             };
 
-        // Residents cannot drive the status state machine (moderator-only,
-        // like PATCH /:id/status) nor plant an incident in another quartier:
-        // their items always land in their own neighborhood with status open.
+        // Residents can't set status or another quartier: forced to own
+        // neighborhood with status open.
         const upsert = this.db.insert(schema.incidents).values(
             allowedItems.map((item) => ({
                 id: item.id,
@@ -422,9 +411,7 @@ export class IncidentsController {
             ? { ...baseConflictUpdateSet, status: sql`excluded.status` }
             : baseConflictUpdateSet;
 
-        // Admins update any row; moderators only rows already in their own
-        // quartier (blocks spoofing another neighborhood's id); residents only
-        // rows they own.
+        // Restrict which existing rows each role may update.
         const conflictWhere = isAdmin
             ? undefined
             : isModerator

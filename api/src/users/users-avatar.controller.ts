@@ -49,8 +49,7 @@ function isAllowedAvatarMimeType(
     return (ALLOWED_AVATAR_MIME_TYPES as readonly string[]).includes(mimetype);
 }
 
-// Verify the declared MIME type against the file's magic bytes so a hostile
-// payload (e.g. an SVG carrying script) cannot masquerade as a raster image.
+// Reject files whose magic bytes don't match the declared image type.
 function hasMatchingImageMagicBytes(
     buffer: Buffer,
     mimetype: AllowedAvatarMimeType,
@@ -137,9 +136,7 @@ export class UsersAvatarController {
         await this.deleteExisting(req.user.sub);
 
         const fileId = new ObjectId();
-        // The write must reject on failure: without it the request either
-        // hangs or records an avatarUrl pointing at a file that was never
-        // stored.
+        // Reject on write failure so no avatarUrl points at a missing file.
         await new Promise<void>((resolve, reject) => {
             const stream = this.bucket.openUploadStreamWithId(
                 fileId,
@@ -200,8 +197,7 @@ export class UsersAvatarController {
         const [file] = await this.bucket.find({ _id: objectId }).toArray();
         if (!file) throw new NotFoundException("Avatar not found");
 
-        // Never trust the stored content type for untrusted data: only emit a
-        // safe raster type, and force download so no active content can render.
+        // Emit a known raster type and force download; never trust stored data.
         const storedType = file.metadata?.contentType as string | undefined;
         const contentType =
             storedType && isAllowedAvatarMimeType(storedType)
@@ -213,8 +209,7 @@ export class UsersAvatarController {
             "Cache-Control": "public, max-age=86400",
         });
         const download = this.bucket.openDownloadStream(objectId);
-        // .pipe() does not forward errors; an unhandled 'error' on the read
-        // stream (missing chunks) would crash the process.
+        // .pipe() doesn't forward read errors, so handle them here.
         download.on("error", () => {
             if (res.headersSent) res.destroy();
             else res.status(500).end();

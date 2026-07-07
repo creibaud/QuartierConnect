@@ -62,5 +62,5 @@ export const adminNavGroups: NavGroup[] = [
     },
 ];
 
-// Liste plate dérivée — garde le lookup de titre de section (_app.tsx) fonctionnel.
+// Flat list for the section-title lookup in _app.tsx.
 export const adminNavItems: NavItem[] = adminNavGroups.flatMap((g) => g.items);

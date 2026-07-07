@@ -20,9 +20,8 @@ export enum SignatureZoneKind {
     INITIALS = "initials",
 }
 
-// Normalized (0..1) rectangle relative to its page, origin at the TOP-LEFT
-// corner of the page (screen convention). PdfService flips to pdf-lib's
-// bottom-left origin when stamping.
+// Normalized (0..1) rectangle with a top-left origin; PdfService flips to
+// pdf-lib's bottom-left origin when stamping.
 export interface SignatureZone {
     page: number;
     x: number;

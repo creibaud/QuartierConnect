@@ -1,5 +1,4 @@
-// NOTE: packages/ui vitest has no jest-dom setup — use plain truthiness, not
-// matchers like toBeInTheDocument.
+// No jest-dom setup here — assert with plain truthiness, not toBeInTheDocument.
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import {

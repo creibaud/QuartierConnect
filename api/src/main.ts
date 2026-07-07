@@ -239,8 +239,7 @@ Endpoints that return lists accept \`?page=1&limit=20\` (max 100).
         },
     );
 
-    // API reference is exposed in every environment; access control is enforced
-    // at the Caddy edge (basic_auth on /docs, /api/docs, /scalar).
+    // Access control is enforced at the Caddy edge (basic_auth).
     app.use(
         "/docs",
         apiReference({
@@ -249,16 +248,14 @@ Endpoints that return lists accept \`?page=1&limit=20\` (max 100).
         }),
     );
 
+    // Caddy owns the edge security headers; avoid duplicating them here.
     app.use(
         helmet({
-            contentSecurityPolicy: {
-                directives: {
-                    ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-                    "script-src": ["'self'", "'unsafe-inline'"],
-                    "style-src": ["'self'", "'unsafe-inline'"],
-                    "img-src": ["'self'", "data:"],
-                },
-            },
+            contentSecurityPolicy: false,
+            strictTransportSecurity: false,
+            xFrameOptions: false,
+            referrerPolicy: false,
+            xContentTypeOptions: false,
         }),
     );
 

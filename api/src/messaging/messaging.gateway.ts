@@ -25,10 +25,7 @@ import { MessageType } from "./schemas/message.schema";
 
 interface AuthSocket extends Socket {
     userId: string;
-    // Resolves once handleConnection has finished authenticating this socket.
-    // Message handlers await it so an early message (emitted right after the
-    // client's `connect` event, while the async token/role check is still
-    // running) does not read an unset `userId` and get wrongly rejected.
+    // Resolves once the socket is authenticated; handlers await it before reading userId.
     authReady?: Promise<void>;
 }
 
@@ -62,9 +59,7 @@ export class MessagingGateway
     ) {}
 
     async handleConnection(client: Socket) {
-        // Store the auth promise synchronously (before the first await) so a
-        // message emitted right after the client's `connect` event can wait for
-        // authentication to finish instead of racing it. See `AuthSocket.authReady`.
+        // Store the auth promise synchronously so early messages can await it.
         const ready = this.authenticateAndSetup(client);
         (client as AuthSocket).authReady = ready;
         await ready;
@@ -117,9 +112,7 @@ export class MessagingGateway
         }
     }
 
-    // Resolves the authenticated userId, waiting for handleConnection's async
-    // authentication to finish first. Closes the race where a message arrives
-    // before `userId` has been set on the socket.
+    // Wait for authentication to finish, then return the authenticated userId.
     private async requireUserId(client: Socket): Promise<string> {
         const ready = (client as AuthSocket).authReady;
         if (ready) await ready;
@@ -128,8 +121,7 @@ export class MessagingGateway
         return userId;
     }
 
-    // Mirrors JwtStrategy.validate(): a socket must be rejected if its access
-    // token was revoked (logout) or if the account has since been banned/deleted.
+    // Reject a socket whose token was revoked or whose account is banned/deleted.
     private async isTokenStillValid(payload: JwtPayload): Promise<boolean> {
         if (
             payload.jti &&
@@ -210,8 +202,7 @@ export class MessagingGateway
         return message;
     }
 
-    // WS payloads bypass the HTTP ValidationPipe, so the shape must be
-    // checked here before anything is persisted or broadcast.
+    // WS payloads bypass the HTTP ValidationPipe, so validate the shape here.
     private validateSendMessage(
         data: { conversationId?: unknown; content?: unknown } | undefined,
     ): { conversationId: string; content: string } {
