@@ -873,6 +873,8 @@ export default {
             title: "Download desktop client",
             description:
                 "Pick the installer for your system. Clean install: menu entry and uninstall handled by the OS.",
+            securityNote:
+                'Unsigned installers: on first launch, Windows SmartScreen shows "More info → Run anyway"; on macOS, right-click the app → Open.',
         },
         common: {
             create: "Create",

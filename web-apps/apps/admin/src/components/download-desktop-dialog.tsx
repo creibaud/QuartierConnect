@@ -95,6 +95,9 @@ export function DownloadDesktopDialog() {
                         </a>
                     ))}
                 </div>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                    {t("adminPages.download.securityNote")}
+                </p>
             </DialogContent>
         </Dialog>
     );
