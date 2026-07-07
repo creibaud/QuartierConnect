@@ -1,67 +1,68 @@
-[{
-	"_id": {
-		"$oid": "6a43d564e4b13110b26ecb94"
+[
+	{
+		"_id": {
+			"$oid": "6a43d564e4b13110b26ecb94"
+		},
+		"participants": [
+			"f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
+			"40170148-cd96-4279-b62a-03d63dfb9d2a"
+		],
+		"neighborhoodId": null,
+		"isGroup": false,
+		"groupName": null,
+		"lastMessageAt": {
+			"$date": "2026-07-01T12:19:08.747Z"
+		},
+		"createdAt": {
+			"$date": "2026-06-30T14:40:36.318Z"
+		},
+		"updatedAt": {
+			"$date": "2026-07-01T12:19:08.749Z"
+		},
+		"__v": 0
 	},
-	"participants": [
-		"f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"40170148-cd96-4279-b62a-03d63dfb9d2a"
-	],
-	"neighborhoodId": null,
-	"isGroup": false,
-	"groupName": null,
-	"lastMessageAt": {
-		"$date": "2026-07-01T12:19:08.747Z"
+	{
+		"_id": {
+			"$oid": "6a475665ef7bb82ab044d3e4"
+		},
+		"participants": [
+			"41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+			"f3dad978-6792-4d0c-b2a5-fe3f3f08253f"
+		],
+		"neighborhoodId": null,
+		"isGroup": false,
+		"groupName": null,
+		"lastMessageAt": {
+			"$date": "2026-07-07T07:20:36.266Z"
+		},
+		"createdAt": {
+			"$date": "2026-07-03T06:27:49.617Z"
+		},
+		"updatedAt": {
+			"$date": "2026-07-07T07:20:36.267Z"
+		},
+		"__v": 0
 	},
-	"createdAt": {
-		"$date": "2026-06-30T14:40:36.318Z"
-	},
-	"updatedAt": {
-		"$date": "2026-07-01T12:19:08.749Z"
-	},
-	"__v": 0
-},
-{
-	"_id": {
-		"$oid": "6a4629251e5092ea4fbe57ce"
-	},
-	"participants": [
-		"f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"ea7894ed-97f8-45ef-b955-35cd773830e5"
-	],
-	"neighborhoodId": null,
-	"isGroup": false,
-	"groupName": null,
-	"lastMessageAt": {
-		"$date": "2026-07-02T21:06:59.214Z"
-	},
-	"createdAt": {
-		"$date": "2026-07-02T09:02:29.919Z"
-	},
-	"updatedAt": {
-		"$date": "2026-07-02T21:06:59.214Z"
-	},
-	"__v": 0
-},
-{
-	"_id": {
-		"$oid": "6a475665ef7bb82ab044d3e4"
-	},
-	"participants": [
-		"41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-		"f3dad978-6792-4d0c-b2a5-fe3f3f08253f"
-	],
-	"neighborhoodId": null,
-	"isGroup": false,
-	"groupName": null,
-	"lastMessageAt": {
-		"$date": "2026-07-03T06:29:42.794Z"
-	},
-	"createdAt": {
-		"$date": "2026-07-03T06:27:49.617Z"
-	},
-	"updatedAt": {
-		"$date": "2026-07-03T06:29:42.794Z"
-	},
-	"__v": 0
-}]
-
+	{
+		"_id": {
+			"$oid": "6a4629251e5092ea4fbe57ce"
+		},
+		"participants": [
+			"f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
+			"ea7894ed-97f8-45ef-b955-35cd773830e5"
+		],
+		"neighborhoodId": null,
+		"isGroup": false,
+		"groupName": null,
+		"lastMessageAt": {
+			"$date": "2026-07-03T16:54:25.631Z"
+		},
+		"createdAt": {
+			"$date": "2026-07-02T09:02:29.919Z"
+		},
+		"updatedAt": {
+			"$date": "2026-07-03T16:54:25.633Z"
+		},
+		"__v": 0
+	}
+]

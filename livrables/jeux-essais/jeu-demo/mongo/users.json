@@ -1,2 +1,23 @@
-[]
-
+[
+	{
+		"_id": {
+			"$oid": "6a4b908a279b0a99a66503b7"
+		},
+		"email": "c.reibaud@myskolae.fr",
+		"__v": 0,
+		"consentTimestamp": {
+			"$date": "2026-07-06T11:24:58.819Z"
+		},
+		"createdAt": {
+			"$date": "2026-07-06T11:24:58.823Z"
+		},
+		"passwordHash": "$argon2id$v=19$m=65536,t=3,p=4$dqXmsnfFwNJaD+XjwUifHw$Rwa6z9q8o3suRxj+fAFKz/PhM55aW4V5bLw6ERnmioc",
+		"refreshTokenHash": null,
+		"role": "resident",
+		"totpEnabled": true,
+		"totpSecret": "GZ2EGV2CMMSUETKEMI5WYP3QFFZFW3KNHRTTWR3BM5HXUUR2HRZQ",
+		"updatedAt": {
+			"$date": "2026-07-06T11:24:58.823Z"
+		}
+	}
+]

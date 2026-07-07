@@ -1,187 +1,218 @@
-[{
-	"_id": {
-		"$oid": "6a46f580cc59f9b84636dfb7"
+[
+	{
+		"_id": {
+			"$oid": "6a44346ed6ad48111c1abcac"
+		},
+		"title": "Aide au jardinage le week-end",
+		"description": "Je propose mon aide pour désherber et tailler les haies le samedi matin.",
+		"category": "gardening",
+		"type": "exchange",
+		"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+		"neighborhoodId": "6a4283405980b9e26ff1a729",
+		"pointsMultiplier": 1,
+		"location": {
+			"type": "Point",
+			"coordinates": [
+				2.3850679222302062,
+				48.84461700272908
+			]
+		},
+		"direction": "offer",
+		"createdAt": {
+			"$date": "2026-06-30T21:26:06.293Z"
+		},
+		"updatedAt": {
+			"$date": "2026-07-07T07:09:12.15Z"
+		},
+		"__v": 0
 	},
-	"title": "Coup de main bricolage par Bob",
-	"description": "Bob vous aide pour vos petits travaux : étagères, joints, ampoules.",
-	"category": "handyman",
-	"type": "paid",
-	"createdBy": "ea7894ed-97f8-45ef-b955-35cd773830e5",
-	"neighborhoodId": "6a42833f5980b9e26ff1a71c",
-	"pointsMultiplier": 1,
-	"direction": "offer",
-	"duration": 60,
-	"status": "active",
-	"createdAt": {
-		"$date": "2026-07-02T23:34:24.343Z"
+	{
+		"_id": {
+			"$oid": "6a44346ed6ad48111c1abcb0"
+		},
+		"title": "Cherche aide pour petit déménagement",
+		"description": "Besoin d'un coup de main pour déplacer quelques meubles ce mois-ci.",
+		"category": "handyman",
+		"type": "paid",
+		"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+		"neighborhoodId": "6a42833f5980b9e26ff1a71c",
+		"pointsMultiplier": 1,
+		"location": {
+			"type": "Point",
+			"coordinates": [
+				2.3692312208095014,
+				48.88276468194858
+			]
+		},
+		"direction": "request",
+		"createdAt": {
+			"$date": "2026-06-30T21:26:06.343Z"
+		},
+		"updatedAt": {
+			"$date": "2026-06-30T21:26:06.343Z"
+		},
+		"__v": 0
 	},
-	"updatedAt": {
-		"$date": "2026-07-02T23:34:24.343Z"
+	{
+		"_id": {
+			"$oid": "6a46c6c0f0d7122d4dc9c973"
+		},
+		"title": "Réparation de vélo par Alice",
+		"description": "Alice répare votre vélo : freins, dérailleur, chambre à air.",
+		"category": "handyman",
+		"type": "paid",
+		"createdBy": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
+		"neighborhoodId": "6a42833f5980b9e26ff1a71c",
+		"pointsMultiplier": 1,
+		"location": {
+			"type": "Point",
+			"coordinates": [
+				2.3652313,
+				48.879765
+			]
+		},
+		"direction": "offer",
+		"duration": 60,
+		"status": "active",
+		"createdAt": {
+			"$date": "2026-07-02T20:14:56.044Z"
+		},
+		"updatedAt": {
+			"$date": "2026-07-02T20:14:56.044Z"
+		},
+		"__v": 0
 	},
-	"__v": 0
-},
-{
-	"_id": {
-		"$oid": "6a44346ed6ad48111c1abcac"
+	{
+		"_id": {
+			"$oid": "6a44346ed6ad48111c1abcaf"
+		},
+		"title": "Recherche covoiturage pour le marché",
+		"description": "Je cherche un trajet partagé vers le marché le dimanche matin.",
+		"category": "transport",
+		"type": "free",
+		"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+		"neighborhoodId": "6a42833f5980b9e26ff1a71c",
+		"pointsMultiplier": 1,
+		"location": {
+			"type": "Point",
+			"coordinates": [
+				2.3632312208095017,
+				48.87776468194858
+			]
+		},
+		"direction": "request",
+		"createdAt": {
+			"$date": "2026-06-30T21:26:06.334Z"
+		},
+		"updatedAt": {
+			"$date": "2026-06-30T21:26:06.334Z"
+		},
+		"__v": 0
 	},
-	"title": "Aide au jardinage le week-end",
-	"description": "Je propose mon aide pour désherber et tailler les haies le samedi matin.",
-	"category": "gardening",
-	"type": "exchange",
-	"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-	"neighborhoodId": "6a42833f5980b9e26ff1a71c",
-	"pointsMultiplier": 1,
-	"location": {
-		"type": "Point",
-		"coordinates": [
-			2.3682312208095015,
-			48.88176468194858
-		]
+	{
+		"_id": {
+			"$oid": "6a46f580cc59f9b84636dfb7"
+		},
+		"title": "Coup de main bricolage par Bob",
+		"description": "Bob vous aide pour vos petits travaux : étagères, joints, ampoules.",
+		"category": "handyman",
+		"type": "paid",
+		"createdBy": "ea7894ed-97f8-45ef-b955-35cd773830e5",
+		"neighborhoodId": "6a42833f5980b9e26ff1a71c",
+		"pointsMultiplier": 1,
+		"direction": "offer",
+		"duration": 60,
+		"status": "active",
+		"createdAt": {
+			"$date": "2026-07-02T23:34:24.343Z"
+		},
+		"updatedAt": {
+			"$date": "2026-07-02T23:34:24.343Z"
+		},
+		"__v": 0
 	},
-	"direction": "offer",
-	"createdAt": {
-		"$date": "2026-06-30T21:26:06.293Z"
+	{
+		"_id": {
+			"$oid": "6a44346ed6ad48111c1abcae"
+		},
+		"title": "Garde d'animaux",
+		"description": "Je garde vos animaux de compagnie pendant vos absences.",
+		"category": "childcare",
+		"type": "free",
+		"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+		"neighborhoodId": "6a42833f5980b9e26ff1a71c",
+		"pointsMultiplier": 1,
+		"location": {
+			"type": "Point",
+			"coordinates": [
+				2.367231220809501,
+				48.87676468194858
+			]
+		},
+		"direction": "offer",
+		"createdAt": {
+			"$date": "2026-06-30T21:26:06.323Z"
+		},
+		"updatedAt": {
+			"$date": "2026-07-03T09:15:33.503Z"
+		},
+		"__v": 0
 	},
-	"updatedAt": {
-		"$date": "2026-07-03T09:09:50.398Z"
+	{
+		"_id": {
+			"$oid": "6a44346ed6ad48111c1abcad"
+		},
+		"title": "Cours de soutien scolaire",
+		"description": "Étudiant disponible pour aider collégiens et lycéens en maths.",
+		"category": "other",
+		"type": "paid",
+		"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
+		"neighborhoodId": "6a42833f5980b9e26ff1a71c",
+		"pointsMultiplier": 1,
+		"location": {
+			"type": "Point",
+			"coordinates": [
+				2.3612312208095014,
+				48.88076468194858
+			]
+		},
+		"direction": "offer",
+		"createdAt": {
+			"$date": "2026-06-30T21:26:06.312Z"
+		},
+		"updatedAt": {
+			"$date": "2026-06-30T21:26:06.312Z"
+		},
+		"__v": 0
 	},
-	"__v": 0
-},
-{
-	"_id": {
-		"$oid": "6a44346ed6ad48111c1abcad"
-	},
-	"title": "Cours de soutien scolaire",
-	"description": "Étudiant disponible pour aider collégiens et lycéens en maths.",
-	"category": "other",
-	"type": "paid",
-	"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-	"neighborhoodId": "6a42833f5980b9e26ff1a71c",
-	"pointsMultiplier": 1,
-	"location": {
-		"type": "Point",
-		"coordinates": [
-			2.3612312208095014,
-			48.88076468194858
-		]
-	},
-	"direction": "offer",
-	"createdAt": {
-		"$date": "2026-06-30T21:26:06.312Z"
-	},
-	"updatedAt": {
-		"$date": "2026-06-30T21:26:06.312Z"
-	},
-	"__v": 0
-},
-{
-	"_id": {
-		"$oid": "6a44346ed6ad48111c1abcb0"
-	},
-	"title": "Cherche aide pour petit déménagement",
-	"description": "Besoin d'un coup de main pour déplacer quelques meubles ce mois-ci.",
-	"category": "handyman",
-	"type": "paid",
-	"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-	"neighborhoodId": "6a42833f5980b9e26ff1a71c",
-	"pointsMultiplier": 1,
-	"location": {
-		"type": "Point",
-		"coordinates": [
-			2.3692312208095014,
-			48.88276468194858
-		]
-	},
-	"direction": "request",
-	"createdAt": {
-		"$date": "2026-06-30T21:26:06.343Z"
-	},
-	"updatedAt": {
-		"$date": "2026-06-30T21:26:06.343Z"
-	},
-	"__v": 0
-},
-{
-	"_id": {
-		"$oid": "6a46c6c0f0d7122d4dc9c973"
-	},
-	"title": "Réparation de vélo par Alice",
-	"description": "Alice répare votre vélo : freins, dérailleur, chambre à air.",
-	"category": "handyman",
-	"type": "paid",
-	"createdBy": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-	"neighborhoodId": "6a42833f5980b9e26ff1a71c",
-	"pointsMultiplier": 1,
-	"location": {
-		"type": "Point",
-		"coordinates": [
-			2.3652313,
-			48.879765
-		]
-	},
-	"direction": "offer",
-	"duration": 60,
-	"status": "active",
-	"createdAt": {
-		"$date": "2026-07-02T20:14:56.044Z"
-	},
-	"updatedAt": {
-		"$date": "2026-07-02T20:14:56.044Z"
-	},
-	"__v": 0
-},
-{
-	"_id": {
-		"$oid": "6a44346ed6ad48111c1abcae"
-	},
-	"title": "Garde d'animaux",
-	"description": "Je garde vos animaux de compagnie pendant vos absences.",
-	"category": "childcare",
-	"type": "free",
-	"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-	"neighborhoodId": "6a42833f5980b9e26ff1a71c",
-	"pointsMultiplier": 1,
-	"location": {
-		"type": "Point",
-		"coordinates": [
-			2.367231220809501,
-			48.87676468194858
-		]
-	},
-	"direction": "offer",
-	"createdAt": {
-		"$date": "2026-06-30T21:26:06.323Z"
-	},
-	"updatedAt": {
-		"$date": "2026-07-03T09:15:33.503Z"
-	},
-	"__v": 0
-},
-{
-	"_id": {
-		"$oid": "6a44346ed6ad48111c1abcaf"
-	},
-	"title": "Recherche covoiturage pour le marché",
-	"description": "Je cherche un trajet partagé vers le marché le dimanche matin.",
-	"category": "transport",
-	"type": "free",
-	"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-	"neighborhoodId": "6a42833f5980b9e26ff1a71c",
-	"pointsMultiplier": 1,
-	"location": {
-		"type": "Point",
-		"coordinates": [
-			2.3632312208095017,
-			48.87776468194858
-		]
-	},
-	"direction": "request",
-	"createdAt": {
-		"$date": "2026-06-30T21:26:06.334Z"
-	},
-	"updatedAt": {
-		"$date": "2026-06-30T21:26:06.334Z"
-	},
-	"__v": 0
-}]
-
+	{
+		"_id": {
+			"$oid": "6a4ca76e5c5c3b730611c41d"
+		},
+		"title": "TEST",
+		"description": "TEST",
+		"category": "transport",
+		"type": "paid",
+		"createdBy": "92805dbc-9df0-4ecb-b6a2-59ffd4536f7c",
+		"neighborhoodId": "6a4283405980b9e26ff1a729",
+		"pointsMultiplier": 1,
+		"location": {
+			"type": "Point",
+			"coordinates": [
+				2.3313015,
+				48.8691551
+			]
+		},
+		"direction": "offer",
+		"address": "12, Rue de la Paix, Quartier Gaillon, Paris 2e Arrondissement, Paris, Île-de-France, France métropolitaine, 75002, France",
+		"duration": 2,
+		"status": "active",
+		"createdAt": {
+			"$date": "2026-07-07T07:14:54.841Z"
+		},
+		"updatedAt": {
+			"$date": "2026-07-07T07:14:54.841Z"
+		},
+		"__v": 0
+	}
+]
