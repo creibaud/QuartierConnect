@@ -14,7 +14,7 @@ public class AuthService {
 
     private volatile String accessToken;
     private volatile String refreshToken;
-    /** E-mail issu du payload JWT — mis en cache pour rester disponible même hors ligne. */
+    /** Email from the JWT payload, cached so it stays available offline. */
     private volatile String cachedEmail;
 
     private static volatile AuthService instance;
@@ -29,7 +29,7 @@ public class AuthService {
     public record LoginResult(String accessToken, String refreshToken) {}
 
     // ------------------------------------------------------------------
-    // Flux de connexion en ligne
+    // Online login
     // ------------------------------------------------------------------
 
     public LoginResult login(String email, String password, String totpCode) throws Exception {
@@ -60,16 +60,12 @@ public class AuthService {
     }
 
     // ------------------------------------------------------------------
-    // Flux hors ligne / reprise de session
+    // Offline / session resume
     // ------------------------------------------------------------------
 
     /**
-     * Tente de reprendre une session depuis le stockage persistant sans aucun appel réseau.
-     * L'e-mail est restauré depuis SQLite ; les jetons sont restaurés depuis le trousseau de l'OS via TokenVault.
-     *
-     * @return true si un jeton d'accès valide (non expiré) a été restauré, ou si seul un jeton de
-     *         rafraîchissement est disponible (mode hors ligne — l'appelant devrait déclencher un
-     *         rafraîchissement en arrière-plan au retour de la connectivité).
+     * Resumes a session from local storage without touching the network.
+     * True when a non-expired access token was restored, or when only a refresh token remains (offline).
      */
     public boolean tryResumeFromDatabase() {
         SQLiteDatabase.SessionRecord emailRecord = SQLiteDatabase.loadSession();
@@ -90,12 +86,7 @@ public class AuthService {
         return refreshToken != null;
     }
 
-    /**
-     * Tente d'obtenir une nouvelle paire de jetons à l'aide du jeton de rafraîchissement stocké.
-     * Persiste la nouvelle paire en cas de succès.
-     *
-     * @return true si le rafraîchissement a réussi.
-     */
+    /** Exchanges the stored refresh token for a new pair, persisted on success. */
     public boolean refreshAccessToken() {
         try {
             if (refreshToken == null) return false;
@@ -111,13 +102,13 @@ public class AuthService {
             return true;
         } catch (Exception e) {
             log.warning("Token refresh failed: " + e.getMessage());
-            // Ne PAS effacer la session ici — nous sommes peut-être hors ligne ; conserver l'état en cache
+            // keep the cached session, we may just be offline
             return false;
         }
     }
 
     // ------------------------------------------------------------------
-    // Accesseurs
+    // Accessors
     // ------------------------------------------------------------------
 
     public String getAccessToken() {
@@ -126,13 +117,10 @@ public class AuthService {
 
     public boolean isAuthenticated() {
         return (accessToken != null && !isTokenExpired(accessToken))
-                || (refreshToken != null); // authentifié hors ligne
+                || (refreshToken != null); // offline auth
     }
 
-    /**
-     * Retourne l'e-mail de l'utilisateur. Se rabat sur l'e-mail mis en cache dans SQLite si le JWT
-     * est indisponible (par exemple, après un démarrage sans réseau).
-     */
+    /** User email, falling back to the SQLite-cached value when the JWT is unavailable. */
     public String getCurrentUserEmail() {
         String fromJwt = extractEmailFromJwt(accessToken);
         return fromJwt != null ? fromJwt : cachedEmail;
@@ -165,7 +153,7 @@ public class AuthService {
     }
 
     // ------------------------------------------------------------------
-    // Utilitaires internes
+    // Internal helpers
     // ------------------------------------------------------------------
 
     private void applyTokens(String newAccessToken, String newRefreshToken) {

@@ -33,7 +33,7 @@ test.describe("Admin — Gestion utilisateurs", () => {
             await apiRegister(targetEmail);
             apiAvailable = true;
         } catch (err) {
-            // API or Docker not available — API-dependent tests will be skipped
+            // no backend or docker, tests skip below
         }
     });
 
@@ -76,7 +76,7 @@ test.describe("Admin — Gestion utilisateurs", () => {
 
     test("lists registered users", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
-        // Verify at least one data row is present in the table
+        // row 0 is the header
         await expect(page.getByRole("row").nth(1)).toBeVisible({
             timeout: 5000,
         });
@@ -89,10 +89,10 @@ test.describe("Admin — Gestion utilisateurs", () => {
 
     test("changes user role to moderator", async ({ page }) => {
         test.skip(!apiAvailable, "API not available — start the backend first");
-        // .nth(1): skip the role-FILTER combobox (.first()); target a user row's role select
+        // nth(0) is the role filter, nth(1) the first user row select
         const combobox = page.getByRole("combobox").nth(1);
         await expect(combobox).toBeVisible({ timeout: 8000 });
-        // Read current role to pick a different target (avoid no-op select)
+        // avoid a no-op role change
         const currentText = (await combobox.textContent()) ?? "";
         const target = /modérateur/i.test(currentText)
             ? /résident/i

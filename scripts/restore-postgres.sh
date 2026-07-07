@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Restauration PostgreSQL depuis un dump produit par backup-all.sh (pg_dumpall).
+# Restore PostgreSQL from a backup-all.sh dump (pg_dumpall).
 #
-#   Usage : ./scripts/restore-postgres.sh /var/backups/quartierconnect/postgres-<DATE>.sql.gz
+#   Usage: ./scripts/restore-postgres.sh /var/backups/quartierconnect/postgres-<DATE>.sql.gz
 #
-# ⚠ Réinjecte le dump global (rôles + bases). Demande une confirmation 'oui'.
+# Replays the global dump (roles + databases). Asks for confirmation first.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -21,7 +21,7 @@ echo "   $ARCHIVE"
 read -r -p "Confirmer ? Taper 'oui' : " CONFIRM
 [ "$CONFIRM" = "oui" ] || { echo "Annulé."; exit 1; }
 
-# pg_dumpall contient les CREATE DATABASE/ROLE : on rejoue dans la base 'postgres'.
+# pg_dumpall includes CREATE DATABASE/ROLE, so replay into the 'postgres' db.
 gunzip -c "$ARCHIVE" | $COMPOSE exec -T postgres psql -U "$PG_USER" -d postgres
 
 echo "✓ PostgreSQL restauré depuis $(basename "$ARCHIVE")"

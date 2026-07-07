@@ -103,13 +103,13 @@ public class ConflictResolutionForm {
         grid.setHgap(0);
         grid.setVgap(0);
 
-        // Colonne « champ » assez large pour « Description » sans retour à la ligne.
+        // Field column wide enough to fit "Description" without wrapping
         ColumnConstraints fieldCol = new ColumnConstraints();
         fieldCol.setMinWidth(112);
         fieldCol.setPrefWidth(112);
         fieldCol.setMaxWidth(112);
 
-        // Base / local / serveur : tiers égaux de la largeur restante.
+        // Base / local / server split the remaining width equally
         ColumnConstraints baseCol = new ColumnConstraints();
         baseCol.setHgrow(Priority.ALWAYS);
         baseCol.setFillWidth(true);
@@ -124,9 +124,7 @@ public class ConflictResolutionForm {
 
         grid.getColumnConstraints().addAll(fieldCol, baseCol, localCol, remoteCol);
 
-        // Rangées : cellules étirées sur toute la hauteur de la ligne et centrées
-        // verticalement, pour que bordures/fonds soient continus et que badge et
-        // texte restent alignés d'une colonne à l'autre.
+        // Cells fill the full row height, keeping borders continuous across columns
         for (int r = 0; r < 4; r++) {
             RowConstraints rc = new RowConstraints();
             rc.setValignment(VPos.CENTER);
@@ -248,9 +246,7 @@ public class ConflictResolutionForm {
         return box;
     }
 
-    /** Étire une cellule sur toute la largeur et la hauteur de sa case ; le texte
-     *  d'un Label est aligné à gauche et centré verticalement, de sorte que les
-     *  colonnes base / local / serveur restent alignées ligne à ligne. */
+    /** Stretches a cell to fill its grid slot; Label text stays left-aligned and vertically centered. */
     private void stretchCell(Region cell) {
         cell.setMaxWidth(Double.MAX_VALUE);
         cell.setMaxHeight(Double.MAX_VALUE);

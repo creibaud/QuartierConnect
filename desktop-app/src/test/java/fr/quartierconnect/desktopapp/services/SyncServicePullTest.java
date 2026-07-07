@@ -20,9 +20,8 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Drives {@link SyncService#pullIncidents} directly with a fake page fetcher —
- * no network, no AuthService — to prove the full pull paginates the whole scope
- * before tombstoning, so an incident beyond page 1 is never deleted by mistake.
+ * Drives {@link SyncService#pullIncidents} with a fake page fetcher (no network):
+ * a full pull must paginate the whole scope before tombstoning.
  */
 class SyncServicePullTest {
 

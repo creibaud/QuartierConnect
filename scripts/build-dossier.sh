@@ -1,25 +1,23 @@
 #!/usr/bin/env bash
-# Assemble tous les documents du dossier de rendu en un seul fichier Markdown
-# (docs/DOSSIER-RENDU.md), dans l'ordre attendu par le jury. La conversion en
-# PDF se fait ensuite avec l'outil de rendu (voir README / make dossier).
+# Concatenate all deliverable docs into docs/DOSSIER-RENDU.md, in the order
+# expected by the jury. PDF conversion happens afterwards (see make dossier).
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 OUT="docs/DOSSIER-RENDU.md"
 
-# Ordre du dossier : synthèse, dossier technique, utilisation, exploitation.
 DOCS=(
-  SYNTHESE        # document de synthèse (démarche, architecture, analyse critique)
-  ARCHITECTURE    # schémas d'architecture et conteneurs
-  DATABASE        # modélisation des 4 bases
-  API             # référence des 86 routes
-  SECURITY        # sécurité, MFA, RGPD
-  DSL             # langage de requête maison
-  PLUGINS         # système de plugins du client lourd
-  TEST            # stratégie et résultats de tests
-  USER_GUIDE      # dossier d'utilisation par rôle
-  DEPLOYMENT      # installation et déploiement
-  RUNBOOK         # exploitation
+  SYNTHESE        # synthesis (approach, architecture, critical analysis)
+  ARCHITECTURE    # architecture and container diagrams
+  DATABASE        # data modelling for the 4 databases
+  API             # reference for the 86 routes
+  SECURITY        # security, MFA, GDPR
+  DSL             # custom query language
+  PLUGINS         # desktop client plugin system
+  TEST            # test strategy and results
+  USER_GUIDE      # per-role user guide
+  DEPLOYMENT      # install and deployment
+  RUNBOOK         # operations
 )
 
 : > "$OUT"

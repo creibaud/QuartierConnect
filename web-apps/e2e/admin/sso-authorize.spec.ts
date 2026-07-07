@@ -13,7 +13,7 @@ test.use({
 });
 
 const CALLBACK_URL = "http://localhost:59999/callback";
-// The API contract requires a UUID v4 state (SsoGenerateDto — PKCE CSRF protection)
+// the API expects a UUID v4 state
 const SSO_STATE = randomUUID();
 
 function authorizePath(): string {
@@ -57,7 +57,7 @@ test.describe("Admin — SSO desktop (consentement)", () => {
 
             apiAvailable = true;
         } catch (err) {
-            // API or Docker not available — API-dependent tests will be skipped
+            // no backend or docker, tests skip below
         }
     });
 

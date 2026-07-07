@@ -85,10 +85,7 @@ public class IncidentRepository {
         }
     }
 
-    /**
-     * Enregistre l'instantané ancêtre d'un incident local.
-     * Appelée après un push réussi afin que les prochains pulls puissent calculer une fusion à trois voies.
-     */
+    /** Stores the post-push ancestor snapshot used by later three-way merges. */
     public void updateBase(int localId, String title, String description,
                            String status, String updatedAt) throws SQLException {
         String sql = """
@@ -107,10 +104,7 @@ public class IncidentRepository {
         }
     }
 
-    /**
-     * Accepte la version locale ou distante d'un incident en conflit,
-     * efface le marqueur de conflit et réinitialise la base sur les valeurs acceptées.
-     */
+    /** Keeps the local or remote version of a conflicted incident and resets the merge base. */
     public void resolveConflict(int localId, boolean acceptRemote) throws SQLException {
         String selectSql = """
                 SELECT title, description, status, updated_at,
@@ -153,14 +147,9 @@ public class IncidentRepository {
     }
 
     /**
-     * Applique un upsert d'un incident serveur via une fusion à trois voies lorsqu'un instantané ancêtre existe,
-     * en repliant sur le Last-Write-Wins quand aucune base n'est disponible (première synchronisation).
-     *
-     * Règles de fusion :
-     *   - base == null              → LWW : le serveur l'emporte si serverUpdatedAt > localUpdatedAt
-     *   - is_dirty == 1             → des modifications locales sont en attente : la fusion à trois voies détecte les conflits
-     *   - fusion à trois voies OK   → applique les valeurs fusionnées, met à jour la base, efface le marqueur dirty
-     *   - fusion en conflit         → positionne is_conflict=1, stocke les valeurs distantes en attente pour l'UI
+     * Upserts a server incident: three-way merge when a base snapshot exists,
+     * last-write-wins otherwise. A merge conflict sets is_conflict and keeps
+     * the remote values pending for the UI.
      */
     public void upsertFromServer(String remoteId, String remoteTitle, String remoteDescription,
                                  String remoteStatus, String serverUpdatedAt) throws SQLException {
@@ -175,7 +164,7 @@ public class IncidentRepository {
             select.setString(1, remoteId);
             try (ResultSet rs = select.executeQuery()) {
                 if (rs.next()) {
-                    if (rs.getString("deleted_at") != null) return; // supprimé localement — ne jamais le ressusciter
+                    if (rs.getString("deleted_at") != null) return; // deleted locally, never resurrect
                     applyMerge(conn, rs, remoteTitle, remoteDescription, remoteStatus, serverUpdatedAt);
                 } else {
                     insertFromServer(conn, remoteId, remoteTitle, remoteDescription, remoteStatus, serverUpdatedAt);
@@ -366,11 +355,7 @@ public class IncidentRepository {
         }
     }
 
-    /**
-     * Supprime un incident. Si l'incident possède un remote_id (déjà synchronisé avec le serveur),
-     * utilise un marqueur de suppression logique pour que le cycle de pull ne le recrée jamais localement.
-     * Les incidents purement locaux (sans remote_id) sont supprimés définitivement.
-     */
+    /** Tombstones synced incidents so pulls cannot recreate them; hard-deletes purely local ones. */
     public void deleteByLocalId(int localId) throws SQLException {
         String checkSql = "SELECT remote_id FROM incidents WHERE id = ?";
         try (Connection conn = SQLiteDatabase.getConnection();
@@ -400,10 +385,7 @@ public class IncidentRepository {
         }
     }
 
-    /**
-     * Marque comme supprimés les incidents locaux dont le remote_id n'est plus renvoyé par le serveur.
-     * Appelée après un pull complet (sans paramètre since=) pour répercuter les suppressions logiques côté serveur.
-     */
+    /** After a full pull, tombstones local incidents whose remote_id the server no longer returns. */
     public void tombstoneOrphans(Set<String> activeRemoteIds) throws SQLException {
         if (activeRemoteIds.isEmpty()) return;
         String sql = "SELECT id, remote_id FROM incidents WHERE remote_id IS NOT NULL AND deleted_at IS NULL";

@@ -13,8 +13,8 @@ import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 /**
- * Enveloppe autour du ModalPane d'AtlantaFX offrant des boîtes de dialogue en surimpression, épurées et stylées.
- * La modale est ancrée au StackPane racine — pas de Stage séparé, pas d'habillage de l'OS.
+ * Wrapper around AtlantaFX's ModalPane for styled overlay dialogs.
+ * Anchored to the root StackPane — no separate Stage, no OS chrome.
  */
 public class AppModal {
 

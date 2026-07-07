@@ -101,8 +101,6 @@ describe("New modules (e2e)", () => {
         await app.close();
     });
 
-    // ─── Social / Recommendations ─────────────────────────────────────────────
-
     describe("Recommendations", () => {
         it("GET /recommendations returns 401 without token", async () => {
             await request(app.getHttpServer())
@@ -118,8 +116,6 @@ describe("New modules (e2e)", () => {
             expect(Array.isArray(res.body)).toBe(true);
         });
     });
-
-    // ─── Contracts ────────────────────────────────────────────────────────────
 
     describe("Contracts", () => {
         let contractId: string;
@@ -195,8 +191,6 @@ describe("New modules (e2e)", () => {
         });
     });
 
-    // ─── Messaging ────────────────────────────────────────────────────────────
-
     describe("Messaging", () => {
         let conversationId: string;
 
@@ -261,8 +255,6 @@ describe("New modules (e2e)", () => {
                 .expect(400);
         });
     });
-
-    // ─── Votes ────────────────────────────────────────────────────────────────
 
     describe("Votes", () => {
         const fakeTargetId = "000000000000000000000001";
@@ -339,8 +331,6 @@ describe("New modules (e2e)", () => {
         });
     });
 
-    // ─── Community votes ──────────────────────────────────────────────────────
-
     describe("Community votes", () => {
         const binaryOptions = [
             { id: "yes", label: "Oui" },
@@ -362,8 +352,7 @@ describe("New modules (e2e)", () => {
             voterToken = voter.accessToken;
             voterId = voter.userId;
 
-            // The auth throttler allows 5 logins per window; the extra voter
-            // login above would starve later describes, so reset the counter.
+            // The extra login above eats into the 5-per-window auth throttle.
             const throttler = module.get<{ storage: Map<string, unknown> }>(
                 ThrottlerStorage,
             );
@@ -502,8 +491,6 @@ describe("New modules (e2e)", () => {
         });
     });
 
-    // ─── Me / RGPD ───────────────────────────────────────────────────────────
-
     describe("Me / RGPD", () => {
         it("GET /users/me/export returns 401 without token", async () => {
             await request(app.getHttpServer())
@@ -522,8 +509,6 @@ describe("New modules (e2e)", () => {
             expect(Array.isArray(res.body.transactions)).toBe(true);
         });
     });
-
-    // ─── DSL ─────────────────────────────────────────────────────────────────
 
     describe("DSL", () => {
         let moderatorToken: string;

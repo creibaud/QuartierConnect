@@ -100,7 +100,7 @@ describe("Paid service settlement (e2e)", () => {
             .expect(201);
         const contractId = accepted.body.contractId as string;
 
-        // The contract PDF is generated on accept and downloadable by a party.
+        // PDF is generated on accept
         const pdf = await request(app.getHttpServer())
             .get(`/contracts/${contractId}/pdf`)
             .set("Authorization", `Bearer ${buyer.accessToken}`)
@@ -108,7 +108,6 @@ describe("Paid service settlement (e2e)", () => {
         expect(pdf.headers["content-type"]).toContain("application/pdf");
         expect((pdf.body as Buffer).subarray(0, 5).toString()).toBe("%PDF-");
 
-        // A non-party cannot read the PDF or the audit log.
         await request(app.getHttpServer())
             .get(`/contracts/${contractId}/pdf`)
             .set("Authorization", `Bearer ${stranger.accessToken}`)
@@ -118,14 +117,14 @@ describe("Paid service settlement (e2e)", () => {
             .set("Authorization", `Bearer ${stranger.accessToken}`)
             .expect(403);
 
-        // No balance movement yet (payment is pending).
+        // no settlement before both signatures
         const buyerBalance0 = await request(app.getHttpServer())
             .get("/points/balance")
             .set("Authorization", `Bearer ${buyer.accessToken}`)
             .expect(200);
         expect(buyerBalance0.body.balance).toBe(0);
 
-        // Buyer (payer) signs first → partial.
+        // buyer is the payer, signs first
         const partial = await request(app.getHttpServer())
             .post(`/contracts/${contractId}/sign`)
             .set("Authorization", `Bearer ${buyer.accessToken}`)
@@ -133,7 +132,7 @@ describe("Paid service settlement (e2e)", () => {
             .expect(201);
         expect(partial.body.status).toBe("partial");
 
-        // Owner (payee) signs → fully_signed + settlement.
+        // payee signs, settlement runs
         const full = await request(app.getHttpServer())
             .post(`/contracts/${contractId}/sign`)
             .set("Authorization", `Bearer ${owner.accessToken}`)
@@ -141,7 +140,6 @@ describe("Paid service settlement (e2e)", () => {
             .expect(201);
         expect(full.body.status).toBe("fully_signed");
 
-        // The audit log is immutable and reflects the full lifecycle so far.
         const audit = await request(app.getHttpServer())
             .get(`/contracts/${contractId}/audit`)
             .set("Authorization", `Bearer ${owner.accessToken}`)
@@ -169,11 +167,7 @@ describe("Paid service settlement (e2e)", () => {
         const PNG =
             "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC";
 
-        // Fresh signatories (rather than the outer owner/buyer) so their TOTP
-        // secrets have never been used: the TotpService replay guard is keyed
-        // by secret+token for the lifetime of the shared app, and the outer
-        // owner/buyer already consumed the offset-0/offset-30 codes in the
-        // previous test.
+        // fresh users: the shared TOTP replay guard already saw the outer owner/buyer codes
         const ts = Date.now();
         const imgOwner = await registerAndLogin(app, `img-owner-${ts}@test.fr`);
         const imgBuyer = await registerAndLogin(app, `img-buyer-${ts}@test.fr`);
@@ -222,7 +216,6 @@ describe("Paid service settlement (e2e)", () => {
             .expect(201);
         expect(full.body.status).toBe("fully_signed");
 
-        // The signed PDF is still downloadable by a party.
         const pdf = await request(app.getHttpServer())
             .get(`/contracts/${contractId}/pdf`)
             .set("Authorization", `Bearer ${imgBuyer.accessToken}`)

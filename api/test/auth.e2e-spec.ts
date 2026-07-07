@@ -87,7 +87,7 @@ describe("Auth (e2e)", () => {
         disposableAccessToken = disposable.accessToken;
         disposableRefreshToken = disposable.refreshToken;
 
-        // Dedicated user for refresh test — avoids TOTP replay exhaustion on the primary user.
+        // dedicated user so the refresh test doesn't burn the primary user's TOTP codes
         const email3 = `e2e-refresh-${ts}@test.fr`;
         const refresh = await registerAndLogin(app, email3);
         refreshTestRefreshToken = refresh.refreshToken;

@@ -21,8 +21,7 @@ function currentTotp(secret: string, timeOffsetSeconds = 0): string {
     });
 }
 
-// The TOTP replay guard rejects any code reuse. Track codes handed out per
-// secret and pick an unused code from the valid ±1-step window each time.
+// The API replay guard rejects reused TOTP codes.
 const usedTotpCodes = new Map<string, Set<string>>();
 
 function freshTotp(secret: string): string {

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Backup quotidien des 3 bases (+ certificats Caddy le lundi).
+# Daily backup of the 3 databases (+ Caddy certs on Mondays).
 #
-#   Usage : ./scripts/backup-all.sh
+#   Usage: ./scripts/backup-all.sh
 #
-# Installé via ops/cron.d/quartierconnect (tous les jours à 2h, user deploy).
-# Lit les identifiants depuis .env à la racine du dépôt. Upload S3 et
-# notification Discord optionnels (variables BACKUP_S3_* / DISCORD_WEBHOOK).
+# Installed via ops/cron.d/quartierconnect (daily at 2am, deploy user).
+# Reads credentials from .env at the repo root. S3 upload and Discord
+# notification are optional (BACKUP_S3_* / DISCORD_WEBHOOK vars).
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -16,12 +16,12 @@ BACKUP_DIR="${BACKUP_DIR:-/var/backups/quartierconnect}"
 LOG_DIR="${LOG_DIR:-/var/log/quartierconnect}"
 RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-7}"
 DATE="$(date +%Y-%m-%d_%H%M%S)"
-DOW="$(date +%u)"   # 1 = lundi
+DOW="$(date +%u)"   # 1 = Monday
 SUMMARY="${LOG_DIR}/backup-summary-$(date +%Y-%m-%d).log"
 
 mkdir -p "$BACKUP_DIR" "$LOG_DIR"
 
-# Lecture robuste d'une variable du .env (gère les '=' dans la valeur).
+# Read a var from .env (handles '=' inside the value).
 env_get() { grep -E "^$1=" .env 2>/dev/null | head -1 | cut -d= -f2- || true; }
 
 log()  { echo "[$(date +%H:%M:%S)] $*" | tee -a "$SUMMARY"; }
@@ -53,7 +53,7 @@ PG_USER="$(env_get POSTGRES_USER)"; PG_USER="${PG_USER:-qc}"
 
 log "=== Backup début ${DATE} ==="
 
-# ── MongoDB : mongodump --gzip --archive (stdout → fichier hôte) ─────────────
+# ── MongoDB: mongodump --gzip --archive (stdout → host file) ────────────────
 MONGO_FILE="${BACKUP_DIR}/mongo-${DATE}.tar.gz"
 $COMPOSE exec -T mongo mongodump \
   --username "$MONGO_USER" --password "$MONGO_PASS" \
@@ -62,20 +62,18 @@ $COMPOSE exec -T mongo mongodump \
 log "MongoDB → $(basename "$MONGO_FILE") ($(du -h "$MONGO_FILE" | cut -f1))"
 upload_s3 "$MONGO_FILE" mongo
 
-# ── PostgreSQL : pg_dumpall | gzip ──────────────────────────────────────────
+# ── PostgreSQL: pg_dumpall | gzip ───────────────────────────────────────────
 PG_FILE="${BACKUP_DIR}/postgres-${DATE}.sql.gz"
 $COMPOSE exec -T postgres pg_dumpall -U "$PG_USER" | gzip > "$PG_FILE" \
   || fail "pg_dumpall"
 log "PostgreSQL → $(basename "$PG_FILE") ($(du -h "$PG_FILE" | cut -f1))"
 upload_s3 "$PG_FILE" postgres
 
-# ── Neo4j : dump à froid (~30s d'indisponibilité) ───────────────────────────
+# ── Neo4j: cold dump (~30s downtime) ────────────────────────────────────────
 NEO_FILE="${BACKUP_DIR}/neo4j-${DATE}.tar.gz"
 NEO_CID="$($COMPOSE ps -q neo4j)"
 $COMPOSE stop neo4j >/dev/null || fail "arrêt neo4j"
-# neo4j-admin runs as the neo4j user (uid 7474) and cannot write to a host
-# bind-mount owned by another user, so dump to the container's /tmp and stream
-# the result to the host file instead.
+# neo4j-admin (uid 7474) can't write to the host bind-mount: dump to /tmp, stream out.
 if docker run --rm --volumes-from "$NEO_CID" neo4j:5 \
      sh -c "neo4j-admin database dump neo4j --to-path=/tmp --overwrite-destination=true >&2 && cat /tmp/neo4j.dump" \
      > "${BACKUP_DIR}/neo4j.dump"; then
@@ -88,7 +86,7 @@ else
   fail "neo4j-admin dump"
 fi
 
-# ── Certificats Caddy : le lundi uniquement ─────────────────────────────────
+# ── Caddy certs: Mondays only ───────────────────────────────────────────────
 if [ "$DOW" = "1" ]; then
   CADDY_FILE="${BACKUP_DIR}/caddy-certs-${DATE}.tar.gz"
   CADDY_CID="$($COMPOSE ps -q caddy)"
@@ -101,7 +99,7 @@ if [ "$DOW" = "1" ]; then
   fi
 fi
 
-# ── Rétention locale ────────────────────────────────────────────────────────
+# ── Local retention ─────────────────────────────────────────────────────────
 find "$BACKUP_DIR" -name '*.tar.gz' -mtime "+${RETENTION_DAYS}" -delete 2>/dev/null || true
 find "$BACKUP_DIR" -name '*.sql.gz'  -mtime "+${RETENTION_DAYS}" -delete 2>/dev/null || true
 

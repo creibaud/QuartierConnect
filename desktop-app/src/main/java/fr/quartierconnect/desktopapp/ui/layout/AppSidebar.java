@@ -53,7 +53,7 @@ public class AppSidebar extends VBox {
         setMinWidth(EXPANDED);
         setMaxWidth(EXPANDED);
 
-        // ── Image du logo ───────────────────────────────────────────────────
+        // ── Logo image ──────────────────────────────────────────────────────
         ImageView logoImg = new ImageView();
         try {
             Image img = new Image(
@@ -74,12 +74,12 @@ public class AppSidebar extends VBox {
         Label appName = new Label("QuartierConnect");
         appName.getStyleClass().add("sidebar-app-name");
 
-        // logoArea masqué en mode réduit
+        // hidden when collapsed
         logoArea = new HBox(10, logoImg, appName);
         logoArea.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(logoArea, Priority.ALWAYS);
 
-        // ── Bouton de bascule (toujours visible) ────────────────────────────
+        // ── Toggle button (always visible) ──────────────────────────────────
         toggleIcon = new FontIcon(FontAwesomeSolid.ANGLE_LEFT);
         toggleIcon.setIconSize(12);
 
@@ -88,19 +88,19 @@ public class AppSidebar extends VBox {
         toggleBtn.getStyleClass().add("sidebar-toggle-btn");
         toggleBtn.setOnAction(e -> toggleCollapse());
 
-        // ── Ligne d'en-tête ─────────────────────────────────────────────────
+        // ── Header row ──────────────────────────────────────────────────────
         header = new HBox(logoArea, toggleBtn);
         header.setAlignment(Pos.CENTER_LEFT);
         header.getStyleClass().add("sidebar-header");
 
-        // ── Liste de navigation ─────────────────────────────────────────────
+        // ── Nav list ────────────────────────────────────────────────────────
         navList.getStyleClass().add("sidebar-nav-list");
         VBox.setVgrow(navList, Priority.ALWAYS);
 
         getChildren().addAll(header, navList);
     }
 
-    /** Le logo est noir sur fond transparent — le blanchir uniquement lorsqu'un thème sombre est actif. */
+    /** The logo is black on transparent — whiten it only while a dark theme is active. */
     private static void bindLogoTintToTheme(ImageView logo) {
         ColorAdjust whiten = new ColorAdjust();
         whiten.setBrightness(1.0);
@@ -110,7 +110,7 @@ public class AppSidebar extends VBox {
                     .otherwise((Effect) null));
     }
 
-    // ── API publique ────────────────────────────────────────────────────────
+    // ── Public API ──────────────────────────────────────────────────────────
 
     public NavItem addNavItem(Ikon icon, String label) {
         NavItem item = new NavItem(icon, label, false);
@@ -145,7 +145,7 @@ public class AppSidebar extends VBox {
         if (item != null) item.setActive(true);
     }
 
-    // ── Réduire / déployer ──────────────────────────────────────────────────
+    // ── Collapse / expand ───────────────────────────────────────────────────
 
     private void toggleCollapse() {
         isCollapsed = !isCollapsed;
@@ -204,7 +204,7 @@ public class AppSidebar extends VBox {
             setPadding(new Insets(0, 10, 0, 10));
             setCursor(Cursor.HAND);
 
-            // Conteneur d'icône à taille fixe — garantit que chaque glyphe occupe le même espace
+            // fixed-size icon container so every glyph takes the same space
             FontIcon fi = new FontIcon(icon);
             fi.setIconSize(14);
             fi.getStyleClass().add(logout ? "nav-icon-logout" : "nav-icon");
@@ -234,7 +234,7 @@ public class AppSidebar extends VBox {
         }
 
         void setLabelVisible(boolean visible) {
-            // children[0] = iconWrap, children[1] = label (libellé)
+            // children: [0] iconWrap, [1] label
             getChildren().get(1).setVisible(visible);
             getChildren().get(1).setManaged(visible);
         }

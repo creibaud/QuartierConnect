@@ -25,9 +25,8 @@ import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 /**
- * Interroge les Releases GitHub à la recherche de versions plus récentes de l'application
- * desktop et, à la demande, télécharge l'installateur natif pour la plateforme courante et le
- * lance afin que l'application se mette à jour sur place.
+ * Checks GitHub Releases for newer desktop versions and, on demand, downloads
+ * and launches the native installer for the current platform.
  */
 public class UpdateService {
 
@@ -73,7 +72,7 @@ public class UpdateService {
         return CURRENT_VERSION;
     }
 
-    /** Dernière version plus récente découverte par les vérifications jusqu'ici, s'il en existe une. */
+    /** Latest newer version found by checks so far, if any. */
     public static Optional<String> knownAvailableUpdate() {
         return Optional.ofNullable(KNOWN_AVAILABLE_UPDATE.get());
     }
@@ -82,7 +81,7 @@ public class UpdateService {
         this.onUpdateAvailable = callback;
     }
 
-    /** Démarre les vérifications de mise à jour en arrière-plan. Se déclenche immédiatement puis toutes les 24 heures. */
+    /** Starts background update checks: immediately, then every 24 hours. */
     public void checkInBackground() {
         scheduler.scheduleAtFixedRate(this::performCheck, 0, CHECK_INTERVAL_HOURS, TimeUnit.HOURS);
     }
@@ -103,12 +102,7 @@ public class UpdateService {
         }
     }
 
-    /**
-     * Compare la dernière version publiée à celle en cours d'exécution.
-     *
-     * @return la version plus récente lorsqu'une mise à jour existe, vide si déjà à jour
-     * @throws IOException lorsque les informations de version ne peuvent pas être récupérées
-     */
+    /** Returns the latest published version when it is newer than the running one, empty if up to date. */
     public Optional<String> findAvailableUpdate() throws IOException {
         String response;
         try {
@@ -132,8 +126,8 @@ public class UpdateService {
     }
 
     /**
-     * Télécharge le dernier installateur pour cette plateforme et le lance. L'appelant
-     * doit quitter l'application dès le retour de cette méthode pour que l'installateur puisse la remplacer.
+     * Downloads the latest installer for this platform and launches it.
+     * Caller must exit right after this returns so the installer can replace the app.
      */
     public void downloadAndInstallLatest(Consumer<String> onStatus) throws IOException, InterruptedException {
         HostOs os = HostOs.detect();
@@ -204,10 +198,8 @@ public class UpdateService {
     }
 
     /**
-     * Vérifie l'intégrité de l'installateur téléchargé contre l'empreinte SHA-256 publiée
-     * dans le fichier {@code SHA256SUMS} de la release. Interrompt l'installation en levant
-     * une {@link SecurityException} si le fichier de sommes, l'entrée correspondante ou la
-     * concordance de l'empreinte fait défaut.
+     * Checks the download against the SHA-256 published in the release's {@code SHA256SUMS}.
+     * Throws {@link SecurityException} if the sums file, the entry, or the hash match is missing.
      */
     private void verifyIntegrity(List<ReleaseAsset> assets, ReleaseAsset installer, Path downloadedFile)
             throws IOException, InterruptedException {
@@ -233,9 +225,8 @@ public class UpdateService {
     }
 
     /**
-     * Extrait l'empreinte hexadécimale attendue pour {@code fileName} d'un contenu SHA256SUMS.
-     * Chaque ligne suit le format {@code <hex-sha256>  <filename>} (le marqueur de mode binaire
-     * {@code *} éventuel devant le nom est ignoré).
+     * Extracts the expected hex hash for {@code fileName} from SHA256SUMS content.
+     * Lines follow {@code <hex-sha256>  <filename>}; a leading {@code *} binary marker is ignored.
      */
     static Optional<String> expectedHashFor(String checksumsContent, String fileName) {
         for (String line : checksumsContent.split("\\R")) {
@@ -327,6 +318,6 @@ public class UpdateService {
         return result;
     }
 
-    /** Artefact téléchargeable attaché à une release GitHub. */
+    /** Downloadable asset attached to a GitHub release. */
     record ReleaseAsset(String name, String url) {}
 }

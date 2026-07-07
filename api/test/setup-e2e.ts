@@ -23,8 +23,7 @@ try {
     // .env not found — env vars must be set externally
 }
 
-// Override MONGO_URI to use a dedicated E2E database.
-// Use credentials from the root .env so auth is satisfied.
+// Dedicated e2e Mongo database, credentials from the root .env.
 const user = process.env.MONGO_ROOT_USER ?? "root";
 const pass = process.env.MONGO_ROOT_PASSWORD ?? "";
 process.env.MONGO_URI = pass
@@ -34,8 +33,7 @@ process.env.MONGO_URI = pass
 // E2E tests verify rate-limiting behaviour — force a tight limit regardless of .env.
 process.env.LOGIN_RATE_LIMIT = "5";
 
-// Map POSTGRES_URL → DATABASE_URL used by DrizzleModule.
-// Prefer an explicitly set DATABASE_URL; fall back to POSTGRES_URL from .env.
+// DrizzleModule reads DATABASE_URL; derive it from POSTGRES_* when unset.
 if (!process.env.DATABASE_URL) {
     if (process.env.POSTGRES_URL) {
         process.env.DATABASE_URL = process.env.POSTGRES_URL;

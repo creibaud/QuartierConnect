@@ -29,7 +29,7 @@ test.describe("Admin — Éditeur DSL", () => {
             adminRefreshToken = tokens.refreshToken;
             apiAvailable = true;
         } catch (err) {
-            // API or Docker not available — API-dependent tests will be skipped
+            // API or Docker not available
         }
     });
 

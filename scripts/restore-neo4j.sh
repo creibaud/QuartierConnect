@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Restauration Neo4j depuis un backup produit par backup-all.sh (dump à froid).
+# Restore Neo4j from a backup-all.sh archive (offline dump).
 #
-#   Usage : ./scripts/restore-neo4j.sh /var/backups/quartierconnect/neo4j-<DATE>.tar.gz
+#   Usage: ./scripts/restore-neo4j.sh /var/backups/quartierconnect/neo4j-<DATE>.tar.gz
 #
-# ⚠ Arrête Neo4j, écrase la base 'neo4j', redémarre. Confirmation 'oui'.
+# Stops Neo4j, overwrites the 'neo4j' database, restarts. Asks for confirmation.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
