@@ -87,9 +87,14 @@ public class AuthService {
     }
 
     /** Exchanges the stored refresh token for a new pair, persisted on success. */
-    public boolean refreshAccessToken() {
+    public synchronized boolean refreshAccessToken() {
         try {
             if (refreshToken == null) return false;
+
+            // Rotating refresh tokens are single-use: another thread may have
+            // already refreshed while we waited for the lock. Reusing the old
+            // token here would replay a revoked token and drop the session.
+            if (accessToken != null && !isTokenExpired(accessToken)) return true;
 
             String body = MAPPER.writeValueAsString(new java.util.HashMap<>() {{
                 put("refreshToken", refreshToken);
