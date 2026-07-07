@@ -885,6 +885,8 @@ export default {
             title: "Télécharger le client lourd",
             description:
                 "Choisissez l'installateur adapté à votre système. L'installation est propre : entrée de menu et désinstallation gérées par le système.",
+            securityNote:
+                "Installeurs non signés : à la première ouverture, Windows SmartScreen affiche « Informations complémentaires → Exécuter quand même » ; sur macOS, clic droit sur l'app → Ouvrir.",
         },
         common: {
             create: "Créer",

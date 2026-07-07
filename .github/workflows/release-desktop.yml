@@ -65,6 +65,10 @@ jobs:
             - **Windows** : `quartierconnect-windows.msi` → double-clic
             - **macOS** : `quartierconnect-macos.dmg` → glisser dans Applications
 
+            ### Première ouverture (installeurs non signés)
+            - **Windows** : SmartScreen affiche « Windows a protégé votre PC ». Cliquez **Informations complémentaires → Exécuter quand même**.
+            - **macOS** : Gatekeeper bloque une app non signée. **Clic droit sur l'app → Ouvrir**, puis confirmez (ou `xattr -dr com.apple.quarantine /Applications/QuartierConnect.app`).
+
             ### Sans installation (JAR)
             ```bash
             wget https://github.com/${{ github.repository }}/releases/latest/download/quartierconnect-desktop.jar
