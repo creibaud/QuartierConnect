@@ -19,21 +19,35 @@ interface ApiError {
     code?: string;
 }
 
+let refreshInFlight: Promise<boolean> | null = null;
+
 export async function refreshTokens(): Promise<boolean> {
-    const res = await fetch(`${BASE_URL}/auth/refresh`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-    });
+    // Rotating refresh tokens are single-use: concurrent requests must share one
+    // refresh, otherwise the losers replay a revoked token and get logged out.
+    if (refreshInFlight) return refreshInFlight;
 
-    if (!res.ok) {
-        clearTokens();
-        return false;
-    }
+    refreshInFlight = (async () => {
+        try {
+            const res = await fetch(`${BASE_URL}/auth/refresh`, {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+            });
 
-    const data = await res.json();
-    setTokens(data.accessToken);
-    return true;
+            if (!res.ok) {
+                clearTokens();
+                return false;
+            }
+
+            const data = await res.json();
+            setTokens(data.accessToken);
+            return true;
+        } finally {
+            refreshInFlight = null;
+        }
+    })();
+
+    return refreshInFlight;
 }
 
 async function apiFetch(
