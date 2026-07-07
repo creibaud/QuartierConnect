@@ -111,6 +111,37 @@ jobs:
         env:
           TAG: ${{ github.event.inputs.tag || github.ref_name }}
 
+      - name: Smoke-test app-image (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          APP_VERSION: ${{ steps.ver.outputs.version }}
+          QC_SMOKE_TEST: "1"
+        run: |
+          bash desktop-app/packaging/jpackage-build.sh app-image
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            "desktop-app/target/installer/QuartierConnect.app/Contents/MacOS/QuartierConnect" > smoke.log 2>&1
+          else
+            sudo apt-get update -qq && sudo apt-get install -y -qq xvfb
+            xvfb-run -a "desktop-app/target/installer/QuartierConnect/bin/QuartierConnect" > smoke.log 2>&1
+          fi
+          echo "--- sortie de l'app ---"; cat smoke.log
+          grep -q "SMOKE_TEST_OK" smoke.log
+
+      - name: Smoke-test app-image (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          APP_VERSION: ${{ steps.ver.outputs.version }}
+          QC_SMOKE_TEST: "1"
+        run: |
+          powershell -File desktop-app/packaging/jpackage-build.ps1 app-image
+          & "desktop-app/target/installer/QuartierConnect/QuartierConnect.exe" *> smoke.log
+          Write-Host "--- sortie de l'app ---"; Get-Content smoke.log
+          if (-not (Select-String -Path smoke.log -Pattern "SMOKE_TEST_OK" -Quiet)) {
+            throw "Smoke-test échoué : marqueur SMOKE_TEST_OK introuvable"
+          }
+
       - name: Build installateur (Unix)
         if: runner.os != 'Windows'
         shell: bash

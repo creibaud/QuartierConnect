@@ -6,11 +6,13 @@ import fr.quartierconnect.desktopapp.plugin.ThemePlugin;
 import fr.quartierconnect.desktopapp.services.UpdateService;
 import fr.quartierconnect.desktopapp.ui.components.ToastManager;
 import fr.quartierconnect.desktopapp.views.LoginView;
+import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.util.logging.Logger;
 
@@ -37,6 +39,19 @@ public class MainApp extends Application {
         primaryStage.show();
 
         startBackgroundUpdateChecks();
+        exitAfterRenderWhenSmokeTesting();
+    }
+
+    /** CI hook: confirm the UI boots on the target OS, then exit cleanly. */
+    private void exitAfterRenderWhenSmokeTesting() {
+        if (!"1".equals(System.getenv("QC_SMOKE_TEST"))) return;
+        LOG.info("SMOKE_TEST_OK");
+        PauseTransition delay = new PauseTransition(Duration.seconds(2));
+        delay.setOnFinished(event -> {
+            Platform.exit();
+            System.exit(0);
+        });
+        delay.play();
     }
 
     @Override

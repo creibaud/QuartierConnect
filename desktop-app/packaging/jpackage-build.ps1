@@ -1,5 +1,8 @@
-# Builds the Windows .msi installer for the QuartierConnect desktop app via jpackage.
-# Usage:  $env:APP_VERSION="1.0.0"; powershell -File packaging/jpackage-build.ps1
+# Builds the Windows package for the QuartierConnect desktop app via jpackage.
+# Usage:  $env:APP_VERSION="1.0.0"; powershell -File packaging/jpackage-build.ps1 [type]
+#   type: "msi" (default, native installer) or "app-image" (portable folder used
+#   by the CI smoke-test; built with a console launcher so its output is captured).
+param([string]$Type = "msi")
 $ErrorActionPreference = "Stop"
 
 $AppName    = "QuartierConnect"
@@ -29,9 +32,16 @@ if ($env:QC_SERVER_URL) {
   Write-Host "==> Serveur ciblé : $Url"
 }
 
-Write-Host "==> jpackage --type msi"
+if ($Type -eq "app-image") {
+  # Console launcher so the smoke-test can read stdout/stderr.
+  $TypeArgs = @("--win-console")
+} else {
+  $TypeArgs = @("--win-menu", "--win-shortcut", "--win-dir-chooser")
+}
+
+Write-Host "==> jpackage --type $Type"
 jpackage `
-  --type msi `
+  --type $Type `
   --name $AppName `
   --app-version $AppVersion `
   --vendor $Vendor `
@@ -41,10 +51,8 @@ jpackage `
   --dest $Dest `
   --add-modules $Modules `
   --icon packaging/logo.ico `
-  --win-menu `
-  --win-shortcut `
-  --win-dir-chooser `
+  @TypeArgs `
   @JavaOptions
 
-Write-Host "==> Installer ready in $Dest"
+Write-Host "==> Package ready in $Dest"
 Get-ChildItem $Dest
