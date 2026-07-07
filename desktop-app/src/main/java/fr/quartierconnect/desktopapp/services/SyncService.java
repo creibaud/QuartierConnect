@@ -27,12 +27,11 @@ public class SyncService {
 
     private static final int POLL_INTERVAL_SECONDS = 30;
     private static final int PULL_PAGE_SIZE = 100;
-    // Safety bound against an unbounded loop (~1M incidents per scope).
+    // safety bound against an unbounded loop (~1M incidents per scope)
     private static final int MAX_PULL_PAGES = 10000;
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    // Seam over ApiService.get so pagination can be driven by a fake in tests
-    // (ApiService.get throws a checked exception, hence a dedicated interface).
+    // test seam over ApiService.get (throws a checked exception, hence a dedicated interface)
     @FunctionalInterface
     interface PageFetcher {
         String fetch(String path, String token) throws Exception;
@@ -65,11 +64,7 @@ public class SyncService {
         this.onStatusChange = listener;
     }
 
-    /**
-     * Enregistre un écouteur invoqué (sur le thread répartiteur de statut) après une
-     * synchronisation ayant modifié les données locales ; reçoit le nombre d'incidents récupérés
-     * depuis le serveur depuis la synchronisation précédente.
-     */
+    /** Listener called on the status dispatcher thread after a sync that changed local data, with the pulled incident count. */
     public void setOnIncidentsChanged(IntConsumer listener) {
         this.onIncidentsChanged = listener;
     }
@@ -92,10 +87,7 @@ public class SyncService {
         if (!isSyncing) scheduler.execute(this::poll);
     }
 
-    /**
-     * Soumet un sondage à l'ordonnanceur et bloque jusqu'à sa fin.
-     * Peut être appelée sans risque depuis un thread d'arrière-plan (par exemple le bouton de synchronisation manuelle).
-     */
+    /** Runs a poll on the scheduler and blocks until it completes. Safe from background threads. */
     public void syncNowAndWait() throws Exception {
         java.util.concurrent.CompletableFuture<Void> future = new java.util.concurrent.CompletableFuture<>();
         scheduler.execute(() -> {
@@ -151,10 +143,8 @@ public class SyncService {
     }
 
     /**
-     * Envoie au serveur tous les incidents modifiés et retourne l'ensemble des identifiants distants
-     * que le serveur a réellement upsertés, afin que le pull suivant puisse les ignorer (évite que le
-     * pull n'écrase des valeurs que le serveur n'a peut-être pas encore stockées correctement).
-     * Les incidents que le serveur signale comme ignorés restent modifiés et sont réessayés plus tard.
+     * Pushes dirty incidents and returns the remote ids the server actually upserted,
+     * so the next pull can skip them. Server-skipped incidents stay dirty for retry.
      */
     private Set<String> pushDirtyIncidents(String token) throws Exception {
         List<IncidentRepository.Incident> dirty = incidentRepo.listDirty();
@@ -205,10 +195,8 @@ public class SyncService {
     }
 
     /**
-     * Extrait le tableau {@code skippedIds} de la réponse à {@code POST /incidents/sync}
-     * ({@code {upserted, skipped, skippedIds}}). Retourne un ensemble vide si le champ est
-     * absent ou le corps illisible (serveurs plus anciens), préservant l'ancien comportement
-     * consistant à tout marquer comme synchronisé.
+     * Reads the {@code skippedIds} array from the sync response.
+     * Empty set if the field is absent or the body unreadable (older servers).
      */
     static Set<String> parseSkippedIds(String syncResponseBody) {
         if (syncResponseBody == null || syncResponseBody.isBlank()) return Set.of();
@@ -230,18 +218,16 @@ public class SyncService {
             incidentRepo.updateBase(inc.localId(), inc.title(), inc.description(),
                     inc.status(), inc.updatedAt());
         } catch (Exception e) {
-            // Non critique : le repli LWW s'applique au prochain pull si la mise à jour de la base échoue
+            // non-critical: LWW fallback applies on the next pull
             LOG.log(Level.FINE, "Base snapshot update failed after push", e);
         }
     }
 
     /**
-     * Récupère les incidents depuis le serveur et retourne combien d'entre eux sont nouveaux pour
-     * ce client (mis à jour depuis le pull précédent et non envoyés par nous),
-     * afin que l'UI puisse annoncer « N incidents reçus ».
+     * Pulls incidents from the server and returns how many are new to this client
+     * (updated since the last pull and not pushed by us).
      */
-    // Package-private for direct testing with a fake PageFetcher (no network,
-    // no AuthService), driven independently of the poll() scheduler loop.
+    // package-private for tests with a fake PageFetcher
     int pullIncidents(String token, Set<String> justPushed) throws Exception {
         boolean isFullPull = lastPullTimestamp == null;
         String previousPullTs = lastPullTimestamp;
@@ -251,9 +237,7 @@ public class SyncService {
         int receivedCount = 0;
         boolean reachedLastPage = false;
 
-        // Paginate the whole scope: a single limit-capped page would leave any
-        // incident beyond page 1 unseen, and tombstoneOrphans would then delete
-        // it locally by mistake.
+        // paginate the whole scope, otherwise tombstoneOrphans deletes unseen incidents
         for (int page = 1; page <= MAX_PULL_PAGES; page++) {
             String path = buildPullPath(isFullPull, previousPullTs, page);
             String response = pageFetcher.fetch(path, token);
@@ -289,9 +273,7 @@ public class SyncService {
             }
         }
 
-        // Only tombstone once the whole scope has been seen (a short last page).
-        // Bailing out on MAX_PULL_PAGES with full pages leaves the set partial,
-        // so we keep local data rather than delete unseen incidents.
+        // tombstone only after a complete pull; a MAX_PULL_PAGES bailout leaves the set partial
         if (isFullPull && reachedLastPage && seenRemoteIds != null) {
             incidentRepo.tombstoneOrphans(seenRemoteIds);
         }

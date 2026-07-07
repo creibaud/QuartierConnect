@@ -1,8 +1,5 @@
-// NOTE: packages/ui vitest has no jest-dom setup — use plain truthiness, not
-// matchers like toBeInTheDocument.
-//
-// MapLibre GL requires WebGL, which jsdom cannot provide. Mock the underlying
-// mapcn layer before importing the wrapper to avoid the crash.
+// No jest-dom in this package — assert with plain truthiness.
+// MapLibre needs WebGL (absent in jsdom); mock the mapcn layer before import.
 import { vi } from "vitest";
 
 vi.mock("@workspace/ui/components/ui/map", async () => {

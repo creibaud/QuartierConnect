@@ -71,11 +71,7 @@ public class AppTopBar extends HBox {
         breadcrumb.setText(text);
     }
 
-    /**
-     * Met à jour le badge de connectivité instantanément chaque fois qu'ONLINE_STATUS_CHANGED
-     * est publié (bascule hors ligne, synchronisation réussie). Le sondage périodique reste
-     * un filet de sécurité pour les coupures réseau silencieuses.
-     */
+    /** Updates the badge on ONLINE_STATUS_CHANGED; polling still covers silent network drops. */
     public void attachEventBus(PluginEventBus eventBus) {
         eventBus.subscribe(data -> {
             if (data.event() != PluginEventBus.Event.ONLINE_STATUS_CHANGED) return;
@@ -88,7 +84,7 @@ public class AppTopBar extends HBox {
         poller.shutdownNow();
     }
 
-    // ── Sondage de connectivité ─────────────────────────────────────────────
+    // ── Connectivity polling ────────────────────────────────────────────────
 
     private void startPolling() {
         poller.scheduleAtFixedRate(() -> {

@@ -114,7 +114,6 @@ async function panWest(
     }
 }
 
-/** Clicks four corners around the canvas center, then closes with Enter. */
 async function drawSquare(
     page: Page,
     canvas: Locator,
@@ -188,8 +187,7 @@ test.describe("Admin — Neighborhoods polygon draw", () => {
         await expect(dialog.getByTestId("map-edit-polygon")).toBeDisabled();
         await expect(dialog.getByTestId("map-delete-polygon")).toBeDisabled();
 
-        // Move away from the seeded Paris neighborhoods before drawing so the
-        // server-side overlap check ($geoIntersects) passes.
+        // Move away from the seeded Paris neighborhoods to pass the overlap check.
         await zoomOut(dialog, 3);
         await panWest(page, canvas, 2);
         await dialog.getByTestId("map-draw-polygon").click();
@@ -264,9 +262,7 @@ test.describe("Admin — Neighborhoods polygon draw", () => {
         test.skip(!apiAvailable, "API not available");
         test.setTimeout(90_000);
 
-        // Ensure the default map view (central Paris) is occupied. When the
-        // database is already seeded with the Paris arrondissements this call
-        // returns 409, which is fine — an overlap target exists either way.
+        // Ensure the default view is occupied; a 409 on seeded data is fine.
         await apiCreateNeighborhood(
             adminAccessToken,
             `${E2E_PREFIX} Base ${Date.now()}`,

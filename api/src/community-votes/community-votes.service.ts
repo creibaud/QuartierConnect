@@ -35,10 +35,7 @@ export class CommunityVotesService {
         });
     }
 
-    // Anonymous votes must never expose who voted what: every response
-    // keeps only the requester's own cast (the client derives "has voted"
-    // and "my choices" from it); aggregated totals stay available through
-    // getResults, which exposes no user ids.
+    // Anonymous votes expose only the requester's own cast; totals stay in getResults.
     private sanitize(vote: CommunityVoteDocument, requesterId: string) {
         if (!vote.isAnonymous) return vote;
         const plain = vote.toObject<CommunityVote & { _id: unknown }>();
@@ -90,8 +87,7 @@ export class CommunityVotesService {
             );
         }
 
-        // Weight keys feed getResults() totals directly, so an unknown key
-        // must be rejected exactly like an unknown choice.
+        // Weight keys feed getResults() totals, so reject unknown keys too.
         const invalidWeightKeys = Object.keys(dto.weights ?? {}).filter(
             (key) => !vote.options.some((o) => o.id === key),
         );
@@ -101,9 +97,7 @@ export class CommunityVotesService {
             );
         }
 
-        // Atomic push: MongoDB re-checks the open/deadline/duplicate guards
-        // itself, so two concurrent casts by the same user can never record
-        // two ballots.
+        // Atomic push: the filter re-checks the open/deadline/duplicate guards.
         const updated = await this.voteModel
             .findOneAndUpdate(
                 {
@@ -141,8 +135,7 @@ export class CommunityVotesService {
 
         if (vote.status === "open" && new Date() > vote.endsAt) {
             vote.status = "closed";
-            // Guarded write (same pattern as the atomic cast): the lazy
-            // auto-close must never clobber a concurrent update.
+            // Guarded write so the lazy auto-close never clobbers a concurrent update.
             await this.voteModel
                 .updateOne(
                     { _id: id, status: "open" },

@@ -50,6 +50,8 @@ export default {
             invalidCredentials: "Incorrect email or password",
             invalidTotp: "Invalid TOTP code",
             loginFailed: "Login error",
+            tooManyAttempts:
+                "Too many login attempts. Try again in a few minutes.",
             emailExists: "This email address is already in use",
             registerFailed: "Registration error",
             invalidTotpCheckApp: "Invalid code. Check your app.",
@@ -114,6 +116,8 @@ export default {
     incidents: {
         title: "Incidents",
         new: "Report an incident",
+        newDescription:
+            "Describe the problem and pinpoint it on the neighborhood map.",
         status: {
             open: "Open",
             in_progress: "In progress",
@@ -242,7 +246,8 @@ export default {
             pointsSettled: {
                 title: "Settlement completed",
                 body: '{{amount}} points settled for "{{serviceTitle}}"',
-                bodyNoAmount: 'The settlement for "{{serviceTitle}}" was completed',
+                bodyNoAmount:
+                    'The settlement for "{{serviceTitle}}" was completed',
             },
         },
     },
@@ -271,8 +276,7 @@ export default {
         reasons: {
             serviceInNeighborhood: "Service offered in your neighborhood",
             upcomingEventNearby: "Upcoming event near you",
-            sharedInterests:
-                "Popular with neighbors who share your interests",
+            sharedInterests: "Popular with neighbors who share your interests",
             reliableNeighbor: "Trusted neighbor, known for helping out",
         },
         types: {
@@ -594,6 +598,18 @@ export default {
             reserve: "Book",
             bookingRequested: "Booking request sent",
             bookingError: "Booking failed",
+            dialogDescription:
+                "Describe the service you offer or are looking for.",
+            confirmReserveTitle: "Confirm booking",
+            confirmReserveDescription:
+                "This service costs {{points}} points, charged when the contract is signed. Send the request?",
+            bookingErrors: {
+                alreadyBooked:
+                    "You already have an active booking for this service.",
+                notPaid: "This service is not paid.",
+                closed: "This service is no longer available.",
+                ownService: "You cannot book your own service.",
+            },
             mine: {
                 title: "My services",
                 description: "Manage your ads and responses.",
@@ -811,6 +827,8 @@ export default {
             title: "Events",
             description: "Gatherings and activities in your neighborhood.",
             create: "Create an event",
+            createDescription:
+                "Fill in the title, date and location of your event.",
             viewCalendar: "Calendar view",
             viewList: "List view",
             viewSwipe: "Discover (swipe)",
@@ -1007,8 +1025,7 @@ export default {
             updateError: "Error while updating",
             createError: "Error while creating",
             deleteConfirmTitle: "Delete this neighborhood?",
-            deleteConfirmDescription:
-                '"{{name}}" will be permanently deleted.',
+            deleteConfirmDescription: '"{{name}}" will be permanently deleted.',
             editTitle: "Edit neighborhood",
             createTitle: "Add a neighborhood",
             nameLabel: "Name *",

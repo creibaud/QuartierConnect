@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Installation automatique de QuartierConnect en une commande.
+# One-command QuartierConnect install.
 #
-#   Usage : ./scripts/setup.sh [--force]
-#   (ou : make setup / make setup SETUP_FORCE=1)
+#   Usage: ./scripts/setup.sh [--force]
+#   (or: make setup / make setup SETUP_FORCE=1)
 #
-# Étapes : prérequis → génération .env → docker compose up --build →
-# attente des healthchecks → import du jeu de démonstration → récapitulatif.
-# --force (ou SETUP_FORCE=1) régénère un fichier .env existant.
+# Checks prerequisites, generates .env, builds the docker stack, waits for
+# healthchecks, imports the demo dataset. --force regenerates an existing .env.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

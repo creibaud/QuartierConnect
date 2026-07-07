@@ -114,7 +114,6 @@ public class IncidentDetailPane {
         appModal.show(I18n.get("incidents.detail.modalTitle", item.title()), content);
     }
 
-    /** Bouton de changement de statut avec icône (plus de flèche texte). */
     private AppButton statusBtn(String labelKey, FontAwesomeSolid iconCode,
                                 IncidentRepository.Incident item, String newStatus) {
         AppButton btn = new AppButton(I18n.get(labelKey), AppButton.Variant.SECONDARY);

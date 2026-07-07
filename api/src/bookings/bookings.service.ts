@@ -40,21 +40,29 @@ export class BookingsService {
     ) {}
 
     async request(serviceId: string, initiatorId: string) {
-        // Reject non-ObjectId input before it reaches a Mongo query, so a
-        // crafted value cannot be smuggled into findById/findOne.
+        // Reject non-ObjectId input before it reaches a Mongo query.
         if (!isValidObjectId(serviceId)) {
             throw new NotFoundException("Service not found");
         }
         const service = await this.serviceModel.findById(serviceId);
         if (!service) throw new NotFoundException("Service not found");
         if (service.type !== "paid") {
-            throw new BadRequestException("Service is not paid");
+            throw new BadRequestException({
+                code: "SERVICE_NOT_PAID",
+                message: "Service is not paid",
+            });
         }
         if (service.status === "closed") {
-            throw new BadRequestException("Service is closed");
+            throw new BadRequestException({
+                code: "SERVICE_CLOSED",
+                message: "Service is closed",
+            });
         }
         if (service.createdBy === initiatorId) {
-            throw new ForbiddenException("Cannot book your own service");
+            throw new ForbiddenException({
+                code: "CANNOT_BOOK_OWN",
+                message: "Cannot book your own service",
+            });
         }
         const existing = await this.bookingModel.findOne({
             serviceId,
@@ -62,9 +70,10 @@ export class BookingsService {
             status: { $in: [BookingStatus.PENDING, BookingStatus.ACCEPTED] },
         });
         if (existing) {
-            throw new BadRequestException(
-                "You already have an active booking for this service",
-            );
+            throw new BadRequestException({
+                code: "ALREADY_BOOKED",
+                message: "You already have an active booking for this service",
+            });
         }
         const { payerId, payeeId } = resolveParties(
             service.direction,
@@ -104,9 +113,7 @@ export class BookingsService {
             throw new ForbiddenException("Only the service owner can accept");
         }
 
-        // Atomically claim the booking so exactly one concurrent accept wins
-        // the PENDING→ACCEPTED transition. The loser gets null and never mints
-        // a second contract or duplicate pending payment for the same booking.
+        // Atomic claim of the PENDING→ACCEPTED transition.
         const claimed = await this.bookingModel.findOneAndUpdate(
             { _id: bookingId, status: BookingStatus.PENDING },
             { $set: { status: BookingStatus.ACCEPTED } },
@@ -119,9 +126,7 @@ export class BookingsService {
             claimed.payeeId,
         ]);
         const content = this.renderContent(service, claimed, partyNames);
-        // The post-claim steps form a small saga: any failure unwinds the
-        // minted contract/payment and releases the claim so the owner can
-        // simply retry, instead of leaving a signable orphan behind.
+        // Saga: any failure unwinds the contract/payment and releases the claim.
         let contractId: string | null = null;
         let linked: ServiceBookingDocument | null = null;
         try {
@@ -142,8 +147,7 @@ export class BookingsService {
                 amount: claimed.pointsAmount,
                 note: `Service payment: ${service.title}`,
             });
-            // Guarded link: a booking cancelled while the contract was being
-            // minted must not end up pointing at a live contract.
+            // Guarded link: don't point a cancelled booking at a live contract.
             linked = await this.bookingModel.findOneAndUpdate(
                 {
                     _id: bookingId,
@@ -173,9 +177,7 @@ export class BookingsService {
         return linked;
     }
 
-    // Best-effort unwind of a half-completed accept: kill the minted
-    // contract and its pending payment, then release the ACCEPTED claim so
-    // the booking becomes acceptable again.
+    // Unwind a half-completed accept and release the claim.
     private async compensateAccept(
         bookingId: string,
         contractId: string | null,
@@ -208,8 +210,7 @@ export class BookingsService {
         if (service.createdBy !== userId) {
             throw new ForbiddenException("Only the service owner can decline");
         }
-        // Atomic claim: a booking accepted concurrently must not be clobbered
-        // to DECLINED while its contract and pending payment stay alive.
+        // Atomic claim: don't clobber a concurrently-accepted booking.
         const claimed = await this.bookingModel.findOneAndUpdate(
             { _id: bookingId, status: BookingStatus.PENDING },
             { $set: { status: BookingStatus.DECLINED } },
@@ -245,14 +246,12 @@ export class BookingsService {
                 "Only the initiator can cancel a pending booking",
             );
         }
-        // The initiator can cancel their pending or accepted booking; the
-        // owner only an accepted one (a pending booking is declined instead).
+        // Initiator cancels pending or accepted; owner only accepted.
         const cancellableStatuses =
             userId === booking.initiatorId
                 ? [BookingStatus.PENDING, BookingStatus.ACCEPTED]
                 : [BookingStatus.ACCEPTED];
-        // Atomic claim: a transition that a concurrent accept, decline or
-        // final signature already performed must not be clobbered.
+        // Atomic claim: don't clobber a concurrent transition.
         const claimed = await this.bookingModel.findOneAndUpdate(
             { _id: bookingId, status: { $in: cancellableStatuses } },
             { $set: { status: BookingStatus.CANCELLED } },
@@ -263,12 +262,7 @@ export class BookingsService {
         }
         if (claimed.contractId) {
             const contractId = claimed.contractId;
-            // Void the pending payment FIRST: that guarded UPDATE is the
-            // atomic arbiter against a concurrent final signature settling the
-            // same row. If nothing was voided and the payment is completed,
-            // the settlement won the race — the money already moved, so the
-            // booking must complete rather than cancel (a fully-signed
-            // contract with a paid settlement can never be cancelled).
+            // Void the pending payment first; a settled payment wins the race.
             const paymentVoided =
                 await this.pointsService.cancelServicePayment(contractId);
             if (
@@ -285,9 +279,7 @@ export class BookingsService {
                     "A fully-signed contract cannot be cancelled",
                 );
             }
-            // The payment is cancelled (or was never pending): a concurrent
-            // signature can no longer settle, so the contract is still in a
-            // cancellable state.
+            // Payment voided (or never pending): the contract is now cancellable.
             await this.contractsService.cancelContract(contractId);
         }
         this.eventEmitter.emit(BOOKING_CANCELLED_EVENT, {
@@ -333,8 +325,7 @@ export class BookingsService {
         contractId: string;
         bookingId: string;
     }) {
-        // Conditional update so a booking that reached a terminal state in
-        // the meantime (e.g. cancelled) is never clobbered back.
+        // Guarded update: don't clobber a booking that reached a terminal state.
         await this.bookingModel.updateOne(
             { _id: payload.bookingId, status: BookingStatus.ACCEPTED },
             { $set: { status: BookingStatus.COMPLETED } },

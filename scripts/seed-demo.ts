@@ -8,8 +8,7 @@ const PG_CONTAINER = process.env.PG_CONTAINER ?? "docker-postgres-1";
 const PG_USER = process.env.POSTGRES_USER ?? "qc";
 const PG_DB = process.env.POSTGRES_DB ?? "quartierconnect";
 
-/** No hardcoded fallback: seeding with a publicly known TOTP secret would
- *  silently weaken the demo accounts' second factor. */
+/** No hardcoded fallback: a committed TOTP secret would be public. */
 function requireDemoTotpSecret(): string {
   const secret = process.env.DEMO_TOTP_SECRET;
   if (secret) return secret;
@@ -81,12 +80,7 @@ function totp(secret: string): string {
 }
 
 function pgQuery(sql: string, vars: Record<string, string> = {}): string {
-  // execFileSync (no shell) + SQL piped via stdin: container/db names and the
-  // query are passed as literal args/input, so nothing can break out into a
-  // shell command. Values are bound as psql variables (-v) and referenced as
-  // :'name' in the SQL: psql does the quoting itself, so no value is ever
-  // interpolated into the statement (an apostrophe in a secret used to break
-  // the query).
+  // No shell involved; values are bound via psql -v so psql handles quoting.
   const varArgs = Object.entries(vars).flatMap(([name, value]) => [
     "-v",
     `${name}=${value}`,
@@ -138,10 +132,7 @@ function promoteRole(email: string, role: string): void {
 const WELCOME_CREDIT_POINTS = 20;
 const WELCOME_CREDIT_NOTE = "Crédit de bienvenue";
 
-/** Grant a one-time welcome credit so demo balances start positive
- *  (points_balances enforces CHECK balance >= -10, and a negative balance on
- *  the demo account makes the whole points economy look broken). Idempotent:
- *  skipped when a credit with the same note already exists for the account. */
+/** One-time welcome credit so demo balances start positive; idempotent per note. */
 function grantWelcomeCredit(email: string): void {
   const sql = `
     WITH credited AS (
@@ -344,8 +335,7 @@ function centroidOf(geometry: { coordinates: unknown }): [number, number] {
   return [lng, lat];
 }
 
-/** The demo neighborhood (first one) + its centroid, used to place all
- *  located demo content inside a single coherent quartier. */
+/** First neighborhood + its centroid; located demo content goes inside it. */
 async function getDemoNeighborhood(
   token: string,
 ): Promise<DemoNeighborhood | null> {
@@ -380,9 +370,7 @@ async function warnIfFailed(label: string, res: Response): Promise<void> {
   console.warn(`  ! ${label} failed (${res.status}): ${detail}`);
 }
 
-/** Titles already present on a list endpoint — the re-run guard that keeps
- *  content seeding idempotent per item (a re-run only creates what is
- *  missing, and never duplicates an existing title). */
+/** Titles already present on a list endpoint, to keep seeding idempotent. */
 async function fetchExistingTitles(
   token: string,
   path: string,
@@ -613,14 +601,11 @@ async function seedContent(
   }
 }
 
-/** Assign an address + neighborhood to the non-admin demo residents so they
- *  pass the address gate (admins are gate-exempt). Without this, alice/bob are
- *  redirected to /onboarding/address and the client E2E suite can't reach the app. */
+/** Non-admin residents need an address + neighborhood to pass the address gate. */
 async function assignNeighborhoodToResidents(
   nbh: DemoNeighborhood,
 ): Promise<void> {
-  // Home sits at the neighborhood centroid so the "home" marker is always
-  // inside the polygon and the maps centre coherently.
+  // Centroid keeps the home marker inside the polygon.
   for (const { email, role } of ACCOUNTS) {
     if (role === "admin") continue;
     try {

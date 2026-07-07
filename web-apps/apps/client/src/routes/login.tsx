@@ -21,8 +21,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 export const Route = createFileRoute("/login")({
-    // `redirect` must stay optional in the derived search type so the
-    // existing navigations without a search object keep compiling.
+    // Keep redirect optional in the search type.
     validateSearch: (
         search: Record<string, unknown>,
     ): { redirect?: string } => ({
@@ -76,15 +75,23 @@ function LoginPage() {
                 });
                 setTokens(data.accessToken);
                 toast.success(t("auth.loginSuccess"));
-                // Back to the page that triggered the login when one was
-                // recorded; the dashboard otherwise.
+                // Return to the recorded page, or the dashboard.
                 if (redirectTo) {
                     router.history.push(redirectTo);
                 } else {
                     navigate({ to: "/dashboard" });
                 }
             } catch (err) {
-                const apiErr = err as { code?: string; message?: string };
+                const apiErr = err as {
+                    code?: string;
+                    message?: string;
+                    status?: number;
+                };
+                if (apiErr.status === 429) {
+                    setServerError(t("auth.errors.tooManyAttempts"));
+                    totpForm.setFieldValue("totpCode", "");
+                    return;
+                }
                 const messages: Record<string, string> = {
                     INVALID_PASSWORD: t("auth.errors.invalidCredentials"),
                     INVALID_TOTP: t("auth.errors.invalidTotp"),

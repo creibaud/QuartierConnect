@@ -14,10 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Plugin intégré — injecte une surcharge CSS en mode compact qui réduit les marges
- * internes et les tailles de police pour une densité d'information plus élevée.
- */
+/** Built-in plugin — injects a CSS override with tighter padding and smaller fonts. */
 public class CompactModePlugin implements QuartierConnectPlugin, PluginRegistry.ContextAwarePlugin, ViewablePlugin {
 
     private static final Logger LOG = Logger.getLogger(CompactModePlugin.class.getName());

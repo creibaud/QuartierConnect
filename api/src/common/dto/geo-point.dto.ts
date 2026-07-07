@@ -7,9 +7,7 @@ import {
     IsNumber,
 } from "class-validator";
 
-// GeoJSON Point payload ([lng, lat]) validated at the DTO layer so a
-// malformed shape is rejected with a 400 before it reaches the 2dsphere
-// index, which would otherwise fail with a raw Mongo error.
+// GeoJSON Point ([lng, lat]) validated here so a malformed shape is rejected with 400.
 export class GeoPointDto {
     @ApiProperty({ enum: ["Point"], example: "Point" })
     @Equals("Point")

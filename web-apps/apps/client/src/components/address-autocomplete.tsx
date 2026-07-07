@@ -61,9 +61,7 @@ export function AddressAutocomplete({
     }, [value, i18n.language]);
 
     return (
-        // Popover portals the list (so no Card/ScrollArea/dialog overflow can
-        // clip it) and is dialog-aware (selecting a suggestion never closes a
-        // parent dialog).
+        // Portaled and dialog-aware so overflow never clips the list.
         <Popover
             open={showDropdown}
             onOpenChange={(next) => {
@@ -87,11 +85,7 @@ export function AddressAutocomplete({
                 onOpenAutoFocus={(e) => e.preventDefault()}
                 className="w-(--radix-popover-trigger-width) p-0"
             >
-                {/* The viewport is capped to the space Radix reports as free, so
-                    the list never runs past the screen edge on mobile; forcing
-                    the inner wrapper back to `block` (Radix defaults it to
-                    `table`) lets long labels truncate instead of widening the
-                    list. */}
+                {/* Cap to available height; force block so long labels truncate. */}
                 <ScrollArea viewportClassName="max-h-[min(14rem,var(--radix-popover-content-available-height))] [&>div]:block!">
                     <ul className="p-1">
                         {suggestions.map((s) => (

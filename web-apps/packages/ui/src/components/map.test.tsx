@@ -1,15 +1,10 @@
-// map.test.tsx — tests for the mapcn (MapLibre) compatibility wrapper.
-//
-// MapLibre GL requires WebGL, which is not available in jsdom. Tests that
-// render the full <Map> tree are therefore skipped here — cover them with
-// Playwright / E2E tests. Only components that have no map-context dependency
-// and pure hooks are tested below.
+// MapLibre needs WebGL (absent in jsdom); full <Map> render is covered by E2E.
+// Here we test map-context-free components and pure hooks.
 
 import { describe, it, expect, vi } from "vitest";
 import { render, renderHook, screen } from "@testing-library/react";
 
-// ── Mock terra-draw before importing the wrapper ──────────────────────────
-// terra-draw drives a real MapLibre instance, which jsdom cannot provide.
+// ── Mock terra-draw — it drives a real MapLibre instance jsdom can't provide ──
 vi.mock("terra-draw", () => {
     class MockTerraDraw {
         enabled = true;
@@ -40,8 +35,7 @@ vi.mock("terra-draw-maplibre-gl-adapter", () => ({
     TerraDrawMapLibreGLAdapter: class {},
 }));
 
-// ── Mock the underlying mapcn layer before importing the wrapper ──────────
-// This prevents maplibre-gl from initialising a WebGL context in jsdom.
+// ── Mock the mapcn layer to keep maplibre-gl from touching WebGL in jsdom ──
 vi.mock("@workspace/ui/components/ui/map", async () => {
     const React = await import("react");
     const mapContainer = document.createElement("div");

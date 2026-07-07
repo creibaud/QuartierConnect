@@ -22,8 +22,7 @@ vi.mock("../../auth", () => ({
     clearTokens: vi.fn(),
 }));
 
-// jsdom provides window.location but href is read-only by default.
-// Override it so useDeleteMyAccount's redirect doesn't throw.
+// jsdom's window.location.href is read-only; make it writable for the redirect.
 Object.defineProperty(window, "location", {
     writable: true,
     value: { href: "" },

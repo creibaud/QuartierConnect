@@ -11,15 +11,8 @@ type CaughtMongooseError =
     | MongooseError.CastError
     | MongooseError.ValidationError;
 
-/**
- * Translates raw Mongoose data errors into a clean HTTP 400 response.
- *
- * A malformed route parameter (e.g. an id that is not a valid ObjectId) makes
- * Mongoose throw a `CastError`, which would otherwise bubble up as a generic
- * 500. Schema `ValidationError`s are mapped the same way. Every other exception
- * — including `HttpException` (401/403/404/409, ...) — is left untouched so the
- * default Nest handler keeps its existing behaviour.
- */
+// Maps Mongoose CastError/ValidationError to HTTP 400. Other exceptions
+// (including HttpException) pass through to the default Nest handler.
 @Catch(MongooseError.CastError, MongooseError.ValidationError)
 export class MongooseExceptionFilter implements ExceptionFilter {
     catch(exception: CaughtMongooseError, host: ArgumentsHost): void {
@@ -39,6 +32,8 @@ export class MongooseExceptionFilter implements ExceptionFilter {
                 (error) => error.message,
             );
         }
-        return `Invalid value provided for parameter '${exception.path}'`;
+        // Never surface the raw `_id` field name to callers.
+        const field = exception.path === "_id" ? "identifier" : exception.path;
+        return `Invalid value provided for the ${field}`;
     }
 }

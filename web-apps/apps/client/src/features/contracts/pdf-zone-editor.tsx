@@ -251,9 +251,7 @@ export function PdfZoneEditor({
                         loading={<Skeleton className="h-[480px] w-full" />}
                     >
                         <div className="relative mx-auto w-fit shadow">
-                            {/* Text/annotation layers are disabled: they sit
-                                above the zone overlay (pdfjs z-index) and
-                                would swallow the zone drag pointer events. */}
+                            {/* Text/annotation layers off so they don't intercept zone drags. */}
                             <Page
                                 pageNumber={pageNumber}
                                 width={pageWidth}

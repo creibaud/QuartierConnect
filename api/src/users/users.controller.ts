@@ -183,8 +183,7 @@ export class UsersController {
         const pageNum = Math.max(1, parseInt(page) || 1);
         const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
         const skip = (pageNum - 1) * limitNum;
-        // Server-side filters: the admin screen pages through users, so a
-        // client-side filter would only ever search the loaded pages.
+        // Filter server-side so search spans all users, not just loaded pages.
         const conditions: SQL[] = [];
         const term = search.trim();
         if (term.length > 0) {
@@ -256,10 +255,10 @@ export class UsersController {
         let role = dto.role;
         let previousRole = current.previousRole;
         if (dto.role === "banned" && current.role !== "banned") {
-            // Banning: remember the current role so it can be restored later
+            // Remember the current role so a later reactivation can restore it.
             previousRole = current.role;
         } else if (current.role === "banned" && dto.role !== "banned") {
-            // Reactivation: restore the original role, not the requested default one
+            // Restore the pre-ban role rather than the requested default.
             role = current.previousRole ?? dto.role;
             previousRole = null;
         }

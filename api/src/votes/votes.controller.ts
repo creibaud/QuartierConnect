@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     Body,
     Controller,
     Get,
@@ -59,6 +60,18 @@ export class VotesController {
         @Query("targetId") targetId: string,
         @Query("targetType") targetType: VoteTargetType,
     ) {
+        // Reject missing/unknown params with a 400 before the strategy lookup.
+        if (!targetId) {
+            throw new BadRequestException("targetId is required");
+        }
+        if (
+            !targetType ||
+            !Object.values(VoteTargetType).includes(targetType)
+        ) {
+            throw new BadRequestException(
+                `targetType must be one of: ${Object.values(VoteTargetType).join(", ")}`,
+            );
+        }
         return this.votesService.getScore(targetId, targetType);
     }
 }

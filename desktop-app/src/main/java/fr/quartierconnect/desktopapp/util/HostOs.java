@@ -2,12 +2,7 @@ package fr.quartierconnect.desktopapp.util;
 
 import java.util.Locale;
 
-/**
- * Système d'exploitation sur lequel s'exécute l'application desktop, avec l'extension
- * d'installateur natif propre à cette plateforme. Utilisé par les flux de mise à jour
- * et de désinstallation pour choisir le bon artefact de release et la bonne commande
- * système.
- */
+/** Host platform with its native installer extension, used by the update and uninstall flows. */
 public enum HostOs {
     LINUX(".deb"),
     WINDOWS(".msi"),

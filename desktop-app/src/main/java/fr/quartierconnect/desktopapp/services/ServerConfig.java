@@ -3,11 +3,9 @@ package fr.quartierconnect.desktopapp.services;
 import java.util.Properties;
 
 /**
- * Résout les URLs du serveur (API et application web SSO) dans cet ordre :
- * propriété système ({@code -Dapi.url=...}), puis fichier {@code server.properties}
- * embarqué dans le JAR, puis valeurs locales par défaut. Le JAR proposé au
- * téléchargement depuis une instance déployée embarque un {@code server.properties}
- * pointant vers cette instance, si bien qu'il fonctionne sans configuration.
+ * Resolves server URLs (API and SSO web app): system property ({@code -Dapi.url=...}),
+ * then the {@code server.properties} bundled in the JAR, then local defaults.
+ * JARs downloaded from a deployed instance bundle a server.properties pointing at it.
  */
 public final class ServerConfig {
 
@@ -38,7 +36,7 @@ public final class ServerConfig {
         try (var stream = ServerConfig.class.getResourceAsStream("/server.properties")) {
             if (stream != null) properties.load(stream);
         } catch (Exception ignored) {
-            // Fichier absent ou illisible : on retombe sur les valeurs par défaut.
+            // missing or unreadable, defaults apply
         }
         return properties;
     }

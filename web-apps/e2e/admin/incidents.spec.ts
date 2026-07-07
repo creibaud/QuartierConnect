@@ -27,8 +27,7 @@ test.describe("Admin — Modération incidents", () => {
             const tokens = await apiLogin(adminEmail, adminSecret, -30);
             adminAccessToken = tokens.accessToken;
             adminRefreshToken = tokens.refreshToken;
-            // Seed one incident so the moderation table (and its column headers)
-            // render — CI starts with an empty DB and otherwise shows the empty state.
+            // Seed one incident so the table renders on a fresh CI database.
             await fetch(
                 `${process.env.API_URL ?? "http://localhost:5000"}/incidents`,
                 {
@@ -45,7 +44,7 @@ test.describe("Admin — Modération incidents", () => {
             );
             apiAvailable = true;
         } catch (err) {
-            // API or Docker not available — API-dependent tests will be skipped
+            // API or Docker not available
         }
     });
 

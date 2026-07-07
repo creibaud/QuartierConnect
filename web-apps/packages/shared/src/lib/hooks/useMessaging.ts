@@ -89,9 +89,7 @@ export function useSocketMessages(
         };
     }, [conversationId, onMessage, queryClient]);
 
-    // The gateway returns the persisted message as a socket.io ack, and a
-    // WsException never acks: awaiting with a timeout is what turns a silent
-    // loss (closed socket, rejected message) into a visible failure.
+    // Await the ack with a timeout so a lost message surfaces as a failure.
     const SEND_ACK_TIMEOUT_MS = 5000;
 
     const sendMessage = (content: string): Promise<Message> => {

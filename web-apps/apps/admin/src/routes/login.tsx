@@ -25,8 +25,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 export const Route = createFileRoute("/login")({
-    // `redirect` must stay optional in the derived search type so the
-    // existing navigations passing only `forbidden` keep compiling.
+    // redirect stays optional for navigations that pass only forbidden.
     validateSearch: (
         search: Record<string, unknown>,
     ): { forbidden: boolean; redirect?: string } => ({
@@ -86,8 +85,7 @@ function AdminLoginPage() {
                 }
                 setTokens(data.accessToken);
                 toast.success(t("adminPages.auth.loginSuccess"));
-                // Back to the page that triggered the login when one was
-                // recorded; the dashboard otherwise.
+                // Return to the recorded page, or the dashboard.
                 if (redirectTo) {
                     router.history.push(redirectTo);
                 } else {

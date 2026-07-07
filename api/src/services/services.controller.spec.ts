@@ -635,11 +635,14 @@ describe("ServicesController", () => {
         });
 
         const result = await controller.findResponded({
-            user: { sub: "me", role: "resident" },
+            user: { sub: "me", role: "resident", neighborhoodId: "n1" },
         } as any);
 
         expect(responseModel.find).toHaveBeenCalledWith({ responderId: "me" });
-        expect(model.find).toHaveBeenCalledWith({ _id: { $in: ["s1"] } });
+        expect(model.find).toHaveBeenCalledWith({
+            _id: { $in: ["s1"] },
+            neighborhoodId: "n1",
+        });
         expect(result).toEqual([{ _id: "s1", title: "T" }]);
     });
 
@@ -649,7 +652,7 @@ describe("ServicesController", () => {
         });
 
         const result = await controller.findResponded({
-            user: { sub: "me", role: "resident" },
+            user: { sub: "me", role: "resident", neighborhoodId: "n1" },
         } as any);
 
         expect(result).toEqual([]);

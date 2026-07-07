@@ -7,9 +7,7 @@ const PG_USER = process.env.POSTGRES_USER ?? "qc";
 const PG_DB = process.env.POSTGRES_DB ?? "quartierconnect";
 const NEO4J_CONTAINER = process.env.NEO4J_CONTAINER ?? "docker-neo4j-1";
 
-// execFileSync (no shell): container names, credentials and statements are
-// passed as literal argv entries, so an env var containing spaces or quotes
-// can never break out into a shell command (same approach as seed-demo.ts).
+// No shell: every value is passed as a literal argv entry.
 function runSilent(args: string[]): void {
   execFileSync("docker", args, { stdio: "pipe" });
 }

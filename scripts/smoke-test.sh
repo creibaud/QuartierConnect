@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
-# Smoke test post-déploiement : vérifie que l'API répond sur /api/health.
-#
-#   Usage : ./scripts/smoke-test.sh <base-url>
-#   Exemple : ./scripts/smoke-test.sh https://quartierconnect.example.com
-#
-# Une sortie != 0 déclenche le rollback automatique dans deploy.yml.
+# Post-deploy smoke test: checks the API responds on /api/health.
+# Usage: ./scripts/smoke-test.sh <base-url>
+# A non-zero exit triggers the automatic rollback in deploy.yml.
 set -euo pipefail
 
 BASE_URL="${1:?Usage: smoke-test.sh <base-url>}"
@@ -28,9 +25,9 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
       fi
       echo "✓ ${path} → ${code}"
     }
-    check_route /aide/ 200   # doc User publique
-    check_route /dev/ 401    # doc Dev protégée (basic_auth)
-    check_route /docs 401    # référence Scalar protégée
+    check_route /aide/ 200   # public user docs
+    check_route /dev/ 401    # dev docs, behind basic auth
+    check_route /docs 401    # Scalar reference, behind basic auth
     if [ -n "${DOCS_AUTH_USER:-}" ] && [ -n "${DOCS_AUTH_PLAINTEXT:-}" ]; then
       auth_code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 -u "${DOCS_AUTH_USER}:${DOCS_AUTH_PLAINTEXT}" "${BASE_URL%/}/dev/" 2>/dev/null || echo "000")
       if [ "$auth_code" != "200" ]; then

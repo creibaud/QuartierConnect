@@ -15,10 +15,7 @@ describe("UsersController", () => {
     let mockDb: any;
 
     beforeEach(async () => {
-        // updateRole reads the current role by awaiting `select(...).from().where()`
-        // directly, so that lookup resolves through `roleLookup`. Making the whole
-        // db mock thenable would break Nest injection (the DI container awaits a
-        // thenable useValue), so only the object returned by `where()` is thenable.
+        // Only where()'s result is thenable; a thenable db mock would break Nest DI.
         const roleLookup = jest.fn(() =>
             Promise.resolve<unknown[]>([mockUser]),
         );
@@ -34,9 +31,7 @@ describe("UsersController", () => {
             roleLookup,
             where: jest.fn(),
         };
-        // `where()` returns a builder that stays chainable (.orderBy()/.limit()
-        // for search/neighbors, .returning() for the update) yet is thenable so
-        // the role lookup resolves when awaited directly.
+        // Chainable builder that's also thenable for the direct role lookup.
         const whereBuilder = {
             orderBy: mockDb.orderBy,
             offset: mockDb.offset,

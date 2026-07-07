@@ -47,8 +47,7 @@ import {
 
 const PDF_MAGIC_BYTES = "%PDF-";
 
-// Only a contract still in progress may be reconciled to fully-signed; a
-// cancelled contract is terminal and must never be revived.
+// Only in-progress contracts may be reconciled to fully-signed; cancelled is terminal.
 const HEALABLE_CONTRACT_STATUSES = [
     ContractStatus.DRAFT,
     ContractStatus.PARTIAL,
@@ -70,7 +69,14 @@ export class ContractsService {
         private readonly contractDocs: ContractDocumentsService,
     ) {}
 
-    findAll(userId: string) {
+    findAll(userId: string, role?: string) {
+        // Admins see every contract but never its private body or signature hashes.
+        if (role === "admin") {
+            return this.contractModel
+                .find({}, { content: 0, "signatures.hash": 0, contentHash: 0 })
+                .sort({ createdAt: -1 })
+                .exec();
+        }
         return this.contractModel
             .find({
                 $or: [{ createdBy: userId }, { signatories: userId }],
@@ -98,9 +104,7 @@ export class ContractsService {
             contract.status = ContractStatus.FULLY_SIGNED;
             if (!contract.signedAt) contract.signedAt = new Date();
             try {
-                // Guarded write so this read-path reconciliation can never
-                // clobber a concurrent status change, and never revive a
-                // cancelled contract.
+                // Guarded write so this reconciliation never clobbers a concurrent status change.
                 await this.contractModel
                     .updateOne(
                         {
@@ -116,8 +120,7 @@ export class ContractsService {
                     )
                     .exec();
             } catch {
-                // best-effort reconciliation: persistence is retried on the
-                // next read
+                // best-effort: retried on the next read
             }
         }
         return contract;
@@ -313,8 +316,7 @@ export class ContractsService {
     }
 
     async cancelContract(id: string): Promise<void> {
-        // Conditional update so a signature that completed the contract in
-        // the meantime can never be clobbered by a late cancellation.
+        // Conditional update so a late cancellation can't clobber a completed signature.
         const cancelled = await this.contractModel
             .findOneAndUpdate(
                 {
@@ -345,8 +347,7 @@ export class ContractsService {
         let res = await this.contractDocs.getPdfStream(id, userId);
         if (!res) {
             if (contract.source === ContractSource.IMPORTED) {
-                // The uploaded file is the single source of truth: an
-                // imported contract is never rebuilt from the template.
+                // Imported contracts are never rebuilt from the template.
                 throw new NotFoundException("PDF unavailable");
             }
             // lazy (re)generation when the PDF is missing
@@ -412,9 +413,7 @@ export class ContractsService {
             .update(contract.content + userId + new Date().toISOString())
             .digest("hex");
 
-        // Atomic claim of the signature slot: MongoDB re-checks the status
-        // and duplicate guards itself, so two concurrent sign calls can never
-        // push twice nor revive a cancelled contract.
+        // Atomic claim of the signature slot: the filter re-checks the status and duplicate guards.
         const updated = await this.contractModel
             .findOneAndUpdate(
                 {
@@ -439,11 +438,8 @@ export class ContractsService {
         }
 
         const contractId = String(updated._id);
-        // Completeness is computed from the post-push document, so exactly
-        // the request that lands the last signature settles and flips.
-        // Demoted back to false when the flip loses against a cancellation,
-        // so completion events never fire for a contract that ended
-        // cancelled.
+        // Computed from the post-push document, so only the request landing the
+        // last signature settles and flips; demoted if the flip loses to a cancellation.
         let isFullySigned = updated.signatories.every((signatory) =>
             updated.signatures.some((s) => s.userId === signatory),
         );
@@ -451,10 +447,8 @@ export class ContractsService {
         let result = updated;
         if (isFullySigned) {
             if (updated.bookingId) {
-                // Money-critical: settle BEFORE flipping the status so a
-                // `fully_signed` service contract can never exist without
-                // payment. On failure the pushed signature is withdrawn so
-                // the signer can retry once the payment issue is resolved.
+                // Settle before flipping so a fully_signed service contract never
+                // exists without payment; on failure the pushed signature is withdrawn.
                 try {
                     await this.pointsService.completeServicePayment(contractId);
                 } catch (err) {
@@ -475,9 +469,7 @@ export class ContractsService {
                 )
                 .exec();
             if (!flipped) {
-                // The read-path reconciliation may have flipped the status
-                // first: that still counts as a completed signature. Only a
-                // contract that ended CANCELLED must not fire completion.
+                // A read-path reconciliation may have flipped first; that still counts as completed.
                 const current = await this.contractModel.findById(id).exec();
                 if (current?.status === ContractStatus.FULLY_SIGNED) {
                     flipped = current;
@@ -518,8 +510,7 @@ export class ContractsService {
         return result;
     }
 
-    // Maps a lost signature claim to the same error the pre-claim guards
-    // would have produced, by re-reading the current document state.
+    // Maps a lost signature claim to the error the pre-claim guards would have produced.
     private async resolveSignRejection(
         id: string,
         userId: string,
@@ -538,9 +529,7 @@ export class ContractsService {
         return new BadRequestException("Contract cannot be signed");
     }
 
-    // Best-effort compensation for a failed settlement: withdraw the pushed
-    // signature (and the PARTIAL status when it was the only one) so the
-    // contract returns to its pre-sign state.
+    // Withdraws the pushed signature (and PARTIAL status if it was the only one) after a failed settlement.
     private async rollbackSignature(
         contractId: string,
         userId: string,
@@ -566,15 +555,11 @@ export class ContractsService {
                     .exec();
             }
         } catch {
-            // the signature stays recorded; the settlement error still
-            // surfaces to the caller and the flow remains retryable through
-            // the read-path reconciliation
+            // best-effort: the signature stays recorded and the flow stays retryable
         }
     }
 
-    // Best-effort PDF stamp — must never affect settlement/signature/status.
-    // Contracts with placement zones (imported PDFs) are stamped at every
-    // zone of the signer; legacy service contracts keep the fixed zones.
+    // Best-effort PDF stamp. Contracts with zones stamp every signer zone; others use the fixed zone.
     private async stampSignedPdf(
         contract: ContractDocument,
         userId: string,

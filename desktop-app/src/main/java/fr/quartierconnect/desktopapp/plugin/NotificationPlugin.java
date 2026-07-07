@@ -15,10 +15,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Plugin intégré — surveille les conflits via l'EventBus (INCIDENTS_CHANGED)
- * et affiche un toast dans l'application lorsque de nouveaux conflits sont détectés.
- */
+/** Built-in plugin — watches INCIDENTS_CHANGED events and toasts when new conflicts appear. */
 public class NotificationPlugin implements QuartierConnectPlugin, PluginRegistry.ContextAwarePlugin, ViewablePlugin {
 
     private static final Logger LOG = Logger.getLogger(NotificationPlugin.class.getName());

@@ -30,7 +30,7 @@ import { SignContractDto } from "./dto/sign-contract.dto";
 import { MAX_IMPORT_PDF_BYTES } from "./lib/import-contract-fields";
 
 interface AuthRequest {
-    user: { sub: string };
+    user: { sub: string; role: string };
 }
 
 @ApiTags("Contracts")
@@ -44,11 +44,11 @@ export class ContractsController {
     @ApiOperation({
         summary: "List my contracts (created or to be signed)",
         description:
-            "Returns all contracts where the user is the creator or a signatory.",
+            "Returns all contracts where the user is the creator or a signatory. Admins receive every contract as metadata only (no content or signature hashes) for platform oversight.",
     })
     @ApiResponse({ status: 200, type: [ContractDto] })
     findAll(@Request() req: AuthRequest) {
-        return this.contractsService.findAll(req.user.sub);
+        return this.contractsService.findAll(req.user.sub, req.user.role);
     }
 
     @Get(":id")

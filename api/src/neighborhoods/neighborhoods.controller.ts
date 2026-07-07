@@ -227,8 +227,7 @@ export class NeighborhoodsController {
             updated._id.toString(),
             updated.name,
         );
-        // A grown polygon may now cover residents stuck in "pending"; same
-        // rule as create(). Shrinking never unassigns anyone here.
+        // A grown polygon may now cover pending residents; shrinking never unassigns.
         if (dto.geometry !== undefined) await this.reassignPending();
         return updated;
     }
@@ -254,9 +253,7 @@ export class NeighborhoodsController {
             "Neighborhood",
             deleted._id.toString(),
         );
-        // Residents must not keep pointing at a deleted quartier: null the
-        // assignment so the onboarding gate sends them back through the
-        // address flow instead of leaving them with empty scoped lists.
+        // Null the assignment so the onboarding gate re-runs the address flow.
         await this.db
             .update(schema.users)
             .set({ neighborhoodId: null, updatedAt: new Date() })

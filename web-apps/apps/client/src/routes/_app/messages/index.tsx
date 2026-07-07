@@ -21,7 +21,15 @@ import {
     useSocketMessages,
 } from "@workspace/shared/lib/hooks/useMessaging";
 import type { Conversation, Message } from "@workspace/shared/lib/types";
+import {
+    Attachment,
+    AttachmentContent,
+    AttachmentDescription,
+    AttachmentMedia,
+    AttachmentTitle,
+} from "@workspace/ui/components/attachment";
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar";
+import { Bubble, BubbleContent } from "@workspace/ui/components/bubble";
 import { Button } from "@workspace/ui/components/button";
 import {
     Dialog,
@@ -40,6 +48,20 @@ import {
     InputGroupInput,
 } from "@workspace/ui/components/input-group";
 import { Label } from "@workspace/ui/components/label";
+import {
+    MessageContent,
+    MessageFooter,
+    MessageGroup,
+    Message as MessageRow,
+} from "@workspace/ui/components/message";
+import {
+    MessageScroller,
+    MessageScrollerButton,
+    MessageScrollerContent,
+    MessageScrollerItem,
+    MessageScrollerProvider,
+    MessageScrollerViewport,
+} from "@workspace/ui/components/message-scroller";
 import { PageHeader } from "@workspace/ui/components/page-header";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import {
@@ -346,19 +368,28 @@ function FileAttachment({ message }: { message: Message }) {
     }
 
     return (
-        <button
-            type="button"
-            onClick={handleDownload}
-            disabled={downloading}
-            className="flex items-center gap-2 text-sm underline underline-offset-2"
-        >
-            <HugeiconsIcon icon={Download01Icon} size={16} />
-            <span>
-                {downloading
-                    ? t("messaging.sending")
-                    : (message.fileName ?? t("messaging.download"))}
-            </span>
-        </button>
+        <Attachment size="sm">
+            <button
+                type="button"
+                onClick={handleDownload}
+                disabled={downloading}
+                className="flex min-w-0 items-center gap-2"
+            >
+                <AttachmentMedia variant="icon">
+                    <HugeiconsIcon icon={Download01Icon} />
+                </AttachmentMedia>
+                <AttachmentContent>
+                    <AttachmentTitle>
+                        {message.fileName ?? t("messaging.download")}
+                    </AttachmentTitle>
+                    <AttachmentDescription>
+                        {downloading
+                            ? t("messaging.sending")
+                            : t("messaging.download")}
+                    </AttachmentDescription>
+                </AttachmentContent>
+            </button>
+        </Attachment>
     );
 }
 
@@ -378,39 +409,40 @@ function MessageBubble({
     const isImage = message.type === "image" && !!message.fileId;
     const isAudio = message.type === "audio" && !!message.fileId;
     const isFile = message.type === "file" && !!message.fileId;
+    const isMedia = isImage || isAudio || isFile;
+    const align = isOutgoing ? "end" : "start";
 
     return (
-        <div
-            className={cn(
-                "flex max-w-[75%] flex-col gap-1",
-                isOutgoing ? "ml-auto items-end" : "mr-auto items-start",
-            )}
-        >
-            <div
-                className={cn(
-                    "px-3.5 py-2 text-sm leading-relaxed",
-                    isOutgoing
-                        ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
-                        : "bg-muted text-foreground rounded-2xl rounded-bl-md",
-                )}
-            >
-                {isImage ? (
-                    <AuthedImage
-                        fileId={message.fileId!}
-                        alt={message.fileName ?? t("messaging.imageAlt")}
-                    />
-                ) : isAudio ? (
-                    <AuthedAudio fileId={message.fileId!} />
-                ) : isFile ? (
-                    <FileAttachment message={message} />
-                ) : (
-                    (message.content ?? "")
-                )}
-            </div>
-            <span className="text-muted-foreground px-1 text-xs tabular-nums">
-                {time}
-            </span>
-        </div>
+        <MessageRow align={align}>
+            <MessageContent>
+                <Bubble
+                    variant={
+                        isMedia ? "muted" : isOutgoing ? "default" : "muted"
+                    }
+                    align={align}
+                >
+                    <BubbleContent className={cn(isMedia && "p-1.5")}>
+                        {isImage ? (
+                            <AuthedImage
+                                fileId={message.fileId!}
+                                alt={
+                                    message.fileName ?? t("messaging.imageAlt")
+                                }
+                            />
+                        ) : isAudio ? (
+                            <AuthedAudio fileId={message.fileId!} />
+                        ) : isFile ? (
+                            <FileAttachment message={message} />
+                        ) : (
+                            (message.content ?? "")
+                        )}
+                    </BubbleContent>
+                </Bubble>
+                <MessageFooter>
+                    <span className="tabular-nums">{time}</span>
+                </MessageFooter>
+            </MessageContent>
+        </MessageRow>
     );
 }
 
@@ -426,7 +458,6 @@ function ConversationThread({
     const { t } = useTranslation();
     const [inputValue, setInputValue] = useState("");
     const [localMessages, setLocalMessages] = useState<Message[]>([]);
-    const bottomRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { data: fetchedMessages, isLoading } = useMessages(conversationId);
@@ -468,16 +499,11 @@ function ConversationThread({
         onRead(conversationId, newestMessageAt ?? new Date().toISOString());
     }, [conversationId, newestMessageAt, onRead]);
 
-    useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [allMessages.length]);
-
     function handleSend(e: React.FormEvent) {
         e.preventDefault();
         const text = inputValue.trim();
         if (!text) return;
-        // Optimistic clear; on failure the draft is restored so nothing the
-        // user typed is ever lost silently.
+        // Optimistic clear; the draft is restored on failure.
         stopTyping();
         setInputValue("");
         sendMessage(text)
@@ -499,28 +525,76 @@ function ConversationThread({
 
     return (
         <div className="flex min-h-0 flex-1 flex-col">
-            <ScrollArea className="min-h-0 flex-1 p-4">
-                {isLoading ? (
-                    <div className="text-muted-foreground py-8 text-center text-sm">
-                        {t("common.loading")}
-                    </div>
-                ) : allMessages.length === 0 ? (
-                    <div className="text-muted-foreground py-8 text-center text-sm">
-                        {t("pages.messages.noMessages")}
-                    </div>
-                ) : (
-                    <div className="flex flex-col gap-2">
-                        {allMessages.map((msg) => (
-                            <MessageBubble
-                                key={msg._id}
-                                message={msg}
-                                isOutgoing={msg.senderId === currentUserId}
-                            />
-                        ))}
-                        <div ref={bottomRef} />
-                    </div>
-                )}
-            </ScrollArea>
+            <MessageScrollerProvider>
+                <MessageScroller className="min-h-0 flex-1">
+                    <MessageScrollerViewport className="p-4">
+                        <MessageScrollerContent className="gap-2">
+                            {isLoading ? (
+                                <MessageGroup>
+                                    {[0, 1, 2, 3].map((i) => {
+                                        const outgoing = i % 2 === 1;
+                                        return (
+                                            <MessageRow
+                                                key={i}
+                                                align={
+                                                    outgoing ? "end" : "start"
+                                                }
+                                            >
+                                                <MessageContent>
+                                                    <Bubble
+                                                        variant={
+                                                            outgoing
+                                                                ? "default"
+                                                                : "muted"
+                                                        }
+                                                        align={
+                                                            outgoing
+                                                                ? "end"
+                                                                : "start"
+                                                        }
+                                                    >
+                                                        <BubbleContent>
+                                                            <span className="shimmer">
+                                                                {"█".repeat(
+                                                                    6 +
+                                                                        ((i *
+                                                                            7) %
+                                                                            14),
+                                                                )}
+                                                            </span>
+                                                        </BubbleContent>
+                                                    </Bubble>
+                                                </MessageContent>
+                                            </MessageRow>
+                                        );
+                                    })}
+                                </MessageGroup>
+                            ) : allMessages.length === 0 ? (
+                                <div className="text-muted-foreground py-8 text-center text-sm">
+                                    {t("pages.messages.noMessages")}
+                                </div>
+                            ) : (
+                                allMessages.map((msg, i) => (
+                                    <MessageScrollerItem
+                                        key={msg._id}
+                                        scrollAnchor={
+                                            i === allMessages.length - 1
+                                        }
+                                    >
+                                        <MessageBubble
+                                            message={msg}
+                                            isOutgoing={
+                                                msg.senderId === currentUserId
+                                            }
+                                        />
+                                    </MessageScrollerItem>
+                                ))
+                            )}
+                        </MessageScrollerContent>
+                    </MessageScrollerViewport>
+                    <MessageScrollerButton direction="end" />
+                </MessageScroller>
+            </MessageScrollerProvider>
 
             <form onSubmit={handleSend} className="border-border border-t p-4">
                 {recorder.isRecording ? (
@@ -791,8 +865,7 @@ function NewConversationDialog({
             onOpenChange(false);
             onCreated(conv._id);
         } catch (err) {
-            // The backend replies with stable codes; the raw English message
-            // is never shown to the user.
+            // Map stable backend codes to localized messages.
             const codeKeys: Record<string, string> = {
                 USER_EMAIL_NOT_FOUND: "pages.messages.userEmailNotFound",
                 SELF_CONVERSATION: "pages.messages.selfConversation",

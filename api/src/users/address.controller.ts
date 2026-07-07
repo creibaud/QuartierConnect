@@ -75,8 +75,7 @@ export class AddressController {
         if (neighborhoodId) {
             await syncLivesIn(this.neo4jDriver, req.user.sub, neighborhoodId);
         } else {
-            // Moved to an uncovered address: drop the stale LIVES_IN so
-            // recommendations stop targeting the previous quartier.
+            // Uncovered address: drop the stale LIVES_IN from the graph.
             await clearLivesIn(this.neo4jDriver, req.user.sub);
         }
 

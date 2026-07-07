@@ -1,5 +1,4 @@
-/** QuartierConnect mark — three houses linked as a neighborhood network.
- *  Vectorized from the brand PNG; uses currentColor so it inherits text color. */
+/** QuartierConnect logo mark; uses currentColor to inherit text color. */
 export function BrandLogo({ className }: { className?: string }) {
     return (
         <svg

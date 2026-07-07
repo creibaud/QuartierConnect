@@ -64,8 +64,7 @@ async function apiFetch(
         const refreshed = await refreshTokens();
         if (refreshed) return apiFetch(path, init, false);
         clearTokens();
-        // Keep the interrupted destination so the login page can send the
-        // user back where they were once re-authenticated.
+        // Preserve the interrupted destination for post-login redirect.
         const destination =
             window.location.pathname + window.location.search;
         window.location.href = destination.startsWith("/login")
@@ -173,9 +172,7 @@ export async function apiUpload<T>(
     path: string,
     formData: FormData,
 ): Promise<T> {
-    // Delegates to apiFetch so uploads get the same silent token refresh as
-    // every other verb (a stale access token used to fail the upload
-    // outright) and the same non-JSON error handling.
+    // Route through apiFetch for the shared token refresh and error handling.
     const res = await apiFetch(path, { method: "POST", body: formData });
 
     const data = await parseJsonSafely(res);

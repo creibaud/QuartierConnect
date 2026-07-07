@@ -20,9 +20,7 @@ export function SignaturePad({
         onChangeRef.current = onChange;
     });
 
-    // Matches the canvas internal resolution to its displayed size and the
-    // screen density. Without this (canvas stretched by CSS), pointer
-    // coordinates are skewed and the stroke appears offset from the cursor.
+    // Match canvas resolution to display size and pixel density to keep strokes aligned.
     useEffect(() => {
         const wrap = wrapRef.current;
         if (!wrap) return;
@@ -55,9 +53,7 @@ export function SignaturePad({
             onChange(null);
             return;
         }
-        // Flattens onto an opaque white background: the ink stays visible in
-        // every theme and the export carries no alpha channel that would turn
-        // into a black block once embedded in the PDF (pdf-lib).
+        // Flatten onto opaque white so the PDF export carries no alpha channel.
         const source = pad.getCanvas();
         const flat = document.createElement("canvas");
         flat.width = source.width;

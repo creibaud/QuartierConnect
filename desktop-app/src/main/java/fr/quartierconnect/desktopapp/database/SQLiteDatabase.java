@@ -10,12 +10,12 @@ import java.time.Instant;
 
 public class SQLiteDatabase {
 
-    /** Relu à chaque appel afin qu'une sqlite.url définie par un test soit toujours respectée, quel que soit l'ordre de chargement des classes. */
+    /** Re-read on each call so a test-set sqlite.url wins regardless of class-load order. */
     private static String dbUrl() {
         return System.getProperty("sqlite.url", "jdbc:sqlite:quartierconnect.db");
     }
 
-    /** Session mise en cache pour la reprise hors ligne. Ne stocke que l'e-mail — les jetons résident dans le trousseau de l'OS via TokenVault. */
+    /** Cached session for offline resume. Email only — tokens live in the OS keychain via TokenVault. */
     public record SessionRecord(String email, String savedAt) {}
 
     public static void initialize() {
@@ -59,7 +59,7 @@ public class SQLiteDatabase {
 
             seedIfEmpty(conn);
 
-            // Migration : suppression des colonnes de jetons en clair des bases antérieures au trousseau
+            // Drop plaintext token columns from pre-keychain databases
             try {
                 stmt.executeUpdate("ALTER TABLE session DROP COLUMN access_token");
             } catch (SQLException ignored) {}
@@ -67,7 +67,7 @@ public class SQLiteDatabase {
                 stmt.executeUpdate("ALTER TABLE session DROP COLUMN refresh_token");
             } catch (SQLException ignored) {}
 
-            // Migration : marqueur de suppression logique pour les incidents locaux
+            // Soft-delete marker for local incidents
             try {
                 stmt.executeUpdate("ALTER TABLE incidents ADD COLUMN deleted_at TEXT");
             } catch (SQLException ignored) {}
@@ -129,17 +129,17 @@ public class SQLiteDatabase {
         Object[][] conflicts = {
             {
                 "demo-conflict-001",
-                "Éclairage défaillant place de la République",    // titre local (modifié)
-                "Les habitants signalent plusieurs coupures ce mois-ci.", // description locale
+                "Éclairage défaillant place de la République",    // local title (edited)
+                "Les habitants signalent plusieurs coupures ce mois-ci.", // local description
                 "open",
                 yesterday, yesterday,
-                "Éclairage défaillant place de la République",    // titre de base (original)
-                "Problème signalé par la mairie.",                // description de base
+                "Éclairage défaillant place de la République",    // base title
+                "Problème signalé par la mairie.",                // base description
                 "open",
                 yesterday,
-                "Panne d'éclairage - prise en charge par les services techniques", // titre distant
-                "Intervention prévue le 15 du mois.",             // description distante
-                "in_progress"                                     // statut distant
+                "Panne d'éclairage - prise en charge par les services techniques", // remote title
+                "Intervention prévue le 15 du mois.",             // remote description
+                "in_progress"                                     // remote status
             },
             {
                 "demo-conflict-002",
@@ -178,7 +178,7 @@ public class SQLiteDatabase {
         }
     }
 
-    /** Persiste l'e-mail de l'utilisateur pour l'affichage hors ligne (upsert sur id=1). Les jetons sont stockés séparément via TokenVault. */
+    /** Upserts the user's email (id=1) for offline display. Tokens are stored via TokenVault. */
     public static void saveSession(String email) {
         String sql = """
             INSERT INTO session (id, email, saved_at)
@@ -192,11 +192,11 @@ public class SQLiteDatabase {
             stmt.setString(2, Instant.now().toString());
             stmt.executeUpdate();
         } catch (SQLException e) {
-            // Non critique — échoue silencieusement, l'e-mail ne s'affichera simplement pas hors ligne
+            // non-critical, the email just won't show offline
         }
     }
 
-    /** Charge l'e-mail de session persisté, ou null s'il n'y en a pas. */
+    /** Returns the persisted session, or null if none. */
     public static SessionRecord loadSession() {
         String sql = "SELECT email, saved_at FROM session WHERE id = 1";
         try (Connection conn = getConnection();
@@ -206,18 +206,17 @@ public class SQLiteDatabase {
                 return new SessionRecord(rs.getString("email"), rs.getString("saved_at"));
             }
         } catch (SQLException e) {
-            // La table peut ne pas encore exister dans les anciennes bases — retourner null sans risque
+            // table may not exist yet in older databases
         }
         return null;
     }
 
-    /** Supprime l'e-mail de session persisté (appelé à la déconnexion). */
     public static void clearSession() {
         String sql = "DELETE FROM session WHERE id = 1";
         try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.executeUpdate();
         } catch (SQLException e) {
-            // Non critique
+            // non-critical
         }
     }
 
@@ -228,7 +227,7 @@ public class SQLiteDatabase {
             stmt.setInt(2, success ? 1 : 0);
             stmt.executeUpdate();
         } catch (SQLException e) {
-            // Non critique — échoue silencieusement plutôt que de faire planter le worker de synchronisation
+            // non-critical, don't crash the sync worker
         }
     }
 

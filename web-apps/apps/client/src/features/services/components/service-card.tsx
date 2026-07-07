@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "@tanstack/react-router";
 import {
     Coins01Icon,
     Delete01Icon,
@@ -8,16 +7,15 @@ import {
     ThumbsUpIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useNavigate } from "@tanstack/react-router";
 import { formatAddress } from "@workspace/shared/lib/address";
-import {
-    useDeleteService,
-} from "@workspace/shared/lib/hooks/services.hooks";
+import { useDeleteService } from "@workspace/shared/lib/hooks/services.hooks";
 import { useCreateBooking } from "@workspace/shared/lib/hooks/useBookings";
-import { computeServicePoints } from "@workspace/shared/lib/pricing";
 import {
     useCastVote,
     useVoteScore,
 } from "@workspace/shared/lib/hooks/useVotes";
+import { computeServicePoints } from "@workspace/shared/lib/pricing";
 import type { Service } from "@workspace/shared/lib/types";
 import {
     AlertDialog,
@@ -40,8 +38,8 @@ import {
     CardTitle,
 } from "@workspace/ui/components/card";
 import { toast } from "sonner";
-import { actionLabel, formatResponderCount } from "../lib/action-label";
 import { useRespond, useUnrespond } from "../hooks/services-core.hooks";
+import { actionLabel, formatResponderCount } from "../lib/action-label";
 
 interface ServiceCardProps {
     service: Service;
@@ -126,7 +124,10 @@ export function ServiceCard({
                     {(!isOwn || canManage) && (
                         <div className="flex flex-wrap items-center gap-2">
                             {!isOwn && isPaid && (
-                                <ReserveButton serviceId={service._id} />
+                                <ReserveButton
+                                    serviceId={service._id}
+                                    pointsPrice={pointsPrice}
+                                />
                             )}
                             {!isOwn && (
                                 <RespondButton
@@ -194,35 +195,80 @@ function RespondButton({
     );
 }
 
-function ReserveButton({ serviceId }: { serviceId: string }) {
+function ReserveButton({
+    serviceId,
+    pointsPrice,
+}: {
+    serviceId: string;
+    pointsPrice: number;
+}) {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const createBooking = useCreateBooking();
 
+    function handleConfirm() {
+        createBooking.mutate(
+            { serviceId },
+            {
+                onSuccess: () => {
+                    toast.success(t("pages.services.bookingRequested"));
+                    void navigate({ to: "/bookings", search: { tab: "sent" } });
+                },
+                onError: (err) => {
+                    const code = (err as { code?: string }).code;
+                    const messages: Record<string, string> = {
+                        ALREADY_BOOKED: t(
+                            "pages.services.bookingErrors.alreadyBooked",
+                        ),
+                        SERVICE_NOT_PAID: t(
+                            "pages.services.bookingErrors.notPaid",
+                        ),
+                        SERVICE_CLOSED: t(
+                            "pages.services.bookingErrors.closed",
+                        ),
+                        CANNOT_BOOK_OWN: t(
+                            "pages.services.bookingErrors.ownService",
+                        ),
+                    };
+                    toast.error(
+                        (code && messages[code]) ??
+                            t("pages.services.bookingError"),
+                    );
+                },
+            },
+        );
+    }
+
     return (
-        <Button
-            type="button"
-            size="sm"
-            disabled={createBooking.isPending}
-            onClick={() =>
-                createBooking.mutate(
-                    { serviceId },
-                    {
-                        onSuccess: () => {
-                            toast.success(t("pages.services.bookingRequested"));
-                            void navigate({
-                                to: "/bookings",
-                                search: { tab: "sent" },
-                            });
-                        },
-                        onError: () =>
-                            toast.error(t("pages.services.bookingError")),
-                    },
-                )
-            }
-        >
-            {t("pages.services.reserve")}
-        </Button>
+        <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Button
+                    type="button"
+                    size="sm"
+                    disabled={createBooking.isPending}
+                >
+                    {t("pages.services.reserve")}
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>
+                        {t("pages.services.confirmReserveTitle")}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {t("pages.services.confirmReserveDescription", {
+                            points: pointsPrice,
+                        })}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirm}>
+                        {t("pages.services.reserve")}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }
 

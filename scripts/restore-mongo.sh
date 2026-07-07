@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Restauration MongoDB depuis un backup produit par backup-all.sh.
+# Restore MongoDB from a backup-all.sh archive.
 #
-#   Usage : ./scripts/restore-mongo.sh /var/backups/quartierconnect/mongo-<DATE>.tar.gz
+#   Usage: ./scripts/restore-mongo.sh /var/backups/quartierconnect/mongo-<DATE>.tar.gz
 #
-# ⚠ Écrase la base 'quartierconnect'. Demande une confirmation 'oui'.
+# Overwrites the 'quartierconnect' database. Asks for confirmation first.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

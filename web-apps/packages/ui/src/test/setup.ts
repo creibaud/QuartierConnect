@@ -1,14 +1,14 @@
 import "@testing-library/jest-dom";
 import { vi } from "vitest";
 
-// Leaflet relies on browser APIs not in JSDOM. Mock minimal surface.
+// JSDOM lacks matchMedia; provide a minimal stub.
 if (typeof window !== "undefined") {
     Object.defineProperty(window, "matchMedia", {
         value: () => ({ matches: false, addListener: vi.fn(), removeListener: vi.fn() }),
     });
 }
 
-// react-leaflet expects ResizeObserver
+// JSDOM lacks ResizeObserver
 class ResizeObserverMock {
     observe() {}
     unobserve() {}

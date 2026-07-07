@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# Construit le client lourd et y injecte l'URL de l'instance cible, afin que le
-# JAR proposé au téléchargement depuis l'admin se connecte à cette instance sans
-# aucune configuration côté utilisateur.
+# Build the desktop client and bake the target instance URL into the JAR,
+# so the download offered by the admin needs no user-side configuration.
 #
-# Usage : scripts/prepare-desktop-download.sh <base-url> [dossier-destination]
-#   base-url : racine HTTPS de l'instance, ex. https://mon-instance.example.com
-#   dossier  : où déposer le JAR (défaut : docker/downloads, servi par Caddy)
+# Usage: scripts/prepare-desktop-download.sh <base-url> [dest-dir]
+#   base-url : HTTPS root of the instance, e.g. https://my-instance.example.com
+#   dest-dir : where to drop the JAR (default: docker/downloads, served by Caddy)
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 

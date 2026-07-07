@@ -11,9 +11,7 @@ function makeEmitter() {
     };
 }
 
-// Hand-rolled fake `db` built from jest spies so the tests assert real
-// behaviour (money movement, idempotency, the -10 floor, the cancel guard)
-// rather than merely that a chain of no-op stubs was reached.
+// Fake `db` backed by jest spies so tests assert real balance movement, not stub calls.
 type Txn = {
     id: string;
     senderId: string;
@@ -117,9 +115,7 @@ function makeDb(pending: Txn | null, senderBalance: number) {
                     }
                     spies.txnUpdateSet(changes);
                     spies.txnUpdateWhere(condition);
-                    // The guarded UPDATE only voids a still-pending row; capture
-                    // that match before the assignment mutates the status so
-                    // RETURNING reflects whether a row was actually flipped.
+                    // Capture the pending match before mutating status so RETURNING reflects the flip.
                     const matchedPending = state.txn?.status === "pending";
                     if (matchedPending && state.txn) {
                         Object.assign(state.txn, changes);

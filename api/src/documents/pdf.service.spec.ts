@@ -27,7 +27,6 @@ describe("PdfService", () => {
         const buf = await svc.generateBaseContractPdf(data);
         expect(buf.length).toBeGreaterThan(500);
         expect(buf.subarray(0, 5).toString()).toBe("%PDF-");
-        // loads back as a 1-page PDF
         const doc = await PDFDocument.load(buf);
         expect(doc.getPageCount()).toBe(1);
     });
@@ -61,8 +60,7 @@ describe("PdfService", () => {
 const PNG_DATA_URL =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAgCAYAAACinX6EAAAAoUlEQVR42u2YQQ7AIAgE/f+n6b2HpioZFt1JempKlxWjMIYxxhiMeD3XJq5iQlQnX2lCVBgw865KE+5yhQkyyePlSCcfYsLwfa8mUK70SYHo6qsJ/YwZgi63NCC6xspctbbVtPszfN9mx8gwoP2JctrZvfTdKbe3ZV0zV1iyiUH7ij+JqXZwabrUe3hEl/IUB9OlOsdDdalOcq+dMBtj8ngAlf+/QZqk6iAAAAAASUVORK5CYII=";
 
-// 1x1 opaque black pixel: stretched to a box it renders as a solid black
-// rectangle, so stampSignature must reject it as a signature image.
+// 1x1 opaque black pixel — a degenerate image stampSignature must reject.
 const DEGENERATE_PNG_DATA_URL =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC";
 

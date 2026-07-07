@@ -17,8 +17,7 @@ import { clientNavGroups } from "@/components/nav-items";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 
-// Terracotta tint (primary at 10%) for the active/hover item, replacing the
-// package's default sage token — keeps the sidebar in the warm Voisinage family.
+// Warm tint (primary at 10%) for the active/hover item.
 const warmAccentTint =
     "[--sidebar-accent:color-mix(in_oklab,var(--primary)_10%,transparent)] [--sidebar-accent-foreground:var(--primary)]";
 

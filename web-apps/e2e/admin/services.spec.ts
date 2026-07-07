@@ -29,7 +29,7 @@ test.describe("Admin — Services (CRUD)", () => {
             adminRefreshToken = tokens.refreshToken;
             apiAvailable = true;
         } catch (err) {
-            // API or Docker not available — API-dependent tests will be skipped
+            // no backend or docker, tests skip below
         }
     });
 
@@ -118,13 +118,13 @@ test.describe("Admin — Services (CRUD)", () => {
 
         const row = page.getByRole("row").filter({ hasText: name });
         await row.getByRole("button", { name: /supprimer/i }).click();
-        // The row button opens an AlertDialog whose confirm action is also "Supprimer"
+        // confirm dialog uses the same "Supprimer" label
         await page
             .getByRole("alertdialog")
             .getByRole("button", { name: /supprimer/i })
             .click();
 
-        // exact:true matches only the table cell, not the AlertDialog description that embeds the name
+        // exact match skips the dialog description that repeats the name
         await expect(page.getByText(name, { exact: true })).not.toBeVisible({
             timeout: 5000,
         });

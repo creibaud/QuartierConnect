@@ -136,12 +136,12 @@ class SsoCallbackServerTest {
         SsoCallbackServer server = SsoCallbackServer.startCallbackServer(state, future);
         int port = server.getPort();
 
-        // Simuler un sondage de navigateur : ouvrir une connexion TCP simple et la fermer aussitôt
+        // Simulate a browser probe: bare TCP connect, closed right away
         try (java.net.Socket probe = new java.net.Socket("localhost", port)) {
-            // Ne rien envoyer — juste se connecter puis fermer
+            // no data sent
         }
 
-        // Le serveur doit rester actif et traiter le vrai callback
+        // server must stay up and handle the real callback
         String expectedToken = UUID.randomUUID().toString();
         HttpResponse<String> response = get(port, "/cb?token=" + expectedToken + "&state=" + state);
         assertEquals(200, response.statusCode());

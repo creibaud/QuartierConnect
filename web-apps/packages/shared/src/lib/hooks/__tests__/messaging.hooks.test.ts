@@ -149,7 +149,6 @@ describe("useSocketMessages", () => {
     beforeEach(() => {
         disconnectRealtimeSocket();
         vi.clearAllMocks();
-        // Reset mock socket state
         mockSocket.connected = true;
         mockIo.mockReturnValue(mockSocket);
     });
