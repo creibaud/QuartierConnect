@@ -301,6 +301,21 @@ export default {
         sidebar: {
             residentSpace: "Resident space",
         },
+        errors: {
+            notFound: {
+                badge: "Error 404",
+                title: "Page not found",
+                description:
+                    "The requested page does not exist or has been moved.",
+            },
+            generic: {
+                badge: "Error",
+                title: "An error occurred",
+                description:
+                    "An unexpected problem interrupted this page. Please try again or return home.",
+            },
+            backHome: "Back to home",
+        },
         login: {
             pageTitle: "Login",
             subtitle: "Sign in to your account",

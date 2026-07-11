@@ -303,6 +303,20 @@ export default {
         sidebar: {
             residentSpace: "Espace résident",
         },
+        errors: {
+            notFound: {
+                badge: "Erreur 404",
+                title: "Page introuvable",
+                description: "La page demandée n'existe pas ou a été déplacée.",
+            },
+            generic: {
+                badge: "Erreur",
+                title: "Une erreur est survenue",
+                description:
+                    "Un problème inattendu a interrompu l'affichage de cette page. Veuillez réessayer ou revenir à l'accueil.",
+            },
+            backHome: "Retour à l'accueil",
+        },
         login: {
             pageTitle: "Connexion",
             subtitle: "Connexion à votre compte",
