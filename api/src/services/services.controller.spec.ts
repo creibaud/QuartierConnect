@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
+import type { Response } from "express";
 import { ServiceBooking } from "../bookings/schemas/service-booking.schema";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import { GeocodingService } from "../geocoding/geocoding.service";
@@ -34,7 +35,7 @@ const authReq = (
 });
 
 // Minimal Response stub: findAll only touches setHeader for the count headers.
-const mockRes = () => ({ setHeader: jest.fn() }) as any;
+const mockRes = () => ({ setHeader: jest.fn() }) as unknown as Response;
 
 // Thin wrapper so the tests keep their focus on the domain filters without
 // repeating the search/sort/order/pagination positional arguments.

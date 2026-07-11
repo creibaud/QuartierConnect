@@ -2,6 +2,7 @@ import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { and, eq, gt, isNull, or, SQL } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
+import type { Response } from "express";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { IncidentsController } from "./incidents.controller";
@@ -28,7 +29,7 @@ const authReq = (
 ) => ({ user: { sub, role, neighborhoodId } });
 
 // Minimal Response stub: findAll only touches setHeader for the count headers.
-const mockRes = () => ({ setHeader: jest.fn() }) as any;
+const mockRes = () => ({ setHeader: jest.fn() }) as unknown as Response;
 
 // Thin wrapper so the tests keep their focus on status/since/req without
 // repeating the search/sort/order/pagination positional arguments.

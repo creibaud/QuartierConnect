@@ -1,5 +1,6 @@
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
+import type { Response } from "express";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import { UsersController } from "./users.controller";
 
@@ -11,7 +12,7 @@ const mockUser = {
 };
 
 // Minimal Response stub: findAll only touches setHeader for the count headers.
-const mockRes = () => ({ setHeader: jest.fn() }) as any;
+const mockRes = () => ({ setHeader: jest.fn() }) as unknown as Response;
 
 describe("UsersController", () => {
     let controller: UsersController;

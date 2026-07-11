@@ -1,6 +1,7 @@
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
+import type { Response } from "express";
 import { GeocodingService } from "../geocoding/geocoding.service";
 import { SocialService } from "../social/social.service";
 import { EventsController } from "./events.controller";
@@ -24,7 +25,7 @@ const authReq = (
 ) => ({ user: { sub, role, neighborhoodId } });
 
 // Minimal Response stub: findAll only touches setHeader for the count headers.
-const mockRes = () => ({ setHeader: jest.fn() }) as any;
+const mockRes = () => ({ setHeader: jest.fn() }) as unknown as Response;
 
 // Thin wrapper so the tests keep their focus on category/date/req without
 // repeating the search/sort/order/pagination positional arguments.
