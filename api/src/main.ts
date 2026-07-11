@@ -271,6 +271,7 @@ Endpoints that return lists accept \`?page=1&limit=20\` (max 100).
         credentials: true,
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
+        exposedHeaders: ["X-Total-Count", "X-Total-Pages"],
     });
 
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
