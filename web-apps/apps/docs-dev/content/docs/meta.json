@@ -6,8 +6,13 @@
         "architecture",
         "api",
         "bases-de-donnees",
+        "messagerie-temps-reel",
         "dsl",
         "plugins",
+        "frontend",
+        "i18n",
+        "desktop",
+        "configuration",
         "deploiement",
         "tests",
         "securite"

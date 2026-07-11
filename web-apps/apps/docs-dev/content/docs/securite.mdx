@@ -13,7 +13,7 @@ L'API n'oppose pas une seule barrière mais empile des couches indépendantes. C
   chart={`flowchart TB
   edge["Caddy au bord<br/>HTTPS + CSP + HSTS"]
   mw["Middleware NestJS<br/>Helmet + CORS + cookieParser"]
-  thr["ThrottlerGuard global<br/>100 req / 15 min"]
+  thr["ThrottlerGuard global<br/>1000 req / 15 min"]
   jwt["JwtAuthGuard<br/>JWT valide et jti non revoque"]
   roles["RolesGuard<br/>role relu en base + scope quartier"]
   pipe["ValidationPipe<br/>whitelist, champs non declares supprimes"]
@@ -117,7 +117,7 @@ Un fichier HTML ou SVG piégé ne peut donc plus être ouvert et exécuté dans 
 
 ## Limitation de débit
 
-Un `ThrottlerGuard` global limite chaque IP à **100 requêtes / 15 minutes** (`ThrottlerModule.forRoot([{ ttl: 900000, limit: 100 }])`). Des routes sensibles ont des limites spécifiques :
+Un `ThrottlerGuard` global limite chaque IP à **1000 requêtes / 15 minutes** (`ThrottlerModule.forRoot([{ ttl: 900000, limit: 1000 }])`). Des routes sensibles ont des limites spécifiques :
 
 | Route | Limite | Fenêtre | Raison |
 |-------|--------|---------|--------|

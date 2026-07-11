@@ -1,0 +1,174 @@
+---
+title: Messagerie temps réel
+description: Passerelle Socket.io, authentification du socket, salons, accusés de livraison, saisie, présence et pièces jointes
+---
+
+La messagerie de QuartierConnect repose sur une passerelle Socket.io — la `MessagingGateway` (`api/src/messaging/messaging.gateway.ts`) — montée en même temps que l'API REST NestJS et exposée à travers le même préfixe `/api` (bascule `wss://` gérée par Caddy). Les conversations et les messages sont persistés dans MongoDB via Mongoose (`MessagingService`), tandis que l'identité des participants est résolue dans PostgreSQL via Drizzle. La partie temps réel se limite au transport : chaque message est d'abord écrit en base, puis diffusé aux participants connectés.
+
+## La passerelle Socket.io
+
+La passerelle est déclarée sur un namespace dédié et partage la politique CORS de l'API :
+
+```ts
+@WebSocketGateway({
+    namespace: "/messaging",
+    cors: { origin: corsOrigins, credentials: true },
+})
+```
+
+Les origines autorisées proviennent de la variable `CORS_ORIGINS` (liste séparée par des virgules), avec repli sur `http://localhost:3000` et `http://localhost:3001`. La `MessagingGateway` implémente `OnGatewayConnection` et `OnGatewayDisconnect`, et conserve deux tables en mémoire pour le suivi de présence :
+
+| Table | Type | Rôle |
+|-------|------|------|
+| `socketsByUser` | `Map<string, Set<string>>` | Les identifiants de socket ouverts par utilisateur — un même compte peut être connecté depuis plusieurs appareils |
+| `conversationPeersByUser` | `Map<string, Set<string>>` | Les pairs (autres participants) de toutes les conversations d'un utilisateur, calculés à la connexion |
+
+Deux familles de salons Socket.io structurent la diffusion :
+
+- `user:<userId>` — un salon personnel par utilisateur, cible des notifications et des mises à jour de présence.
+- `conversation:<conversationId>` — un salon par conversation, cible des messages et des indicateurs de saisie.
+
+## Authentification du socket
+
+L'authentification se joue dès la poignée de main, avant que le moindre message applicatif ne soit traité. `handleConnection` stocke **synchroniquement** la promesse d'authentification sur le socket (`authReady`) puis l'attend, de sorte qu'un message émis très tôt par le client puisse s'y raccrocher plutôt que de lire un `userId` encore indéfini.
+
+`authenticateAndSetup` déroule les contrôles suivants :
+
+1. Extraction du jeton depuis `handshake.auth.token`, ou à défaut depuis l'en-tête `Authorization: Bearer …`. En son absence, le socket est déconnecté.
+2. Vérification de signature via `jwtService.verify<JwtPayload>(token)` ; un `payload.sub` est requis.
+3. `isTokenStillValid(payload)` rejette le socket si le `jti` figure dans les jetons révoqués (`tokenService.isAccessTokenRevoked`), ou si le compte est introuvable, `banned` ou `deleted` (lecture de `users.role` dans PostgreSQL via Drizzle).
+
+Toute erreur ou tout échec de contrôle conduit à `client.disconnect()`. En cas de succès, `userId` est fixé sur le socket, l'utilisateur rejoint son salon `user:<userId>`, et la reconstruction des salons de conversation démarre.
+
+Chaque handler applicatif passe par `requireUserId(client)`, qui attend `authReady` puis renvoie le `userId` authentifié — ou lève une `WsException("Unauthorized")` si le socket n'a pas d'identité. Les charges utiles WebSocket ne traversant pas le `ValidationPipe` HTTP, la validation de forme est faite à la main dans chaque handler.
+
+<Mermaid
+  chart={`sequenceDiagram
+  participant Cli as Client (socket.io-client)
+  participant Gw as MessagingGateway
+  participant Tok as TokenService
+  participant Pg as PostgreSQL (Drizzle)
+  participant Mongo as MongoDB (Mongoose)
+  Cli->>Gw: handshake (auth.token = JWT)
+  Gw->>Gw: jwtService.verify(token)
+  Gw->>Tok: isAccessTokenRevoked(jti) ?
+  Gw->>Pg: role de l'utilisateur (banned / deleted ?)
+  Pg-->>Gw: rôle valide
+  Gw->>Cli: join user:<userId>
+  Gw->>Mongo: findConversations(userId)
+  Mongo-->>Gw: conversations
+  Gw->>Cli: join conversation:<id> (pour chaque conversation)
+  Gw-->>Cli: presence:snapshot { onlineUserIds }`}
+/>
+
+## Reconstruction et gestion des salons
+
+Socket.io ne conserve pas l'appartenance aux salons entre deux connexions : elle doit être **reconstruite à chaque `handleConnection`**. La passerelle appelle `messagingService.findConversations(userId)` (tri par `lastMessageAt` décroissant), puis fait rejoindre au socket chaque salon `conversation:<_id>`. Elle calcule ensuite l'ensemble des pairs (`collectConversationPeers`) et le mémorise dans `conversationPeersByUser`.
+
+En cours de session, le client peut ajuster son appartenance :
+
+- `join_conversation` — après `requireUserId`, la passerelle vérifie que l'appelant est bien participant (`messagingService.isParticipant`) ; sinon `WsException("Not a participant")`. En cas de succès, elle rejoint le salon et renvoie l'accusé `{ joined: conversationId }`.
+- `leave_conversation` — quitte le salon et renvoie `{ left: conversationId }`.
+
+`handleDisconnect` retire l'identifiant de socket de `socketsByUser`. Tant qu'il reste au moins un socket ouvert pour ce compte (autre onglet, autre appareil), l'utilisateur est considéré comme en ligne. Lorsque le dernier socket se ferme, l'entrée est supprimée, une mise à jour de présence hors ligne est diffusée à ses pairs, et le cache des pairs est purgé.
+
+## Envoi d'un message et accusé de livraison
+
+Le handler `send_message` reçoit `{ conversationId, content }`. `validateSendMessage` impose un `conversationId` non vide, un `content` de type chaîne, non vide après `trim`, et d'au plus `MAX_MESSAGE_CONTENT_LENGTH` (4000) caractères — toute violation lève une `WsException`. Le message est ensuite persisté par `messagingService.sendMessage(conversationId, userId, content, MessageType.TEXT)`, qui vérifie l'existence de la conversation et la qualité de participant de l'expéditeur, écrit le document `Message`, puis met à jour `lastMessageAt` sur la conversation.
+
+Deux mécanismes de retour cohabitent, à ne pas confondre :
+
+- **La diffusion** — `server.to("conversation:<id>").emit("new_message", message)` pousse le document persisté à tous les membres du salon, expéditeur inclus.
+- **L'accusé (ack)** — la valeur retournée par le handler (`return message`) est renvoyée à l'appelant comme accusé de l'`emitWithAck`. C'est une confirmation d'**écriture et de diffusion côté serveur**, pas un accusé de lecture par les destinataires.
+
+Côté client, `useSocketMessages` (`web-apps/packages/shared/src/lib/hooks/useMessaging.ts`) émet l'envoi avec un délai de garde : `socket.timeout(5000).emitWithAck("send_message", { conversationId, content })`. Un socket déconnecté ou un ack perdu au bout de 5 secondes fait échouer la promesse, ce qui remonte comme une erreur d'envoi dans l'interface. L'expéditeur reçoit donc son message deux fois — via l'ack et via la diffusion `new_message` — d'où un dédoublonnage systématique par `_id` côté client.
+
+<Mermaid
+  chart={`sequenceDiagram
+  participant Snd as Expéditeur
+  participant Gw as MessagingGateway
+  participant Mongo as MongoDB
+  participant Rcv as Destinataires (salon)
+  Snd->>Gw: emitWithAck("send_message", { conversationId, content })
+  Note over Gw: requireUserId + validateSendMessage
+  Gw->>Mongo: sendMessage() — insert + lastMessageAt
+  Mongo-->>Gw: message persisté
+  Gw->>Rcv: emit("new_message", message)
+  Gw-->>Snd: ack = message
+  Note over Snd,Rcv: dédoublonnage par _id (ack + broadcast)`}
+/>
+
+## Indicateurs de saisie
+
+Les événements `typing:start` et `typing:stop` sont relayés par `relayTypingUpdate`. Après `requireUserId` et contrôle du `conversationId`, si le socket n'est pas déjà dans le salon, la qualité de participant est vérifiée. La passerelle diffuse alors `typing:update` **à tous sauf l'émetteur** (`client.to(room).emit(…)`) avec `{ conversationId, userId, typing }`.
+
+Côté client, `useTypingEmitter` (`web-apps/apps/client/src/features/realtime/use-typing-emitter.ts`) émet un unique `typing:start` à la première frappe, puis arme un minuteur d'inactivité de 2 secondes (`TYPING_IDLE_DELAY_MS`) qui émet `typing:stop` — également déclenché à l'envoi du message ou au démontage du composant. Le `RealtimeProvider` agrège les `typing:update` reçus dans `typingUserIdsByConversation`, exposé via `useRealtime` / `useTypingUserIds`, et purge un utilisateur de tous les états de saisie dès qu'il passe hors ligne.
+
+## Présence
+
+La présence est déduite de `socketsByUser`. À la connexion, la passerelle envoie à l'arrivant un instantané `presence:snapshot` listant, parmi ses pairs, ceux qui ont au moins un socket ouvert. Lorsqu'un utilisateur passe du hors-ligne à en-ligne (premier socket) ou inversement (dernier socket fermé), `emitPresenceUpdate` diffuse `presence:update` `{ userId, online }` aux salons `user:` de ses pairs uniquement — la présence n'est jamais divulguée à des utilisateurs sans conversation commune. Le `RealtimeProvider` tient à jour un `Set` `onlineUserIds`, réinitialisé sur l'événement `disconnect` du socket.
+
+## Notifications transverses
+
+La passerelle sert aussi de canal de notification applicative. `sendNotification(userIds, type, payload)` mappe les identifiants vers leurs salons `user:` et émet `notification` `{ type, payload }`. Le `NotificationsListener` (`api/src/messaging/notifications.listener.ts`) écoute les événements du cycle de vie des réservations, contrats et règlements de points (`BOOKING_*`, `CONTRACT_SIGNED`, `CONTRACT_FULLY_SIGNED`, `POINTS_SETTLED`) via `@OnEvent` et notifie les contreparties concernées. Côté client, `handleRealtimeNotification` transforme ces événements en toasts et invalide les caches react-query correspondants (`bookings`, `contracts`, `points`).
+
+## Pièces jointes
+
+Les pièces jointes ne transitent pas par le WebSocket : elles passent par une route REST multipart, `POST /messaging/conversations/:id/upload` (`MessagingController`), protégée par `JwtAuthGuard` et plafonnée à 10 Mo par le `FileInterceptor`. Le flux :
+
+1. Rejet des non-participants avant toute écriture (`assertParticipant`).
+2. `resolveUploadMessageType(mimetype)` (`message-upload.policy.ts`) détermine le type de message :
+
+| Type MIME | `MessageType` |
+|-----------|---------------|
+| `audio/*` (limité à `audio/webm`, `audio/ogg`, `audio/mpeg`, `audio/mp4`) | `AUDIO` |
+| `image/svg+xml` | `FILE` (jamais servi en ligne — potentiellement scriptable) |
+| autre `image/*` | `IMAGE` |
+| tout le reste | `FILE` |
+
+3. Pour un audio, `assertAudioSizeWithinLimit` impose un plafond de 5 Mo (sinon `413 PayloadTooLarge`).
+4. Le binaire est écrit dans le bucket GridFS `messaging_files` (`openUploadStreamWithId`), avec métadonnées `uploadedBy`, `conversationId`, `contentType`. Un échec d'écriture rejette la requête, ce qui garantit qu'aucun message ne pointe vers un fichier absent.
+5. `sendFileMessage` crée le document `Message` (avec `fileId`/`fileName`, sans `content`) puis la passerelle diffuse `new_message` via `gateway.emitToConversation` — les pièces jointes apparaissent donc en temps réel comme les messages texte.
+
+Le téléchargement se fait par `GET /messaging/files/:fileId`, qui vérifie la qualité de participant à partir du `conversationId` stocké dans les métadonnées GridFS. Seuls des types MIME de la liste blanche (`INLINE_SAFE_MIME_TYPES` : PNG, JPEG, WebP, GIF et les audios acceptés) sont servis `inline` ; tout le reste force `attachment` / `application/octet-stream`, et le nom de fichier est nettoyé des caractères de contrôle.
+
+> **Message vocal** — l'interface enregistre directement dans le navigateur via `useVoiceRecorder` (`MediaRecorder`, format préféré `audio/webm;codecs=opus`, repli `audio/mp4`, durée maximale 2 min), puis envoie le blob obtenu sur la même route `upload`. Il s'agit donc d'un `MessageType.AUDIO` classique.
+>
+> Les endpoints de fichiers exigeant un JWT, le client ne peut pas pointer une balise `<img>`/`<audio>` directement dessus : `useAuthedFileUrl` récupère le binaire authentifié en `blob`, crée une URL d'objet et la révoque au démontage.
+
+## Consommation côté client web
+
+Le client web ouvre un socket unique, partagé à l'échelle de l'application (`web-apps/packages/shared/src/lib/realtime.ts`) :
+
+```ts
+activeSocket = io("/messaging", {
+    path: "/api/socket.io",
+    auth: (provideAuth) => provideAuth({ token: getAccessToken() }),
+    transports: ["websocket"],
+});
+```
+
+Le rappel `auth` relit le jeton d'accès à chaque (re)connexion, ce qui permet à un socket reconnecté de présenter un jeton frais. Deux couches se partagent ce socket :
+
+- **`RealtimeProvider`** (`web-apps/apps/client/src/features/realtime/realtime-provider.tsx`) — monté à la racine de l'app, il écoute `presence:snapshot`, `presence:update`, `typing:update`, `notification` et `new_message` (ce dernier pour invalider la liste des conversations), et expose présence + états de saisie via le contexte `useRealtime`.
+- **`useSocketMessages`** (partagé) — au niveau d'une conversation ouverte : rejoint le salon (`join_conversation`) à la connexion, écoute `new_message` pour la conversation courante et invalide le cache `["messages", conversationId]`, et fournit `sendMessage` (l'`emitWithAck` décrit plus haut).
+
+Le fil de discussion (`conversation-thread.tsx`) fusionne l'historique paginé (récupéré en REST) avec les messages optimistes locaux, dédoublonnés par `_id`. L'envoi est optimiste : le champ est vidé immédiatement et le brouillon restauré si la promesse d'ack échoue.
+
+### Suivi des messages non lus
+
+Le suivi des non-lus est **entièrement côté client** : le serveur ne conserve aucun accusé de lecture. À l'affichage d'une conversation, `ConversationThread` appelle `onRead(conversationId, newestMessageAt)`, et `useConversationReadMarkers` (`web-apps/apps/client/src/features/messages/hooks/use-conversation-read-markers.ts`) persiste ce repère dans `localStorage` (clé `quartierconnect.messages.readMarkers`). La fonction `isConversationUnread` (`features/messages/lib/conversation.ts`) compare ensuite la dernière activité de la conversation (`lastMessageAt` / dernier message) au repère de lecture local : une conversation active est toujours considérée comme lue, tout comme celle dont le dernier message émane de l'utilisateur courant.
+
+## Référence des événements
+
+| Sens | Événement | Charge utile | Effet |
+|------|-----------|--------------|-------|
+| Client → serveur | `join_conversation` | `conversationId` | Rejoint le salon (ack `{ joined }`), garde de participant |
+| Client → serveur | `leave_conversation` | `conversationId` | Quitte le salon (ack `{ left }`) |
+| Client → serveur | `send_message` | `{ conversationId, content }` | Persiste + diffuse ; ack = message persisté |
+| Client → serveur | `typing:start` / `typing:stop` | `{ conversationId }` | Relaie `typing:update` aux autres membres |
+| Serveur → client | `new_message` | `Message` | Nouveau message texte ou pièce jointe dans le salon |
+| Serveur → client | `typing:update` | `{ conversationId, userId, typing }` | Un pair saisit (ou s'arrête) |
+| Serveur → client | `presence:snapshot` | `{ onlineUserIds }` | Pairs en ligne à la connexion |
+| Serveur → client | `presence:update` | `{ userId, online }` | Un pair passe en ligne / hors ligne |
+| Serveur → client | `notification` | `{ type, payload }` | Notification réservation / contrat / points |

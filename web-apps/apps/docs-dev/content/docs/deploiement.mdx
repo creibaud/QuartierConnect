@@ -3,13 +3,15 @@ title: Déploiement et exploitation
 description: Mise en production, Caddy, secrets et procédures
 ---
 
-Cette page décrit la mise en production de QuartierConnect sur un VPS Linux (Ubuntu 22.04+ / Debian 12), la configuration de Caddy, la gestion des secrets et les procédures d'exploitation. Elle synthétise `docs/DEPLOYMENT.md` et `docs/RUNBOOK.md`.
+Cette page décrit la mise en production de QuartierConnect sur un VPS Linux (Ubuntu 22.04+ / Debian 12), la configuration de Caddy, la gestion des secrets et les procédures d'exploitation. Elle rassemble en un seul endroit les étapes de déploiement et les gestes d'exploitation courante.
+
+Le déploiement de référence est servi sur le domaine `quartierconnect.duckdns.org`, avec un **routage par préfixe de chemin** (`/`, `/admin`, `/aide`, `/dev`, `/api`) plutôt que par sous-domaine — c'est pourquoi les sites de documentation Fumadocs sont configurés avec les `basePath` `/dev` et `/aide`.
 
 ## Prérequis
 
 - **VPS** : 2 vCPU, 4 Go de RAM (8 Go conseillé), 40 Go SSD, IP publique fixe.
 - **Réseau** : ports **80** et **443** ouverts.
-- **DNS** : enregistrement A `quartierconnect.fr` → IP du VPS.
+- **DNS** : sous-domaine DuckDNS `quartierconnect.duckdns.org` pointant vers l'IP publique du VPS.
 - **Logiciels** : Docker + Docker Compose v2, plus `git make jq curl wget unzip awscli`.
 
 Le serveur est durci en amont : user non-root `deploy`, SSH root et authentification par mot de passe désactivés, UFW (80/443/22 uniquement), fail2ban (jails **SSH** et **caddy-auth**), et un cron quotidien installé depuis `ops/`.
@@ -67,7 +69,7 @@ Caddy met 30 à 60 s à obtenir son certificat Let's Encrypt ; suivre `logs -f c
 Le seed des comptes démo puis un smoke test valident l'installation :
 
 ```bash
-./scripts/smoke-test.sh https://quartierconnect.fr
+./scripts/smoke-test.sh https://quartierconnect.duckdns.org
 ```
 
 Le smoke test vérifie `/api/health` (dont l'état de chaque base), le client, `/admin`, `/docs` (Scalar), le rejet des credentials invalides (401), la présence des en-têtes **HSTS** et **CSP**, l'absence d'en-tête `Server`, la validité HTTPS et le WebSocket `/api/messaging`.
@@ -80,7 +82,7 @@ Caddy route les requêtes par **préfixe de chemin** vers le conteneur adéquat 
 
 <Mermaid
   chart={`flowchart LR
-  req["Requête HTTPS<br/>quartierconnect.fr"]
+  req["Requête HTTPS<br/>quartierconnect.duckdns.org"]
   caddy["Caddy<br/>reverse proxy + TLS"]
   req --> caddy
   caddy -->|"/api/*"| api["api : 5000"]
@@ -92,7 +94,7 @@ Caddy route les requêtes par **préfixe de chemin** vers le conteneur adéquat 
   caddy -->|"défaut"| client["client : 3000"]`}
 />
 
-Points d'attention issus du runbook :
+Points d'attention en exploitation :
 
 - **Port 80 requis** pour le renouvellement ACME ; s'il est bloqué par UFW, le renew échoue silencieusement jusqu'à expiration.
 - **Rate limit Let's Encrypt** : 5 échecs/heure par domaine. Pour débugger, basculer temporairement sur `acme_ca https://acme-staging-v02.api.letsencrypt.org/directory` dans le bloc global du Caddyfile, puis retirer et recharger.
@@ -167,11 +169,11 @@ git log --oneline -10
 
 Un cron lance `backup-all.sh` chaque nuit à 2 h. Il dumpe MongoDB (`mongodump --gzip`), PostgreSQL (`pg_dumpall | gzip`), Neo4j (`neo4j-admin database dump`, à froid, ~30 s d'arrêt) et, le lundi, les certificats Caddy. Rétention locale 7 j (28 j pour les certifs), rétention S3 échelonnée (7 j + 4 sem + 12 mois). Une notification Discord n'est envoyée qu'en cas d'échec.
 
-> **Backup non testé = backup inexistant.** Effectuer un drill de restauration (`restore-mongo.sh`, `restore-postgres.sh`, `restore-neo4j.sh`) au moins une fois et consigner la durée dans le RUNBOOK.
+> **Backup non testé = backup inexistant.** Effectuer un drill de restauration (`restore-mongo.sh`, `restore-postgres.sh`, `restore-neo4j.sh`) au moins une fois et consigner la durée de restauration observée.
 
 ## Incidents courants
 
-Réflexe initial : `ps` de la stack puis `smoke-test.sh`. Le runbook détaille six incidents.
+Réflexe initial : `ps` de la stack puis `smoke-test.sh`. Les six incidents les plus fréquents et leur traitement :
 
 - **MongoDB down** : redémarrer le conteneur ; si crash en boucle (`unclean shutdown`), `mongod --repair` sur le volume ; sinon restauration.
 - **Certificat expiré** : vérifier port 80, DNS (`dig +short`), rate limit ACME ; forcer un `caddy reload`.
