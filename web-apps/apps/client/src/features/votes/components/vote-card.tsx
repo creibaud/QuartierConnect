@@ -11,10 +11,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@workspace/ui/components/card";
-import {
-    StatusBadge,
-    statusTone,
-} from "@workspace/ui/components/status-badge";
+import { StatusBadge, statusTone } from "@workspace/ui/components/status-badge";
 import { toast } from "sonner";
 import { useCastCommunityVote, useVoteResults } from "../hooks/votes.hooks";
 import { computeVoteTotals } from "../lib/vote-totals";
@@ -112,11 +109,14 @@ export function VoteCard({ vote }: { vote: CommunityVote }) {
                 )}
                 <p className="text-muted-foreground text-xs">
                     {t("pages.votes.endsOn", {
-                        date: new Date(vote.endsAt).toLocaleDateString(i18n.language, {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                        }),
+                        date: new Date(vote.endsAt).toLocaleDateString(
+                            i18n.language,
+                            {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                            },
+                        ),
                     })}
                 </p>
             </CardHeader>
@@ -162,6 +162,7 @@ export function VoteCard({ vote }: { vote: CommunityVote }) {
                                                     type="number"
                                                     min={1}
                                                     max={10}
+                                                    aria-label={opt.label}
                                                     className="w-16 rounded border px-1 text-xs"
                                                     value={weights[opt.id] ?? 1}
                                                     onChange={(e) =>

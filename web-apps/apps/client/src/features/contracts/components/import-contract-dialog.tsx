@@ -16,12 +16,12 @@ import {
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { toast } from "sonner";
-import { PdfZoneEditor, type ZoneSigner } from "./pdf-zone-editor";
-import { type Neighbor, SignatoryPicker } from "./signatory-picker";
 import {
     signersMissingZones,
     signerZoneColor,
 } from "../lib/signature-zone-utils";
+import { PdfZoneEditor, type ZoneSigner } from "./pdf-zone-editor";
+import { SignatoryPicker, type Neighbor } from "./signatory-picker";
 
 type ImportStep = "upload" | "placement";
 type FileErrorKey = "fileNotPdf" | "fileTooLarge";
@@ -40,9 +40,7 @@ function validatePdfFile(file: File): FileErrorKey | null {
 
 function selfAsNeighbor(user: TokenPayload | null): Neighbor[] {
     if (!user) return [];
-    const fullName = [user.firstName, user.lastName]
-        .filter(Boolean)
-        .join(" ");
+    const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
     return [{ id: user.sub, name: fullName || user.email }];
 }
 
@@ -101,9 +99,7 @@ export function ImportContractDialog({
     function handleSignatoriesChange(next: Neighbor[]) {
         setSignatories(next);
         setZones((current) =>
-            current.filter((zone) =>
-                next.some((s) => s.id === zone.signerId),
-            ),
+            current.filter((zone) => next.some((s) => s.id === zone.signerId)),
         );
     }
 
@@ -131,8 +127,7 @@ export function ImportContractDialog({
                     resetState();
                     onImported(contract);
                 },
-                onError: () =>
-                    toast.error(t("pages.contracts.import.error")),
+                onError: () => toast.error(t("pages.contracts.import.error")),
             },
         );
     }
@@ -152,10 +147,11 @@ export function ImportContractDialog({
                 {step === "upload" && (
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label>
+                            <Label htmlFor="import-contract-file">
                                 {t("pages.contracts.import.fileLabel")}
                             </Label>
                             <input
+                                id="import-contract-file"
                                 ref={fileInputRef}
                                 type="file"
                                 accept="application/pdf"
@@ -235,9 +231,7 @@ export function ImportContractDialog({
                             )}
                             {fileError && (
                                 <p className="text-destructive text-sm">
-                                    {t(
-                                        `pages.contracts.import.${fileError}`,
-                                    )}
+                                    {t(`pages.contracts.import.${fileError}`)}
                                 </p>
                             )}
                         </div>

@@ -41,6 +41,7 @@ export function QueryEditor({
                 {"\n"}
             </pre>
             <textarea
+                aria-label={placeholder}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 onKeyDown={onKeyDown}

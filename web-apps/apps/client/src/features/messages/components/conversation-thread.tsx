@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Attachment01Icon, Mic01Icon, SentIcon } from "@hugeicons/core-free-icons";
+import {
+    Attachment01Icon,
+    Mic01Icon,
+    SentIcon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
     useMessages,
@@ -277,6 +281,7 @@ export function ConversationThread({
                 <input
                     ref={fileInputRef}
                     type="file"
+                    aria-label={t("messaging.attachFile")}
                     className="hidden"
                     onChange={handleFilePick}
                 />
