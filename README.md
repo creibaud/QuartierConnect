@@ -258,18 +258,11 @@ protected by Caddy basic auth: credentials are configured through the
 
 The full technical documentation (architecture, databases, API, security, DSL,
 plugins, tests, deployment) lives in the **`/dev`** site, and the user guides in
-**`/aide`**. The academic reports remain as Markdown:
+**`/aide`**. The requirements specification remains as Markdown:
 
 | Document                                               | Contents                                                  |
 | ------------------------------------------------------ | --------------------------------------------------------- |
 | [docs/CDC.md](docs/CDC.md)                             | Full requirements specification                           |
-| [docs/SYNTHESE.md](docs/SYNTHESE.md)                   | Synthesis — approach, architecture, critical analysis     |
-| [docs/RAPPORT-TECHNIQUE.md](docs/RAPPORT-TECHNIQUE.md) | Full report for the defense — all the algorithms          |
-| [docs/RAPPORT-ETAPE2.md](docs/RAPPORT-ETAPE2.md)       | Milestone 2 report                                        |
-| [docs/RAPPORT-ETAPE3.md](docs/RAPPORT-ETAPE3.md)       | Milestone 3 report                                        |
-| [docs/RENDU-31-05.md](docs/RENDU-31-05.md)             | 31 May submission — functional + technical, end to end    |
-| [docs/GUIDE-SOUTENANCE.md](docs/GUIDE-SOUTENANCE.md)   | Demo scenarios, Q&A, key figures                          |
-| [docs/RUNBOOK.md](docs/RUNBOOK.md)                     | Production incident procedures                            |
 
 ---
 
