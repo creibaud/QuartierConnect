@@ -1,5 +1,6 @@
-import { Download01Icon } from "@hugeicons/core-free-icons";
+import { ArrowDown01Icon, Download01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import type { FC } from "react";
 import { useTranslation } from "react-i18next";
 import {
     Dialog,
@@ -9,6 +10,12 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@workspace/ui/components/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
 import { SidebarMenuButton } from "@workspace/ui/components/sidebar";
 
 type LogoProps = { className?: string };
@@ -49,14 +56,79 @@ const JavaLogo = ({ className }: LogoProps) => (
     <BrandIcon path={JAVA_PATH} className={className} />
 );
 
-const DOWNLOADS = [
-    { name: "Windows", format: ".msi", size: "56 Mo", file: "quartierconnect-windows.msi", Logo: WindowsLogo },
-    { name: "macOS", format: ".dmg", size: "57 Mo", file: "quartierconnect-macos.dmg", Logo: AppleLogo },
-    { name: "Linux (Debian/Ubuntu)", format: ".deb", size: "49 Mo", file: "quartierconnect-linux.deb", Logo: LinuxLogo },
-    { name: "Linux (Fedora/RHEL)", format: ".rpm", size: "49 Mo", file: "quartierconnect-linux.rpm", Logo: LinuxLogo },
-    { name: "Linux (portable)", format: ".tar.gz", size: "50 Mo", file: "quartierconnect-linux.tar.gz", Logo: LinuxLogo },
-    { name: "Portable (Java)", format: ".jar", size: "29 Mo", file: "quartierconnect-desktop.jar", Logo: JavaLogo },
+const ROW_CLASS =
+    "hover:bg-accent flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors";
+
+type DirectDownload = {
+    name: string;
+    format: string;
+    size: string;
+    file: string;
+    Logo: FC<LogoProps>;
+};
+
+const WINDOWS_DOWNLOAD: DirectDownload = { name: "Windows", format: ".msi", size: "56 Mo", file: "quartierconnect-windows.msi", Logo: WindowsLogo };
+const MACOS_DOWNLOAD: DirectDownload = { name: "macOS", format: ".dmg", size: "57 Mo", file: "quartierconnect-macos.dmg", Logo: AppleLogo };
+const JAR_DOWNLOAD: DirectDownload = { name: "Portable (Java)", format: ".jar", size: "29 Mo", file: "quartierconnect-desktop.jar", Logo: JavaLogo };
+
+const LINUX_FORMATS = [
+    { format: ".deb", target: "Debian, Ubuntu", size: "49 Mo", file: "quartierconnect-linux.deb" },
+    { format: ".rpm", target: "Fedora, RHEL", size: "49 Mo", file: "quartierconnect-linux.rpm" },
+    { format: ".tar.gz", target: "Portable", size: "50 Mo", file: "quartierconnect-linux.tar.gz" },
 ] as const;
+
+function DirectDownloadRow({ name, format, size, file, Logo }: DirectDownload) {
+    return (
+        <a href={`/telechargements/${file}`} download className={ROW_CLASS}>
+            <Logo className="size-7 shrink-0" />
+            <div className="flex-1">
+                <p className="text-sm font-medium">{name}</p>
+                <p className="text-muted-foreground text-xs">
+                    {format} · {size}
+                </p>
+            </div>
+            <HugeiconsIcon
+                icon={Download01Icon}
+                className="text-muted-foreground size-4"
+            />
+        </a>
+    );
+}
+
+function LinuxDownloadRow() {
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger className={ROW_CLASS}>
+                <LinuxLogo className="size-7 shrink-0" />
+                <div className="flex-1">
+                    <p className="text-sm font-medium">Linux</p>
+                    <p className="text-muted-foreground text-xs">
+                        .deb · .rpm · .tar.gz
+                    </p>
+                </div>
+                <HugeiconsIcon
+                    icon={ArrowDown01Icon}
+                    className="text-muted-foreground size-4"
+                />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                align="start"
+                className="w-(--radix-dropdown-menu-trigger-width)"
+            >
+                {LINUX_FORMATS.map(({ format, target, size, file }) => (
+                    <DropdownMenuItem key={file} asChild>
+                        <a href={`/telechargements/${file}`} download>
+                            <span className="font-medium">{format}</span>
+                            <span className="text-muted-foreground ml-auto text-xs">
+                                {target} · {size}
+                            </span>
+                        </a>
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
 
 export function DownloadDesktopDialog() {
     const { t } = useTranslation();
@@ -76,26 +148,10 @@ export function DownloadDesktopDialog() {
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-2">
-                    {DOWNLOADS.map(({ name, format, size, file, Logo }) => (
-                        <a
-                            key={file}
-                            href={`/telechargements/${file}`}
-                            download
-                            className="hover:bg-accent flex items-center gap-3 rounded-lg border p-3 transition-colors"
-                        >
-                            <Logo className="size-7 shrink-0" />
-                            <div className="flex-1">
-                                <p className="text-sm font-medium">{name}</p>
-                                <p className="text-muted-foreground text-xs">
-                                    {format} · {size}
-                                </p>
-                            </div>
-                            <HugeiconsIcon
-                                icon={Download01Icon}
-                                className="text-muted-foreground size-4"
-                            />
-                        </a>
-                    ))}
+                    <DirectDownloadRow {...WINDOWS_DOWNLOAD} />
+                    <DirectDownloadRow {...MACOS_DOWNLOAD} />
+                    <LinuxDownloadRow />
+                    <DirectDownloadRow {...JAR_DOWNLOAD} />
                 </div>
                 <p className="text-muted-foreground text-xs leading-relaxed">
                     {t("adminPages.download.securityNote")}
