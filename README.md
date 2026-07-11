@@ -263,6 +263,7 @@ plugins, tests, deployment) lives in the **`/dev`** site, and the user guides in
 | Document                                               | Contents                                                  |
 | ------------------------------------------------------ | --------------------------------------------------------- |
 | [docs/CDC.md](docs/CDC.md)                             | Full requirements specification                           |
+| [docs/RAPPORT-TECHNIQUE.md](docs/RAPPORT-TECHNIQUE.md) | Consolidated technical report (mirrors the `/dev` site)   |
 
 ---
 
