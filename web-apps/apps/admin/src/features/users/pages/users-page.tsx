@@ -144,7 +144,7 @@ export function UsersPage() {
                 >
                     <div className="space-y-4">
                         <UsersTable
-                            users={rows as User[]}
+                            users={rows}
                             sort={sort}
                             order={order}
                             onSort={handleSort}

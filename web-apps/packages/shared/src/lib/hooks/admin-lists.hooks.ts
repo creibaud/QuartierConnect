@@ -1,5 +1,6 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { apiGetPage, type Page } from "../api";
+import type { Event, Incident, Neighborhood, Service, User } from "../types";
 
 export interface AdminListParams {
     page: number;
@@ -37,7 +38,7 @@ function useAdminList<T>(key: string, path: string, params: object) {
 
 export const useAdminIncidents = (
     params: AdminListParams & { status?: string; category?: string },
-) => useAdminList("admin-incidents", "/incidents", params);
+) => useAdminList<Incident>("admin-incidents", "/incidents", params);
 
 export const useAdminServices = (
     params: AdminListParams & {
@@ -45,18 +46,18 @@ export const useAdminServices = (
         type?: string;
         direction?: string;
     },
-) => useAdminList("admin-services", "/services", params);
+) => useAdminList<Service>("admin-services", "/services", params);
 
 export const useAdminEvents = (
     params: AdminListParams & { category?: string; date?: string },
-) => useAdminList("admin-events", "/events", params);
+) => useAdminList<Event>("admin-events", "/events", params);
 
 export const useAdminNeighborhoods = (params: AdminListParams) =>
-    useAdminList("admin-neighborhoods", "/neighborhoods", params);
+    useAdminList<Neighborhood>("admin-neighborhoods", "/neighborhoods", params);
 
 export const useAdminCommunityVotes = (
     params: AdminListParams & { status?: string },
 ) => useAdminList("admin-community-votes", "/community-votes", params);
 
 export const useAdminUsers = (params: AdminListParams & { role?: string }) =>
-    useAdminList("admin-users", "/users", params);
+    useAdminList<User>("admin-users", "/users", params);

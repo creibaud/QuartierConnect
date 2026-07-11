@@ -177,7 +177,7 @@ export function AdminServicesPage() {
                         >
                             <div className="space-y-4">
                                 <ServicesTable
-                                    services={rows as Service[]}
+                                    services={rows}
                                     neighborhoodNames={neighborhoodNames}
                                     sort={sort}
                                     order={order}
@@ -200,7 +200,7 @@ export function AdminServicesPage() {
                     </TabsContent>
                     <TabsContent value="map">
                         <ServicesMap
-                            services={mapServices as Service[]}
+                            services={mapServices}
                             neighborhoods={neighborhoods}
                         />
                     </TabsContent>

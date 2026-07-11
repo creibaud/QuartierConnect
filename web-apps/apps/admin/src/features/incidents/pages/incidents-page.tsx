@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert01Icon, ListViewIcon, MapsLocation01Icon } from "@hugeicons/core-free-icons";
+import {
+    Alert01Icon,
+    ListViewIcon,
+    MapsLocation01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAdminIncidents } from "@workspace/shared/lib/hooks/admin-lists.hooks";
@@ -175,7 +179,7 @@ export function AdminIncidentsPage() {
                         >
                             <div className="space-y-4">
                                 <IncidentsTable
-                                    incidents={rows as Incident[]}
+                                    incidents={rows}
                                     sort={sort}
                                     order={order}
                                     onSort={handleSort}
@@ -199,7 +203,7 @@ export function AdminIncidentsPage() {
 
                     <TabsContent value="map">
                         <IncidentsMap
-                            incidents={mapIncidents as Incident[]}
+                            incidents={mapIncidents}
                             neighborhoods={neighborhoods ?? []}
                         />
                     </TabsContent>
