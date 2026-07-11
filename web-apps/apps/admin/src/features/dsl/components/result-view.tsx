@@ -18,7 +18,7 @@ export function ResultView({ result }: { result: unknown }) {
                     {result}
                 </span>
                 <span className="text-muted-foreground text-sm">
-                    {t("adminPages.dsl.countResult", { count: result })}
+                    {t("adminPages.dsl.resultCount", { count: result })}
                 </span>
             </div>
         );

@@ -52,7 +52,7 @@ export function ServicesFilters({
                     </SelectItem>
                     {SERVICE_CATEGORIES.map((category) => (
                         <SelectItem key={category} value={category}>
-                            {t(`adminPages.serviceCategories.${category}`, {
+                            {t(`pages.services.categories.${category}`, {
                                 defaultValue: category,
                             })}
                         </SelectItem>

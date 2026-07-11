@@ -468,11 +468,6 @@ export default {
             noServicesHint: "Services offered near you will appear here.",
             noTransactionsHint:
                 "Take part in neighborhood life to earn your first points.",
-            recoType: {
-                service: "Service",
-                event: "Event",
-                neighbor: "Neighbor",
-            },
             quickActions: "Quick actions",
             moderation: {
                 title: "Moderation area",
@@ -899,21 +894,6 @@ export default {
             banned: "Banned",
             deleted: "Deleted",
         },
-        serviceCategories: {
-            gardening: "Gardening",
-            handyman: "Handyman",
-            transport: "Transport",
-            shopping: "Shopping",
-            childcare: "Childcare",
-            "it-support": "IT support",
-            other: "Other",
-        },
-        theme: {
-            label: "Theme",
-            light: "Light",
-            dark: "Dark",
-            system: "System",
-        },
         meta: {
             description:
                 "QuartierConnect administration console — manage neighborhoods, incidents, services and residents.",
@@ -1072,7 +1052,6 @@ export default {
             directionOffer: "Offer",
             directionRequest: "Request",
             typeLabel: "Type *",
-            types: { free: "Free", paid: "Paid", exchange: "Exchange" },
             addressLabel: "Address",
             addressPlaceholder: "e.g. 12 rue de la Paix",
             pointsMultiplierLabel: "Points multiplier",
@@ -1171,8 +1150,6 @@ export default {
             errorBadge: "Error",
             resultCount_one: "{{count}} result",
             resultCount_other: "{{count}} results",
-            countResult_one: "result",
-            countResult_other: "results",
             noRows: "No records",
             viewTable: "Table",
             viewJson: "JSON",

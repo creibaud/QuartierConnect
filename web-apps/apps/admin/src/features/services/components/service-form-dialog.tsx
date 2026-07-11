@@ -183,7 +183,7 @@ export function ServiceFormDialog({
                                     {SERVICE_CATEGORIES.map((c) => (
                                         <SelectItem key={c} value={c}>
                                             {t(
-                                                `adminPages.serviceCategories.${c}`,
+                                                `pages.services.categories.${c}`,
                                                 { defaultValue: c },
                                             )}
                                         </SelectItem>
@@ -206,14 +206,14 @@ export function ServiceFormDialog({
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="free">
-                                        {t("adminPages.services.types.free")}
+                                        {t("pages.services.types.free")}
                                     </SelectItem>
                                     <SelectItem value="paid">
-                                        {t("adminPages.services.types.paid")}
+                                        {t("pages.services.types.paid")}
                                     </SelectItem>
                                     <SelectItem value="exchange">
                                         {t(
-                                            "adminPages.services.types.exchange",
+                                            "pages.services.types.exchange",
                                         )}
                                     </SelectItem>
                                 </SelectContent>

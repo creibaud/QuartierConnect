@@ -43,7 +43,7 @@ export function ServicesMap({
                                 <p className="font-medium">{s.title}</p>
                                 <p className="text-xs">
                                     {t(
-                                        `adminPages.serviceCategories.${s.category}`,
+                                        `pages.services.categories.${s.category}`,
                                         { defaultValue: s.category },
                                     )}
                                 </p>

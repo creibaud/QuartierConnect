@@ -27,7 +27,7 @@ export function ServiceRow({
             <TableCell className="py-2 font-medium">{service.title}</TableCell>
             <TableCell className="py-2">
                 <Badge variant="secondary">
-                    {t(`adminPages.serviceCategories.${service.category}`, {
+                    {t(`pages.services.categories.${service.category}`, {
                         defaultValue: service.category,
                     })}
                 </Badge>
