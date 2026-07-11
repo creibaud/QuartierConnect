@@ -146,6 +146,30 @@ export async function apiGet<T>(path: string): Promise<T> {
     return data as T;
 }
 
+export interface Page<T> {
+    data: T[];
+    total: number;
+    totalPages: number;
+}
+
+export async function apiGetPage<T>(path: string): Promise<Page<T>> {
+    const res = await apiFetch(path, { method: "GET" });
+    const data = await parseJsonSafely(res);
+    if (!res.ok) {
+        const err = data as ApiError | null;
+        throw Object.assign(new Error(err?.message ?? "Request failed"), {
+            code: err?.code,
+            status: res.status,
+        });
+    }
+    const total = Number(
+        res.headers.get("X-Total-Count") ??
+            (Array.isArray(data) ? data.length : 0),
+    );
+    const totalPages = Number(res.headers.get("X-Total-Pages") ?? 1);
+    return { data: (data ?? []) as T[], total, totalPages };
+}
+
 export async function apiDelete<T>(path: string, body?: unknown): Promise<T> {
     const res = await apiFetch(path, {
         method: "DELETE",
