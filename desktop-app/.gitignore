@@ -5,6 +5,7 @@ target/
 .kotlin
 
 # Build artifacts
+src/main/resources/server.properties
 META-INF/
 module-info.class
 org/

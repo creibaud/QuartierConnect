@@ -30,6 +30,11 @@ jobs:
           java-version: "21"
           cache: maven
 
+      - name: Cibler le serveur déployé
+        env:
+          QC_SERVER_URL: ${{ vars.QC_SERVER_URL }}
+        run: bash desktop-app/packaging/write-server-properties.sh
+
       - name: Build JAR
         working-directory: desktop-app
         run: ./mvnw -B clean package -DskipTests
@@ -61,7 +66,9 @@ jobs:
 
             ### Installateurs natifs
             Téléchargez le paquet correspondant à votre système ci-dessous :
-            - **Linux** : `quartierconnect-linux.deb` → `sudo apt install ./quartierconnect-linux.deb` (résout les dépendances ; `dpkg -i` ne le fait pas)
+            - **Linux (Debian/Ubuntu)** : `quartierconnect-linux.deb` → `sudo apt install ./quartierconnect-linux.deb` (résout les dépendances ; `dpkg -i` ne le fait pas)
+            - **Linux (Fedora/RHEL)** : `quartierconnect-linux.rpm` → `sudo dnf install ./quartierconnect-linux.rpm`
+            - **Linux (portable)** : `quartierconnect-linux.tar.gz` → extraire puis lancer `QuartierConnect/bin/QuartierConnect` (aucune installation, JRE incluse)
             - **Windows** : `quartierconnect-windows.msi` → double-clic
             - **macOS** : `quartierconnect-macos.dmg` → glisser dans Applications
 
@@ -95,6 +102,14 @@ jobs:
             type: deb
             asset: quartierconnect-linux.deb
             script: bash desktop-app/packaging/jpackage-build.sh deb
+          - os: ubuntu-22.04
+            type: rpm
+            asset: quartierconnect-linux.rpm
+            script: bash desktop-app/packaging/jpackage-build.sh rpm
+          - os: ubuntu-22.04
+            type: tar.gz
+            asset: quartierconnect-linux.tar.gz
+            script: bash desktop-app/packaging/jpackage-build.sh tar.gz
           - os: macos-latest
             type: dmg
             asset: quartierconnect-macos.dmg
@@ -120,6 +135,10 @@ jobs:
         run: echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
         env:
           TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+      - name: Installer rpmbuild
+        if: matrix.type == 'rpm'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq rpm
 
       - name: Smoke-test app-image (Unix)
         if: runner.os != 'Windows'

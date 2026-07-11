@@ -52,7 +52,9 @@ const JavaLogo = ({ className }: LogoProps) => (
 const DOWNLOADS = [
     { name: "Windows", format: ".msi", size: "56 Mo", file: "quartierconnect-windows.msi", Logo: WindowsLogo },
     { name: "macOS", format: ".dmg", size: "57 Mo", file: "quartierconnect-macos.dmg", Logo: AppleLogo },
-    { name: "Linux", format: ".deb", size: "49 Mo", file: "quartierconnect-linux.deb", Logo: LinuxLogo },
+    { name: "Linux (Debian/Ubuntu)", format: ".deb", size: "49 Mo", file: "quartierconnect-linux.deb", Logo: LinuxLogo },
+    { name: "Linux (Fedora/RHEL)", format: ".rpm", size: "49 Mo", file: "quartierconnect-linux.rpm", Logo: LinuxLogo },
+    { name: "Linux (portable)", format: ".tar.gz", size: "50 Mo", file: "quartierconnect-linux.tar.gz", Logo: LinuxLogo },
     { name: "Portable (Java)", format: ".jar", size: "29 Mo", file: "quartierconnect-desktop.jar", Logo: JavaLogo },
 ] as const;
 
