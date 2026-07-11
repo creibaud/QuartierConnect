@@ -1,12 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { Calendar02Icon } from "@hugeicons/core-free-icons";
-import { Link } from "@tanstack/react-router";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import { useMyBookings } from "@workspace/shared/lib/hooks/useBookings";
 import { useServices } from "@workspace/shared/lib/hooks/services.hooks";
-import { Button } from "@workspace/ui/components/button";
 import { DataState } from "@workspace/ui/components/data-state";
-import { EmptyState } from "@workspace/ui/components/empty-state";
 import { PageHeader } from "@workspace/ui/components/page-header";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import {
@@ -15,25 +11,8 @@ import {
     TabsList,
     TabsTrigger,
 } from "@workspace/ui/components/tabs";
-import { BookingCard } from "./booking-card";
-
-function BookingsEmptyState({ message }: { message: string }) {
-    const { t } = useTranslation();
-    return (
-        <EmptyState
-            icon={Calendar02Icon}
-            title={t("bookings.emptyState.title")}
-            description={message}
-            action={
-                <Button asChild>
-                    <Link to="/services">
-                        {t("bookings.emptyState.browseServices")}
-                    </Link>
-                </Button>
-            }
-        />
-    );
-}
+import { BookingCard } from "../components/booking-card";
+import { BookingsEmptyState } from "../components/bookings-empty-state";
 
 export type BookingsTab = "received" | "sent";
 
