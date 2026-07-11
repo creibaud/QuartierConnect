@@ -17,6 +17,7 @@ FORCE="${SETUP_FORCE:-0}"
 if [ "${1:-}" = "--force" ]; then
     FORCE=1
 fi
+ENV_REGENERATED=0
 
 BOLD=$(printf '\033[1m')
 GREEN=$(printf '\033[32m')
@@ -75,11 +76,20 @@ generate_env_file() {
     if grep -v '^[[:space:]]*#' .env | grep -q "CHANGE_ME"; then
         fail "Des valeurs CHANGE_ME subsistent dans .env : complétez-les à la main (voir .env.example)."
     fi
+    ENV_REGENERATED=1
     ok ".env généré avec des secrets aléatoires (openssl rand -hex 32)"
 }
 
 start_docker_services() {
     step "Construction et démarrage des services Docker"
+    if [ "$ENV_REGENERATED" = "1" ]; then
+        # A fresh .env means fresh database secrets, but Mongo/Postgres only seed
+        # their root user on an empty volume — a volume left over from a previous
+        # install keeps the old password and every later connection fails auth.
+        # Drop the volumes so the databases re-initialise with the new secrets.
+        $COMPOSE down -v --remove-orphans >/dev/null 2>&1 || true
+        ok "Volumes de bases réinitialisés (identifiants alignés sur le nouveau .env)"
+    fi
     $COMPOSE up -d --build
     ok "Services lancés en arrière-plan"
 }
