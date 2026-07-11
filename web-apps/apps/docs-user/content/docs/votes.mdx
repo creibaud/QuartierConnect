@@ -1,0 +1,115 @@
+---
+title: Les votes du quartier
+description: Participer aux consultations du quartier et suivre les résultats
+---
+
+Les **votes** sont les consultations de votre quartier : une question posée à tous les
+habitants, à laquelle chacun répond à sa façon. C'est l'endroit où l'on décide ensemble,
+en toute simplicité — installer des bancs dans le parc, choisir la date de la fête des
+voisins, répartir un petit budget entre plusieurs idées. Cette page vous explique comment
+participer et comment suivre les résultats.
+
+Dans l'application, vous trouvez ces consultations sur la page **Votes communautaires**.
+Un aperçu des **votes ouverts** apparaît aussi sur votre tableau de bord, dès votre
+arrivée sur la plateforme.
+
+## Comment se présente un vote
+
+Chaque vote affiche une **question**, parfois une **description** qui la précise, et une
+**date de fin**. Sous le titre, la mention « Fin : … » vous indique jusqu'à quand vous
+pouvez répondre.
+
+La page range les consultations en trois onglets, pour vous y retrouver d'un coup d'œil :
+
+- **En cours** : les votes encore ouverts, auxquels vous pouvez participer ;
+- **Répondu** : ceux auxquels vous avez déjà pris part ;
+- **Terminé** : les consultations closes, dont vous consultez le bilan.
+
+Vous pouvez aussi trier la liste par **fin proche** (les échéances les plus urgentes
+d'abord) ou par les **plus récents**.
+
+## Les quatre façons de voter
+
+Toutes les consultations ne se répondent pas de la même manière. Le type de vote change la
+façon de choisir, mais le geste reste toujours aussi simple : vous cochez, puis vous
+appuyez sur **Voter**.
+
+| Type de vote | Ce que vous faites |
+|--------------|--------------------|
+| **Oui / Non** | Vous tranchez une question par l'affirmative ou la négative : une seule réponse possible. |
+| **Choix unique** | Plusieurs propositions vous sont offertes, vous en retenez **une seule**. |
+| **Choix multiple** | Vous pouvez sélectionner **autant de propositions que vous le souhaitez**. |
+| **Vote pondéré** | Vous choisissez des propositions et donnez à chacune une **importance** (un nombre), pour dire lesquelles comptent le plus à vos yeux. |
+
+Un petit repère visuel vous aide à savoir combien de réponses sont attendues : une **pastille
+ronde** signale un choix unique (une seule réponse), une **case carrée** signale que
+plusieurs réponses sont permises.
+
+Pour un **vote pondéré**, dès que vous sélectionnez une proposition, un petit champ
+apparaît à côté : indiquez-y le poids que vous lui accordez. Plus le nombre est élevé, plus
+la proposition pèse dans le résultat.
+
+> Vous ne votez **qu'une seule fois** par consultation, et votre réponse ne peut pas être
+> modifiée ensuite. Prenez le temps de bien choisir avant de valider.
+
+## Votre vote reste discret
+
+Certaines consultations sont **anonymes**. Dans ce cas, la plateforme ne vous renvoie
+jamais que **votre propre réponse** : impossible de savoir qui a voté quoi. Les résultats,
+eux, ne montrent que des **totaux** — le décompte de toutes les réponses réunies, sans
+jamais nommer personne.
+
+Ainsi, vous participez en confiance : on connaît la tendance générale du quartier, mais
+votre choix individuel vous appartient.
+
+## Suivre les résultats en direct
+
+Dès que vous avez voté, la consultation vous montre les **résultats provisoires** au lieu
+du bulletin. Chaque proposition apparaît avec sa **barre de progression**, son nombre de
+**voix** et son pourcentage, et le nombre de **participants** est rappelé en tête. Votre
+propre réponse est mise en avant par la mention **« Votre choix »**.
+
+Ces résultats sont vivants : ils évoluent au fil des réponses de vos voisins tant que la
+consultation reste ouverte.
+
+## Votes ouverts et votes terminés
+
+Une consultation est **ouverte** jusqu'à sa date de fin : vous pouvez y répondre et suivre
+les résultats provisoires. Passé cette échéance, elle devient **terminée** — on ne peut
+plus voter, et les résultats affichés deviennent les **résultats finaux**. La personne qui
+a lancé le vote peut aussi le clôturer un peu plus tôt si besoin.
+
+Le parcours d'une consultation ressemble donc à ceci :
+
+<Mermaid
+  chart={`flowchart LR
+  ouvert["Vote ouvert<br/>(question posée)"]
+  voter["Vous votez<br/>une seule fois"]
+  direct(["Résultats<br/>provisoires"])
+  fin["Date de fin<br/>atteinte"]
+  final(["Résultats<br/>finaux"])
+
+  ouvert -->|"Onglet En cours"| voter
+  voter --> direct
+  direct -->|"Le quartier continue de voter"| direct
+  ouvert --> fin
+  fin -->|"Onglet Terminé"| final`}
+/>
+
+Si vous n'avez pas répondu à temps à un vote désormais terminé, pas d'inquiétude : vous en
+consultez tout de même le bilan dans l'onglet **Terminé**.
+
+## En résumé
+
+- Retrouvez les consultations du quartier sur la page **Votes communautaires**, classées
+  en **En cours**, **Répondu** et **Terminé**.
+- Selon le type de vote — **Oui / Non**, **Choix unique**, **Choix multiple** ou **Vote
+  pondéré** — vous retenez une ou plusieurs propositions, voire vous leur donnez une
+  importance.
+- Vous ne votez **qu'une fois** par consultation, et votre réponse est **discrète** sur les
+  scrutins anonymes.
+- Après avoir voté, suivez les **résultats provisoires** en direct ; à la **date de fin**,
+  ils deviennent les **résultats finaux**.
+
+Votre voix compte : parcourez régulièrement les votes ouverts pour peser sur les décisions
+de votre quartier.

@@ -1,0 +1,60 @@
+---
+title: Recommandations
+description: Des suggestions de services, d'événements et de voisins choisies pour vous
+---
+
+La page **Recommandations** rassemble, en un seul endroit, ce que QuartierConnect vous suggère de découvrir : des **services** proposés près de chez vous, des **événements** à venir dans votre quartier, et des **voisins** avec qui entrer en contact. Ce sont des suggestions personnalisées, construites à partir de votre activité de quartier — sans que vous ayez rien à demander.
+
+## Où les trouver
+
+Deux chemins mènent à vos recommandations :
+
+- **Depuis le menu**, l'entrée **« Recommandations »** (repérable à sa petite icône d'étincelles) ouvre la liste complète.
+- **Depuis votre tableau de bord**, la carte **« Recommandations pour toi »** affiche un aperçu des premières suggestions. Un clic vous amène à la liste détaillée.
+
+Chaque suggestion se présente sous forme de carte, avec une icône selon son type, son nom, une pastille (**Service**, **Événement** ou **Voisin**) et une courte phrase qui explique **pourquoi** elle vous est proposée.
+
+## Ce que QuartierConnect vous suggère
+
+Les recommandations se répartissent en trois familles, chacune accompagnée de sa raison :
+
+- **Un service de votre quartier** — *« Service proposé dans votre quartier »*. Une annonce de service près de chez vous que vous n'avez pas encore utilisée.
+- **Un événement à venir** — *« Événement à venir près de chez vous »*. Un rendez-vous du quartier encore à venir auquel vous ne participez pas déjà.
+- **Un événement apprécié de vos voisins** — *« Apprécié par des voisins qui partagent vos centres d'intérêt »*. Un événement qui plaît à des voisins ayant marqué de l'intérêt pour les mêmes rendez-vous que vous.
+- **Un voisin fiable** — *« Voisin fiable, reconnu pour son entraide »*. Un habitant de votre quartier qui s'est déjà illustré en rendant service autour de lui.
+
+Les suggestions les plus pertinentes remontent en haut de la liste, et celle-ci reste volontairement courte pour aller à l'essentiel.
+
+## Comment ces suggestions sont construites
+
+Rien de mystérieux : QuartierConnect s'appuie simplement sur ce que vous faites déjà dans l'application. Trois éléments nourrissent vos recommandations.
+
+<Mermaid
+  chart={`flowchart LR
+  quartier["Votre quartier<br/>(votre adresse)"]
+  interets["Vos centres d'intérêt<br/>(événements qui vous intéressent)"]
+  entraide["L'entraide du quartier<br/>(services rendus entre voisins)"]
+  reco(["Vos recommandations<br/>services, événements, voisins"])
+  quartier --> reco
+  interets --> reco
+  entraide --> reco`}
+/>
+
+- **Votre quartier** détermine ce qui vous est proposé de proche : les services et les événements rattachés à votre secteur.
+- **Vos centres d'intérêt** se déduisent des [événements](/docs/evenements) pour lesquels vous vous êtes montré intéressé ou auxquels vous participez. Ils permettent de repérer les voisins qui vous ressemblent et les événements qu'ils apprécient.
+- **L'entraide du quartier** met en avant les voisins reconnus pour les services qu'ils ont rendus, une fois les [contrats](/docs/contrats) menés à leur terme.
+
+> **Bon à savoir :** ces suggestions écartent naturellement ce qui n'a plus lieu d'être proposé — un service que vous avez déjà utilisé, un événement auquel vous participez déjà, ou vos propres annonces. Vous ne verrez donc pas revenir ce que vous connaissez déjà.
+
+## Agir sur une suggestion
+
+Chaque carte vous emmène directement là où l'action se passe :
+
+- Une suggestion de **service** ou d'**événement** vous conduit vers la page correspondante — [Services](/docs/services) ou [Événements](/docs/evenements) — pour en savoir plus et, si vous le souhaitez, y répondre ou vous inscrire.
+- Une suggestion de **voisin** propose un bouton **« Contacter »**. D'un clic, une conversation s'ouvre dans votre [messagerie](/docs/messagerie), prête à démarrer.
+
+## Pourquoi je ne vois rien ?
+
+Si la liste affiche **« Aucune recommandation pour le moment »**, c'est simplement que QuartierConnect n'a pas encore assez d'éléments pour vous suggérer quelque chose de pertinent. La solution tient en une phrase, celle que l'application vous souffle : **participez à la vie du quartier pour recevoir des suggestions adaptées**.
+
+Concrètement, plus vous marquez votre intérêt pour des événements, plus vous échangez de services avec vos voisins, plus vos recommandations se précisent et s'enrichissent. C'est une page qui grandit avec vous.

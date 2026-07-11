@@ -1,0 +1,131 @@
+---
+title: Le tableau de bord
+description: Votre page d'accueil, un aperçu vivant de votre quartier
+---
+
+Le tableau de bord est votre **page d'accueil** : c'est l'écran qui vous accueille dès
+que vous vous connectez et que votre compte est rattaché à un quartier. Il rassemble en
+un seul endroit l'essentiel de ce qui se passe autour de chez vous, sous la forme de
+cartes claires que vous pouvez parcourir d'un coup d'œil. Cette page vous explique ce que
+chacune de ces cartes affiche.
+
+En haut, un mot de bienvenue vous accueille **par votre prénom**, accompagné de votre
+adresse e-mail et d'une pastille rappelant votre rôle. En dessous se déploient la carte de
+votre quartier, puis une série de cartes d'aperçu qui font le lien vers les grandes pages
+de la plateforme.
+
+<Mermaid
+  chart={`flowchart TD
+  accueil(["Tableau de bord<br/>votre page d'accueil"])
+  carte["Carte du quartier"]
+  points["Vos points"]
+  activite["Activité récente"]
+  votes["Votes ouverts"]
+  events["Événements à venir"]
+  services["Services du quartier"]
+  recos["Recommandations"]
+
+  accueil --> carte
+  accueil --> points --> P["Page Points"]
+  accueil --> activite --> P
+  accueil --> votes --> V["Page Votes"]
+  accueil --> events --> E["Page Événements"]
+  accueil --> services --> S["Page Services"]
+  accueil --> recos --> R["Page Recommandations"]`}
+/>
+
+## La carte de votre quartier
+
+La première carte affiche un **plan interactif centré sur votre quartier**. Elle dessine
+le contour de votre quartier de rattachement et y place des repères pour situer, en un
+instant, ce qui se passe près de chez vous :
+
+- les **offres de service** et les **demandes de service** qui ont une position renseignée ;
+- les **événements** localisés ;
+- les **incidents de quartier** signalés sur la carte ;
+- votre **domicile**, si votre adresse a pu être positionnée.
+
+Une **légende** rappelle à quoi correspond chaque type de repère. Seuls les éléments dont
+la position est connue apparaissent : un service ou un événement sans adresse localisable
+reste bien publié, mais sans point sur le plan. Pour tout savoir sur le périmètre du
+quartier et la notion de couverture, reportez-vous à la page
+[La carte du quartier](/docs/carte).
+
+> Si votre quartier n'a pas encore de contour défini, la carte ne s'affiche pas : le reste
+> du tableau de bord, lui, reste bien présent.
+
+## Vos points en un clin d'œil
+
+Une carte met en avant votre **solde de points**, la monnaie d'entraide du quartier. Le
+chiffre est affiché en grand ; tant qu'aucun solde n'est disponible, un simple tiret prend
+sa place. Un lien **« Voir l'historique »** vous conduit directement vers la page
+[Points et récompenses](/docs/points), où vous retrouvez le détail de tous vos mouvements.
+
+## Votre activité récente
+
+Juste à côté, la carte d'activité récente reprend vos **dernières transactions de points**.
+Chaque ligne indique le voisin concerné et le montant :
+
+- en **vert avec un `+`** pour les points que vous avez reçus ;
+- en **gris avec un `−`** pour les points que vous avez envoyés ou dépensés.
+
+Cet aperçu ne montre que les mouvements les plus récents ; le bouton **« Tout voir »**
+ouvre l'historique complet sur la page Points.
+
+## Les votes ouverts
+
+Cette carte liste les **consultations du quartier en cours**. Pour chaque vote, vous voyez
+son titre, le **nombre de participants** déjà comptabilisés et, le cas échéant, sa **date
+de clôture**.
+
+- Si vous avez déjà voté, une pastille **« Voté »** vous le confirme.
+- Sinon, un bouton vous invite à **répondre** et vous emmène sur la page Votes.
+
+Seuls les votes encore ouverts apparaissent ici : dès qu'une consultation est close, elle
+laisse la place aux suivantes.
+
+## Les événements à venir
+
+La carte des événements affiche les **prochains rendez-vous** de la vie locale, classés du
+plus proche au plus lointain. Chaque événement montre sa **date** (jour et mois), son
+titre, son lieu lorsqu'il est renseigné et une pastille de **catégorie**. Les événements
+déjà passés n'y figurent pas. Le bouton **« Tout voir »** ouvre la page Événements.
+
+## Les services du quartier
+
+Cette carte donne un aperçu des **services proposés autour de chez vous** : pour chacun,
+son titre, une courte description et sa **catégorie**. C'est une façon rapide de repérer un
+coup de main disponible ou une demande à laquelle vous pourriez répondre. Le lien mène vers
+la page [Services entre voisins](/docs/services).
+
+## Les recommandations pour vous
+
+Enfin, une carte vous suggère du contenu **choisi pour vous** : un service, un événement ou
+un voisin. Chaque recommandation affiche un nom, une **raison** (par exemple un service
+dans votre quartier, un événement à proximité, des centres d'intérêt communs ou un voisin
+de confiance) et une pastille indiquant son type. Le bouton **« Tout voir »** ouvre la page
+Recommandations.
+
+## Quand une carte est vide
+
+Le tableau de bord s'adapte à l'activité de votre quartier. Si une rubrique n'a encore rien
+à montrer (aucun vote ouvert, aucun événement à venir, aucune transaction…), la carte
+affiche un **message d'accueil bienveillant** plutôt qu'un vide, avec une courte indication
+sur ce qui apparaîtra là un jour. Et si le chargement échoue momentanément, un bouton
+**« Réessayer »** vous permet de recharger la carte concernée sans quitter la page.
+
+## En résumé
+
+| Carte | Ce qu'elle montre | Vers quelle page |
+|-------|-------------------|------------------|
+| Carte du quartier | Votre quartier, les services, événements, incidents et votre domicile | Carte |
+| Vos points | Votre solde de points | Points |
+| Activité récente | Vos dernières transactions de points | Points |
+| Votes ouverts | Les consultations en cours et votre participation | Votes |
+| Événements à venir | Les prochains rendez-vous locaux | Événements |
+| Services du quartier | Un aperçu des offres et demandes de service | Services |
+| Recommandations | Des suggestions choisies pour vous | Recommandations |
+
+Le tableau de bord n'est pas une page où l'on s'attarde : c'est un **point de départ**.
+Chaque carte vous donne l'essentiel et vous ouvre la porte de la rubrique correspondante,
+pour explorer votre quartier à votre rythme.

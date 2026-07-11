@@ -1,0 +1,215 @@
+---
+title: Profil et données personnelles
+description: Modifier votre profil, sécuriser votre compte et gérer vos données (RGPD)
+---
+
+La page **Profil** rassemble tout ce qui vous concerne : votre identité, la sécurité
+de votre compte et le contrôle de vos données personnelles. Vous y accédez depuis le
+menu de votre compte. Cette page vous accompagne pas à pas dans chacun de ces réglages,
+sans jargon.
+
+## Vue d'ensemble
+
+Votre profil se présente sous forme de **cartes**, que vous parcourez de haut en bas :
+
+- **Profil** : votre photo, votre prénom et votre nom.
+- **Quartier** : l'adresse qui vous rattache à votre quartier.
+- **Sécurité** : votre mot de passe et votre double authentification.
+- **Adresse e-mail** : l'e-mail de connexion.
+- **Numéro de téléphone** : votre numéro, facultatif.
+- **Confidentialité (RGPD)** : l'export et la suppression de vos données.
+
+Un principe traverse toute cette page : **chaque modification sensible** (mot de passe,
+e-mail, téléphone, suppression du compte) vous demande le **code à six chiffres** de
+votre application d'authentification. C'est ce code qui garantit que vous êtes bien à
+l'origine du changement, même si quelqu'un accédait un instant à votre écran.
+
+## Modifier vos informations de profil
+
+La carte **Profil** affiche votre photo, votre nom complet, votre adresse e-mail et une
+étiquette indiquant votre rôle (par exemple « Résident »). Pour changer votre nom ou
+votre photo :
+
+1. Cliquez sur **Modifier** en haut de la carte.
+2. Renseignez votre **prénom** et votre **nom**.
+3. Pour la photo, cliquez sur l'avatar ou sur **Changer la photo**, puis choisissez une
+   image depuis votre appareil. Elle est automatiquement recadrée et redimensionnée avant
+   l'envoi, pour rester légère. Si une photo est déjà en place, vous pouvez la
+   **Supprimer**.
+4. Cliquez sur **Enregistrer**.
+
+> Bon à savoir : votre **adresse e-mail** et votre **rôle** s'affichent ici mais ne se
+> modifient pas depuis cette carte. L'e-mail se change dans sa propre carte (voir plus
+> bas) ; le rôle est géré par l'équipe d'administration.
+
+### Votre quartier
+
+Juste en dessous, la carte **Quartier** rappelle le quartier auquel vous êtes rattaché
+et vous permet de **corriger votre adresse** à tout moment, avec l'aide de
+l'autocomplétion. Le fonctionnement détaillé du rattachement (adresse couverte ou
+« couverture en attente ») est décrit sur la page **Créer un compte et se connecter**.
+
+## La carte Sécurité
+
+Cette carte réunit deux éléments : le **changement de mot de passe** et l'état de votre
+**double authentification**.
+
+### Changer votre mot de passe
+
+Pour définir un nouveau mot de passe, renseignez :
+
+1. votre **mot de passe actuel** ;
+2. votre **nouveau mot de passe** (au moins huit caractères) ;
+3. la **confirmation** de ce nouveau mot de passe ;
+4. le **code à six chiffres** de votre application d'authentification.
+
+Un **indicateur de robustesse** évalue votre nouveau mot de passe en direct, de « très
+faible » à « fort », pour vous aider à en choisir un solide. Le bouton **Mettre à jour
+le mot de passe** reste inactif tant que les conditions ne sont pas réunies (mot de passe
+trop court, confirmation différente ou code incomplet).
+
+Si un message d'erreur apparaît, il vous indique précisément quoi corriger :
+
+- **mot de passe actuel incorrect** : vérifiez votre saisie ;
+- **code à six chiffres invalide** : attendez l'apparition d'un nouveau code dans votre
+  application, puis réessayez.
+
+### La double authentification
+
+La carte confirme que votre **double authentification est active**. Elle est activée dès
+la création de votre compte et le reste en permanence : c'est ce qui protège vos accès et
+valide chacune de vos actions sensibles.
+
+Concrètement, à chaque opération importante, l'application vous demande le code à six
+chiffres. Le tableau ci-dessous récapitule les actions concernées.
+
+| Action | Code à six chiffres demandé ? |
+|--------|-------------------------------|
+| Modifier votre prénom, votre nom ou votre photo | Non |
+| Corriger votre adresse | Non |
+| Changer votre mot de passe | Oui |
+| Changer votre adresse e-mail | Oui |
+| Changer ou retirer votre téléphone | Oui |
+| Supprimer votre compte | Oui |
+
+## Changer votre adresse e-mail
+
+Votre adresse e-mail est aussi votre identifiant de connexion. Pour la modifier, ouvrez
+la carte **Adresse e-mail** et cliquez sur **Modifier**. Une fenêtre vous demande :
+
+1. votre **nouvelle adresse e-mail** ;
+2. votre **mot de passe** actuel ;
+3. le **code à six chiffres**.
+
+Une fois le changement validé, comme votre identifiant a changé, vous êtes
+**automatiquement déconnecté** et invité à vous **reconnecter** avec votre nouvelle
+adresse. C'est normal, et c'est une protection supplémentaire.
+
+<Mermaid chart={`
+flowchart LR
+    A["Nouvelle adresse,<br/>mot de passe et code"] --> B["Changement validé"]
+    B --> C["Déconnexion<br/>automatique"]
+    C --> D["Reconnexion avec<br/>la nouvelle adresse"]
+`} />
+
+Si l'adresse que vous saisissez est **déjà utilisée** par un autre compte, un message
+vous en avertit et le changement est refusé. Choisissez alors une autre adresse.
+
+## Changer ou retirer votre numéro de téléphone
+
+Le téléphone est **facultatif**. Depuis la carte **Numéro de téléphone**, cliquez sur
+**Modifier**. Dans la fenêtre :
+
+1. saisissez votre numéro **au format international**, par exemple `+33612345678` ;
+2. saisissez le **code à six chiffres** ;
+3. validez avec **Enregistrer**.
+
+Si le format du numéro n'est pas reconnu, un message vous invite à le corriger avant de
+pouvoir enregistrer. Pour **retirer** votre numéro, ouvrez la même fenêtre, **effacez le
+champ**, saisissez votre code, puis enregistrez : votre numéro est supprimé de votre
+compte.
+
+## Double authentification : téléphone perdu ou changé
+
+Votre application d'authentification produit le code à six chiffres demandé à chaque
+connexion et à chaque action sensible. Ce **secret** ne change jamais : il vous a été
+présenté **une seule fois, à la création de votre compte**, sous forme de QR code et de
+texte à copier. Anticiper est donc la meilleure protection.
+
+- **Vous changez de téléphone** : pendant que vous avez encore accès à votre ancien
+  appareil, installez une application d'authentification sur le nouveau et **ajoutez-y le
+  même secret** (celui conservé lors de votre inscription). Vos deux appareils
+  produiront alors le même code, et vous pourrez vous séparer de l'ancien en toute
+  tranquillité.
+- **Un code est refusé** : le code se renouvelle toutes les trente secondes. Vérifiez que
+  l'heure de votre téléphone est réglée **automatiquement**, attendez l'apparition du code
+  suivant, puis réessayez.
+
+> Réflexe utile : conservez précieusement le secret affiché à l'inscription (capture,
+> gestionnaire de mots de passe, note sécurisée). C'est lui qui vous permet de reconfigurer
+> votre double authentification sur un nouvel appareil.
+
+Si vous avez perdu à la fois votre application **et** le secret d'origine, vous ne pouvez
+plus produire de code et donc plus vous connecter par vous-même : **rapprochez-vous de
+l'équipe d'administration** de la plateforme pour rétablir votre accès.
+
+## Confidentialité (RGPD)
+
+La dernière carte vous rend maître de vos données. Elle propose deux actions bien
+distinctes : **exporter** vos données ou **supprimer** votre compte.
+
+<Mermaid chart={`
+flowchart TD
+    A["Carte Confidentialité (RGPD)"] --> B["Export des données"]
+    A --> C["Suppression du compte"]
+    B --> D["Téléchargement d'un<br/>fichier de vos données"]
+    C --> E["Code à six chiffres"]
+    E --> F["Déconnexion et<br/>compte anonymisé (définitif)"]
+`} />
+
+### Exporter vos données
+
+Le bouton **Export des données** rassemble l'ensemble de vos informations et les
+télécharge sous forme d'un **fichier** nommé `quartierconnect-mes-donnees.json`. Ce fichier
+correspond à votre droit à la portabilité (article 20 du RGPD).
+
+On y retrouve notamment :
+
+- votre **profil** et la **date de votre consentement** ;
+- vos **signalements d'incidents** ;
+- votre **solde de points** et l'historique de vos **transactions** (envoyées comme
+  reçues) ;
+- vos **messages envoyés**, vos **contrats**, vos **réservations** ;
+- vos **votes** et vos **participations aux consultations** du quartier ;
+- les **services** que vous avez publiés.
+
+Certaines informations sensibles ne figurent **jamais** dans cet export : votre mot de
+passe (qui n'est de toute façon conservé que sous forme chiffrée) et le secret de votre
+double authentification.
+
+### Supprimer votre compte
+
+La suppression est **définitive**. Depuis la carte, cliquez sur **Suppression du compte** :
+une fenêtre vous demande de confirmer en saisissant votre **code à six chiffres**. Cette
+confirmation évite toute suppression accidentelle ou malveillante.
+
+Dès la validation, vous êtes **immédiatement déconnecté**. Votre compte est alors
+**anonymisé** : votre adresse e-mail est remplacée par un identifiant sans valeur, votre
+mot de passe et le secret de votre double authentification sont effacés, et votre profil
+n'apparaît plus comme le vôtre sur la plateforme. Les contenus que vous avez publiés
+peuvent subsister sous une forme anonymisée, le temps nécessaire à la vie du quartier et
+à la modération.
+
+## En résumé
+
+| Carte | Ce que vous y gérez | Code à six chiffres |
+|-------|---------------------|---------------------|
+| Profil | Prénom, nom, photo | Non |
+| Quartier | Votre adresse et votre rattachement | Non |
+| Sécurité | Mot de passe, double authentification | Oui (mot de passe) |
+| Adresse e-mail | E-mail de connexion (puis reconnexion) | Oui |
+| Numéro de téléphone | Numéro facultatif (ajout ou retrait) | Oui |
+| Confidentialité (RGPD) | Export et suppression de vos données | Oui (suppression) |
+
+Vous gardez ainsi la main sur votre identité, la sécurité de votre accès et le devenir de
+vos données, à tout moment et en quelques clics.
