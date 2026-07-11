@@ -70,6 +70,12 @@ jobs:
               -f docker/docker-compose.yml \
               -f docker/docker-compose.prod.yml \
               up -d --build --remove-orphans
+            # Caddy's image is unchanged, so up -d won't re-read the bind-mounted
+            # Caddyfile; force-recreate it so CSP / routing changes take effect.
+            docker compose --env-file .env \
+              -f docker/docker-compose.yml \
+              -f docker/docker-compose.prod.yml \
+              up -d --force-recreate caddy
           EOF
 
       - name: Smoke test
@@ -82,6 +88,17 @@ jobs:
         run: |
           ssh "$VPS_USER@$VPS_HOST" \
             "cd '$DEPLOY_PATH' && ./scripts/smoke-test.sh '$PROD_URL'"
+
+      - name: Seed comptes démo (best effort)
+        if: success()
+        continue-on-error: true
+        env:
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          DEPLOY_PATH: ${{ secrets.VPS_DEPLOY_PATH }}
+        run: |
+          ssh "$VPS_USER@$VPS_HOST" \
+            "cd '$DEPLOY_PATH' && ./scripts/seed-prod-demo.sh"
 
       - name: Rollback si smoke test KO
         if: failure() && steps.deploy.outcome == 'success'
