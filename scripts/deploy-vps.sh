@@ -41,9 +41,15 @@ git pull --ff-only origin "$REF" 2>/dev/null || true
 # 3. Rebuild + restart
 $COMPOSE up -d --build --remove-orphans
 
+# Caddy's image is unchanged, so `up -d` won't re-read the bind-mounted
+# Caddyfile; force-recreate it so CSP / routing changes take effect.
+$COMPOSE up -d --force-recreate caddy
+
 # 4. Smoke test → automatic rollback on failure
 if ./scripts/smoke-test.sh "$DOMAIN"; then
   echo "✓ Déploiement OK sur ${REF}"
+  # Keep the demo accounts' TOTP in sync with DEMO_TOTP_SECRET (best effort).
+  ./scripts/seed-prod-demo.sh || true
   notify "🟢 Deploy OK : ${REF} → ${DOMAIN}"
 else
   echo "✗ Smoke test KO — rollback vers ${PREV_SHA:0:8}" >&2
