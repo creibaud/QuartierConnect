@@ -72,7 +72,7 @@ generate_env_file() {
         -e "s/CHANGE_ME_postgres_password/${postgres_password}/g" \
         -e "s/CHANGE_ME_neo4j_password/${neo4j_password}/g" \
         .env.example > .env
-    if grep -q "CHANGE_ME" .env; then
+    if grep -v '^[[:space:]]*#' .env | grep -q "CHANGE_ME"; then
         fail "Des valeurs CHANGE_ME subsistent dans .env : complétez-les à la main (voir .env.example)."
     fi
     ok ".env généré avec des secrets aléatoires (openssl rand -hex 32)"

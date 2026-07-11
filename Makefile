@@ -391,11 +391,12 @@ seed-neo4j: ## Peupler Neo4j avec les nœuds depuis MongoDB (quartiers, services
 	           NODE_PATH=./node_modules npx tsx ../scripts/seed-neo4j.ts
 	@echo "$(OK) Graphe Neo4j peuplé"
 
-totp: ## Générer un code TOTP pour les comptes démo (secret JBSWY3DPEHPK3PXP)
+totp: ## Générer un code TOTP pour les comptes démo (secret : DEMO_TOTP_SECRET dans .env)
 	@echo ""
 	@echo "$(BOLD)  Code TOTP (valable 30s) :$(RESET)"
-	@oathtool --totp --base32 JBSWY3DPEHPK3PXP 2>/dev/null \
-		&& echo "" \
+	@SECRET=$$(grep -E '^DEMO_TOTP_SECRET=' .env 2>/dev/null | cut -d= -f2- | tr -d '"'); \
+	 [ -n "$$SECRET" ] || SECRET=JBSWY3DPEHPK3PXP; \
+	 oathtool --totp --base32 "$$SECRET" 2>/dev/null && echo "" \
 		|| echo "  $(YELLOW)oathtool non disponible. Installer : sudo apt install oathtool$(RESET)"
 
 # ─── Git hooks ───────────────────────────────────────────────────────────────

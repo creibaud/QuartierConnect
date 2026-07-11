@@ -51,16 +51,14 @@ check_schema_present() {
 }
 
 purge_postgres() {
-  echo "→ Purge PostgreSQL (TRUNCATE des tables du schéma public)"
+  echo "→ Purge PostgreSQL (réinitialisation des schémas public + drizzle)"
+  # Le dump recrée les schémas et tables (CREATE SCHEMA/TABLE sans IF NOT EXISTS) :
+  # on repart d'une base vide plutôt qu'un TRUNCATE, sinon les migrations déjà
+  # appliquées par l'API entrent en conflit à la restauration.
   psql_exec <<'SQL'
-DO $$
-DECLARE t text;
-BEGIN
-  FOR t IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP
-    EXECUTE format('TRUNCATE TABLE public.%I CASCADE', t);
-  END LOOP;
-END
-$$;
+DROP SCHEMA IF EXISTS drizzle CASCADE;
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
 SQL
 }
 
