@@ -9,6 +9,7 @@
         "format": "pnpm format:root",
         "format:root": "prettier --write .",
         "typecheck": "turbo typecheck",
+        "i18n:check": "node scripts/check-i18n-parity.mjs",
         "test": "turbo run test",
         "test:e2e": "playwright test",
         "test:e2e:ui": "playwright test --ui"

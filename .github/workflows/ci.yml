@@ -172,6 +172,10 @@ jobs:
         working-directory: web-apps
         run: pnpm run lint
 
+      - name: i18n parity (FR/EN)
+        working-directory: web-apps
+        run: pnpm run i18n:check
+
       - name: Typecheck
         working-directory: web-apps
         run: pnpm run typecheck
