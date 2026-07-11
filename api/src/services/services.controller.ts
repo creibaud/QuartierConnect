@@ -13,6 +13,7 @@ import {
     Post,
     Query,
     Request,
+    Res,
     UseGuards,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
@@ -26,6 +27,7 @@ import {
 } from "@nestjs/swagger";
 import { inArray } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { Response } from "express";
 import { Model, Types } from "mongoose";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import {
@@ -33,6 +35,12 @@ import {
     ServiceBooking,
     ServiceBookingDocument,
 } from "../bookings/schemas/service-booking.schema";
+import {
+    escapeRegex,
+    parsePagination,
+    resolveSort,
+    setPageHeaders,
+} from "../common/pagination";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { GeocodingService } from "../geocoding/geocoding.service";
@@ -116,16 +124,38 @@ export class ServicesController {
         enum: ["offer", "request"],
         description: "Service direction",
     })
+    @ApiQuery({
+        name: "search",
+        required: false,
+        example: "tonte",
+        description: "Case-insensitive substring on title or description",
+    })
+    @ApiQuery({
+        name: "sort",
+        required: false,
+        enum: ["createdAt", "title"],
+        description: "Sort field (default: createdAt)",
+    })
+    @ApiQuery({
+        name: "order",
+        required: false,
+        enum: ["asc", "desc"],
+        description: "Sort direction (default: desc)",
+    })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
     @ApiResponse({ status: 200, type: [ServiceDto] })
     async findAll(
+        // @Res goes first: a required param can't follow optional @Query params (TS1016).
+        @Res({ passthrough: true }) res: Response,
         @Query("category") category?: string,
         @Query("type") type?: string,
         @Query("direction") direction?: string,
+        @Query("search") search?: string,
+        @Query("sort") sort?: string,
+        @Query("order") order?: string,
         @Query("page") page = "1",
         @Query("limit") limit = "20",
-        // Default satisfies TS1016 (a required param can't follow optional @Query params).
         @Request() req: AuthRequest = { user: { sub: "", role: "" } },
     ) {
         // Scoped callers without a neighborhood get nothing: an undefined filter
@@ -138,16 +168,31 @@ export class ServicesController {
         if (typeof category === "string") filter.category = category;
         if (typeof type === "string") filter.type = type;
         if (typeof direction === "string") filter.direction = direction;
+        if (typeof search === "string" && search.trim()) {
+            const rx = new RegExp(escapeRegex(search.trim()), "i");
+            filter.$or = [{ title: rx }, { description: rx }];
+        }
 
-        const pageNum = Math.max(1, parseInt(page) || 1);
-        const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
-        const skip = (pageNum - 1) * limitNum;
-        const services = await this.serviceModel
-            .find(filter)
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limitNum)
-            .lean();
+        const { limitNum, skip } = parsePagination(page, limit);
+        const { field, direction: sortDirection } = resolveSort(
+            sort,
+            order,
+            ["createdAt", "title"] as const,
+            "createdAt",
+        );
+        const sortSpec: Record<string, 1 | -1> = {
+            [field]: sortDirection === "asc" ? 1 : -1,
+        };
+        const [services, total] = await Promise.all([
+            this.serviceModel
+                .find(filter)
+                .sort(sortSpec)
+                .skip(skip)
+                .limit(limitNum)
+                .lean(),
+            this.serviceModel.countDocuments(filter),
+        ]);
+        setPageHeaders(res, total, limitNum);
         const ids = services.map((s) => s._id);
         const responses = await this.responseModel
             .find({ serviceId: { $in: ids } })

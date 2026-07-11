@@ -1,0 +1,167 @@
+---
+title: Architecture front-end
+description: Monorepo pnpm/Turborepo, stack React/Vite/TanStack et découpage par features
+---
+
+Les surfaces web de QuartierConnect vivent dans un monorepo dédié (`web-apps/`), géré par **pnpm** et orchestré par **Turborepo**. Il regroupe quatre applications — deux SPA React servies par Vite (le client résident et l'admin back-office) et deux sites de documentation Fumadocs — au-dessus de deux packages partagés : `@workspace/shared` (logique métier, hooks de données, i18n) et `@workspace/ui` (design system shadcn/Radix). Les deux SPA ne réimplémentent presque rien : elles assemblent des composants et des hooks tirés de ces packages, et n'hébergent que ce qui leur est propre, organisé par domaine fonctionnel.
+
+<Mermaid
+  chart={`flowchart TB
+  subgraph apps[apps/]
+    client["client<br/>SPA React · Vite · :3000"]
+    admin["admin<br/>SPA React · Vite · :3001"]
+    docsUser["docs-user<br/>Next · Fumadocs · :3002"]
+    docsDev["docs-dev<br/>Next · Fumadocs · :3003"]
+  end
+  subgraph packages[packages/]
+    shared["@workspace/shared<br/>api · hooks · i18n · types"]
+    ui["@workspace/ui<br/>shadcn · Radix · Map · thème"]
+  end
+  client --> shared
+  client --> ui
+  admin --> shared
+  admin --> ui
+  ui --> shared`}
+/>
+
+## Le monorepo pnpm/Turborepo
+
+Le `pnpm-workspace.yaml` déclare deux globs, `apps/*` et `packages/*`. Le gestionnaire est épinglé (`packageManager: pnpm@9.15.9`, Node ≥ 20) et les dépendances internes sont référencées par protocole workspace (`"@workspace/shared": "workspace:^"`, `"@workspace/ui": "workspace:*"`).
+
+| Emplacement | Paquet | Rôle | Stack |
+|-------------|--------|------|-------|
+| `apps/client` | `client` | Espace résident (dashboard, services, incidents, événements, messagerie, contrats…) | React 19 + Vite, `:3000` |
+| `apps/admin` | `admin` | Back-office (modération, quartiers, DSL, votes communautaires, utilisateurs…) | React 19 + Vite, `:3001` |
+| `apps/docs-user` | `docs-user` | Aide utilisateur | Next 16 + Fumadocs, `:3002` |
+| `apps/docs-dev` | `docs-dev` | Documentation développeur (ce site) | Next 16 + Fumadocs, `:3003` |
+| `packages/shared` | `@workspace/shared` | Client HTTP, hooks React Query, i18n, types, helpers géo | Librairie TS, sans build |
+| `packages/ui` | `@workspace/ui` | Design system (shadcn/Radix), composant `<Map>`, thème, styles | Librairie TS/TSX |
+
+`turbo.json` définit le pipeline : `build` (avec `dependsOn: ["^build"]` pour respecter l'ordre topologique des packages, sorties `dist/**`, `out/**`, `.next/**`), `lint`, `format`, `typecheck`, `test`, et `dev` (`persistent: true`, `cache: false`). À la racine, `pnpm dev` lance `turbo dev` — Vite en mode HMR pour le client et l'admin, `next dev` pour les deux sites de doc. Les deux packages partagés sont consommés **en source** (pas d'étape de build préalable) : ils sont résolus par alias dans les `vite.config.ts` des apps et par les `exports` de leur `package.json`.
+
+> Les deux sites `docs-*` sortent du cadre décrit ici : ce sont des applications Next/Fumadocs (MDX), pas des SPA React/Vite. Le reste de cette page concerne `apps/client` et `apps/admin`.
+
+## La stack des SPA
+
+Client et admin partagent la même fondation, câblée dans `src/main.tsx` :
+
+- **React 19** (`react@^19.2`) rendu par `createRoot` en `StrictMode`.
+- **Vite 7** comme bundler/dev-server, avec `@vitejs/plugin-react` et le plugin `@tanstack/router-plugin/vite` (`TanStackRouterVite({ target: "react", autoCodeSplitting: true })`).
+- **TanStack Router** en routage par fichiers : l'arbre est généré dans `src/routeTree.gen.ts` à partir de `src/routes/`, puis passé à `createRouter`. Les gardes d'authentification s'exécutent dans les `beforeLoad` asynchrones via `ensureAuthenticated()`.
+- **TanStack Query** (`@tanstack/react-query`) pour tout l'état serveur. Le `QueryClient` global fixe `retry: 1` et `staleTime: 30_000`.
+- **TanStack Form** (`@tanstack/react-form` + `@tanstack/zod-form-adapter`) pour les formulaires, avec des schémas **Zod** partagés. Le helper `useAppForm` est exposé par `@workspace/ui/lib/form`.
+- **Tailwind CSS v4** via le plugin `@tailwindcss/vite` ; les feuilles de base sont importées depuis le design system (`@workspace/ui/globals.css` et `@workspace/ui/voisinage.css`).
+- **@unhead/react** pour les balises `<head>` (titre, meta, `lang`) et **sonner** pour les toasts.
+
+Le `vite.config.ts` du client fixe le port `3000`, proxifie `/api` vers `http://localhost:5000` (avec `ws: true` pour la messagerie Socket.io et réécriture du préfixe), et force le **dedupe** de `i18next`/`react-i18next` — sans quoi le build de production rend les clés brutes de traduction. Les alias `@` (→ `src/`), `@workspace/shared` et `@workspace/ui` y sont également déclarés.
+
+## Le design system : `@workspace/ui`
+
+Tout le vocabulaire visuel est centralisé dans `packages/ui`, un registre shadcn (`components.json`, style `radix-nova`, `baseColor: neutral`, `iconLibrary: hugeicons`). Le package expose une cinquantaine de composants sous `src/components/` (primitives shadcn au-dessus de **Radix UI** / `@base-ui/react` : `dialog`, `select`, `dropdown-menu`, `popover`, `sidebar`, `table`, `pagination`, `command`, `tabs`…), plus des composants transverses de plus haut niveau réutilisés par les deux apps :
+
+- `data-state.tsx` — enveloppe déclarative des états `loading` / `error` / `empty` / contenu.
+- `page-header.tsx`, `sortable-head.tsx`, `pagination.tsx` (`DataPagination`) — l'ossature des écrans de liste.
+- `map.tsx` / `map-draw.tsx` — la carte `react-leaflet` (tracé de quartiers, clusters), partagée surtout par l'admin.
+
+Les `exports` du `package.json` rendent ces briques importables par chemin explicite : `@workspace/ui/components/*`, `@workspace/ui/hooks/*`, `@workspace/ui/lib/*`, plus les deux feuilles CSS. Le thème (clair/sombre, polices variables Hanken Grotesk / Geist / Fraunces) est piloté par `next-themes` et les variables CSS de `src/styles/globals.css`.
+
+## Le flux de données
+
+Aucun composant n'appelle `fetch` directement. Toutes les requêtes passent par le client HTTP de `packages/shared/src/lib/api.ts`, lui-même enveloppé dans des hooks React Query.
+
+`api.ts` expose `apiGet`, `apiPost`, `apiPatch`, `apiDelete`, `apiUpload`, `apiBlob`/`apiBlobUrl` et — pour les listes paginées — `apiGetPage`. Toutes ces fonctions transitent par `apiFetch`, qui :
+
+- résout l'URL de base (`import.meta.env.VITE_API_URL ?? "/api"`) ;
+- ajoute l'en-tête `Authorization: Bearer <access token>` et `credentials: "include"` (cookie `httpOnly` du refresh token) ;
+- sur un `401`, tente **un** rafraîchissement de token (`refreshTokens`, dédupliqué via `refreshInFlight` pour ne pas rejouer un refresh token à usage unique), puis rejoue la requête une fois ; en dernier recours, redirige vers `/login` en conservant la destination.
+
+`apiGetPage<T>` est le contrat de liste : il renvoie `{ data, total, totalPages }` en lisant les en-têtes `X-Total-Count` et `X-Total-Pages` de la réponse.
+
+Au-dessus, `packages/shared/src/lib/hooks/` fournit les hooks de données transverses, groupés par domaine. Deux conventions cohabitent :
+
+- des modules `*.hooks.ts` (`points.hooks.ts`, `events.hooks.ts`, `incidents.hooks.ts`, `services.hooks.ts`, `neighborhoods.hooks.ts`, `admin-lists.hooks.ts`) qui s'appuient sur une couche d'appels dédiée dans `packages/shared/src/lib/api/*.api.ts` ;
+- des modules `useXxx.ts` (`useBookings`, `useContracts`, `useMessaging`, `useMe`, `useStats`, `useRecommendations`, `useAdminUsers`, `useVotes`, plus les utilitaires `useDebouncedValue`, `useLocale`, `useUserSearch`).
+
+Ces hooks encapsulent `useQuery` / `useInfiniteQuery` / `useMutation`, la `queryKey`, le `staleTime` et l'invalidation. Un composant se contente de les consommer.
+
+<Mermaid
+  chart={`flowchart LR
+  cmp["Composant de feature"]
+  hook["Hook React Query<br/>(shared ou local)"]
+  api["apiGet / apiGetPage<br/>(api.ts)"]
+  fetch["apiFetch<br/>token + refresh 401"]
+  backend["API NestJS"]
+  cmp --> hook
+  hook --> api
+  api --> fetch
+  fetch --> backend`}
+/>
+
+## L'architecture par features
+
+Le découpage majeur adopté récemment est **feature-based**. Chaque domaine fonctionnel vit dans son propre dossier sous `src/features/<domaine>/`, avec une structure interne canonique :
+
+```
+features/<domaine>/
+├── components/     briques d'UI propres au domaine
+├── pages/          composants de page complets (un par écran)
+├── hooks/          hooks React Query locaux au domaine (optionnel)
+├── lib/            logique pure + tests (labels, transitions d'état…)
+└── index.ts        barrel : ré-exporte les pages consommées par les routes
+```
+
+Tous les sous-dossiers ne sont pas systématiquement présents : `hooks/` n'existe que quand le domaine a des requêtes qui lui sont propres (ex. `services/hooks/services-core.hooks.ts`), et certains domaines exposent leurs pages par chemin direct plutôt que par barrel. Les hooks locaux consomment le même client `apiGet`/`apiPost` que les hooks partagés ; la règle est : un hook réutilisé entre les deux apps vit dans `packages/shared`, un hook spécifique à une app vit dans son `features/<domaine>/hooks/`.
+
+Le contraste avec l'organisation précédente porte sur les **routes**. Auparavant, le module de route TanStack contenait à la fois le câblage de route *et* toute la logique de l'écran (routes « grasses »). Désormais, chaque fichier de `src/routes/` est un simple **wrapper d'une poignée de lignes** qui lie un chemin à un composant de page importé depuis sa feature :
+
+```tsx
+// src/routes/_app/incidents/index.tsx
+import { createFileRoute } from "@tanstack/react-router";
+import { IncidentsPage } from "@/features/incidents";
+
+export const Route = createFileRoute("/_app/incidents/")({
+    component: IncidentsPage,
+});
+```
+
+Le dossier `src/routes/` ne décrit plus que la **carte de navigation** ; la substance est dans `src/features/`. Concrètement pour le client :
+
+```
+apps/client/src/
+├── main.tsx                    providers (Query, Router, Unhead, thème, i18n)
+├── routeTree.gen.ts            arbre de routes généré par le plugin Vite
+├── components/                 chrome applicatif (sidebar, nav, theme-provider…)
+├── features/
+│   ├── dashboard/  · services/ · incidents/  · events/
+│   ├── contracts/  · bookings/  · points/     · votes/
+│   ├── messages/   · recommendations/ · account/ · onboarding/
+│   └── realtime/               provider Socket.io (RealtimeProvider)
+└── routes/
+    ├── __root.tsx              layout racine (head, Toaster)
+    ├── index.tsx               redirection selon l'authentification
+    ├── login.tsx · register.tsx  pages d'entrée (encore résidentes en route)
+    ├── onboarding/             wrappers vers features/onboarding
+    └── _app/                   layout authentifié + wrappers de route
+        ├── dashboard/ · services/ · incidents/ · events/
+        ├── contracts/ · bookings/ · points/    · votes/
+        ├── messages/  · recommendations/ · settings/
+```
+
+L'admin suit exactement le même modèle, avec ses propres domaines : `community-votes`, `dashboard`, `dsl`, `events`, `incidents`, `neighborhoods`, `services`, `uncovered-addresses`, `users`. Le layout `_app.tsx` porte la garde d'authentification (`beforeLoad` → `ensureAuthenticated`) et le chrome (sidebar, breadcrumb). Les pages d'entrée d'authentification (`login.tsx`, `register.tsx`) restent, elles, des modules de route à part entière.
+
+## Les listes admin en pagination serveur
+
+Les écrans de liste de l'admin ne chargent plus l'intégralité d'une collection pour filtrer côté client : ils délèguent recherche, tri, filtres et pagination à l'API via une famille de hooks `useAdmin*`, définis dans `packages/shared/src/lib/hooks/admin-lists.hooks.ts`.
+
+Un unique hook générique interne, `useAdminList<T>`, sérialise les paramètres en query-string (`buildQuery` ignore les valeurs `undefined`, `""` et `"all"`), appelle `apiGetPage<T>` et renvoie `{ rows, total, totalPages, isLoading, isFetching, error }`. Il active `placeholderData: keepPreviousData` pour éviter le clignotement entre deux pages. Les paramètres partagés sont typés par `AdminListParams` (`page`, `limit`, `search?`, `sort?`, `order?`), chaque domaine ajoutant ses propres filtres :
+
+| Hook | Endpoint | Filtres additionnels |
+|------|----------|----------------------|
+| `useAdminIncidents` | `/incidents` | `status`, `category` |
+| `useAdminServices` | `/services` | `category`, `type`, `direction` |
+| `useAdminEvents` | `/events` | `category`, `date` |
+| `useAdminNeighborhoods` | `/neighborhoods` | — |
+| `useAdminCommunityVotes` | `/community-votes` | `status` |
+| `useAdminUsers` | `/users` | `role` |
+
+Côté page (par exemple `apps/admin/src/features/users/pages/users-page.tsx`), l'écran gère l'état d'UI local (`search`, filtres, `page`, `sort`, `order`), débounce la recherche avec `useDebouncedValue`, remet la page à 1 quand un critère change, puis passe le tout au hook. Le rendu s'appuie sur les composants partagés `DataState`, `PageHeader` et `DataPagination` (`@workspace/ui`). Après une mutation, la liste se rafraîchit par invalidation de la `queryKey` racine (`queryClient.invalidateQueries({ queryKey: ["admin-users"] })`), ce qui laisse React Query recharger la page courante avec les mêmes paramètres.

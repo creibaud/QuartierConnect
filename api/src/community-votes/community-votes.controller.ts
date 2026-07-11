@@ -8,6 +8,7 @@ import {
     Post,
     Query,
     Request,
+    Res,
     UseGuards,
 } from "@nestjs/common";
 import {
@@ -18,7 +19,9 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
+import type { Response } from "express";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { setPageHeaders } from "../common/pagination";
 import { CommunityVotesService } from "./community-votes.service";
 import { CastCommunityVoteDto } from "./dto/cast-community-vote.dto";
 import {
@@ -53,15 +56,55 @@ export class CommunityVotesController {
 
     @Get()
     @ApiOperation({ summary: "List community votes" })
+    @ApiQuery({
+        name: "search",
+        required: false,
+        example: "bancs",
+        description: "Case-insensitive substring on title",
+    })
+    @ApiQuery({
+        name: "status",
+        required: false,
+        enum: ["open", "closed"],
+        description: "Open votes end in the future; closed ones have ended",
+    })
+    @ApiQuery({
+        name: "sort",
+        required: false,
+        enum: ["createdAt", "endsAt"],
+        description: "Sort field (default: createdAt)",
+    })
+    @ApiQuery({
+        name: "order",
+        required: false,
+        enum: ["asc", "desc"],
+        description: "Sort direction (default: desc)",
+    })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
     @ApiResponse({ status: 200, type: [CommunityVoteDto] })
-    findAll(
+    async findAll(
+        // @Res goes first: a required param can't follow optional @Query params (TS1016).
+        @Res({ passthrough: true }) res: Response,
         @Query("page", new DefaultValuePipe(1), ParseIntPipe) page: number,
         @Query("limit", new DefaultValuePipe(20), ParseIntPipe) limit: number,
+        @Query("search") search?: string,
+        @Query("status") status?: string,
+        @Query("sort") sort?: string,
+        @Query("order") order?: string,
         @Request() req: AuthRequest = { user: { sub: "", role: "" } },
     ) {
-        return this.communityVotesService.findAllFor(req.user.sub, page, limit);
+        const { rows, total } = await this.communityVotesService.findAllFor(
+            req.user.sub,
+            page,
+            limit,
+            search,
+            status,
+            sort,
+            order,
+        );
+        setPageHeaders(res, total, limit);
+        return rows;
     }
 
     @Get(":id")

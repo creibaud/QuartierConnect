@@ -11,6 +11,7 @@ import {
     Post,
     Query,
     Request,
+    Res,
     UseGuards,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
@@ -23,8 +24,15 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
+import type { Response } from "express";
 import { Model } from "mongoose";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import {
+    escapeRegex,
+    parsePagination,
+    resolveSort,
+    setPageHeaders,
+} from "../common/pagination";
 import { GeocodingService } from "../geocoding/geocoding.service";
 import { SocialService } from "../social/social.service";
 import { CreateEventDto } from "./dto/create-event.dto";
@@ -91,16 +99,38 @@ export class EventsController {
         example: "2026-05-15",
         description: "ISO date YYYY-MM-DD (filters over the entire day)",
     })
+    @ApiQuery({
+        name: "search",
+        required: false,
+        example: "brocante",
+        description: "Case-insensitive substring on title",
+    })
+    @ApiQuery({
+        name: "sort",
+        required: false,
+        enum: ["createdAt", "date", "title"],
+        description: "Sort field (default: createdAt)",
+    })
+    @ApiQuery({
+        name: "order",
+        required: false,
+        enum: ["asc", "desc"],
+        description: "Sort direction (default: desc)",
+    })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
     @ApiResponse({ status: 200, type: [EventDto] })
     @ApiResponse({ status: 401, description: "Not authenticated" })
-    findAll(
+    async findAll(
+        // @Res goes first: a required param can't follow optional @Query params (TS1016).
+        @Res({ passthrough: true }) res: Response,
         @Query("category") category?: string,
         @Query("date") date?: string,
+        @Query("search") search?: string,
+        @Query("sort") sort?: string,
+        @Query("order") order?: string,
         @Query("page") page = "1",
         @Query("limit") limit = "20",
-        // Default required by TS1016: a required param can't follow optional @Query params.
         @Request() req: AuthRequest = { user: { sub: "", role: "" } },
     ) {
         // Scoped caller without a neighborhood gets nothing: an undefined
@@ -116,16 +146,31 @@ export class EventsController {
             to.setDate(to.getDate() + 1);
             filter.date = { $gte: from, $lt: to };
         }
+        if (typeof search === "string" && search.trim()) {
+            filter.title = new RegExp(escapeRegex(search.trim()), "i");
+        }
 
-        const pageNum = Math.max(1, parseInt(page) || 1);
-        const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
-        const skip = (pageNum - 1) * limitNum;
-        return this.eventModel
-            .find(filter)
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limitNum)
-            .exec();
+        const { limitNum, skip } = parsePagination(page, limit);
+        const { field, direction } = resolveSort(
+            sort,
+            order,
+            ["createdAt", "date", "title"] as const,
+            "createdAt",
+        );
+        const sortSpec: Record<string, 1 | -1> = {
+            [field]: direction === "asc" ? 1 : -1,
+        };
+        const [events, total] = await Promise.all([
+            this.eventModel
+                .find(filter)
+                .sort(sortSpec)
+                .skip(skip)
+                .limit(limitNum)
+                .exec(),
+            this.eventModel.countDocuments(filter),
+        ]);
+        setPageHeaders(res, total, limitNum);
+        return events;
     }
 
     @Get(":id")

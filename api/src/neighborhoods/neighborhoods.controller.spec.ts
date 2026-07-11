@@ -36,12 +36,14 @@ describe("NeighborhoodsController", () => {
         neo4jRun = jest.fn().mockResolvedValue(undefined);
 
         const findChain = {
+            sort: jest.fn().mockReturnThis(),
             skip: jest.fn().mockReturnThis(),
             limit: jest.fn().mockReturnThis(),
             exec: jest.fn().mockResolvedValue([mockNeighborhood]),
         };
         model = {
             find: jest.fn().mockReturnValue(findChain),
+            countDocuments: jest.fn().mockResolvedValue(1),
             findById: jest.fn().mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockNeighborhood),
             }),
@@ -108,7 +110,8 @@ describe("NeighborhoodsController", () => {
     });
 
     it("GET /neighborhoods returns list", async () => {
-        const result = await controller.findAll();
+        const res = { setHeader: jest.fn() } as any;
+        const result = await controller.findAll(res);
         expect(result).toHaveLength(1);
         expect(model.find).toHaveBeenCalled();
     });

@@ -1,5 +1,6 @@
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
+import type { Response } from "express";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import { UsersController } from "./users.controller";
 
@@ -9,6 +10,9 @@ const mockUser = {
     role: "resident",
     createdAt: new Date(),
 };
+
+// Minimal Response stub: findAll only touches setHeader for the count headers.
+const mockRes = () => ({ setHeader: jest.fn() }) as unknown as Response;
 
 describe("UsersController", () => {
     let controller: UsersController;
@@ -53,24 +57,24 @@ describe("UsersController", () => {
     });
 
     it("GET /users returns paginated list", async () => {
-        const result = await controller.findAll();
+        const result = await controller.findAll(mockRes());
         expect(result).toHaveLength(1);
         expect(mockDb.select).toHaveBeenCalled();
     });
 
     it("GET /users without filters queries with an undefined where clause", async () => {
-        await controller.findAll();
+        await controller.findAll(mockRes());
         expect(mockDb.where).toHaveBeenCalledWith(undefined);
     });
 
     it("GET /users?search filters server-side instead of relying on loaded pages", async () => {
-        await controller.findAll("1", "20", "bob", "resident");
+        await controller.findAll(mockRes(), "1", "20", "bob", "resident");
         expect(mockDb.where).toHaveBeenCalled();
         expect(mockDb.where.mock.calls[0][0]).toBeDefined();
     });
 
     it("GET /users ignores an unknown role filter", async () => {
-        await controller.findAll("1", "20", "", "superadmin");
+        await controller.findAll(mockRes(), "1", "20", "", "superadmin");
         expect(mockDb.where).toHaveBeenCalledWith(undefined);
     });
 

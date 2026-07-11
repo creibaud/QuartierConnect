@@ -2,6 +2,7 @@ import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { and, eq, gt, isNull, or, SQL } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
+import type { Response } from "express";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { IncidentsController } from "./incidents.controller";
@@ -26,6 +27,33 @@ const authReq = (
     role = "resident",
     neighborhoodId: string | null = "n1",
 ) => ({ user: { sub, role, neighborhoodId } });
+
+// Minimal Response stub: findAll only touches setHeader for the count headers.
+const mockRes = () => ({ setHeader: jest.fn() }) as unknown as Response;
+
+// Thin wrapper so the tests keep their focus on status/since/req without
+// repeating the search/sort/order/pagination positional arguments.
+function listIncidents(
+    controller: IncidentsController,
+    opts: {
+        status?: string;
+        since?: string;
+        req: unknown;
+    },
+) {
+    return controller.findAll(
+        mockRes(),
+        opts.status,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "1",
+        "20",
+        opts.since,
+        opts.req as any,
+    );
+}
 
 function buildMockDb(defaultRows = [mockIncident]) {
     const mock: any = {};
@@ -82,70 +110,40 @@ describe("IncidentsController", () => {
     });
 
     it("GET /incidents returns list without filter (resident, scoped)", async () => {
-        await controller.findAll(
-            undefined,
-            "1",
-            "20",
-            undefined,
-            authReq() as any,
-        );
+        await listIncidents(controller, { req: authReq() });
         expect(mockDb.select).toHaveBeenCalled();
     });
 
     it("GET /incidents?status=open filters by status", async () => {
-        await controller.findAll(
-            "open",
-            "1",
-            "20",
-            undefined,
-            authReq() as any,
-        );
+        await listIncidents(controller, { status: "open", req: authReq() });
         expect(mockDb.select).toHaveBeenCalled();
     });
 
     it("GET /incidents returns [] for a resident with no neighborhood", async () => {
-        const result = await controller.findAll(
-            undefined,
-            "1",
-            "20",
-            undefined,
-            authReq("u", "resident", null) as any,
-        );
+        const result = await listIncidents(controller, {
+            req: authReq("u", "resident", null),
+        });
         expect(result).toEqual([]);
         expect(mockDb.select).not.toHaveBeenCalled();
     });
 
     it("GET /incidents lets an admin query across all neighborhoods", async () => {
-        await controller.findAll(
-            undefined,
-            "1",
-            "20",
-            undefined,
-            authReq("admin1", "admin", null) as any,
-        );
+        await listIncidents(controller, {
+            req: authReq("admin1", "admin", null),
+        });
         expect(mockDb.select).toHaveBeenCalled();
     });
 
     it("GET /incidents scopes a moderator to their own neighborhood", async () => {
-        const result = await controller.findAll(
-            undefined,
-            "1",
-            "20",
-            undefined,
-            authReq("mod1", "moderator", null) as any,
-        );
+        const result = await listIncidents(controller, {
+            req: authReq("mod1", "moderator", null),
+        });
         expect(result).toEqual([]);
         expect(mockDb.select).not.toHaveBeenCalled();
     });
 
     it("GET /incidents (resident) restricts the where to neighborhood category or own submissions", async () => {
-        await controller.findAll(
-            undefined,
-            "1",
-            "20",
-            undefined,
-            authReq() as any,
-        );
+        await listIncidents(controller, { req: authReq() });
 
         const rendered = renderSql(mockDb.where.mock.calls[0][0]);
         expect(rendered).toEqual(
@@ -163,13 +161,9 @@ describe("IncidentsController", () => {
     });
 
     it("GET /incidents (moderator) keeps the quartier scope but no category filter", async () => {
-        await controller.findAll(
-            undefined,
-            "1",
-            "20",
-            undefined,
-            authReq("mod1", "moderator", "n1") as any,
-        );
+        await listIncidents(controller, {
+            req: authReq("mod1", "moderator", "n1"),
+        });
 
         const rendered = renderSql(mockDb.where.mock.calls[0][0]);
         expect(rendered.sql).not.toContain("category");
@@ -184,13 +178,9 @@ describe("IncidentsController", () => {
     });
 
     it("GET /incidents (admin) applies neither quartier nor category filter", async () => {
-        await controller.findAll(
-            undefined,
-            "1",
-            "20",
-            undefined,
-            authReq("admin1", "admin", null) as any,
-        );
+        await listIncidents(controller, {
+            req: authReq("admin1", "admin", null),
+        });
 
         const rendered = renderSql(mockDb.where.mock.calls[0][0]);
         expect(rendered.sql).not.toContain("neighborhood_id");
@@ -201,13 +191,10 @@ describe("IncidentsController", () => {
     });
 
     it("GET /incidents?since=ISO adds an updatedAt delta condition", async () => {
-        await controller.findAll(
-            undefined,
-            "1",
-            "20",
-            "2026-07-01T00:00:00.000Z",
-            authReq() as any,
-        );
+        await listIncidents(controller, {
+            since: "2026-07-01T00:00:00.000Z",
+            req: authReq(),
+        });
 
         const rendered = renderSql(mockDb.where.mock.calls[0][0]);
         expect(rendered).toEqual(
@@ -228,18 +215,16 @@ describe("IncidentsController", () => {
         );
     });
 
-    it("GET /incidents?since=garbage throws 400", () => {
+    it("GET /incidents?since=garbage throws 400", async () => {
         const callWithGarbageSince = () =>
-            controller.findAll(
-                undefined,
-                "1",
-                "20",
-                "garbage",
-                authReq() as any,
-            );
+            listIncidents(controller, { since: "garbage", req: authReq() });
 
-        expect(callWithGarbageSince).toThrow(BadRequestException);
-        expect(callWithGarbageSince).toThrow("Invalid since: garbage");
+        await expect(callWithGarbageSince()).rejects.toThrow(
+            BadRequestException,
+        );
+        await expect(callWithGarbageSince()).rejects.toThrow(
+            "Invalid since: garbage",
+        );
     });
 
     it("GET /incidents/:id returns one", async () => {

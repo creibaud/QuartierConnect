@@ -9,6 +9,7 @@
         "format": "pnpm format:root",
         "format:root": "prettier --write .",
         "typecheck": "turbo typecheck",
+        "i18n:check": "node scripts/check-i18n-parity.mjs",
         "test": "turbo run test",
         "test:e2e": "playwright test",
         "test:e2e:ui": "playwright test --ui"
@@ -46,7 +47,8 @@
             "js-yaml@3": "3.15.0",
             "js-yaml@4": "4.2.0",
             "postcss": "8.5.10",
-            "qs": "6.15.2"
+            "qs": "6.15.2",
+            "@types/react": "19.2.17"
         }
     }
 }

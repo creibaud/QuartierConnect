@@ -63,15 +63,16 @@ test.describe("Admin — Services (CRUD)", () => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         const name = `Service E2E ${Date.now()}`;
         await page.getByRole("button", { name: /ajouter/i }).first().click();
-        await expect(page.getByRole("dialog")).toBeVisible();
-        await page.getByLabel(/nom/i).fill(name);
-        await page.getByLabel(/catégorie/i).click();
+        const dialog = page.getByRole("dialog");
+        await expect(dialog).toBeVisible();
+        await dialog.getByLabel(/nom/i).fill(name);
+        await dialog.getByLabel(/catégorie/i).click();
         await page.getByRole("option", { name: "Autre" }).click();
-        await page.getByLabel(/description/i).fill("Description de test E2E");
-        await page.getByRole("button", { name: /créer/i }).last().click();
-        await expect(page.getByRole("dialog")).not.toBeVisible({
-            timeout: 5000,
-        });
+        await dialog.getByLabel(/description/i).fill("Description de test E2E");
+        await dialog.getByRole("button", { name: /créer/i }).click();
+        await expect(dialog).not.toBeVisible({ timeout: 5000 });
+        // Server-side pagination/sort may place the new row on another page.
+        await page.getByPlaceholder("Rechercher par nom").fill(name);
         await expect(page.getByText(name)).toBeVisible({ timeout: 5000 });
     });
 
@@ -81,24 +82,24 @@ test.describe("Admin — Services (CRUD)", () => {
         const updated = `${original} MAJ`;
 
         await page.getByRole("button", { name: /ajouter/i }).first().click();
-        await page.getByLabel(/nom/i).fill(original);
-        await page.getByLabel(/catégorie/i).click();
+        const dialog = page.getByRole("dialog");
+        await dialog.getByLabel(/nom/i).fill(original);
+        await dialog.getByLabel(/catégorie/i).click();
         await page.getByRole("option", { name: "Autre" }).click();
-        await page.getByLabel(/description/i).fill("Description de test E2E");
-        await page.getByRole("button", { name: /créer/i }).last().click();
-        await expect(page.getByRole("dialog")).not.toBeVisible({
-            timeout: 5000,
-        });
+        await dialog.getByLabel(/description/i).fill("Description de test E2E");
+        await dialog.getByRole("button", { name: /créer/i }).click();
+        await expect(dialog).not.toBeVisible({ timeout: 5000 });
+        await page.getByPlaceholder("Rechercher par nom").fill(original);
         await expect(page.getByText(original)).toBeVisible({ timeout: 5000 });
 
         const row = page.getByRole("row").filter({ hasText: original });
         await row.getByRole("button", { name: /modifier/i }).click();
-        await page.getByLabel(/nom/i).clear();
-        await page.getByLabel(/nom/i).fill(updated);
-        await page
-            .getByRole("button", { name: /enregistrer/i })
-            .last()
-            .click();
+        const editDialog = page.getByRole("dialog");
+        await editDialog.getByLabel(/nom/i).clear();
+        await editDialog.getByLabel(/nom/i).fill(updated);
+        await editDialog.getByRole("button", { name: /enregistrer/i }).click();
+        await expect(editDialog).not.toBeVisible({ timeout: 5000 });
+        await page.getByPlaceholder("Rechercher par nom").fill(updated);
         await expect(page.getByText(updated)).toBeVisible({ timeout: 5000 });
     });
 
@@ -106,14 +107,14 @@ test.describe("Admin — Services (CRUD)", () => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         const name = `Service Delete ${Date.now()}`;
         await page.getByRole("button", { name: /ajouter/i }).first().click();
-        await page.getByLabel(/nom/i).fill(name);
-        await page.getByLabel(/catégorie/i).click();
+        const dialog = page.getByRole("dialog");
+        await dialog.getByLabel(/nom/i).fill(name);
+        await dialog.getByLabel(/catégorie/i).click();
         await page.getByRole("option", { name: "Autre" }).click();
-        await page.getByLabel(/description/i).fill("Description de test E2E");
-        await page.getByRole("button", { name: /créer/i }).last().click();
-        await expect(page.getByRole("dialog")).not.toBeVisible({
-            timeout: 5000,
-        });
+        await dialog.getByLabel(/description/i).fill("Description de test E2E");
+        await dialog.getByRole("button", { name: /créer/i }).click();
+        await expect(dialog).not.toBeVisible({ timeout: 5000 });
+        await page.getByPlaceholder("Rechercher par nom").fill(name);
         await expect(page.getByText(name)).toBeVisible({ timeout: 5000 });
 
         const row = page.getByRole("row").filter({ hasText: name });

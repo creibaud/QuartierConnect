@@ -63,8 +63,9 @@ test.describe("Admin — Événements (CRUD)", () => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         const title = `Événement E2E ${Date.now()}`;
         await page.getByRole("button", { name: /créer/i }).first().click();
-        await expect(page.getByRole("dialog")).toBeVisible();
-        await page.getByLabel(/titre/i).fill(title);
+        const dialog = page.getByRole("dialog");
+        await expect(dialog).toBeVisible();
+        await dialog.getByLabel(/titre/i).fill(title);
         await page.locator("#evt-date").fill("2026-12-01T10:00");
         await page
             .locator('[data-slot="select-trigger"]')
@@ -74,10 +75,10 @@ test.describe("Admin — Événements (CRUD)", () => {
             .getByRole("option", { name: /communauté|community/i })
             .click();
         await page.locator("#evt-desc").fill("Description de test E2E");
-        await page.getByRole("button", { name: /créer/i }).last().click();
-        await expect(page.getByRole("dialog")).not.toBeVisible({
-            timeout: 5000,
-        });
+        await dialog.getByRole("button", { name: /créer/i }).click();
+        await expect(dialog).not.toBeVisible({ timeout: 5000 });
+        // Server-side pagination/sort may place the new row on another page.
+        await page.getByPlaceholder("Rechercher par titre").fill(title);
         await expect(page.getByText(title).first()).toBeVisible({ timeout: 5000 });
     });
 
@@ -87,7 +88,8 @@ test.describe("Admin — Événements (CRUD)", () => {
         const updated = `${original} MAJ`;
 
         await page.getByRole("button", { name: /créer/i }).first().click();
-        await page.getByLabel(/titre/i).fill(original);
+        const dialog = page.getByRole("dialog");
+        await dialog.getByLabel(/titre/i).fill(original);
         await page.locator("#evt-date").fill("2026-12-01T10:00");
         await page
             .locator('[data-slot="select-trigger"]')
@@ -97,23 +99,19 @@ test.describe("Admin — Événements (CRUD)", () => {
             .getByRole("option", { name: /communauté|community/i })
             .click();
         await page.locator("#evt-desc").fill("Description de test E2E");
-        await page.getByRole("button", { name: /créer/i }).last().click();
-        await expect(page.getByRole("dialog")).not.toBeVisible({
-            timeout: 5000,
-        });
+        await dialog.getByRole("button", { name: /créer/i }).click();
+        await expect(dialog).not.toBeVisible({ timeout: 5000 });
+        await page.getByPlaceholder("Rechercher par titre").fill(original);
         await expect(page.getByText(original)).toBeVisible({ timeout: 5000 });
 
         const row = page.getByRole("row").filter({ hasText: original });
         await row.getByRole("button", { name: /modifier/i }).click();
-        await page.getByLabel(/titre/i).clear();
-        await page.getByLabel(/titre/i).fill(updated);
-        await page
-            .getByRole("button", { name: /enregistrer/i })
-            .last()
-            .click();
-        await expect(page.getByRole("dialog")).not.toBeVisible({
-            timeout: 5000,
-        });
+        const editDialog = page.getByRole("dialog");
+        await editDialog.getByLabel(/titre/i).clear();
+        await editDialog.getByLabel(/titre/i).fill(updated);
+        await editDialog.getByRole("button", { name: /enregistrer/i }).click();
+        await expect(editDialog).not.toBeVisible({ timeout: 5000 });
+        await page.getByPlaceholder("Rechercher par titre").fill(updated);
         await expect(page.getByText(updated)).toBeVisible({ timeout: 5000 });
     });
 
@@ -121,7 +119,8 @@ test.describe("Admin — Événements (CRUD)", () => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         const title = `Événement Delete ${Date.now()}`;
         await page.getByRole("button", { name: /créer/i }).first().click();
-        await page.getByLabel(/titre/i).fill(title);
+        const dialog = page.getByRole("dialog");
+        await dialog.getByLabel(/titre/i).fill(title);
         await page.locator("#evt-date").fill("2026-12-01T10:00");
         await page
             .locator('[data-slot="select-trigger"]')
@@ -131,10 +130,9 @@ test.describe("Admin — Événements (CRUD)", () => {
             .getByRole("option", { name: /communauté|community/i })
             .click();
         await page.locator("#evt-desc").fill("Description de test E2E");
-        await page.getByRole("button", { name: /créer/i }).last().click();
-        await expect(page.getByRole("dialog")).not.toBeVisible({
-            timeout: 5000,
-        });
+        await dialog.getByRole("button", { name: /créer/i }).click();
+        await expect(dialog).not.toBeVisible({ timeout: 5000 });
+        await page.getByPlaceholder("Rechercher par titre").fill(title);
         await expect(page.getByText(title).first()).toBeVisible({ timeout: 5000 });
 
         const row = page.getByRole("row").filter({ hasText: title });

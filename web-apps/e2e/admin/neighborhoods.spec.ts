@@ -89,16 +89,15 @@ test.describe("Admin — Quartiers (CRUD)", () => {
         await page
             .getByRole("button", { name: /créer|ajouter|nouveau/i }).first()
             .click();
-        await expect(page.getByRole("dialog")).toBeVisible();
-        await page.getByLabel(/nom/i).first().fill(name);
-        await page.getByLabel(/ville/i).fill("Paris");
-        await page
+        const dialog = page.getByRole("dialog");
+        await expect(dialog).toBeVisible();
+        await dialog.getByLabel(/nom/i).fill(name);
+        await dialog.getByLabel(/ville/i).fill("Paris");
+        await dialog
             .getByRole("button", { name: /créer|enregistrer|confirmer/i })
             .last()
             .click();
-        await expect(page.getByRole("dialog")).not.toBeVisible({
-            timeout: 5000,
-        });
+        await expect(dialog).not.toBeVisible({ timeout: 5000 });
         await page.getByTestId("neighborhood-search").fill(name);
         await expect(page.getByText(name)).toBeVisible({ timeout: 5000 });
     });
@@ -111,15 +110,14 @@ test.describe("Admin — Quartiers (CRUD)", () => {
         await page
             .getByRole("button", { name: /créer|ajouter|nouveau/i }).first()
             .click();
-        await page.getByLabel(/nom/i).first().fill(original);
-        await page.getByLabel(/ville/i).fill("Paris");
-        await page
+        const dialog = page.getByRole("dialog");
+        await dialog.getByLabel(/nom/i).fill(original);
+        await dialog.getByLabel(/ville/i).fill("Paris");
+        await dialog
             .getByRole("button", { name: /créer|enregistrer|confirmer/i })
             .last()
             .click();
-        await expect(page.getByRole("dialog")).not.toBeVisible({
-            timeout: 5000,
-        });
+        await expect(dialog).not.toBeVisible({ timeout: 5000 });
         await page.getByTestId("neighborhood-search").fill(original);
         await expect(page.getByText(original)).toBeVisible({ timeout: 5000 });
 
@@ -127,17 +125,16 @@ test.describe("Admin — Quartiers (CRUD)", () => {
         await row
             .getByRole("button", { name: /modifier|éditer|edit/i })
             .click();
-        await page.getByLabel(/nom/i).first().clear();
-        await page.getByLabel(/nom/i).first().fill(updated);
-        await page
+        const editDialog = page.getByRole("dialog");
+        await editDialog.getByLabel(/nom/i).clear();
+        await editDialog.getByLabel(/nom/i).fill(updated);
+        await editDialog
             .getByRole("button", {
                 name: /enregistrer|sauvegarder|mettre à jour/i,
             })
             .last()
             .click();
-        await expect(page.getByRole("dialog")).not.toBeVisible({
-            timeout: 5000,
-        });
+        await expect(editDialog).not.toBeVisible({ timeout: 5000 });
         await page.getByTestId("neighborhood-search").fill(updated);
         await expect(page.getByText(updated)).toBeVisible({ timeout: 5000 });
     });
@@ -148,15 +145,14 @@ test.describe("Admin — Quartiers (CRUD)", () => {
         await page
             .getByRole("button", { name: /créer|ajouter|nouveau/i }).first()
             .click();
-        await page.getByLabel(/nom/i).first().fill(name);
-        await page.getByLabel(/ville/i).fill("Paris");
-        await page
+        const dialog = page.getByRole("dialog");
+        await dialog.getByLabel(/nom/i).fill(name);
+        await dialog.getByLabel(/ville/i).fill("Paris");
+        await dialog
             .getByRole("button", { name: /créer|enregistrer|confirmer/i })
             .last()
             .click();
-        await expect(page.getByRole("dialog")).not.toBeVisible({
-            timeout: 5000,
-        });
+        await expect(dialog).not.toBeVisible({ timeout: 5000 });
         await page.getByTestId("neighborhood-search").fill(name);
         await expect(page.getByText(name)).toBeVisible({ timeout: 5000 });
 

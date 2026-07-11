@@ -6,9 +6,9 @@ import { Item, ItemGroup, ItemContent, ItemTitle, ItemDescription, ItemActions }
 import { EmptyBlock, ErrorBlock, FeedCard, Rows } from "./feed-card";
 
 const TYPE_LABEL: Record<string, string> = {
-    service: "pages.dashboard.recoType.service",
-    event: "pages.dashboard.recoType.event",
-    neighbor: "pages.dashboard.recoType.neighbor",
+    service: "recommendations.types.service",
+    event: "recommendations.types.event",
+    neighbor: "recommendations.types.neighbor",
 };
 
 export function RecommendationsCard() {
@@ -42,7 +42,7 @@ export function RecommendationsCard() {
                             </ItemContent>
                             <ItemActions>
                                 <Badge variant="secondary" className="text-[10px]">
-                                    {t(TYPE_LABEL[r.type] ?? "pages.dashboard.recoType.service")}
+                                    {t(TYPE_LABEL[r.type] ?? "recommendations.types.service")}
                                 </Badge>
                             </ItemActions>
                         </Item>

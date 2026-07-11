@@ -9,6 +9,7 @@ import {
     Patch,
     Post,
     Query,
+    Res,
     UseGuards,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
@@ -22,11 +23,18 @@ import {
 } from "@nestjs/swagger";
 import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { Response } from "express";
 import { Model } from "mongoose";
 import { Driver } from "neo4j-driver";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
+import {
+    escapeRegex,
+    parsePagination,
+    resolveSort,
+    setPageHeaders,
+} from "../common/pagination";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { syncLivesIn } from "../social/lives-in.util";
@@ -57,14 +65,62 @@ export class NeighborhoodsController {
 
     @Get()
     @ApiOperation({ summary: "List neighborhoods" })
+    @ApiQuery({
+        name: "search",
+        required: false,
+        example: "lyon",
+        description: "Case-insensitive substring on name or city",
+    })
+    @ApiQuery({
+        name: "sort",
+        required: false,
+        enum: ["createdAt", "name"],
+        description: "Sort field (default: createdAt)",
+    })
+    @ApiQuery({
+        name: "order",
+        required: false,
+        enum: ["asc", "desc"],
+        description: "Sort direction (default: desc)",
+    })
     @ApiQuery({ name: "page", required: false, example: "1" })
     @ApiQuery({ name: "limit", required: false, example: "20" })
     @ApiResponse({ status: 200, type: [NeighborhoodDto] })
-    findAll(@Query("page") page = "1", @Query("limit") limit = "20") {
-        const pageNum = Math.max(1, parseInt(page) || 1);
-        const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
-        const skip = (pageNum - 1) * limitNum;
-        return this.neighborhoodModel.find().skip(skip).limit(limitNum).exec();
+    async findAll(
+        // @Res goes first: a required param can't follow optional @Query params (TS1016).
+        @Res({ passthrough: true }) res: Response,
+        @Query("search") search?: string,
+        @Query("sort") sort?: string,
+        @Query("order") order?: string,
+        @Query("page") page = "1",
+        @Query("limit") limit = "20",
+    ) {
+        const filter: Record<string, unknown> = {};
+        if (typeof search === "string" && search.trim()) {
+            const rx = new RegExp(escapeRegex(search.trim()), "i");
+            filter.$or = [{ name: rx }, { city: rx }];
+        }
+        const { limitNum, skip } = parsePagination(page, limit);
+        const { field, direction } = resolveSort(
+            sort,
+            order,
+            ["createdAt", "name"] as const,
+            "createdAt",
+        );
+        const sortSpec: Record<string, 1 | -1> = {
+            [field]: direction === "asc" ? 1 : -1,
+        };
+        const [rows, total] = await Promise.all([
+            this.neighborhoodModel
+                .find(filter)
+                .sort(sortSpec)
+                .skip(skip)
+                .limit(limitNum)
+                .exec(),
+            this.neighborhoodModel.countDocuments(filter),
+        ]);
+        setPageHeaders(res, total, limitNum);
+        return rows;
     }
 
     // WARNING: static routes must stay declared before @Get(":id") —

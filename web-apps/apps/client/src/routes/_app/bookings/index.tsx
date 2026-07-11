@@ -1,8 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-    BookingsPage,
-    type BookingsTab,
-} from "@/features/bookings/bookings-page";
+import { BookingsPage, type BookingsTab } from "@/features/bookings";
 
 export const Route = createFileRoute("/_app/bookings/")({
     validateSearch: (

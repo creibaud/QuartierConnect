@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
+import { escapeRegex, resolveSort } from "../common/pagination";
 import { CastCommunityVoteDto } from "./dto/cast-community-vote.dto";
 import { CreateCommunityVoteDto } from "./dto/create-community-vote.dto";
 import {
@@ -43,15 +44,49 @@ export class CommunityVotesService {
         return plain;
     }
 
-    async findAllFor(requesterId: string, page = 1, limit = 20) {
+    async findAllFor(
+        requesterId: string,
+        page = 1,
+        limit = 20,
+        search?: string,
+        status?: string,
+        sort?: string,
+        order?: string,
+    ): Promise<{
+        rows: (CommunityVoteDocument | CommunityVote)[];
+        total: number;
+    }> {
         const skip = (page - 1) * limit;
-        const votes = await this.voteModel
-            .find()
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .exec();
-        return votes.map((vote) => this.sanitize(vote, requesterId));
+        const filter: Record<string, unknown> = {};
+        if (search?.trim()) {
+            filter.title = new RegExp(escapeRegex(search.trim()), "i");
+        }
+        // "open" votes are still running; "closed" have passed their deadline.
+        if (status === "open") filter.endsAt = { $gt: new Date() };
+        if (status === "closed") filter.endsAt = { $lte: new Date() };
+        const { field, direction } = resolveSort(
+            sort,
+            order,
+            ["createdAt", "endsAt"] as const,
+            "createdAt",
+        );
+        const sortSpec: Record<string, 1 | -1> = {
+            [field]: direction === "asc" ? 1 : -1,
+        };
+        // Keep .exec() (not .lean()): sanitize() relies on Mongoose documents.
+        const [votes, total] = await Promise.all([
+            this.voteModel
+                .find(filter)
+                .sort(sortSpec)
+                .skip(skip)
+                .limit(limit)
+                .exec(),
+            this.voteModel.countDocuments(filter),
+        ]);
+        return {
+            rows: votes.map((vote) => this.sanitize(vote, requesterId)),
+            total,
+        };
     }
 
     async findOne(id: string): Promise<CommunityVoteDocument> {

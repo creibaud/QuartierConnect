@@ -1,0 +1,2 @@
+export const RECENT_INCIDENTS_LIMIT = 5;
+export const PENDING_ADDRESSES_LIMIT = 3;

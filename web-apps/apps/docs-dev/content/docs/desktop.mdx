@@ -1,0 +1,144 @@
+---
+title: Application desktop
+description: Client JavaFX d'administration, mode hors ligne et synchronisation
+---
+
+L'application desktop `fr.quartierconnect.desktopapp` est un client **JavaFX 21** natif destiné aux **administrateurs et modérateurs**. Elle donne accès à l'administration des incidents du quartier même sans connexion : les données sont mises en cache localement dans SQLite et un `SyncService` réconcilie les modifications avec l'API par une fusion à trois voies inspirée de Git.
+
+Le module Maven `fr.quartierconnect:desktop-app` cible Java 21. Il s'appuie sur JavaFX (`javafx-controls`, `javafx-fxml`), le thème [AtlantaFX](https://mvnrepository.com/artifact/io.github.mkpaz/atlantafx-base), les icônes Ikonli/FontAwesome, le pilote `sqlite-jdbc` (org.xerial), Jackson pour le JSON et `java-keyring` pour le trousseau système. La classe d'amorçage est `fr.quartierconnect.desktopapp.Launcher`, qui délègue à `MainApp` (une `javafx.application.Application`).
+
+## À quoi sert l'application
+
+Au démarrage, `MainApp.start()` initialise la base SQLite (`SQLiteDatabase.initialize()`) puis affiche `LoginView`. La connexion se fait **via le navigateur** : le bouton principal lance un flux SSO PKCE (`startSsoPkceFlow`) dont le retour est capté par un petit serveur de boucle locale `SsoCallbackServer`, puis échangé contre une paire de jetons par `AuthService.exchangeSsoToken` (endpoint `/auth/sso/exchange`). Une connexion directe e-mail / mot de passe / TOTP existe aussi (`AuthService.login` → `/auth/login`). Le rôle (`admin` / `moderator`) est lu dans la charge utile du JWT par `AuthService.getCurrentUserRole()`.
+
+Une fois authentifié, l'utilisateur travaille sur les incidents (`IncidentsView`, `IncidentDetailPane`, `IncidentCreateForm`) : création, changement de statut, résolution de conflits (`ConflictResolutionForm`). Toutes ces actions écrivent d'abord **en local**, puis remontent vers l'API au cycle de synchronisation suivant.
+
+## Mode hors ligne
+
+Le mode hors ligne repose sur trois mécanismes :
+
+- **Reprise de session sans réseau.** `AuthService.tryResumeFromDatabase()` restaure l'e-mail (table `session` de SQLite) et la paire de jetons (via `TokenVault`). Il rend `true` si un access token non expiré est retrouvé, ou s'il ne reste qu'un refresh token — auquel cas la session reste ouverte hors ligne (`isAuthenticated()` renvoie `true` tant qu'un refresh token existe).
+- **Bascule explicite.** `ApiService.setOfflineMode(true)` (piloté par `OfflineModePlugin` depuis la barre supérieure) force chaque appel HTTP à lever une `IOException` immédiate au lieu de tenter le réseau. `ApiService.isReachable()` sonde `/health` avec un délai de 3 s.
+- **Écritures locales d'abord.** `IncidentRepository.insertDirty`, `updateLocally` et `updateStatusLocally` marquent la ligne `is_dirty = 1`. Ces incidents « sales » sont poussés au prochain passage en ligne, sans perte.
+
+En ligne, tout `execute()` d'`ApiService` qui reçoit un `401` tente **un** rafraîchissement (`AuthService.refreshAccessToken`, endpoint `/auth/refresh`) puis rejoue la requête une seule fois.
+
+## Synchronisation — `SyncService`
+
+`SyncService` s'exécute sur un `ScheduledExecutorService` mono-thread (thread démon `sync-worker`). `start()` planifie `poll()` toutes les **30 secondes** (`POLL_INTERVAL_SECONDS`) ; `syncNow()` déclenche un cycle immédiat et `syncNowAndWait()` bloque jusqu'à la fin (utilisé par les tests et certains flux). Un verrou `isSyncing` empêche deux cycles concurrents.
+
+Chaque `poll()` enchaîne :
+
+1. **Jeton valide.** Récupère l'access token ; s'il manque ou est expiré, tente `refreshAccessToken()`. En cas d'échec, notifie « hors ligne » et sort.
+2. **Push.** `pushDirtyIncidents(token)` envoie les incidents `is_dirty = 1 AND is_conflict = 0`.
+3. **Pull.** `pullIncidents(token, justPushed)` récupère les incidents du serveur en évitant de réappliquer ce qu'on vient de pousser.
+4. Journalise le résultat (`SQLiteDatabase.logSync`), notifie l'UI et publie les événements du bus de plugins (`SYNC_STARTED`, `INCIDENTS_CHANGED`, `SYNC_COMPLETED`, ou `SYNC_FAILED`).
+
+<Mermaid
+  chart={`sequenceDiagram
+  participant Sched as scheduler (30s)
+  participant Sync as SyncService.poll
+  participant Auth as AuthService
+  participant Api as API
+  participant Repo as IncidentRepository
+  Sched->>Sync: poll()
+  Sync->>Auth: getAccessToken / refresh si expire
+  Sync->>Repo: listDirty()
+  Sync->>Api: POST /incidents/sync
+  Api-->>Sync: skippedIds
+  Sync->>Repo: markSynced + updateBase (sauf skipped)
+  Sync->>Api: GET /incidents?limit=100&page=N[&since=ts]
+  Api-->>Sync: page d'incidents
+  Sync->>Repo: upsertFromServer (fusion 3 voies)
+  Note over Sync,Repo: tombstoneOrphans seulement apres un full pull complet`}
+/>
+
+### Push — `/incidents/sync`
+
+`pushDirtyIncidents` construit un tableau `{ id, title, description, status, createdBy, updatedAt }` pour chaque incident sale. L'`id` envoyé est le `remote_id` existant, ou un UUID fraîchement tiré si l'incident est purement local. Le corps `{ "incidents": [...] }` est posté sur `/incidents/sync`. La réponse peut contenir un tableau `skippedIds` (`parseSkippedIds`) : ces incidents-là **restent sales** pour une nouvelle tentative. Pour les autres, on affecte le `remote_id` (`assignRemoteId`), on retire le drapeau `is_dirty` (`markSynced`) et on met à jour le cliché de base ancêtre (`updateBase`) qui servira aux fusions ultérieures.
+
+### Pull — `/incidents?since=`
+
+`pullIncidents` pagine tout le périmètre par pages de **100** (`PULL_PAGE_SIZE`), avec une borne de sécurité de `MAX_PULL_PAGES` (10000) contre une boucle infinie. Le chemin est bâti par `buildPullPath` :
+
+- **Premier pull** (aucun horodatage mémorisé) : `/incidents?limit=100&page=N`.
+- **Pulls suivants (delta)** : `/incidents?limit=100&page=N&since=<updatedAt encodé>`, où `since` est le plus récent `updatedAt` observé au pull précédent (`lastPullTimestamp`).
+
+Chaque incident distant non présent dans `justPushed` passe par `IncidentRepository.upsertFromServer`. Le `tombstoneOrphans` — qui supprime localement les incidents que le serveur ne renvoie plus — n'est déclenché **qu'après un premier pull complet** (toutes les pages parcourues) ; un abandon sur `MAX_PULL_PAGES` laisse l'ensemble partiel et n'efface rien.
+
+### Fusion à trois voies — `ThreeWayMerger`
+
+Chaque ligne d'incident conserve trois clichés dans SQLite : la version **locale** (`title`, `description`, `status`), la version **de base** (`base_*`, l'ancêtre commun au dernier point de synchronisation) et, en cas de conflit, la version **distante** en attente (`remote_*`). `IncidentRepository.applyMerge` appelle `ThreeWayMerger.merge(base, local, remote)` champ par champ (titre, description, statut) :
+
+<Mermaid
+  chart={`flowchart TD
+  start["Champ : base, local, remote"]
+  nobase{"base == null ?"}
+  lww["LWW : prendre remote"]
+  lc{"local a change ?"}
+  rc1{"remote a change ?"}
+  rc2{"remote a change ?"}
+  same{"local == remote ?"}
+  keepLocalNoChange["garder local (aucun changement)"]
+  takeRemote["prendre remote"]
+  keepLocal["garder local"]
+  conflict["CONFLIT : is_conflict = 1"]
+  start --> nobase
+  nobase -->|oui| lww
+  nobase -->|non| lc
+  lc -->|non| rc1
+  rc1 -->|non| keepLocalNoChange
+  rc1 -->|oui| takeRemote
+  lc -->|oui| rc2
+  rc2 -->|non| keepLocal
+  rc2 -->|oui| same
+  same -->|oui| keepLocal
+  same -->|non| conflict`}
+/>
+
+- Si **aucun cliché de base** n'existe (jamais synchronisé), on retombe en **dernier-écrit-gagne** (`applyLww`) : le distant écrase le local uniquement si l'incident n'est pas sale et que `serverUpdatedAt` est postérieur.
+- Une fusion **propre** (`applyCleanMerge`) écrit le résultat, remet `is_dirty = 0` et rafraîchit le cliché de base.
+- Un **conflit** sur au moins un champ (`flagConflict`) pose `is_conflict = 1` et stocke les valeurs distantes dans `remote_*`. L'incident apparaît alors dans `listConflicts()` et l'utilisateur tranche via `ConflictResolutionForm` → `resolveConflict(localId, acceptRemote)`, qui réinitialise le cliché de base sur la version retenue.
+
+> Un incident supprimé localement est **tombé** (`deleted_at` renseigné) plutôt que réellement effacé : `upsertFromServer` refuse de le ressusciter tant que le tombstone existe.
+
+## Stockage des jetons — `TokenVault`
+
+`TokenVault` conserve les jetons dans le **trousseau du système d'exploitation** via la bibliothèque `java-keyring` : SecretService sur Linux, Keychain sur macOS, Credential Manager sur Windows. Les entrées utilisent le service `QuartierConnect` et les comptes `access_token` / `refresh_token`. `AuthService.applyTokens` appelle `TokenVault.saveTokens` à chaque connexion ou rafraîchissement, `loadTokens` les restaure au démarrage et `clearTokens` les efface à la déconnexion.
+
+Si aucun backend de trousseau n'est disponible (`BackendNotSupportedException`), `TokenVault` bascule silencieusement sur un stockage **en mémoire uniquement** (jamais sur disque). Les jetons ne sont **jamais** persistés en clair : `SQLiteDatabase.initialize()` va jusqu'à supprimer (`ALTER TABLE ... DROP COLUMN`) d'éventuelles colonnes `access_token` / `refresh_token` héritées de bases pré-trousseau. Seul l'e-mail est mis en cache dans la table `session` (pour l'affichage hors ligne).
+
+## Cache SQLite local
+
+`SQLiteDatabase` ouvre une base fichier `quartierconnect.db` dans le **répertoire de données par utilisateur** de l'OS — un emplacement inscriptible même pour une app installée sous `C:\Program Files` :
+
+| OS | Emplacement |
+|----|-------------|
+| Windows | `%APPDATA%\QuartierConnect` (défaut `~\AppData\Roaming`) |
+| macOS | `~/Library/Application Support/QuartierConnect` |
+| Linux / autres | `$XDG_DATA_HOME/QuartierConnect` (défaut `~/.local/share`) |
+
+La propriété système `-Dsqlite.url` permet de surcharger cette URL (utilisée par les tests, qui pointent sur une base éphémère). `initialize()` crée trois tables si besoin :
+
+- **`incidents`** — cache principal. Outre les champs métier (`title`, `description`, `status`), elle porte les drapeaux `is_dirty` et `is_conflict`, le cliché de base (`base_title`, `base_description`, `base_status`, `base_updated_at`), la version distante en attente (`remote_title`, `remote_description`, `remote_status`) et un marqueur de suppression douce `deleted_at`.
+- **`sync_log`** — historique horodaté (`synced_at`, `success`) alimenté par `logSync`.
+- **`session`** — une ligne (`id = 1`) contenant l'e-mail et `saved_at` pour la reprise hors ligne.
+
+Sur une base vide, `seedIfEmpty` insère des incidents de démonstration (dont deux cas de conflit préparés) afin que l'application soit utilisable sans serveur.
+
+## Système de plugins
+
+L'application est extensible sans modification du code source : un plugin est un JAR découvert au démarrage (`PluginRegistry.loadFromDirectory`) ou enregistré en interne, qui dialogue avec l'application via l'interface `AppContext` — laquelle expose notamment `getIncidentRepository()` (le cache SQLite ci-dessus) et `getEventBus()` (les événements `SYNC_*` publiés par `SyncService`). Six plugins intégrés sont livrés, dont `OfflineModePlugin` (bascule hors ligne) et `ThemePlugin`.
+
+Le contrat complet — cycle de vie, `AppContext`, points d'extension de l'UI, bus d'événements et empaquetage d'un plugin — est décrit sur la page dédiée : **[Plugins](/docs/plugins)**.
+
+## Empaquetage et distribution
+
+Le build produit deux formats à partir du même code :
+
+- **Fat JAR** — le plugin `maven-shade-plugin` assemble toutes les dépendances dans `target/quartierconnect-desktop.jar` (manifeste `Main-Class: fr.quartierconnect.desktopapp.Launcher`, `module-info.class` exclu). C'est le livrable « Portable (Java) » exécutable sur toute JVM.
+- **Installeurs natifs** — le script `packaging/jpackage-build.sh` (et son équivalent PowerShell `.ps1`) appelle `jpackage` sur le JAR avec un runtime réduit (`--add-modules`). `jpackage` ne produit que pour l'OS courant, donc la CI de release l'exécute sur chaque plateforme : **`.deb` / `.rpm` / `.tar.gz`** sur Linux, **`.dmg`** sur macOS, **`.msi`** sur Windows. Le type par défaut dépend de l'OS ; `tar.gz` construit d'abord une `app-image` portable puis l'archive.
+
+L'URL du serveur ciblé est **gravée dans le JAR** au build : `packaging/write-server-properties.sh` écrit un `server.properties` (`api.url` / `web.url`) à partir de `QC_SERVER_URL`, et `ServerConfig` le lit en priorité — après `-Dapi.url=...`, avant les défauts `localhost`. Un JAR téléchargé depuis une instance déployée pointe donc automatiquement vers elle, sans configuration.
+
+Les artefacts sont servis en production par Caddy sous **`/telechargements/*`** (`file_server` sur `/srv/downloads`, voir [Déploiement](/docs/deploiement)). Le back-office propose leur téléchargement via le composant `DownloadDesktopDialog` (`web-apps/apps/admin/src/components/download-desktop-dialog.tsx`), qui liste Windows (`.msi`), macOS (`.dmg`), Linux (`.deb` / `.rpm` / `.tar.gz`) et le JAR portable. Enfin, `UpdateService` (lancé en arrière-plan par `MainApp`) signale par un toast lorsqu'une version plus récente est disponible.

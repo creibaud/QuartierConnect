@@ -96,25 +96,78 @@ Un code **TOTP** (30 s de validité, 6 chiffres) est exigé, en plus de la sessi
 
 Deux limitations de débit protègent le flux : la connexion est plafonnée à **5 tentatives par 15 minutes**, le renouvellement de jeton à **10 par minute**.
 
-## Pagination
+## Pagination et listes
 
-Les endpoints de liste acceptent deux paramètres de requête :
+Les endpoints de liste partagent un **contrat commun** implémenté dans `api/src/common/pagination.ts` (`parsePagination`, `resolveSort`, `escapeLike` / `escapeRegex`, `setPageHeaders`). Recherche, tri et filtres sont appliqués **côté serveur** — ils portent donc sur l'ensemble des données correspondantes, pas seulement sur la page déjà chargée. Chaque endpoint accepte les paramètres de requête suivants :
+
+| Paramètre | Rôle | Défaut |
+|-----------|------|--------|
+| `page` | Numéro de page (à partir de `1`) | `1` |
+| `limit` | Taille de page — bornée à l'intervalle `1`–`100` par `parsePagination` | `20` |
+| `search` | Sous-chaîne insensible à la casse (champs selon l'endpoint) | — |
+| `sort` | Champ de tri (liste blanche par endpoint) | `createdAt` |
+| `order` | Sens du tri : `asc` ou `desc` | `desc` |
 
 ```
-GET /incidents?page=1&limit=20
+GET /incidents?page=2&limit=20&search=poutre&sort=createdAt&order=desc
 ```
 
-- `page` — numéro de page (à partir de `1`).
-- `limit` — taille de page, **plafonnée à 100**.
+### Filtres par endpoint
 
-La pagination s'applique notamment aux utilisateurs, incidents, quartiers, votes communautaires, messages, historique de points et transactions.
+À ces paramètres communs s'ajoutent des filtres propres à chaque liste, ainsi que les champs sur lesquels porte `search` et la liste blanche de `sort` :
 
-### Filtres additionnels
+| Endpoint | Filtres additionnels | `search` porte sur | Champs `sort` autorisés |
+|----------|----------------------|--------------------|-------------------------|
+| `GET /incidents` | `status` (`open`/`in_progress`/`resolved`), `category` (`neighborhood`/`reporting`/`bug`) | titre + description | `createdAt`, `updatedAt`, `status` |
+| `GET /services` | `category`, `type` (`free`/`paid`/`exchange`), `direction` (`offer`/`request`) | titre + description | `createdAt`, `title` |
+| `GET /events` | `category`, `date` (`YYYY-MM-DD`, jour entier) | titre | `createdAt`, `date`, `title` |
+| `GET /neighborhoods` | — | nom + ville | `createdAt`, `name` |
+| `GET /community-votes` | `status` (`open`/`closed`, selon `endsAt`) | titre | `createdAt`, `endsAt` |
+| `GET /users` (admin) | `role` (`resident`/`moderator`/`admin`/`banned`, valeur inconnue ignorée) | email | `createdAt`, `email`, `role` |
 
-Certains endpoints de liste acceptent des paramètres supplémentaires, appliqués **côté serveur** — le filtrage porte donc sur l'ensemble des données, pas seulement sur la page déjà chargée :
+### Corps de réponse et métadonnées
 
-- `GET /incidents?since=<ISO>` — synchronisation delta : ne renvoie que les incidents modifiés après l'horodatage ISO fourni (comparaison sur `updatedAt`). Utilisé par le pull incrémental du client bureautique. Une valeur non parsable renvoie `400`.
-- `GET /users?search=<sous-chaîne>&role=<rôle>` (admin) — filtre les comptes par sous-chaîne d'email (insensible à la casse) et par rôle, avec tri par date de création (`createdAt`). Un `role` inconnu est ignoré.
+Le **corps de la réponse reste un tableau nu** d'entités — inchangé pour les consommateurs existants, notamment le pull incrémental du client bureautique (`GET /incidents?since=…`). Les métadonnées de pagination voyagent dans deux **en-têtes de réponse** posés par `setPageHeaders` :
+
+- `X-Total-Count` — nombre total d'éléments correspondant au filtre, toutes pages confondues.
+- `X-Total-Pages` — nombre total de pages (`ceil(total / limit)`, au minimum `1`).
+
+Ces deux en-têtes sont **exposés via CORS** (`exposedHeaders` dans `api/src/main.ts`) afin d'être lisibles depuis le navigateur. Côté web, le helper `apiGetPage` (`web-apps/packages/shared/src/lib/api.ts`) les lit et renvoie `{ data, total, totalPages }` ; en leur absence il retombe sur `data.length` et `1`.
+
+```http
+GET /incidents?page=2&limit=20&status=open HTTP/1.1
+Authorization: Bearer <accessToken>
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+X-Total-Count: 137
+X-Total-Pages: 7
+
+[
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "title": "Poutre fissurée hall B",
+    "status": "open",
+    "category": "neighborhood",
+    "createdAt": "2026-07-08T09:12:00.000Z"
+  }
+]
+```
+
+### Robustesse des entrées
+
+Deux garde-fous du contrat neutralisent les entrées malveillantes :
+
+- **`search` échappé** — le terme est toujours interprété littéralement. Sur les stores PostgreSQL (incidents, utilisateurs) `escapeLike` échappe `%`, `_` et `\` avant le `ILIKE` ; sur les stores MongoDB (services, événements, quartiers, votes) `escapeRegex` échappe les métacaractères d'expression régulière avant le `$regex`. Aucune injection de motif `LIKE` ni de regex Mongo n'est donc possible.
+- **`sort` en liste blanche** — `resolveSort` compare le champ demandé à la liste autorisée de l'endpoint et retombe sur `createdAt` si la valeur est inconnue ; une valeur `sort` forgée ne peut jamais atteindre la requête. `order` n'accepte que `asc`, toute autre valeur (ou son absence) donnant `desc`.
+
+Les filtres MongoDB n'acceptent par ailleurs que des chaînes (`typeof … === "string"`), ce qui bloque l'injection d'opérateurs de type `?category[$ne]=`.
+
+### Synchronisation delta (client bureautique)
+
+- `GET /incidents?since=<ISO>` — synchronisation delta : ne renvoie que les incidents modifiés après l'horodatage ISO fourni (comparaison sur `updatedAt`). Utilisé par le pull incrémental du client bureautique JavaFX. Une valeur non parsable renvoie `400`. Ce paramètre s'ajoute aux paramètres communs sans altérer le format de réponse (toujours un tableau nu).
 
 ## Rôles et autorisations
 

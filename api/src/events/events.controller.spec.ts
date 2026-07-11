@@ -1,6 +1,7 @@
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
+import type { Response } from "express";
 import { GeocodingService } from "../geocoding/geocoding.service";
 import { SocialService } from "../social/social.service";
 import { EventsController } from "./events.controller";
@@ -22,6 +23,28 @@ const authReq = (
     role = "resident",
     neighborhoodId: string | null = "n1",
 ) => ({ user: { sub, role, neighborhoodId } });
+
+// Minimal Response stub: findAll only touches setHeader for the count headers.
+const mockRes = () => ({ setHeader: jest.fn() }) as unknown as Response;
+
+// Thin wrapper so the tests keep their focus on category/date/req without
+// repeating the search/sort/order/pagination positional arguments.
+function listEvents(
+    controller: EventsController,
+    opts: { category?: string; date?: string; req: unknown },
+) {
+    return controller.findAll(
+        mockRes(),
+        opts.category,
+        opts.date,
+        undefined,
+        undefined,
+        undefined,
+        "1",
+        "20",
+        opts.req as any,
+    );
+}
 
 describe("EventsController", () => {
     let controller: EventsController;
@@ -48,6 +71,7 @@ describe("EventsController", () => {
                     interestedUserIds: ["user-uuid-1"],
                 }),
             }),
+            countDocuments: jest.fn().mockResolvedValue(1),
         };
 
         socialService = {
@@ -72,25 +96,16 @@ describe("EventsController", () => {
     });
 
     it("GET /events returns list scoped to the caller's neighborhood", async () => {
-        const result = await controller.findAll(
-            undefined,
-            undefined,
-            "1",
-            "20",
-            authReq() as any,
-        );
+        const result = await listEvents(controller, { req: authReq() });
         expect(result).toHaveLength(1);
         expect(model.find).toHaveBeenCalledWith({ neighborhoodId: "n1" });
     });
 
     it("GET /events?category=community filters by category", async () => {
-        await controller.findAll(
-            "community",
-            undefined,
-            "1",
-            "20",
-            authReq() as any,
-        );
+        await listEvents(controller, {
+            category: "community",
+            req: authReq(),
+        });
         expect(model.find).toHaveBeenCalledWith(
             expect.objectContaining({
                 neighborhoodId: "n1",
@@ -100,13 +115,7 @@ describe("EventsController", () => {
     });
 
     it("GET /events?date=2026-06-15 filters by date range", async () => {
-        await controller.findAll(
-            undefined,
-            "2026-06-15",
-            "1",
-            "20",
-            authReq() as any,
-        );
+        await listEvents(controller, { date: "2026-06-15", req: authReq() });
         expect(model.find).toHaveBeenCalledWith(
             expect.objectContaining({
                 date: expect.objectContaining({ $gte: expect.any(Date) }),
@@ -115,25 +124,17 @@ describe("EventsController", () => {
     });
 
     it("GET /events returns [] when the caller has no neighborhood", async () => {
-        const result = await controller.findAll(
-            undefined,
-            undefined,
-            "1",
-            "20",
-            authReq("user-uuid-1", "resident", null) as any,
-        );
+        const result = await listEvents(controller, {
+            req: authReq("user-uuid-1", "resident", null),
+        });
         expect(result).toEqual([]);
         expect(model.find).not.toHaveBeenCalled();
     });
 
     it("GET /events lets an admin list across all neighborhoods", async () => {
-        await controller.findAll(
-            undefined,
-            undefined,
-            "1",
-            "20",
-            authReq("admin1", "admin", null) as any,
-        );
+        await listEvents(controller, {
+            req: authReq("admin1", "admin", null),
+        });
         const calledFilter = model.find.mock.calls[0][0];
         expect(calledFilter).not.toHaveProperty("neighborhoodId");
     });

@@ -129,7 +129,7 @@ export function NavUser() {
                                 <HugeiconsIcon
                                     icon={THEME_ICON[theme] ?? MonitorDotIcon}
                                 />
-                                {t("adminPages.theme.label")}
+                                {t("common.theme.label")}
                             </DropdownMenuSubTrigger>
                             <DropdownMenuSubContent>
                                 <DropdownMenuRadioGroup
@@ -142,17 +142,17 @@ export function NavUser() {
                                 >
                                     <DropdownMenuRadioItem value="light">
                                         <HugeiconsIcon icon={Sun01Icon} />
-                                        {t("adminPages.theme.light")}
+                                        {t("common.theme.light")}
                                     </DropdownMenuRadioItem>
                                     <DropdownMenuRadioItem value="dark">
                                         <HugeiconsIcon icon={Moon01Icon} />
-                                        {t("adminPages.theme.dark")}
+                                        {t("common.theme.dark")}
                                     </DropdownMenuRadioItem>
                                     <DropdownMenuRadioItem value="system">
                                         <HugeiconsIcon
                                             icon={MonitorDotIcon}
                                         />
-                                        {t("adminPages.theme.system")}
+                                        {t("common.theme.system")}
                                     </DropdownMenuRadioItem>
                                 </DropdownMenuRadioGroup>
                             </DropdownMenuSubContent>

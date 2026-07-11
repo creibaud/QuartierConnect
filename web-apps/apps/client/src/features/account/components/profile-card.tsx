@@ -1,12 +1,11 @@
 import { useRef, useState, type ChangeEvent } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Camera02Icon,
     PencilEdit02Icon,
     UserIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { assetUrl } from "@workspace/shared/lib/api";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import {
@@ -30,6 +29,7 @@ import {
 } from "@workspace/ui/components/card";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
+import { toast } from "sonner";
 import { resizeImageToBlob } from "@/features/account/lib/avatar";
 
 export function ProfileCard() {
@@ -49,7 +49,9 @@ export function ProfileCard() {
     const role = profile?.role ?? jwtUser?.role ?? "resident";
     const baseFirst = profile?.firstName ?? jwtUser?.firstName ?? "";
     const baseLast = profile?.lastName ?? jwtUser?.lastName ?? "";
-    const avatarSrc = profile?.avatarUrl ? assetUrl(profile.avatarUrl) : undefined;
+    const avatarSrc = profile?.avatarUrl
+        ? assetUrl(profile.avatarUrl)
+        : undefined;
 
     const shownFirst = editing ? firstName : (baseFirst ?? "");
     const shownLast = editing ? lastName : (baseLast ?? "");
@@ -183,6 +185,7 @@ export function ProfileCard() {
                                 ref={fileRef}
                                 type="file"
                                 accept="image/*"
+                                aria-label={t("pages.account.changePhoto")}
                                 className="hidden"
                                 onChange={handleFile}
                             />
@@ -207,7 +210,9 @@ export function ProfileCard() {
                                 <Input
                                     id="profile-last"
                                     value={lastName}
-                                    onChange={(e) => setLastName(e.target.value)}
+                                    onChange={(e) =>
+                                        setLastName(e.target.value)
+                                    }
                                 />
                             </div>
                         </div>

@@ -1,0 +1,140 @@
+---
+title: Variables d'environnement
+description: Référence consolidée des variables d'environnement de la stack
+---
+
+Cette page recense **toutes** les variables d'environnement consommées par QuartierConnect : l'API NestJS, les conteneurs de base de données, Caddy et les scripts d'exploitation. Chaque entrée renvoie à l'emplacement réel qui la lit (`api/src/…`, `docker/docker-compose.yml`, `scripts/…`) — aucune variable n'est inventée. Deux templates servent de point de départ : `.env.example` (développement local) et `docker/.env.prod.example` (production).
+
+## Chargement et précédence
+
+L'API charge la configuration en deux temps. Au tout début du bootstrap, `api/src/env-loader.ts` lit un fichier `.env` — d'abord à la racine du `cwd`, puis `../.env` — et n'affecte une variable **que si elle est encore indéfinie** (`process.env[key] === undefined`). Ensuite, `ConfigModule.forRoot({ envFilePath: [".env", "../.env"] })` (`api/src/app.module.ts`) expose ces valeurs via `ConfigService`.
+
+En conteneur, Docker Compose injecte lui-même l'environnement : le bloc `env_file: ../.env` charge le `.env` de la racine, et le bloc `environment:` du service `api` **surcharge** certaines valeurs (noms d'hôtes internes `mongo`/`postgres`/`neo4j`, `PYTHON_BIN: python3`, `DSL_PATH: /app/dsl`…). Comme `env-loader` ne réécrit jamais une variable déjà posée, ces surcharges Compose l'emportent.
+
+<Mermaid
+  chart={`flowchart LR
+  subgraph host["Exécution sur l'hôte (dev)"]
+    envfile[".env (racine)"] --> loader["env-loader.ts<br/>pose si indéfini"]
+    loader --> proc["process.env"]
+  end
+  subgraph docker["Exécution en conteneur"]
+    ef["env_file: ../.env"] --> compose["environment: (surcharge)<br/>hôtes internes, PYTHON_BIN…"]
+    compose --> proc2["process.env"]
+  end
+  proc --> cfg["ConfigService"]
+  proc2 --> cfg`}
+/>
+
+> **Contraintes sur les secrets.** Le healthcheck Mongo du `docker-compose.yml` interpole `MONGO_ROOT_PASSWORD` dans une commande shell : un mot de passe contenant une **espace** ou les caractères `<` `>` casse le démarrage. Il faut aussi garder chaque mot de passe synchronisé entre sa variable et l'URI qui l'embarque (`MONGO_ROOT_PASSWORD` ↔ `MONGO_URI`, `POSTGRES_PASSWORD` ↔ `POSTGRES_URL`, `NEO4J_PASSWORD` ↔ `NEO4J_AUTH`).
+
+## Runtime NestJS
+
+| Variable | Rôle | Exemple / défaut | Requis |
+|----------|------|------------------|--------|
+| `PORT` | Port d'écoute de l'API (`app.listen`, `api/src/main.ts`) | `5000` (défaut si absent) | Non |
+| `NODE_ENV` | Active le flag `Secure` des cookies de refresh quand vaut `production` (`api/src/auth/auth.controller.ts`) | `production` en prod, non défini en dev | Non |
+
+## Authentification JWT
+
+| Variable | Rôle | Exemple / défaut | Requis |
+|----------|------|------------------|--------|
+| `JWT_SECRET` | Clé de signature HS256 des tokens (`api/src/auth/auth.module.ts`, `jwt.strategy.ts`, `messaging.module.ts`). L'API **refuse de démarrer** si absente (`throw new Error("JWT_SECRET env var is required")`). | `openssl rand -base64 48 \| tr -d '/+='` | **Oui** |
+| `JWT_ACCESS_EXPIRES_IN` | Présente dans les templates, **non lue** par le code : la durée de l'access token est codée en dur (`expiresIn: "15m"` dans `token.service.ts` / `auth.module.ts`). | `15m` | Non (voir note) |
+| `JWT_REFRESH_EXPIRES_IN` | Idem : la durée du refresh token est codée en dur (`expiresIn: "7d"` dans `token.service.ts`). | `7d` | Non (voir note) |
+
+> **`JWT_*_EXPIRES_IN` sont inertes.** Les deux variables figurent dans `.env.example` et `docker/.env.prod.example` pour la lisibilité, mais aucun `configService.get` ne les consulte. Modifier leur valeur n'a **aucun effet** ; changer les durées suppose d'éditer `api/src/auth/token.service.ts`.
+
+## TOTP / démo
+
+| Variable | Rôle | Exemple / défaut | Requis |
+|----------|------|------------------|--------|
+| `DEMO_TOTP_SECRET` | Secret base32 partagé par les comptes de démonstration semés par `scripts/seed-demo.ts`. Le script **échoue** si la variable est absente (`requireDemoTotpSecret`). Non lue par l'API en runtime. | `JBSWY3DPEHPK3PXP` (exemple) ; en prod, générer un base32 unique | Requis pour le seed uniquement |
+
+> **Ne jamais réutiliser le secret d'exemple en production.** Générer un secret propre : `python3 -c "import base64,os;print(base64.b32encode(os.urandom(20)).decode())"`.
+
+## CORS
+
+| Variable | Rôle | Exemple / défaut | Requis |
+|----------|------|------------------|--------|
+| `CORS_ORIGINS` | Liste d'origines autorisées, séparées par des virgules, lue par `api/src/main.ts` (REST) **et** `api/src/messaging/messaging.gateway.ts` (WebSocket). | Prod : `https://quartierconnect.fr`. Défaut si absente : origines de dev (`http://localhost`, `:3000`, `:3001`, `:5000`) | Non |
+
+## Rate limiting
+
+| Variable | Rôle | Exemple / défaut | Requis |
+|----------|------|------------------|--------|
+| `LOGIN_RATE_LIMIT` | Nombre de tentatives de login autorisées par IP sur une fenêtre de 15 min (`@Throttle`, `api/src/auth/auth.controller.ts`). Élevée en dev/test, basse en prod. | `parseInt(… ?? "5")` → défaut **5** ; `100` en local | Non |
+
+## PostgreSQL
+
+| Variable | Rôle | Exemple / défaut | Requis |
+|----------|------|------------------|--------|
+| `POSTGRES_USER` | Utilisateur du conteneur `postgres` (`docker-compose.yml`). | `qc` (défaut Compose `${POSTGRES_USER:-qc}`) | Non |
+| `POSTGRES_PASSWORD` | Mot de passe du conteneur `postgres`. Sans défaut Compose. | `openssl rand -base64 32 \| tr -d '/+='` | **Oui** (conteneur) |
+| `POSTGRES_DB` | Nom de la base créée à l'init. | `quartierconnect` (défaut Compose) | Non |
+| `POSTGRES_URL` | Chaîne de connexion lue par l'API (`api/src/database/drizzle.module.ts`). | `postgresql://qc:<pwd>@postgres:5432/quartierconnect` ; défaut local `postgresql://postgres:postgres@localhost:5432/quartierconnect` | Non (défaut fourni) |
+| `DATABASE_URL` | **Fallback secondaire** de `POSTGRES_URL` (`?? config.get("DATABASE_URL")`), pour les hébergeurs qui l'imposent. Absente des templates. | — | Non |
+
+## MongoDB
+
+| Variable | Rôle | Exemple / défaut | Requis |
+|----------|------|------------------|--------|
+| `MONGO_ROOT_USER` | Utilisateur root du conteneur `mongo` (`MONGO_INITDB_ROOT_USERNAME`). | `root` (défaut Compose `${MONGO_ROOT_USER:-root}`) | Non |
+| `MONGO_ROOT_PASSWORD` | Mot de passe root du conteneur `mongo` ; interpolé dans le healthcheck. Sans défaut Compose. | `openssl rand -base64 24` | **Oui** (conteneur) |
+| `MONGO_URI` | URI de connexion lue par l'API (`api/src/app.module.ts`, `MongooseModule`). | `mongodb://root:<pwd>@mongo:27017/quartierconnect?authSource=admin` ; défaut `mongodb://localhost:27017/quartierconnect` | Non (défaut fourni) |
+
+## Neo4j
+
+| Variable | Rôle | Exemple / défaut | Requis |
+|----------|------|------------------|--------|
+| `NEO4J_URI` | URI Bolt lue par l'API (`api/src/social/neo4j/neo4j.provider.ts`). | `bolt://neo4j:7687` ; défaut `bolt://localhost:7687` | Non (défaut fourni) |
+| `NEO4J_USER` | Utilisateur Neo4j côté API. | `neo4j` (défaut) | Non |
+| `NEO4J_PASSWORD` | Mot de passe Neo4j côté API. | Défaut : chaîne vide `""` | Recommandé |
+| `NEO4J_AUTH` | Credentials du conteneur `neo4j` au format `user/password` (`docker-compose.yml`). À garder synchronisé avec `NEO4J_USER`/`NEO4J_PASSWORD`. | `neo4j/<mot de passe fort>` | **Oui** (conteneur) |
+
+## DSL Python (PLY)
+
+| Variable | Rôle | Exemple / défaut | Requis |
+|----------|------|------------------|--------|
+| `PYTHON_BIN` | Interpréteur Python utilisé par `pythonia` pour lancer le moteur DSL. En conteneur : `python3` ; en local, le venv du DSL. | `./dsl/.venv/bin/python` (local) / `python3` (conteneur) | Non |
+| `DSL_PATH` | Répertoire contenant `main.py` du DSL, lu par `api/src/dsl/dsl.service.ts`. | `/app/dsl` (conteneur) ; défaut `<cwd>/dsl` | Non (défaut fourni) |
+
+## Documentation protégée (Caddy `basic_auth`)
+
+Les sites `/dev`, `/docs`, `/scalar` sont protégés au bord par Caddy (`docker-compose.yml`, service `caddy`).
+
+| Variable | Rôle | Exemple / défaut | Requis |
+|----------|------|------------------|--------|
+| `DOCS_AUTH_USER` | Identifiant `basic_auth`. | `admin` (prod) ; défaut Compose `docs` | Non |
+| `DOCS_AUTH_HASH` | Hash **bcrypt** du mot de passe. Généré par `caddy hash-password`. | `$$2a$$14$$…` (voir note) ; un hash de démo sert de défaut Compose | Recommandé (prod) |
+
+> **Doubler les `$` du hash.** Docker Compose interprète les `$` des valeurs de `.env` (via `--env-file`, utilisé par les scripts de déploiement). Chaque `$` du hash bcrypt doit être doublé en `$$`, sinon le hash est corrompu au démarrage et `basic_auth` casse. Exemple : `$2a$14$abc…` → `$$2a$$14$$abc…`.
+
+## Domaine et Caddy
+
+| Variable | Rôle | Exemple / défaut | Requis |
+|----------|------|------------------|--------|
+| `SITE_ADDRESS` | Adresse servie par Caddy (`docker/Caddyfile`, `docker/docker-compose.prod.yml`). Un domaine public active l'auto-HTTPS Let's Encrypt ; **vide** = HTTP sur `:80`. | `quartierconnect.fr` | Prod |
+| `PROD_DOMAIN` | Domaine public (sans `https://`) ciblé par `scripts/deploy-vps.sh` / `smoke-test.sh`. | `quartierconnect.fr` | Prod |
+
+## Sauvegardes off-site
+
+Optionnelles, consommées par `scripts/backup-all.sh` (archivage S3-compatible : AWS S3, Scaleway, Backblaze B2…).
+
+| Variable | Rôle | Exemple / défaut | Requis |
+|----------|------|------------------|--------|
+| `BACKUP_BUCKET` | Bucket de destination des dumps. Vide = pas d'upload off-site. | `qc-backups` | Non |
+| `BACKUP_S3_ENDPOINT` | Endpoint S3 personnalisé (fournisseur non-AWS). | `https://s3.fr-par.scw.cloud` | Non |
+| `AWS_ACCESS_KEY_ID` | Clé d'accès (lue par `awscli`). | — | Non |
+| `AWS_SECRET_ACCESS_KEY` | Clé secrète (lue par `awscli`). | — | Non |
+| `AWS_DEFAULT_REGION` | Région du bucket. | `fr-par` | Non |
+| `BACKUP_RETENTION_DAYS` | Rétention locale des dumps, en jours. | `7` (défaut) | Non |
+
+## Notifications ops
+
+| Variable | Rôle | Exemple / défaut | Requis |
+|----------|------|------------------|--------|
+| `DISCORD_WEBHOOK` | Webhook Discord pour les alertes de déploiement et d'échec de backup (`scripts/deploy-vps.sh`, `scripts/backup-all.sh`). | `https://discord.com/api/webhooks/…` | Non |
+
+## Géocodage
+
+Le géocodage **n'a aucune variable d'environnement**. `api/src/geocoding/geocoding.service.ts` interroge directement l'endpoint public Nominatim (`https://nominatim.openstreetmap.org/search`), avec un `User-Agent` et un throttle ~1 req/s codés en dur, sans clé API. Aucune configuration n'est donc requise ni possible pour ce service.

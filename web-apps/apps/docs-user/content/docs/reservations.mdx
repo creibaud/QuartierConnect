@@ -1,0 +1,108 @@
+---
+title: Vos réservations
+description: Suivre vos demandes de services payants, les accepter, les refuser ou les annuler
+---
+
+La page **Réservations** rassemble toutes les demandes de services payants qui vous concernent : celles que vous avez envoyées à un voisin, et celles qu'un voisin vous a adressées. C'est votre point de suivi entre le moment où une réservation est demandée et celui où l'échange se conclut par un contrat signé et un transfert de points.
+
+Chaque réservation apparaît sous forme de carte qui rappelle l'essentiel : le **service** concerné, le **nombre de points** en jeu, la **date** de la demande et son **statut** du moment.
+
+## Deux onglets : Reçues et Envoyées
+
+La page se divise en deux onglets, et le compteur entre parenthèses vous indique combien de réservations se trouvent dans chacun :
+
+- **Reçues** : les demandes qu'un voisin vous a adressées sur l'un de vos services payants. C'est ici que vous **acceptez** ou **refusez** une demande en attente.
+- **Envoyées** : les réservations que vous avez vous-même demandées à un voisin. Vous y suivez leur avancement et pouvez les **annuler**.
+
+Un même échange se retrouve donc dans l'onglet **Envoyées** chez le demandeur, et dans l'onglet **Reçues** chez la personne qui va rendre le service. À l'ouverture, la page affiche l'onglet **Reçues** ; si vous n'avez que des demandes envoyées, elle vous place directement sur **Envoyées**.
+
+## Demander une réservation
+
+On ne crée pas une réservation depuis cette page : elle naît toujours d'un **service payant**. Depuis la fiche d'une annonce payante, sur la page [Services entre voisins](/docs/services), vous demandez la réservation. Le **nombre de points est calculé automatiquement** à partir du barème du service (sa durée et son éventuel multiplicateur) : vous n'avez pas à le fixer vous-même.
+
+La demande apparaît alors aussitôt dans votre onglet **Envoyées**, au statut **En attente**.
+
+Quelques garde-fous s'appliquent au moment de la demande :
+
+- seuls les services **payants** peuvent être réservés ;
+- vous ne pouvez pas réserver **votre propre** annonce ;
+- un service **fermé** n'est plus réservable ;
+- vous ne pouvez pas envoyer une seconde demande tant qu'une réservation reste **active** (en attente ou acceptée) sur le même service.
+
+## Le statut d'une réservation
+
+Chaque carte porte un **statut** qui vous dit où en est la réservation :
+
+| Statut | Ce que cela signifie |
+|--------|----------------------|
+| En attente | La demande est envoyée ; le propriétaire du service ne s'est pas encore prononcé. |
+| Acceptée | Le propriétaire a accepté : un contrat vient d'être généré. |
+| Refusée | Le propriétaire a décliné la demande. Aucun point n'est échangé. |
+| Annulée | La réservation a été annulée avant sa conclusion. Aucun point n'est échangé. |
+| Terminée | Le contrat a été entièrement signé et le transfert de points réglé. |
+
+Ces statuts s'enchaînent toujours dans le même ordre : une réservation commence **En attente**, puis suit l'une des issues ci-dessous.
+
+<Mermaid
+  chart={`stateDiagram-v2
+  state "En attente" as Attente
+  state "Acceptée" as Acceptee
+  state "Refusée" as Refusee
+  state "Annulée" as Annulee
+  state "Terminée" as Terminee
+  [*] --> Attente
+  Attente --> Acceptee : le propriétaire accepte
+  Attente --> Refusee : le propriétaire refuse
+  Attente --> Annulee : le demandeur annule
+  Acceptee --> Terminee : contrat entièrement signé
+  Acceptee --> Annulee : annulation avant signature complète
+  Terminee --> [*]`}
+/>
+
+## Accepter ou refuser une demande reçue
+
+Dans l'onglet **Reçues**, toute demande encore **En attente** vous propose deux boutons : **Accepter** et **Refuser**.
+
+- **Accepter** fait passer la réservation au statut **Acceptée** et déclenche la création automatique d'un **contrat** entre vous et le demandeur. Les points correspondants sont dès lors **réservés** en attendant les signatures. Un bouton **Voir le contrat** apparaît alors sur la carte pour rejoindre directement le document.
+- **Refuser** clôt la demande au statut **Refusée**. Rien n'est prélevé, et le demandeur en est informé.
+
+> Seul le propriétaire du service peut accepter ou refuser une demande reçue. Si une action ne peut pas aboutir, un court message **« Action impossible »** vous le signale, sans que rien ne change.
+
+## Annuler une réservation
+
+Depuis l'onglet **Envoyées**, un bouton **Annuler** est disponible sur vos réservations tant qu'elles sont **En attente** ou **Acceptée**. L'annulation fait passer la réservation au statut **Annulée**.
+
+Si la réservation avait déjà donné lieu à un contrat, l'annulation **libère les points réservés** et **annule le contrat** associé. Une limite importante s'applique toutefois :
+
+> Une réservation ne peut plus être annulée une fois que le **contrat est entièrement signé**. Le paiement étant alors réglé, l'échange est considéré comme conclu et la réservation passe au statut **Terminée**. L'annulation reste possible **tant que le contrat n'est pas entièrement signé**.
+
+## De la réservation au contrat et au transfert de points
+
+Une réservation acceptée n'est pas la fin du parcours : elle ouvre la voie au contrat qui formalise l'échange, puis au transfert de points qui le conclut.
+
+1. Vous **acceptez** une demande reçue : un **contrat** est généré automatiquement, et les points sont **réservés**.
+2. Les deux parties **signent** le contrat. La signature se déroule en trois temps (lecture des termes, tracé de votre signature manuscrite, puis confirmation par votre code à six chiffres).
+3. Dès la **dernière signature**, le **transfert de points** se déclenche automatiquement et scelle l'échange. La réservation bascule alors au statut **Terminée**.
+
+Pour tout ce qui concerne la signature, le suivi et le PDF du contrat, reportez-vous à la page [Contrats et signature](/docs/contrats). Pour comprendre comment le transfert crédite et débite les comptes, consultez la page [Points et récompenses](/docs/points).
+
+<Mermaid
+  chart={`flowchart LR
+  demande["Un voisin<br/>demande la réservation"]
+  accept["Vous acceptez<br/>(onglet Reçues)"]
+  contrat(["Contrat généré<br/>points réservés"])
+  signature["Les deux parties<br/>signent le contrat"]
+  termine(["Réservation terminée<br/>points transférés"])
+  demande --> accept
+  accept --> contrat
+  contrat --> signature
+  signature --> termine`}
+/>
+
+## En résumé
+
+- La page **Réservations** suit vos demandes de services payants dans deux onglets : **Reçues** (à accepter ou refuser) et **Envoyées** (à suivre ou annuler).
+- Une réservation naît toujours d'un **service payant** ; ses points sont calculés **automatiquement** selon le barème.
+- Le **statut** (En attente, Acceptée, Refusée, Annulée, Terminée) vous indique où en est chaque échange.
+- Accepter une demande **génère un contrat** et **réserve les points** ; le transfert se règle **à la dernière signature**.
+- L'annulation reste possible **tant que le contrat n'est pas entièrement signé**.

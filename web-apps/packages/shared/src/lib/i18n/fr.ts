@@ -303,6 +303,20 @@ export default {
         sidebar: {
             residentSpace: "Espace résident",
         },
+        errors: {
+            notFound: {
+                badge: "Erreur 404",
+                title: "Page introuvable",
+                description: "La page demandée n'existe pas ou a été déplacée.",
+            },
+            generic: {
+                badge: "Erreur",
+                title: "Une erreur est survenue",
+                description:
+                    "Un problème inattendu a interrompu l'affichage de cette page. Veuillez réessayer ou revenir à l'accueil.",
+            },
+            backHome: "Retour à l'accueil",
+        },
         login: {
             pageTitle: "Connexion",
             subtitle: "Connexion à votre compte",
@@ -475,11 +489,6 @@ export default {
                 "Les services proposés près de chez toi apparaîtront ici.",
             noTransactionsHint:
                 "Participe à la vie du quartier pour gagner tes premiers points.",
-            recoType: {
-                service: "Service",
-                event: "Événement",
-                neighbor: "Voisin",
-            },
             quickActions: "Actions rapides",
             moderation: {
                 title: "Espace modération",
@@ -911,21 +920,6 @@ export default {
             banned: "Banni",
             deleted: "Supprimé",
         },
-        serviceCategories: {
-            gardening: "Jardinage",
-            handyman: "Bricolage",
-            transport: "Transport",
-            shopping: "Courses",
-            childcare: "Garde d'enfants",
-            "it-support": "Aide informatique",
-            other: "Autre",
-        },
-        theme: {
-            label: "Thème",
-            light: "Clair",
-            dark: "Sombre",
-            system: "Système",
-        },
         meta: {
             description:
                 "Console d'administration QuartierConnect — gestion des quartiers, incidents, services et résidents.",
@@ -1087,7 +1081,6 @@ export default {
             directionOffer: "Offre",
             directionRequest: "Demande",
             typeLabel: "Type *",
-            types: { free: "Gratuit", paid: "Payant", exchange: "Échange" },
             addressLabel: "Adresse",
             addressPlaceholder: "Ex : 12 rue de la Paix",
             pointsMultiplierLabel: "Multiplicateur de points",
@@ -1186,8 +1179,6 @@ export default {
             errorBadge: "Erreur",
             resultCount_one: "{{count}} résultat",
             resultCount_other: "{{count}} résultats",
-            countResult_one: "résultat",
-            countResult_other: "résultats",
             noRows: "Aucun enregistrement",
             viewTable: "Tableau",
             viewJson: "JSON",

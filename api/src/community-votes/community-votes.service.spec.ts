@@ -74,6 +74,7 @@ const mockModel = {
     find: jest.fn(),
     findById: jest.fn(),
     findOneAndUpdate: jest.fn(),
+    countDocuments: jest.fn().mockResolvedValue(1),
 };
 
 describe("CommunityVotesService", () => {
@@ -307,7 +308,8 @@ describe("CommunityVotesService", () => {
         ]);
         mockModel.find.mockReturnValue(queryResolving([anonymousVote]));
 
-        const [vote] = await service.findAllFor("user1");
+        const { rows } = await service.findAllFor("user1");
+        const [vote] = rows;
 
         expect(vote.casts).toHaveLength(1);
         expect(vote.casts.map((c) => c.userId)).toEqual(["user1"]);
@@ -320,7 +322,8 @@ describe("CommunityVotesService", () => {
         };
         mockModel.find.mockReturnValue(queryResolving([publicVote]));
 
-        const [vote] = await service.findAllFor("user1");
+        const { rows } = await service.findAllFor("user1");
+        const [vote] = rows;
 
         expect(vote.casts).toHaveLength(2);
         expect(vote.casts.map((c) => c.userId)).toEqual([

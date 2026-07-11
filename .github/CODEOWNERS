@@ -9,8 +9,6 @@
 /docker/                     @MouhamadouNDIAYE @creibaud
 /scripts/                    @MouhamadouNDIAYE @creibaud
 /ops/                        @MouhamadouNDIAYE @creibaud
-/docs/DEPLOYMENT.md          @MouhamadouNDIAYE @creibaud
-/docs/RUNBOOK.md             @MouhamadouNDIAYE @creibaud
 Makefile                     @MouhamadouNDIAYE @creibaud
 
 # Documentation et tests — Andras

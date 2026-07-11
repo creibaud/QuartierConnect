@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
+import type { Response } from "express";
 import { ServiceBooking } from "../bookings/schemas/service-booking.schema";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import { GeocodingService } from "../geocoding/geocoding.service";
@@ -32,6 +33,34 @@ const authReq = (
 ) => ({
     user: { sub, role, neighborhoodId },
 });
+
+// Minimal Response stub: findAll only touches setHeader for the count headers.
+const mockRes = () => ({ setHeader: jest.fn() }) as unknown as Response;
+
+// Thin wrapper so the tests keep their focus on the domain filters without
+// repeating the search/sort/order/pagination positional arguments.
+function listServices(
+    controller: ServicesController,
+    opts: {
+        category?: string;
+        type?: string;
+        direction?: string;
+        req: unknown;
+    },
+) {
+    return controller.findAll(
+        mockRes(),
+        opts.category,
+        opts.type,
+        opts.direction,
+        undefined,
+        undefined,
+        undefined,
+        "1",
+        "20",
+        opts.req as any,
+    );
+}
 
 describe("ServicesController", () => {
     let controller: ServicesController;
@@ -62,6 +91,7 @@ describe("ServicesController", () => {
             findByIdAndDelete: jest.fn().mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockService),
             }),
+            countDocuments: jest.fn().mockResolvedValue(1),
         };
 
         responseModel = {
@@ -116,27 +146,13 @@ describe("ServicesController", () => {
     });
 
     it("GET /services returns all (no filter)", async () => {
-        const result = await controller.findAll(
-            undefined,
-            undefined,
-            undefined,
-            "1",
-            "20",
-            authReq() as any,
-        );
+        const result = await listServices(controller, { req: authReq() });
         expect(result).toHaveLength(1);
         expect(model.find).toHaveBeenCalledWith({ neighborhoodId: "n1" });
     });
 
     it("GET /services?category=home filters by category", async () => {
-        await controller.findAll(
-            "home",
-            undefined,
-            undefined,
-            "1",
-            "20",
-            authReq() as any,
-        );
+        await listServices(controller, { category: "home", req: authReq() });
         expect(model.find).toHaveBeenCalledWith({
             neighborhoodId: "n1",
             category: "home",
@@ -144,14 +160,7 @@ describe("ServicesController", () => {
     });
 
     it("GET /services?type=free filters by type", async () => {
-        await controller.findAll(
-            undefined,
-            "free",
-            undefined,
-            "1",
-            "20",
-            authReq() as any,
-        );
+        await listServices(controller, { type: "free", req: authReq() });
         expect(model.find).toHaveBeenCalledWith({
             neighborhoodId: "n1",
             type: "free",
@@ -167,26 +176,19 @@ describe("ServicesController", () => {
                 lean: jest.fn().mockResolvedValue([]),
             }),
         });
-        const result = await controller.findAll(
-            "invalid-category",
-            undefined,
-            undefined,
-            "1",
-            "20",
-            authReq() as any,
-        );
+        const result = await listServices(controller, {
+            category: "invalid-category",
+            req: authReq(),
+        });
         expect(result).toHaveLength(0);
     });
 
     it("GET /services?category=home&type=free filters by both", async () => {
-        await controller.findAll(
-            "home",
-            "free",
-            undefined,
-            "1",
-            "20",
-            authReq() as any,
-        );
+        await listServices(controller, {
+            category: "home",
+            type: "free",
+            req: authReq(),
+        });
         expect(model.find).toHaveBeenCalledWith({
             neighborhoodId: "n1",
             category: "home",
@@ -195,14 +197,10 @@ describe("ServicesController", () => {
     });
 
     it("GET /services?direction=offer filters by direction", async () => {
-        await controller.findAll(
-            undefined,
-            undefined,
-            "offer",
-            "1",
-            "20",
-            authReq() as any,
-        );
+        await listServices(controller, {
+            direction: "offer",
+            req: authReq(),
+        });
         expect(model.find).toHaveBeenCalledWith({
             neighborhoodId: "n1",
             direction: "offer",
@@ -218,14 +216,7 @@ describe("ServicesController", () => {
                     { serviceId: "svc-id-1", responderId: "me" },
                 ]),
         });
-        const result = await controller.findAll(
-            undefined,
-            undefined,
-            undefined,
-            "1",
-            "20",
-            req as any,
-        );
+        const result = await listServices(controller, { req });
         expect(result[0]).toMatchObject({
             responderCount: 1,
             hasResponded: true,
@@ -241,14 +232,7 @@ describe("ServicesController", () => {
                     { serviceId: "svc-id-1", responderId: "other-user" },
                 ]),
         });
-        const result = await controller.findAll(
-            undefined,
-            undefined,
-            undefined,
-            "1",
-            "20",
-            req as any,
-        );
+        const result = await listServices(controller, { req });
         expect(result[0]).toMatchObject({
             responderCount: 1,
             hasResponded: false,
@@ -259,27 +243,13 @@ describe("ServicesController", () => {
         const req = {
             user: { sub: "u", role: "resident", neighborhoodId: null },
         };
-        const result = await controller.findAll(
-            undefined,
-            undefined,
-            undefined,
-            "1",
-            "20",
-            req as any,
-        );
+        const result = await listServices(controller, { req });
         expect(result).toEqual([]);
     });
 
     it("GET /services admin with no neighborhoodId sees all services (no scope)", async () => {
         const req = { user: { sub: "admin1", role: "admin" } };
-        const result = await controller.findAll(
-            undefined,
-            undefined,
-            undefined,
-            "1",
-            "20",
-            req as any,
-        );
+        const result = await listServices(controller, { req });
         expect(result).not.toEqual([]);
         const calledFilter = model.find.mock.calls[0][0];
         expect(calledFilter).not.toHaveProperty("neighborhoodId");
@@ -289,28 +259,14 @@ describe("ServicesController", () => {
         const req = {
             user: { sub: "mod1", role: "moderator", neighborhoodId: "n9" },
         };
-        await controller.findAll(
-            undefined,
-            undefined,
-            undefined,
-            "1",
-            "20",
-            req as any,
-        );
+        await listServices(controller, { req });
         const calledFilter = model.find.mock.calls[0][0];
         expect(calledFilter).toMatchObject({ neighborhoodId: "n9" });
     });
 
     it("GET /services returns [] for a moderator with no neighborhood", async () => {
         const req = { user: { sub: "mod1", role: "moderator" } };
-        const result = await controller.findAll(
-            undefined,
-            undefined,
-            undefined,
-            "1",
-            "20",
-            req as any,
-        );
+        const result = await listServices(controller, { req });
         expect(result).toEqual([]);
     });
 
