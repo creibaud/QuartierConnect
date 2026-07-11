@@ -73,7 +73,10 @@ describe("Community votes list contract (e2e)", () => {
 
         const day = 24 * 60 * 60 * 1000;
         // Two open (future deadline) + one closed (past deadline).
-        await createVote(`${tag}-alpha`, new Date(Date.now() + day).toISOString());
+        await createVote(
+            `${tag}-alpha`,
+            new Date(Date.now() + day).toISOString(),
+        );
         await createVote(
             `${tag}-bravo`,
             new Date(Date.now() + 2 * day).toISOString(),
@@ -128,7 +131,9 @@ describe("Community votes list contract (e2e)", () => {
 
     it("sorts by endsAt ascending when asked", async () => {
         const res = await request(app.getHttpServer())
-            .get(`/community-votes?search=${tag}&sort=endsAt&order=asc&limit=100`)
+            .get(
+                `/community-votes?search=${tag}&sort=endsAt&order=asc&limit=100`,
+            )
             .set("Authorization", `Bearer ${token}`)
             .expect(200);
         const titles = res.body.map((v: { title: string }) => v.title);

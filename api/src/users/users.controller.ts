@@ -37,7 +37,11 @@ import type { Response } from "express";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
-import { parsePagination, resolveSort, setPageHeaders } from "../common/pagination";
+import {
+    parsePagination,
+    resolveSort,
+    setPageHeaders,
+} from "../common/pagination";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { UpdateRoleDto } from "./dto/update-role.dto";
@@ -246,7 +250,10 @@ export class UsersController {
                 .from(schema.users)
                 .where(where)
                 // Secondary key keeps pagination stable when the sort field ties.
-                .orderBy(direction === "asc" ? asc(col) : desc(col), schema.users.id)
+                .orderBy(
+                    direction === "asc" ? asc(col) : desc(col),
+                    schema.users.id,
+                )
                 .offset(skip)
                 .limit(limitNum),
             this.db.select({ value: count() }).from(schema.users).where(where),

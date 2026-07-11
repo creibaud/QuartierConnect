@@ -52,7 +52,10 @@ export class CommunityVotesService {
         status?: string,
         sort?: string,
         order?: string,
-    ): Promise<{ rows: (CommunityVoteDocument | CommunityVote)[]; total: number }> {
+    ): Promise<{
+        rows: (CommunityVoteDocument | CommunityVote)[];
+        total: number;
+    }> {
         const skip = (page - 1) * limit;
         const filter: Record<string, unknown> = {};
         if (search?.trim()) {
