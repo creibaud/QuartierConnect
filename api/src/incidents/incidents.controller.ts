@@ -12,6 +12,7 @@ import {
     Post,
     Query,
     Request,
+    Res,
     UseGuards,
 } from "@nestjs/common";
 import {
@@ -22,11 +23,18 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
-import { and, desc, eq, gt, isNull, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, ilike, isNull, or, sql } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { Response } from "express";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
+import {
+    escapeLike,
+    parsePagination,
+    resolveSort,
+    setPageHeaders,
+} from "../common/pagination";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { CreateIncidentDto } from "./dto/create-incident.dto";
@@ -97,6 +105,30 @@ export class IncidentsController {
         description: "Filter by status",
     })
     @ApiQuery({
+        name: "category",
+        required: false,
+        enum: ["neighborhood", "reporting", "bug"],
+        description: "Filter by category",
+    })
+    @ApiQuery({
+        name: "search",
+        required: false,
+        example: "poutre",
+        description: "Case-insensitive substring on title or description",
+    })
+    @ApiQuery({
+        name: "sort",
+        required: false,
+        enum: ["createdAt", "updatedAt", "status"],
+        description: "Sort field (default: createdAt)",
+    })
+    @ApiQuery({
+        name: "order",
+        required: false,
+        enum: ["asc", "desc"],
+        description: "Sort direction (default: desc)",
+    })
+    @ApiQuery({
         name: "page",
         required: false,
         example: "1",
@@ -122,17 +154,20 @@ export class IncidentsController {
     })
     @ApiResponse({ status: 400, description: "Invalid status or since" })
     @ApiResponse({ status: 401, description: "Not authenticated" })
-    findAll(
+    async findAll(
+        // @Res goes first: a required param can't follow optional @Query params (TS1016).
+        @Res({ passthrough: true }) res: Response,
         @Query("status") status?: string,
+        @Query("category") category?: string,
+        @Query("search") search?: string,
+        @Query("sort") sort?: string,
+        @Query("order") order?: string,
         @Query("page") page = "1",
         @Query("limit") limit = "20",
         @Query("since") since?: string,
-        // Default required by TS1016: a required param can't follow optional @Query params.
         @Request() req: AuthRequest = { user: { sub: "", role: "" } },
     ) {
-        const pageNum = Math.max(1, parseInt(page) || 1);
-        const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
-        const skip = (pageNum - 1) * limitNum;
+        const { limitNum, skip } = parsePagination(page, limit);
 
         // Non-admins see only their own quartier's incidents.
         const isAdmin = req.user.role === "admin";
@@ -165,6 +200,17 @@ export class IncidentsController {
             }
             conditions.push(eq(schema.incidents.status, status));
         }
+        if (typeof category === "string" && category) {
+            conditions.push(eq(schema.incidents.category, category));
+        }
+        if (typeof search === "string" && search.trim()) {
+            const term = `%${escapeLike(search.trim())}%`;
+            const bySearch = or(
+                ilike(schema.incidents.title, term),
+                ilike(schema.incidents.description, term),
+            );
+            if (bySearch) conditions.push(bySearch);
+        }
         if (since) {
             // Delta sync for the desktop client; a full pull omits this parameter.
             const sinceDate = new Date(since);
@@ -174,13 +220,35 @@ export class IncidentsController {
             conditions.push(gt(schema.incidents.updatedAt, sinceDate));
         }
 
-        return this.db
-            .select()
-            .from(schema.incidents)
-            .where(and(...conditions))
-            .orderBy(desc(schema.incidents.createdAt))
-            .offset(skip)
-            .limit(limitNum);
+        const where = and(...conditions);
+        const sortMap = {
+            createdAt: schema.incidents.createdAt,
+            updatedAt: schema.incidents.updatedAt,
+            status: schema.incidents.status,
+        } as const;
+        const { field, direction } = resolveSort(
+            sort,
+            order,
+            ["createdAt", "updatedAt", "status"] as const,
+            "createdAt",
+        );
+        const col = sortMap[field];
+
+        const [rows, [{ value: total }]] = await Promise.all([
+            this.db
+                .select()
+                .from(schema.incidents)
+                .where(where)
+                .orderBy(direction === "asc" ? asc(col) : desc(col))
+                .offset(skip)
+                .limit(limitNum),
+            this.db
+                .select({ value: count() })
+                .from(schema.incidents)
+                .where(where),
+        ]);
+        setPageHeaders(res, Number(total), limitNum);
+        return rows;
     }
 
     @Get(":id")
