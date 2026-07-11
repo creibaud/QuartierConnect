@@ -132,7 +132,7 @@ export function NeighborhoodsPage() {
             >
                 <div className="space-y-4">
                     <NeighborhoodsTable
-                        neighborhoods={rows}
+                        neighborhoods={rows as Neighborhood[]}
                         sort={sort}
                         order={order}
                         onSort={handleSort}

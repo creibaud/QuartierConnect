@@ -137,7 +137,7 @@ export function AdminEventsPage() {
                 >
                     <div className="space-y-4">
                         <EventsTable
-                            events={rows}
+                            events={rows as Event[]}
                             neighborhoodNames={neighborhoodNames}
                             sort={sort}
                             order={order}
