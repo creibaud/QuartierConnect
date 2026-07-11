@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Add01Icon, CustomerServiceIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -71,9 +71,15 @@ export function AdminServicesPage() {
         neighborhoods.map((n) => [n._id, n.name]),
     );
 
-    useEffect(() => {
+    function handleSearchChange(value: string) {
+        setSearch(value);
         setPage(1);
-    }, [debouncedSearch, categoryFilter]);
+    }
+
+    function handleCategoryChange(value: string) {
+        setCategoryFilter(value);
+        setPage(1);
+    }
 
     function refreshList() {
         queryClient.invalidateQueries({ queryKey: ["admin-services"] });
@@ -125,9 +131,9 @@ export function AdminServicesPage() {
                         </TabsList>
                         <ServicesFilters
                             search={search}
-                            onSearchChange={setSearch}
+                            onSearchChange={handleSearchChange}
                             categoryFilter={categoryFilter}
-                            onCategoryChange={setCategoryFilter}
+                            onCategoryChange={handleCategoryChange}
                         />
                     </div>
                     <TabsContent value="list">

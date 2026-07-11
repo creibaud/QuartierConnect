@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Add01Icon, Calendar01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -54,9 +54,10 @@ export function AdminEventsPage() {
         neighborhoods.map((n) => [n._id, n.name]),
     );
 
-    useEffect(() => {
+    function handleSearchChange(value: string) {
+        setSearch(value);
         setPage(1);
-    }, [debouncedSearch]);
+    }
 
     function refreshList() {
         queryClient.invalidateQueries({ queryKey: ["admin-events"] });
@@ -96,7 +97,7 @@ export function AdminEventsPage() {
                     }
                 />
 
-                <EventsSearch value={search} onChange={setSearch} />
+                <EventsSearch value={search} onChange={handleSearchChange} />
 
                 <DataState
                     loading={isLoading}

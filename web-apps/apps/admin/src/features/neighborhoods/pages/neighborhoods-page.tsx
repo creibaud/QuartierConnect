@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Add01Icon, Building01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -53,9 +53,10 @@ export function NeighborhoodsPage() {
     const others = allNeighborhoods ?? [];
     const deleteNeighborhood = useDeleteNeighborhood();
 
-    useEffect(() => {
+    function handleSearchChange(value: string) {
+        setSearch(value);
         setPage(1);
-    }, [debouncedSearch]);
+    }
 
     function refreshList() {
         queryClient.invalidateQueries({ queryKey: ["admin-neighborhoods"] });
@@ -94,7 +95,7 @@ export function NeighborhoodsPage() {
                 }
             />
 
-            <NeighborhoodsSearch value={search} onChange={setSearch} />
+            <NeighborhoodsSearch value={search} onChange={handleSearchChange} />
 
             <DataState
                 loading={isLoading}

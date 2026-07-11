@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { UserMultipleIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -46,9 +46,15 @@ export function UsersPage() {
     const updateRole = useUpdateUserRole();
     const currentUserId = getCurrentUser()?.sub ?? null;
 
-    useEffect(() => {
+    function handleSearchChange(value: string) {
+        setSearch(value);
         setPage(1);
-    }, [debouncedSearch, roleFilter]);
+    }
+
+    function handleRoleFilterChange(value: string) {
+        setRoleFilter(value);
+        setPage(1);
+    }
 
     function handleSort(field: string) {
         setPage(1);
@@ -107,9 +113,9 @@ export function UsersPage() {
 
                 <UsersFilters
                     search={search}
-                    onSearchChange={setSearch}
+                    onSearchChange={handleSearchChange}
                     roleFilter={roleFilter}
-                    onRoleFilterChange={setRoleFilter}
+                    onRoleFilterChange={handleRoleFilterChange}
                 />
 
                 <DataState

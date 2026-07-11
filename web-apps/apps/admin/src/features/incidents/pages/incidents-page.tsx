@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
     Alert01Icon,
@@ -68,9 +68,15 @@ export function AdminIncidentsPage() {
     const updateStatus = useUpdateIncidentStatus();
     const deleteIncident = useDeleteIncident();
 
-    useEffect(() => {
+    function handleCategoryChange(value: string) {
+        setCategoryFilter(value);
         setPage(1);
-    }, [statusFilter, categoryFilter]);
+    }
+
+    function handleStatusChange(value: string) {
+        setStatusFilter(value);
+        setPage(1);
+    }
 
     function refreshList() {
         queryClient.invalidateQueries({ queryKey: ["admin-incidents"] });
@@ -122,9 +128,9 @@ export function AdminIncidentsPage() {
                     actions={
                         <IncidentsFilters
                             categoryFilter={categoryFilter}
-                            onCategoryChange={setCategoryFilter}
+                            onCategoryChange={handleCategoryChange}
                             statusFilter={statusFilter}
-                            onStatusChange={setStatusFilter}
+                            onStatusChange={handleStatusChange}
                         />
                     }
                 />
