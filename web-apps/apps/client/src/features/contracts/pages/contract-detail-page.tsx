@@ -17,9 +17,9 @@ import {
     StatusBadge,
     statusTone,
 } from "@workspace/ui/components/status-badge";
-import { ContractAuditTimeline } from "./contract-audit-timeline";
-import { ContractPdfViewer } from "./contract-pdf-viewer";
-import { SignContractDialog } from "./sign-contract-dialog";
+import { ContractAuditTimeline } from "../components/contract-audit-timeline";
+import { ContractPdfViewer } from "../components/contract-pdf-viewer";
+import { SignContractDialog } from "../components/sign-contract-dialog";
 
 export function ContractDetailPage({ id }: { id: string }) {
     const { t } = useTranslation();

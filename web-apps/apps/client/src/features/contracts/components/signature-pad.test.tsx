@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { SignaturePad } from "../signature-pad";
+import { SignaturePad } from "./signature-pad";
 
 const h = vi.hoisted(() => ({
     pad: { empty: true, dataUrl: "data:image/png;base64,DRAWN" },

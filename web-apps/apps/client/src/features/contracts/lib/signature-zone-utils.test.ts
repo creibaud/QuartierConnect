@@ -9,7 +9,7 @@ import {
     signersMissingZones,
     signerZoneColor,
     SIGNER_ZONE_COLORS,
-} from "../signature-zone-utils";
+} from "./signature-zone-utils";
 
 function zone(overrides: Partial<SignatureZone> = {}): SignatureZone {
     return {

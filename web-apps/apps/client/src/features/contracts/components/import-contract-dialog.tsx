@@ -21,7 +21,7 @@ import { type Neighbor, SignatoryPicker } from "./signatory-picker";
 import {
     signersMissingZones,
     signerZoneColor,
-} from "./signature-zone-utils";
+} from "../lib/signature-zone-utils";
 
 type ImportStep = "upload" | "placement";
 type FileErrorKey = "fileNotPdf" | "fileTooLarge";

@@ -20,7 +20,7 @@ import {
     type Neighbor,
     neighborInitials,
     useNeighborSearch,
-} from "./use-neighbor-search";
+} from "../hooks/use-neighbor-search";
 
 export type { Neighbor };
 

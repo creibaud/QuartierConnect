@@ -10,7 +10,7 @@ import type {
 import { Button } from "@workspace/ui/components/button";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Document, Page, pdfjs } from "react-pdf";
-import { moveZone, placeZone, resizeZone } from "./signature-zone-utils";
+import { moveZone, placeZone, resizeZone } from "../lib/signature-zone-utils";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     "pdfjs-dist/build/pdf.worker.min.mjs",

@@ -1,5 +1,5 @@
 import { createFileRoute, useParams } from "@tanstack/react-router";
-import { ContractDetailPage } from "@/features/contracts/contract-detail-page";
+import { ContractDetailPage } from "@/features/contracts";
 
 export const Route = createFileRoute("/_app/contracts/$id")({
     component: ContractDetailRoute,
