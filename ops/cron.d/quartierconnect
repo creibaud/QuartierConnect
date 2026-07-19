@@ -1,11 +1,16 @@
 # QuartierConnect — scheduled jobs
-#   cp ops/cron.d/quartierconnect /etc/cron.d/quartierconnect
-#   chmod 644 /etc/cron.d/quartierconnect
+#   sudo cp ops/cron.d/quartierconnect /etc/cron.d/quartierconnect
+#   sudo chmod 644 /etc/cron.d/quartierconnect
+#
+# Runs as root: /var/backups/quartierconnect and /var/log/quartierconnect are
+# root-owned, and the backup needs docker exec. Adjust the checkout path below
+# if the deployment lives somewhere other than /home/ubuntu.
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # Daily database backup at 2am
-0 2 * * *   deploy   cd /home/deploy/QuartierConnect && ./scripts/backup-all.sh >> /var/log/quartierconnect/cron-backup.log 2>&1
+0 2 * * *   root   cd /home/ubuntu/QuartierConnect && ./scripts/backup-all.sh >> /var/log/quartierconnect/cron-backup.log 2>&1
 
-# Weekly Docker cleanup (Sunday 4am) — images/cache older than 7 days
-0 4 * * 0   deploy   docker system prune -af --filter "until=168h" >> /var/log/quartierconnect/cron-prune.log 2>&1
+# Weekly Docker cleanup (Sunday 4am) — images/cache older than 7 days.
+# Skipping it lets the build cache grow until a deploy fails on a full disk.
+0 4 * * 0   root   docker system prune -af --filter "until=168h" >> /var/log/quartierconnect/cron-prune.log 2>&1
