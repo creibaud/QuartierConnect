@@ -25,12 +25,12 @@ notify() {
 }
 
 PREV_SHA="$(git rev-parse HEAD)"
-echo "▶ Déploiement de '${REF}' (rollback possible vers ${PREV_SHA:0:8})"
+echo "▶ Deploying '${REF}' (rollback available to ${PREV_SHA:0:8})"
 
 # 1. Pre-deploy backup (best effort)
 if [ -x ./scripts/backup-all.sh ]; then
-  echo "▶ Backup pré-déploiement…"
-  ./scripts/backup-all.sh || echo "⚠ Backup KO — on continue le déploiement"
+  echo "▶ Pre-deploy backup…"
+  ./scripts/backup-all.sh || echo "⚠ Backup failed — carrying on with the deploy"
 fi
 
 # 2. Fetch the target ref
@@ -47,13 +47,13 @@ $COMPOSE up -d --force-recreate caddy
 
 # 4. Smoke test → automatic rollback on failure
 if ./scripts/smoke-test.sh "$DOMAIN"; then
-  echo "✓ Déploiement OK sur ${REF}"
+  echo "✓ Deploy OK on ${REF}"
   # Keep the demo accounts' TOTP in sync with DEMO_TOTP_SECRET (best effort).
   ./scripts/seed-prod-demo.sh || true
-  notify "🟢 Deploy OK : ${REF} → ${DOMAIN}"
+  notify "🟢 Deploy OK: ${REF} → ${DOMAIN}"
 else
-  echo "✗ Smoke test KO — rollback vers ${PREV_SHA:0:8}" >&2
+  echo "✗ Smoke test failed — rolling back to ${PREV_SHA:0:8}" >&2
   ./scripts/rollback.sh "$PREV_SHA"
-  notify "🔴 Deploy KO → rollback ${PREV_SHA:0:8}"
+  notify "🔴 Deploy failed → rollback ${PREV_SHA:0:8}"
   exit 1
 fi

@@ -4,8 +4,8 @@ import { isTabular } from "../lib/result-format";
 import { JsonView } from "./json-view";
 import { ResultTable } from "./result-table";
 
-/** Rend le résultat DSL : gros nombre pour COUNT, tableau pour un tableau
- *  d'objets (avec bascule JSON), JSON coloré sinon. */
+/** Renders a DSL result: big number for COUNT, table for an array of objects
+ *  (with a JSON toggle), highlighted JSON otherwise. */
 export function ResultView({ result }: { result: unknown }) {
     const { t } = useTranslation();
     const [asJson, setAsJson] = useState(false);

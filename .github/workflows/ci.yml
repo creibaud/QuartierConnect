@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    # Seul job à commenter la PR (rapport de coverage lcov)
+    # Only job that comments on the PR (lcov coverage report)
     permissions:
       contents: read
       pull-requests: write
@@ -73,7 +73,7 @@ jobs:
       JWT_SECRET: ci-test-secret-min-32-chars-long-xx
       JWT_ACCESS_EXPIRES_IN: 15m
       JWT_REFRESH_EXPIRES_IN: 7d
-      DEMO_TOTP_SECRET: JBSWY3DPEHPK3PXP
+      DEMO_TOTP_SECRET: 4PX635D55YS6JJV3NYIXKZPREIO6YIIV
       LOGIN_RATE_LIMIT: "100"
       CORS_ORIGINS: http://localhost:3000,http://localhost:3001
       PORT: "5000"
@@ -125,7 +125,7 @@ jobs:
           path: api/coverage/
           retention-days: 7
 
-      - name: Commentaire coverage en PR
+      - name: Comment coverage on PR
         if: github.event_name == 'pull_request'
         uses: romeovs/lcov-reporter-action@87a815f34ec27a5826abba44ce09bbc688da58fd # v0.4.0
         with:
@@ -271,7 +271,7 @@ jobs:
         working-directory: dsl
         run: uv run pytest -v
 
-  # Vérifie que make validate-fast passe (source de vérité locale)
+  # Checks that make validate-fast passes (the local source of truth)
   make-validate:
     name: make validate-fast
     runs-on: ubuntu-latest
@@ -315,7 +315,7 @@ jobs:
       - name: Validate
         run: make validate-fast
 
-  # Job de synthèse pour la branch protection
+  # Rollup job for branch protection
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
@@ -326,7 +326,7 @@ jobs:
         run: |
           if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ] || \
              [ "${{ contains(needs.*.result, 'cancelled') }}" = "true" ]; then
-            echo "::error::Au moins un job CI a échoué"
+            echo "::error::At least one CI job failed"
             exit 1
           fi
-          echo "✓ Tous les jobs ont réussi"
+          echo "✓ All jobs passed"

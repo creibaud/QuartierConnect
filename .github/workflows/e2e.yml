@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: "Branche à tester (défaut : la branche du dispatch)"
+        description: "Branch to test (defaults to the dispatch branch)"
         required: false
         default: ""
 
@@ -52,7 +52,7 @@ jobs:
             api/pnpm-lock.yaml
             web-apps/pnpm-lock.yaml
 
-      - name: Préparer le .env de CI
+      - name: Write the CI .env
         run: |
           cat > .env <<'EOF'
           PORT=5000
@@ -70,19 +70,19 @@ jobs:
           NEO4J_AUTH=neo4j/testpass1234
           NEO4J_USER=neo4j
           NEO4J_PASSWORD=testpass1234
-          DEMO_TOTP_SECRET=JBSWY3DPEHPK3PXP
+          DEMO_TOTP_SECRET=4PX635D55YS6JJV3NYIXKZPREIO6YIIV
           LOGIN_RATE_LIMIT=100
           CORS_ORIGINS=http://localhost,http://localhost:3000,http://localhost:3001
           EOF
 
-      - name: Démarrer la stack Docker
+      - name: Start the Docker stack
         run: docker compose -f docker/docker-compose.yml --env-file .env up -d --build
 
-      - name: Attendre que l'API soit prête
+      - name: Wait for the API
         run: |
           for i in {1..90}; do
             if curl -fs http://localhost/api/health > /dev/null 2>&1; then
-              echo "API ready après ${i} essais"; exit 0
+              echo "API ready after ${i} attempts"; exit 0
             fi
             sleep 2
           done
@@ -97,7 +97,7 @@ jobs:
         working-directory: web-apps
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Appliquer les migrations Postgres (Drizzle)
+      - name: Run Postgres migrations (Drizzle)
         working-directory: api
         env:
           DATABASE_URL: postgresql://qc:testpass@localhost:5432/quartierconnect
@@ -105,13 +105,13 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm exec drizzle-kit migrate
 
-      - name: Seed des comptes démo
-        # DEMO_TOTP_SECRET : le script n'a plus de fallback, la valeur doit
-        # correspondre à celle du .env de CI (conteneur api) ci-dessus.
+      - name: Seed demo accounts
+        # DEMO_TOTP_SECRET: the script has no fallback anymore, so the value
+        # must match the CI .env (api container) above.
         run: |
           cd api && pnpm install --frozen-lockfile
           API_URL=http://localhost/api PG_CONTAINER=docker-postgres-1 \
-            DEMO_TOTP_SECRET=JBSWY3DPEHPK3PXP \
+            DEMO_TOTP_SECRET=4PX635D55YS6JJV3NYIXKZPREIO6YIIV \
             pnpm exec tsx ../scripts/seed-demo.ts || echo "Seed failed"
 
       - name: Setup Python
@@ -129,7 +129,7 @@ jobs:
           key: uv-${{ runner.os }}-${{ hashFiles('dsl/uv.lock') }}
           restore-keys: uv-${{ runner.os }}-
 
-      - name: Préparer le venv du DSL (pythonia)
+      - name: Prepare the DSL venv (pythonia)
         working-directory: dsl
         run: uv sync --frozen
 
@@ -169,15 +169,15 @@ jobs:
             web-apps/test-results/
           retention-days: 14
 
-      - name: Dump logs en cas d'échec
+      - name: Dump logs on failure
         if: failure()
         run: docker compose -f docker/docker-compose.yml --env-file .env logs --tail=200
 
-      - name: Notification Discord
+      - name: Discord notification
         if: failure() && env.DISCORD_WEBHOOK != ''
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           curl -X POST -H 'Content-Type: application/json' \
-            -d '{"content":"🔴 **E2E nightly KO** — `${{ github.ref_name }}` — voir [run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"}' \
+            -d '{"content":"🔴 **E2E nightly failed** — `${{ github.ref_name }}` — see [run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"}' \
             "$DISCORD_WEBHOOK"

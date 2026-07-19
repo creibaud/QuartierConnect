@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag de la release"
+        description: "Release tag"
         required: true
 
 permissions:
@@ -30,7 +30,7 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Cibler le serveur déployé
+      - name: Point at the deployed server
         env:
           QC_SERVER_URL: ${{ vars.QC_SERVER_URL }}
         run: bash desktop-app/packaging/write-server-properties.sh
@@ -39,7 +39,7 @@ jobs:
         working-directory: desktop-app
         run: ./mvnw -B clean package -DskipTests
 
-      - name: Générer le changelog
+      - name: Generate the changelog
         id: changelog
         run: |
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
@@ -54,7 +54,7 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Publier sur GitHub Releases
+      - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
           name: ${{ github.event.inputs.tag || github.ref_name }}
@@ -87,7 +87,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   installers:
-    name: Installateur ${{ matrix.type }} (${{ matrix.os }})
+    name: Installer ${{ matrix.type }} (${{ matrix.os }})
     needs: jar
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -129,7 +129,7 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Calculer la version
+      - name: Compute the version
         id: ver
         shell: bash
         run: echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
@@ -154,7 +154,7 @@ jobs:
             sudo apt-get update -qq && sudo apt-get install -y -qq xvfb
             xvfb-run -a "desktop-app/target/installer/QuartierConnect/bin/QuartierConnect" > smoke.log 2>&1
           fi
-          echo "--- sortie de l'app ---"; cat smoke.log
+          echo "--- app output ---"; cat smoke.log
           grep -q "SMOKE_TEST_OK" smoke.log
 
       - name: Smoke-test app-image (Windows)
@@ -166,12 +166,12 @@ jobs:
         run: |
           powershell -File desktop-app/packaging/jpackage-build.ps1 app-image
           & "desktop-app/target/installer/QuartierConnect/QuartierConnect.exe" *> smoke.log
-          Write-Host "--- sortie de l'app ---"; Get-Content smoke.log
+          Write-Host "--- app output ---"; Get-Content smoke.log
           if (-not (Select-String -Path smoke.log -Pattern "SMOKE_TEST_OK" -Quiet)) {
-            throw "Smoke-test échoué : marqueur SMOKE_TEST_OK introuvable"
+            throw "Smoke test failed: SMOKE_TEST_OK marker not found"
           }
 
-      - name: Build installateur (Unix)
+      - name: Build installer (Unix)
         if: runner.os != 'Windows'
         shell: bash
         env:
@@ -179,7 +179,7 @@ jobs:
           QC_SERVER_URL: ${{ vars.QC_SERVER_URL }}
         run: ${{ matrix.script }}
 
-      - name: Build installateur (Windows)
+      - name: Build installer (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         env:
@@ -189,11 +189,11 @@ jobs:
 
       # Publish under a stable, version-less name so the web app can link to
       # releases/latest/download/<asset> without knowing the version.
-      - name: Renommer en nom stable
+      - name: Rename to the stable asset name
         shell: bash
         run: mv desktop-app/target/installer/*.${{ matrix.type }} "desktop-app/target/installer/${{ matrix.asset }}"
 
-      - name: Attacher l'installateur à la release
+      - name: Attach the installer to the release
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
@@ -202,7 +202,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   checksums:
-    name: Publier SHA256SUMS
+    name: Publish SHA256SUMS
     needs: [jar, installers]
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -210,13 +210,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Télécharger tous les assets de la release
+      - name: Download all release assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: gh release download "$TAG" --dir dist
 
-      - name: Générer SHA256SUMS
+      - name: Generate SHA256SUMS
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.event.inputs.tag || github.ref_name }}
@@ -224,7 +224,7 @@ jobs:
           cd dist
           sha256sum * > SHA256SUMS
 
-      - name: Publier SHA256SUMS sur la release
+      - name: Upload SHA256SUMS to the release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.event.inputs.tag || github.ref_name }}

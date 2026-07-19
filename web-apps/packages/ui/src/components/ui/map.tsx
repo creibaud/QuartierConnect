@@ -270,7 +270,6 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     }
   }, []);
 
-  // Initialize the map
   useEffect(() => {
     if (!containerRef.current) return;
 

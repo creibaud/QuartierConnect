@@ -1,5 +1,5 @@
 // MapLibre needs WebGL (absent in jsdom); full <Map> render is covered by E2E.
-// Here we test map-context-free components and pure hooks.
+// Scope is limited to map-context-free components and pure hooks.
 
 import { describe, it, expect, vi } from "vitest";
 import { render, renderHook, screen } from "@testing-library/react";

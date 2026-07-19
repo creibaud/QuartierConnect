@@ -188,9 +188,9 @@ pnpm dlx shadcn@latest add <component>
 | bob@demo.fr   | Demo1234!    | moderator |
 | admin@demo.fr | Demo1234!    | admin     |
 
-Shared TOTP secret: `JBSWY3DPEHPK3PXP`
+Shared TOTP secret: `4PX635D55YS6JJV3NYIXKZPREIO6YIIV`
 
 ```bash
 make totp
-# or: oathtool --totp --base32 JBSWY3DPEHPK3PXP
+# or: oathtool --totp --base32 4PX635D55YS6JJV3NYIXKZPREIO6YIIV
 ```

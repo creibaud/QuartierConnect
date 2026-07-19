@@ -48,7 +48,7 @@ En conteneur, Docker Compose injecte lui-même l'environnement : le bloc `env_fi
 
 | Variable | Rôle | Exemple / défaut | Requis |
 |----------|------|------------------|--------|
-| `DEMO_TOTP_SECRET` | Secret base32 partagé par les comptes de démonstration semés par `scripts/seed-demo.ts`. Le script **échoue** si la variable est absente (`requireDemoTotpSecret`). Non lue par l'API en runtime. | `JBSWY3DPEHPK3PXP` (exemple) ; en prod, générer un base32 unique | Requis pour le seed uniquement |
+| `DEMO_TOTP_SECRET` | Secret base32 partagé par les comptes de démonstration semés par `scripts/seed-demo.ts`. Le script **échoue** si la variable est absente (`requireDemoTotpSecret`). Non lue par l'API en runtime. | `4PX635D55YS6JJV3NYIXKZPREIO6YIIV` (exemple) ; en prod, générer un base32 unique | Requis pour le seed uniquement |
 
 > **Ne jamais réutiliser le secret d'exemple en production.** Générer un secret propre : `python3 -c "import base64,os;print(base64.b32encode(os.urandom(20)).decode())"`.
 

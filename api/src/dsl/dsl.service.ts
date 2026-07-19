@@ -103,19 +103,20 @@ export class DslService {
                 const detail = message
                     .replace(/.*(?:SyntaxError|ValueError):\s*/, "")
                     .trim();
-                throw new BadRequestException(detail || "Requête DSL invalide");
+                throw new BadRequestException(detail || "Invalid DSL query");
             }
             throw new BadRequestException(
                 message.trim()
                     ? `DSL execution failed: ${message.trim()}`
-                    : "Requête DSL invalide",
+                    : "Invalid DSL query",
             );
         }
 
         return this.runCompiledQuery(compiled, requester);
     }
 
-    // Non-admins are scoped to their own quartier; neighborhoods stay public.
+    // Non-admins are scoped to their own neighborhood; the neighborhoods
+    // collection stays public.
     private isNeighborhoodScoped(requester?: DslRequester): boolean {
         return requester !== undefined && requester.role !== "admin";
     }

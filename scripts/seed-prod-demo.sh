@@ -16,11 +16,11 @@ env_get() { grep -E "^$1=" .env 2>/dev/null | head -1 | cut -d= -f2- || true; }
 
 PG_CONTAINER="$(docker ps --format '{{.Names}}' | grep -i postgres | head -1 || true)"
 if [ -z "$PG_CONTAINER" ]; then
-  echo "⚠ Seed démo sauté : aucun conteneur postgres trouvé."
+  echo "⚠ Demo seed skipped: no postgres container found."
   exit 0
 fi
 
-echo "▶ Re-seed des comptes démo (secret courant, conteneur $PG_CONTAINER)…"
+echo "▶ Re-seeding the demo accounts (current secret, container $PG_CONTAINER)…"
 if docker run --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v "$ROOT_DIR:/repo" -w /repo \
@@ -31,8 +31,8 @@ if docker run --rm \
   -e API_URL="http://localhost:5000" \
   -e PG_CONTAINER="$PG_CONTAINER" \
   node:22-alpine sh -c "apk add --no-cache docker-cli >/dev/null 2>&1 && npx --yes tsx scripts/seed-demo.ts"; then
-  echo "✓ Comptes démo re-semés (make totp génère le code courant)."
+  echo "✓ Demo accounts re-seeded (make totp prints the current code)."
 else
-  echo "⚠ Seed démo KO (non-bloquant) — le login démo pourrait avoir dérivé."
+  echo "⚠ Demo seed failed (non-blocking) — the demo login may have drifted."
 fi
 exit 0

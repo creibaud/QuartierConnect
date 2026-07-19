@@ -160,7 +160,7 @@ describe("IncidentsController", () => {
         );
     });
 
-    it("GET /incidents (moderator) keeps the quartier scope but no category filter", async () => {
+    it("GET /incidents (moderator) keeps the neighborhood scope but no category filter", async () => {
         await listIncidents(controller, {
             req: authReq("mod1", "moderator", "n1"),
         });
@@ -177,7 +177,7 @@ describe("IncidentsController", () => {
         );
     });
 
-    it("GET /incidents (admin) applies neither quartier nor category filter", async () => {
+    it("GET /incidents (admin) applies neither neighborhood nor category filter", async () => {
         await listIncidents(controller, {
             req: authReq("admin1", "admin", null),
         });

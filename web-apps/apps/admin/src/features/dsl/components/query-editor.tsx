@@ -1,8 +1,8 @@
 import { useRef } from "react";
 import { TOKEN_CLASS, tokenizeQuery } from "../lib/tokenize-query";
 
-/** Éditeur avec coloration syntaxique : un <pre> coloré aligné derrière un
- *  <textarea> au texte transparent (le caret et la saisie restent réels). */
+/** Syntax-highlighted editor: a colored <pre> aligned behind a transparent
+ *  <textarea>, so the caret and typing stay native. */
 export function QueryEditor({
     value,
     onChange,

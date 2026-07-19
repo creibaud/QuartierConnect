@@ -1,4 +1,4 @@
-/** Coloration JSON simple (clés, chaînes, nombres, booléens/null). */
+/** Minimal JSON highlighting (keys, strings, numbers, booleans/null). */
 export function JsonView({ data }: { data: unknown }) {
     const json = JSON.stringify(data, null, 2);
     const parts: React.ReactNode[] = [];

@@ -400,18 +400,17 @@ public class IncidentsView {
         ContextMenu menu = new ContextMenu();
         menu.getStyleClass().add("incidents-context-menu");
 
-        // Résolution de conflit — priorité maximale
+        // Conflict resolution comes first
         if (item.isConflict()) {
             menu.getItems().add(menuItem(I18n.get("incidents.menu.resolveConflict"), FontAwesomeSolid.CODE_BRANCH, false,
                 () -> conflictForm.open(item)));
             menu.getItems().add(new SeparatorMenuItem());
         }
 
-        // Modifier
         menu.getItems().add(menuItem(I18n.get("incidents.menu.edit"), FontAwesomeSolid.EDIT, false,
             () -> detailForm.open(item)));
 
-        // Transitions de statut
+        // Status transitions
         if (!item.isConflict()) {
             menu.getItems().add(new SeparatorMenuItem());
 
@@ -435,7 +434,6 @@ public class IncidentsView {
             }
         }
 
-        // Supprimer
         menu.getItems().add(new SeparatorMenuItem());
         menu.getItems().add(menuItem(I18n.get("incidents.menu.delete"), FontAwesomeSolid.TRASH_ALT, true,
             () -> deleteIncident(item)));
@@ -462,7 +460,7 @@ public class IncidentsView {
         return box;
     }
 
-    // ── Filtres ──────────────────────────────────────────────────────────────
+    // ── Filters ──────────────────────────────────────────────────────────────
 
     private AppButton filterBtn(String label, String filter) {
         AppButton btn = new AppButton(label, AppButton.Variant.GHOST);
@@ -524,7 +522,7 @@ public class IncidentsView {
         footerInfo.setText(sb.toString());
     }
 
-    // ── Logique métier ────────────────────────────────────────────────────────
+    // ── Business logic ───────────────────────────────────────────────────────
 
     private void changeStatus(IncidentRepository.Incident incident, String newStatus) {
         new Thread(() -> {
@@ -568,7 +566,7 @@ public class IncidentsView {
 
     private void deleteIncident(IncidentRepository.Incident incident) {
         new Thread(() -> {
-            // Suppression serveur au mieux (peut renvoyer 403 pour les non-modérateurs — le marqueur gère le côté local)
+            // Best-effort server delete (403 for non-moderators — the tombstone still covers the local side)
             if (incident.remoteId() != null) {
                 try {
                     ApiService.delete("/incidents/" + incident.remoteId(),

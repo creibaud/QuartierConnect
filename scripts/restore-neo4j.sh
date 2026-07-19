@@ -11,12 +11,12 @@ cd "$ROOT_DIR"
 
 COMPOSE="docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml --env-file .env"
 ARCHIVE="${1:?Usage: restore-neo4j.sh <neo4j-archive.tar.gz>}"
-[ -f "$ARCHIVE" ] || { echo "✗ Fichier introuvable : $ARCHIVE" >&2; exit 1; }
+[ -f "$ARCHIVE" ] || { echo "✗ File not found: $ARCHIVE" >&2; exit 1; }
 
-echo "⚠  Cela va ÉCRASER la base Neo4j 'neo4j' avec :"
+echo "⚠  This will OVERWRITE the 'neo4j' Neo4j database with:"
 echo "   $ARCHIVE"
-read -r -p "Confirmer ? Taper 'oui' : " CONFIRM
-[ "$CONFIRM" = "oui" ] || { echo "Annulé."; exit 1; }
+read -r -p "Confirm? Type 'yes': " CONFIRM
+[ "$CONFIRM" = "yes" ] || { echo "Aborted."; exit 1; }
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -29,4 +29,4 @@ docker run --rm --volumes-from "$NEO_CID" -v "$TMP":/backups neo4j:5 \
   neo4j-admin database load neo4j --from-path=/backups --overwrite-destination=true
 $COMPOSE start neo4j >/dev/null
 
-echo "✓ Neo4j restauré depuis $(basename "$ARCHIVE")"
+echo "✓ Neo4j restored from $(basename "$ARCHIVE")"

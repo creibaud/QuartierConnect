@@ -1,15 +1,15 @@
-# Overrides production — appliqués par-dessus docker-compose.yml :
+# Production overrides — layered on top of docker-compose.yml:
 #   docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml up -d --build
 #
-# Objectif : exploitation sur un VPS mono-hôte — redémarrage auto, logs bornés,
-# et limites mémoire pour qu'un conteneur emballé ne fasse pas tomber l'hôte
-# entier. La topologie reste définie dans docker-compose.yml.
+# Aimed at running on a single-host VPS: auto-restart, bounded logs, and memory
+# limits so a runaway container can't take the whole host down. Topology still
+# lives in docker-compose.yml.
 #
-# Les limites mémoire visent un VPS de 4 à 8 Go (somme des plafonds ~3,5 Go,
-# le reste pour l'hôte). Ajuste `deploy.resources.limits.memory` à ta machine.
-# `deploy.resources` est bien appliqué par docker compose v2 hors swarm.
-# Pas de limite CPU dure : la contention CPU ralentit sans crasher, et brider
-# le JVM Neo4j ou les bases ferait plus de mal que de bien.
+# Memory limits target a 4-8 GB VPS (caps add up to ~3.5 GB, the rest is for the
+# host). Tune `deploy.resources.limits.memory` to your machine. `deploy.resources`
+# is honoured by docker compose v2 outside swarm.
+# No hard CPU limit: CPU contention slows things down without crashing, and
+# throttling the Neo4j JVM or the databases would do more harm than good.
 
 services:
   api:
@@ -94,9 +94,9 @@ services:
 
   neo4j:
     restart: unless-stopped
-    # Épingle heap + pagecache pour que le JVM respecte la limite cgroup
-    # ci-dessous. Sinon Neo4j dimensionne son heap sur la RAM de l'hôte et se
-    # fait OOM-kill dès que la limite du conteneur est plus basse.
+    # Pin heap + pagecache so the JVM stays under the cgroup limit below.
+    # Otherwise Neo4j sizes its heap from host RAM and gets OOM-killed as soon
+    # as the container limit is lower.
     environment:
       NEO4J_server_memory_heap_initial__size: 512m
       NEO4J_server_memory_heap_max__size: 512m
@@ -131,8 +131,8 @@ services:
     restart: unless-stopped
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
-      DOCS_AUTH_USER: ${DOCS_AUTH_USER:?DOCS_AUTH_USER requis en prod}
-      DOCS_AUTH_HASH: ${DOCS_AUTH_HASH:?DOCS_AUTH_HASH requis en prod}
+      DOCS_AUTH_USER: ${DOCS_AUTH_USER:?DOCS_AUTH_USER is required in production}
+      DOCS_AUTH_HASH: ${DOCS_AUTH_HASH:?DOCS_AUTH_HASH is required in production}
     volumes:
       - /var/log/quartierconnect/caddy:/var/log/caddy
       - ./downloads:/srv/downloads:ro
