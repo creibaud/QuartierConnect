@@ -219,6 +219,12 @@ export default {
             "Accès au micro refusé. Autorisez le microphone dans votre navigateur pour enregistrer un message vocal.",
         recordingUnsupported:
             "L'enregistrement audio n'est pas pris en charge par ce navigateur.",
+        today: "Aujourd’hui",
+        yesterday: "Hier",
+        sentAt: "Envoyé à {{time}}",
+        scrollToLatest: "Aller au dernier message",
+        threadLabel: "Messages de la conversation",
+        charactersLeft: "{{count}} caractères restants",
     },
     realtime: {
         typing: "écrit…",

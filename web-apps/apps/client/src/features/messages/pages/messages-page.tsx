@@ -20,6 +20,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@workspace/ui/components/sheet";
+import { cn } from "@workspace/ui/lib/utils";
 import { PresenceBadge } from "@/features/realtime/presence-badge";
 import {
     useRealtime,
@@ -102,7 +103,9 @@ export function MessagesPage({ conversation }: { conversation?: string }) {
                                                 )}
                                             </SheetTitle>
                                             <SheetDescription className="sr-only">
-                                                {t("pages.messages.description")}
+                                                {t(
+                                                    "pages.messages.description",
+                                                )}
                                             </SheetDescription>
                                         </SheetHeader>
                                         <ScrollArea className="min-h-0 flex-1">
@@ -128,7 +131,7 @@ export function MessagesPage({ conversation }: { conversation?: string }) {
                     }
                 />
 
-                <div className="border-border bg-card flex min-h-0 flex-1 overflow-hidden rounded-xl border">
+                <div className="border-border bg-card text-card-foreground flex min-h-0 flex-1 overflow-hidden rounded-xl border">
                     <aside className="border-border hidden w-80 shrink-0 flex-col border-r md:flex">
                         <div className="border-border border-b px-4 py-3">
                             <h2 className="text-sm font-semibold">
@@ -157,21 +160,31 @@ export function MessagesPage({ conversation }: { conversation?: string }) {
                                         />
                                     </Avatar>
                                     <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-semibold">
+                                        <p className="truncate text-base font-semibold tracking-[-0.015em]">
                                             {activeLabel}
                                         </p>
                                         <p
                                             aria-live="polite"
-                                            className="text-primary truncate text-xs empty:hidden"
+                                            className={cn(
+                                                "min-h-4 truncate text-xs",
+                                                isActiveOtherTyping
+                                                    ? "text-primary"
+                                                    : "text-muted-foreground",
+                                            )}
                                         >
                                             {isActiveOtherTyping
                                                 ? t("realtime.typing")
-                                                : null}
+                                                : isActiveOtherOnline
+                                                  ? t(
+                                                        "realtime.presence.online",
+                                                    )
+                                                  : ""}
                                         </p>
                                     </div>
                                 </div>
                                 <ConversationThread
                                     key={activeConversationId}
+                                    conversation={activeConversation}
                                     conversationId={activeConversationId}
                                     currentUserId={user.sub}
                                     onRead={markConversationRead.mutate}

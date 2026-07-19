@@ -14,7 +14,7 @@ function BubbleGroup({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 const bubbleVariants = cva(
-    "group/bubble relative flex w-fit max-w-[80%] min-w-0 flex-col gap-1 group-data-[align=end]/message:self-end data-[align=end]:self-end data-[variant=ghost]:max-w-full",
+    "group/bubble relative flex w-fit max-w-[min(92%,42ch)] min-w-0 flex-col gap-1 group-data-[align=end]/message:self-end data-[align=end]:self-end data-[variant=ghost]:max-w-full sm:max-w-[min(78%,42ch)]",
     {
         variants: {
             variant: {
@@ -29,6 +29,10 @@ const bubbleVariants = cva(
                 ghost: "[&>[data-slot=bubble-content]:is(button,a):hover]:bg-muted [&>[data-slot=bubble-content]:is(button,a):hover]:text-foreground dark:[&>[data-slot=bubble-content]:is(button,a):hover]:bg-muted/50 border-none *:data-[slot=bubble-content]:rounded-none *:data-[slot=bubble-content]:bg-transparent *:data-[slot=bubble-content]:p-0",
                 destructive:
                     "*:data-[slot=bubble-content]:bg-destructive/10 *:data-[slot=bubble-content]:text-destructive dark:*:data-[slot=bubble-content]:bg-destructive/20 [&>[data-slot=bubble-content]:is(button,a):hover]:bg-destructive/20 dark:[&>[data-slot=bubble-content]:is(button,a):hover]:bg-destructive/30",
+                outgoing:
+                    "*:data-[slot=bubble-content]:bg-bubble-out *:data-[slot=bubble-content]:text-bubble-out-foreground *:data-[slot=bubble-content]:rounded-ee-[3px] [&>[data-slot=bubble-content]:is(button,a):hover]:bg-[oklch(from_var(--bubble-out)_calc(l*0.94)_c_h)]",
+                incoming:
+                    "*:data-[slot=bubble-content]:bg-bubble-in *:data-[slot=bubble-content]:text-bubble-in-foreground *:data-[slot=bubble-content]:border-bubble-in-border *:data-[slot=bubble-content]:rounded-es-[3px] [&>[data-slot=bubble-content]:is(button,a):hover]:bg-[oklch(from_var(--bubble-in)_calc(l*1.06)_c_h)]",
             },
         },
         defaultVariants: {
@@ -70,7 +74,7 @@ function BubbleContent({
         <Comp
             data-slot="bubble-content"
             className={cn(
-                "[button,a]:focus-visible:border-ring [button,a]:focus-visible:ring-ring/50 w-fit max-w-full min-w-0 overflow-hidden rounded-xl border border-transparent px-3 py-2 text-sm leading-relaxed wrap-break-word group-data-[align=end]/bubble:self-end [button]:text-left [button,a]:transition-colors [button,a]:outline-none [button,a]:focus-visible:ring-3",
+                "[button,a]:focus-visible:border-ring [button,a]:focus-visible:ring-ring/50 w-fit max-w-full min-w-0 overflow-hidden rounded-md border border-transparent px-3 py-2 text-sm leading-snug wrap-break-word whitespace-pre-wrap group-data-[align=end]/bubble:self-end [button]:text-left [button,a]:transition-colors [button,a]:outline-none [button,a]:focus-visible:ring-3",
                 className,
             )}
             {...props}
@@ -78,44 +82,4 @@ function BubbleContent({
     );
 }
 
-const bubbleReactionsVariants = cva(
-    "bg-muted ring-card absolute z-10 flex w-fit shrink-0 items-center justify-center gap-1 rounded-full px-1.5 py-0.5 text-sm ring-3 has-[button]:p-0",
-    {
-        variants: {
-            side: {
-                top: "top-0 -translate-y-3/4",
-                bottom: "bottom-0 translate-y-3/4",
-            },
-            align: {
-                start: "left-3",
-                end: "right-3",
-            },
-        },
-        defaultVariants: {
-            side: "bottom",
-            align: "end",
-        },
-    },
-);
-
-function BubbleReactions({
-    side = "bottom",
-    align = "end",
-    className,
-    ...props
-}: React.ComponentProps<"div"> & {
-    align?: "start" | "end";
-    side?: "top" | "bottom";
-}) {
-    return (
-        <div
-            data-slot="bubble-reactions"
-            data-align={align}
-            data-side={side}
-            className={cn(bubbleReactionsVariants({ side, align }), className)}
-            {...props}
-        />
-    );
-}
-
-export { BubbleGroup, Bubble, BubbleContent, BubbleReactions };
+export { BubbleGroup, Bubble, BubbleContent };

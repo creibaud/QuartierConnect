@@ -101,9 +101,10 @@ export function ConversationList({
                     <button
                         key={conv._id}
                         onClick={() => onSelect(conv._id)}
+                        aria-current={isActive ? "true" : undefined}
                         className={cn(
-                            "hover:bg-muted flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
-                            isActive && "bg-primary/10",
+                            "hover:bg-muted flex w-full items-start gap-3 rounded-lg border-s-2 border-transparent px-3 py-2.5 text-left transition-colors",
+                            isActive && "bg-primary/10 border-primary",
                         )}
                     >
                         <Avatar size="sm">
@@ -117,7 +118,7 @@ export function ConversationList({
                                 <p
                                     className={cn(
                                         "truncate text-sm font-medium",
-                                        isActive && "text-primary",
+                                        isActive && "font-semibold",
                                         unread && "font-semibold",
                                     )}
                                 >

@@ -218,6 +218,12 @@ export default {
             "Microphone access denied. Allow microphone access in your browser to record a voice message.",
         recordingUnsupported:
             "Audio recording is not supported in this browser.",
+        today: "Today",
+        yesterday: "Yesterday",
+        sentAt: "Sent at {{time}}",
+        scrollToLatest: "Jump to latest message",
+        threadLabel: "Conversation messages",
+        charactersLeft: "{{count}} characters left",
     },
     realtime: {
         typing: "typing…",

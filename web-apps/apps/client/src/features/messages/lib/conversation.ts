@@ -1,6 +1,7 @@
 import type {
     Conversation,
     LastMessagePreview,
+    Message,
 } from "@workspace/shared/lib/types";
 import type { TFunction } from "i18next";
 
@@ -83,4 +84,84 @@ export function isConversationUnread({
     isActive: boolean;
 }): boolean {
     return !isActive && conversation.unreadCount > 0;
+}
+
+export const BURST_WINDOW_MS = 5 * 60_000;
+
+export type MessageRowModel = {
+    message: Message;
+    isOutgoing: boolean;
+    position: "only" | "first" | "middle" | "last";
+    showTime: boolean;
+    startsBurst: boolean;
+    startsDay: boolean;
+    senderName?: string;
+};
+
+export function isSameDay(a: string, b: string): boolean {
+    return new Date(a).toDateString() === new Date(b).toDateString();
+}
+
+export function isSameBurst(previous: Message, current: Message): boolean {
+    if (previous.senderId !== current.senderId) return false;
+    if (!isSameDay(previous.createdAt, current.createdAt)) return false;
+    return (
+        new Date(current.createdAt).getTime() -
+            new Date(previous.createdAt).getTime() <=
+        BURST_WINDOW_MS
+    );
+}
+
+export function formatDayLabel(
+    isoDate: string,
+    locale: string,
+    t: TFunction,
+): string {
+    const date = new Date(isoDate);
+    const today = new Date();
+    if (date.toDateString() === today.toDateString())
+        return t("messaging.today");
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    if (date.toDateString() === yesterday.toDateString())
+        return t("messaging.yesterday");
+    return date.toLocaleDateString(locale, {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+    });
+}
+
+export function buildMessageRows({
+    messages,
+    currentUserId,
+    participantNames,
+}: {
+    messages: Message[];
+    currentUserId: string;
+    participantNames?: Map<string, string>;
+}): MessageRowModel[] {
+    return messages.map((message, index) => {
+        const previous = messages[index - 1];
+        const next = messages[index + 1];
+        const previousSame = previous ? isSameBurst(previous, message) : false;
+        const nextSame = next ? isSameBurst(message, next) : false;
+        return {
+            message,
+            isOutgoing: message.senderId === currentUserId,
+            position:
+                !previousSame && !nextSame
+                    ? "only"
+                    : !previousSame
+                      ? "first"
+                      : !nextSame
+                        ? "last"
+                        : "middle",
+            showTime: !nextSame,
+            startsBurst: !previousSame,
+            startsDay:
+                !previous || !isSameDay(previous.createdAt, message.createdAt),
+            senderName: participantNames?.get(message.senderId),
+        };
+    });
 }

@@ -43,6 +43,13 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
+    --color-bubble-out: var(--bubble-out);
+    --color-bubble-out-foreground: var(--bubble-out-foreground);
+    --color-bubble-out-meta: var(--bubble-out-meta);
+    --color-bubble-in: var(--bubble-in);
+    --color-bubble-in-foreground: var(--bubble-in-foreground);
+    --color-bubble-in-border: var(--bubble-in-border);
+    --color-bubble-in-meta: var(--bubble-in-meta);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -56,6 +63,7 @@
 }
 
 :root {
+    color-scheme: light;
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -88,9 +96,18 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.488 0.243 264.376);
+    --bubble-out: oklch(from var(--primary) 0.488 c h);
+    --bubble-out-foreground: oklch(0.98 0.012 254.604);
+    --bubble-out-meta: oklch(0.93 0.012 254.604);
+    --bubble-in: oklch(0.968 0.002 260);
+    --bubble-in-foreground: oklch(0.145 0 0);
+    --bubble-in-border: oklch(0.86 0 0);
+    --bubble-in-meta: oklch(0.52 0 0);
+    --scrollbar-thumb: oklch(0.8 0 0);
 }
 
 .dark {
+    color-scheme: dark;
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
@@ -122,6 +139,14 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.623 0.214 259.815);
+    --bubble-out: oklch(from var(--primary) 0.52 c h);
+    --bubble-out-foreground: oklch(0.985 0.01 254.604);
+    --bubble-out-meta: oklch(0.92 0.015 254.604);
+    --bubble-in: oklch(0.262 0 0);
+    --bubble-in-foreground: oklch(0.985 0 0);
+    --bubble-in-border: oklch(1 0 0 / 16%);
+    --bubble-in-meta: oklch(0.72 0 0);
+    --scrollbar-thumb: oklch(0.4 0 0);
 }
 
 @layer base {
@@ -149,6 +174,17 @@
     }
     .maplibregl-popup-tip {
         @apply hidden!;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
     }
 }
 
@@ -202,16 +238,13 @@
 /* ── Scrollbar helpers for the message-scroller viewport ── */
 @utility scrollbar-thin {
     scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 @utility scrollbar-gutter-stable {
     scrollbar-gutter: stable;
 }
 
-@utility scrollbar-thumb-transparent {
-    scrollbar-color: transparent transparent;
-}
-
-@utility scrollbar-track-transparent {
+@utility scrollbar-hidden {
     scrollbar-color: transparent transparent;
 }
