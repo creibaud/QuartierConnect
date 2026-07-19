@@ -276,6 +276,7 @@ plugins, tests, deployment) lives in the **`/dev`** site, and the user guides in
 | ---------------------------------------------------------- | ------------------------------------------------- |
 | [docs/synthese.pdf](docs/synthese.pdf)                     | Approach, split of the work, critical review      |
 | [docs/rapport-technique.pdf](docs/rapport-technique.pdf)   | Technical report (mirrors the `/dev` site)        |
+| [docs/manuel-utilisateur.pdf](docs/manuel-utilisateur.pdf) | User manual (printable mirror of the `/aide` site)|
 | [docs/demo.pdf](docs/demo.pdf)                             | Demonstration script                              |
 | [docs/fiche-soutenance.pdf](docs/fiche-soutenance.pdf)     | Live URL, demo accounts, TOTP QR codes            |
 | [docs/presentation.pdf](docs/presentation.pdf)             | Defence slides                                    |
