@@ -3,7 +3,7 @@
 Neighborhood community platform — ESGI 3AL2 · Final submission
 
 > **Final submission**: 19 July 2026 · **Instructor**: Frédéric SANANES
-> **v1.0.2** · **1,100+ automated tests** · 9 Docker containers · 3 databases · 4 surfaces
+> **v1.0.2** · **1,447 automated tests** · 9 Docker containers · 3 databases · 4 surfaces
 
 QuartierConnect connects residents of a neighborhood: report incidents, offer and
 find services, organize events, vote, exchange points, and chat in real time.
@@ -13,7 +13,7 @@ It ships four surfaces from one monorepo:
 | -------------------- | ------------------------------ | ----------------------------------------------- |
 | **Resident client**  | React 19                       | The app residents use day to day                |
 | **Admin back-office**| React 19 + DSL editor          | Moderation, management, MongoDB query console   |
-| **REST API**         | NestJS 11                      | 87 endpoints, JWT + TOTP, WebSocket             |
+| **REST API**         | NestJS 11                      | 88 endpoints, JWT + TOTP, WebSocket             |
 | **Desktop client**   | JavaFX 21                      | Offline-first companion app (SQLite), plugins   |
 
 ---
@@ -66,7 +66,7 @@ local development, the desktop app, and the DSL.
 | **Docker + Compose**     | Runs the 9 services                          | https://docs.docker.com/get-docker/                      |
 | **GNU Make**             | Task runner (every command below)            | `sudo apt install make`                                  |
 | **Node.js 22+ & pnpm 9** | API + web apps + seed scripts                | Node from nodejs.org, then `corepack enable` for pnpm    |
-| **oathtool**             | Generates the TOTP codes for demo login      | `sudo apt install oathtool` (or any authenticator app)   |
+| **oathtool** *(optional)* | Only if you want codes without `make totp`  | `sudo apt install oathtool` (or any authenticator app)   |
 | **uv**                   | Python package manager — runs the DSL        | https://docs.astral.sh/uv/ (`curl -LsSf … \| sh`)        |
 | **Java 21**              | Desktop app (Maven ships as `./mvnw`)        | Temurin / your distro's `openjdk-21`                     |
 
@@ -155,9 +155,12 @@ Login requires a 6-digit TOTP code (valid 30s). `make totp` prints one per
 account:
 
 ```bash
-make totp
-# Or, for a single account: oathtool --totp --base32 <secret>
+make totp                     # one code per account
+make totp EMAIL=bob@demo.fr   # just that one
 ```
+
+Codes come from `scripts/seed/roster.ts`, the same source the seed writes to
+the database, so a printed code always matches the account it names.
 
 ---
 

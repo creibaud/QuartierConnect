@@ -391,18 +391,8 @@ seed-neo4j: ## Populate Neo4j with nodes from MongoDB (neighborhoods, services, 
 	           NODE_PATH=./node_modules npx tsx ../scripts/seed-neo4j.ts
 	@echo "$(OK) Neo4j graph populated"
 
-totp: ## Generate a TOTP code for each demo login (alice's secret: DEMO_TOTP_SECRET in .env)
-	@echo ""
-	@echo "$(BOLD)  TOTP codes (valid 30s):$(RESET)"
-	@ALICE=$$(grep -E '^DEMO_TOTP_SECRET=' .env 2>/dev/null | cut -d= -f2- | tr -d '"'); \
-	 [ -n "$$ALICE" ] || ALICE=4PX635D55YS6JJV3NYIXKZPREIO6YIIV; \
-	 command -v oathtool >/dev/null 2>&1 \
-		|| { echo "  $(YELLOW)oathtool not available. Install: sudo apt install oathtool$(RESET)"; exit 0; }; \
-	 for pair in "alice@demo.fr:$$ALICE" \
-	             "bob@demo.fr:K7QM4TZBX2VNHR5CJWYD6LPS3AF4EGU2" \
-	             "admin@demo.fr:P4WDGNQ7RJ25XKTCVBM3ZLHY6SFA4EDN"; do \
-	   printf '  %-18s %s\n' "$${pair%%:*}" "$$(oathtool --totp --base32 "$${pair#*:}")"; \
-	 done; echo ""
+totp: ## Print the current TOTP code for each demo login (EMAIL=... for one)
+	@cd api && NODE_PATH=./node_modules npx tsx ../scripts/totp.ts
 
 # ─── Git hooks ───────────────────────────────────────────────────────────────
 hooks: ## Enable the shared git hooks (pre-commit) — run once per clone

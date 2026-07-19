@@ -199,6 +199,6 @@ Each account has its own TOTP secret, because the replay guard is keyed on
 | admin@demo.fr | `P4WDGNQ7RJ25XKTCVBM3ZLHY6SFA4EDN` |
 
 ```bash
-make totp
-# or, for a single account: oathtool --totp --base32 <secret>
+make totp                     # one code per account
+make totp EMAIL=bob@demo.fr   # just that one
 ```
