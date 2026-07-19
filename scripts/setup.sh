@@ -141,7 +141,10 @@ wait_for_stack() {
 import_demo_data() {
     step "Importing the demo dataset"
     if [ -f deliverables/test-datasets/import-dataset.sh ]; then
-        bash deliverables/test-datasets/import-dataset.sh demo-dataset
+        # --yes: the databases were created moments ago, so there is nothing to
+        # lose, and without it the install cannot finish unattended. The import's
+        # own production guard still applies.
+        bash deliverables/test-datasets/import-dataset.sh --yes demo-dataset
         ok "Demo dataset imported (deliverables/test-datasets)"
         restart_api_after_import
     else
