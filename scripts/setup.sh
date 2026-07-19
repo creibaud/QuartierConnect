@@ -77,7 +77,7 @@ generate_env_file() {
         fail "CHANGE_ME values remain in .env: fill them in by hand (see .env.example)."
     fi
     ENV_REGENERATED=1
-    ok ".env generated with random secrets (openssl rand -hex 32)"
+    ok ".env created with random secrets (openssl rand -hex 32)"
 }
 
 start_docker_services() {
