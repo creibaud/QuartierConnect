@@ -242,6 +242,9 @@ export class MessagingService {
         currentUserId: string,
     ): Promise<string[]> {
         const ids = new Set<string>(dto.participants ?? []);
+        // Dropping the caller below empties the set, which would otherwise be
+        // reported as "nothing supplied" even though the user did name someone.
+        let namedOnlySelf = false;
 
         if (dto.participantEmails && dto.participantEmails.length > 0) {
             const emails = dto.participantEmails.map((e) => e.toLowerCase());
@@ -262,8 +265,16 @@ export class MessagingService {
                 });
             }
             for (const row of rows) {
-                if (row.id !== currentUserId) ids.add(row.id);
+                if (row.id === currentUserId) namedOnlySelf = true;
+                else ids.add(row.id);
             }
+        }
+
+        if (ids.size === 0 && namedOnlySelf) {
+            throw new BadRequestException({
+                code: "SELF_CONVERSATION",
+                message: "You cannot start a conversation with yourself.",
+            });
         }
 
         if (ids.size === 0) {

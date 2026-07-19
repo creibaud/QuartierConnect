@@ -228,6 +228,29 @@ describe("MessagingService", () => {
             const result = await svc2.createConversation(dto, "user-1");
             expect(result.participants).toEqual(["user-1", "user-2"]);
         });
+
+        it("reports SELF_CONVERSATION when the only email given is the caller's", async () => {
+            mockDb._builder.where.mockResolvedValue([
+                { id: "user-1", email: "alice@demo.fr" },
+            ]);
+
+            await expect(
+                service.createConversation(
+                    { participantEmails: ["alice@demo.fr"] },
+                    "user-1",
+                ),
+            ).rejects.toMatchObject({
+                response: { code: "SELF_CONVERSATION" },
+            });
+        });
+
+        it("still reports PARTICIPANTS_REQUIRED when nothing is supplied", async () => {
+            await expect(
+                service.createConversation({}, "user-1"),
+            ).rejects.toMatchObject({
+                response: { code: "PARTICIPANTS_REQUIRED" },
+            });
+        });
     });
 
     describe("getMessages", () => {

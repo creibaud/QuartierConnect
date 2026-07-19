@@ -73,7 +73,7 @@ export function EventCard({ event }: { event: Event }) {
                         </p>
                     </CardContent>
                 )}
-                <CardFooter className="pt-0">
+                <CardFooter>
                     <div className="w-full">
                         <EventParticipation event={event} />
                     </div>
