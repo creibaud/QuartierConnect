@@ -22,11 +22,19 @@ import { ParticipantCount } from "./event-participation";
 export function EventsMapView({ events }: { events: Event[] }) {
     const { t, i18n } = useTranslation();
     const { data: neighborhoods } = useNeighborhoods();
-    const { data: myLocation } = useMyLocation();
-    const firstNeighborhood = neighborhoods?.find((n) => n.geometry);
+    const { data: myLocation, isPending: locationPending } = useMyLocation();
     const eventsWithCoords = events.filter((e) => e.location);
 
-    if (!firstNeighborhood?.geometry) {
+    // The map reads `center` once, at mount. Mounting before the location
+    // resolves would freeze the view on whichever neighborhood came first.
+    if (locationPending) return null;
+
+    const focusGeometry =
+        myLocation?.neighborhood?.geometry ??
+        neighborhoods?.find((n) => n.geometry)?.geometry ??
+        null;
+
+    if (!focusGeometry) {
         return (
             <p className="text-muted-foreground text-sm">
                 {t("pages.events.noNeighborhoodMapped")}
@@ -49,7 +57,7 @@ export function EventsMapView({ events }: { events: Event[] }) {
             <CardContent>
                 <div className="relative isolate">
                     <Map
-                        center={centroidOf(firstNeighborhood.geometry)}
+                        center={centroidOf(focusGeometry)}
                         zoom={14}
                         className="h-[480px] w-full"
                     >
@@ -96,9 +104,7 @@ export function EventsMapView({ events }: { events: Event[] }) {
                                     ? [myLocation.lat, myLocation.lng]
                                     : null
                             }
-                            fitGeometry={
-                                myLocation?.neighborhood?.geometry ?? null
-                            }
+                            fitGeometry={focusGeometry}
                         />
                     </Map>
                 </div>

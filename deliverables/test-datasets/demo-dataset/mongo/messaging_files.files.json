@@ -1,64 +1,64 @@
 [{
 	"_id": {
-		"$oid": "6a5ca52d76d969f391133341"
+		"$oid": "6a5cca152cf0e1ce2a3c9dbe"
 	},
 	"length": 5279,
 	"chunkSize": 261120,
 	"uploadDate": {
-		"$date": "2026-07-19T10:21:33.202Z"
+		"$date": "2026-07-19T12:59:01.95Z"
 	},
 	"filename": "carre-potager.png",
 	"metadata": {
-		"uploadedBy": "4de869de-be0a-47b9-9f6a-772041cdc24f",
-		"conversationId": "6a5ca52c76d969f391133336",
+		"uploadedBy": "20c07cb0-abf1-44bc-9c10-4111e876b7d0",
+		"conversationId": "6a5cca152cf0e1ce2a3c9db3",
 		"contentType": "image/png"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ca52d76d969f391133344"
+		"$oid": "6a5cca152cf0e1ce2a3c9dc1"
 	},
 	"length": 1312,
 	"chunkSize": 261120,
 	"uploadDate": {
-		"$date": "2026-07-19T10:21:33.225Z"
+		"$date": "2026-07-19T12:59:01.967Z"
 	},
 	"filename": "compte-rendu-reunion-jardin.pdf",
 	"metadata": {
-		"uploadedBy": "4de869de-be0a-47b9-9f6a-772041cdc24f",
-		"conversationId": "6a5ca52c76d969f391133336",
+		"uploadedBy": "20c07cb0-abf1-44bc-9c10-4111e876b7d0",
+		"conversationId": "6a5cca152cf0e1ce2a3c9db3",
 		"contentType": "application/pdf"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ca52d76d969f391133347"
+		"$oid": "6a5cca152cf0e1ce2a3c9dc4"
 	},
 	"length": 40032,
 	"chunkSize": 261120,
 	"uploadDate": {
-		"$date": "2026-07-19T10:21:33.246Z"
+		"$date": "2026-07-19T12:59:01.988Z"
 	},
 	"filename": "message-vocal.mp3",
 	"metadata": {
-		"uploadedBy": "4de869de-be0a-47b9-9f6a-772041cdc24f",
-		"conversationId": "6a5ca52c76d969f391133336",
+		"uploadedBy": "20c07cb0-abf1-44bc-9c10-4111e876b7d0",
+		"conversationId": "6a5cca152cf0e1ce2a3c9db3",
 		"contentType": "audio/mpeg"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ca52d76d969f39113334a"
+		"$oid": "6a5cca162cf0e1ce2a3c9dc7"
 	},
 	"length": 3679,
 	"chunkSize": 261120,
 	"uploadDate": {
-		"$date": "2026-07-19T10:21:33.262Z"
+		"$date": "2026-07-19T12:59:02.003Z"
 	},
 	"filename": "affiche-troc-plantes.png",
 	"metadata": {
-		"uploadedBy": "4de869de-be0a-47b9-9f6a-772041cdc24f",
-		"conversationId": "6a5ca52c76d969f391133336",
+		"uploadedBy": "20c07cb0-abf1-44bc-9c10-4111e876b7d0",
+		"conversationId": "6a5cca152cf0e1ce2a3c9db3",
 		"contentType": "image/png"
 	}
 }]

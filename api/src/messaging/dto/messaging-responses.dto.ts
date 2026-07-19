@@ -55,6 +55,37 @@ export class ConversationDto {
 
     @ApiProperty({ example: "2026-04-05T10:00:00.000Z" })
     createdAt: string;
+
+    @ApiProperty({
+        example: 2,
+        description:
+            "Messages from other participants newer than the caller's read marker",
+    })
+    unreadCount: number;
+
+    @ApiPropertyOptional({
+        type: () => LastMessagePreviewDto,
+        nullable: true,
+        description: "Newest surviving message, for the conversation list",
+    })
+    lastMessage?: LastMessagePreviewDto | null;
+}
+
+export class LastMessagePreviewDto {
+    @ApiProperty({ example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890" })
+    senderId: string;
+
+    @ApiProperty({ enum: MessageType, example: MessageType.TEXT })
+    type: MessageType;
+
+    @ApiPropertyOptional({ example: "See you Saturday!", nullable: true })
+    content: string | null;
+
+    @ApiPropertyOptional({ example: "garden-photo.jpg", nullable: true })
+    fileName: string | null;
+
+    @ApiProperty({ example: "2026-04-05T12:00:00.000Z" })
+    createdAt: string;
 }
 
 export class MessageDto {

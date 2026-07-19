@@ -26,6 +26,35 @@ export function useCreateConversation() {
     });
 }
 
+/**
+ * Clears the badge optimistically: the server round trip would otherwise leave
+ * the dot up for as long as the refetch takes.
+ */
+export function useMarkConversationRead() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (conversationId: string) =>
+            apiPost<{ readAt: string }>(
+                `/messaging/conversations/${conversationId}/read`,
+                {},
+            ),
+        onMutate: (conversationId: string) => {
+            queryClient.setQueryData<Conversation[]>(
+                ["conversations"],
+                (previous) =>
+                    previous?.map((conv) =>
+                        conv._id === conversationId
+                            ? { ...conv, unreadCount: 0 }
+                            : conv,
+                    ),
+            );
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ["conversations"] });
+        },
+    });
+}
+
 export function useMessages(conversationId: string, page = 1) {
     return useQuery<Message[]>({
         queryKey: ["messages", conversationId, page],

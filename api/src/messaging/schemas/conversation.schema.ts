@@ -19,6 +19,10 @@ export class Conversation {
 
     @Prop({ type: Date, default: null })
     lastMessageAt: Date | null;
+
+    /** Per-participant read marker, keyed by user id. Absent means never opened. */
+    @Prop({ type: Map, of: Date, default: () => new Map<string, Date>() })
+    lastReadAt: Map<string, Date>;
 }
 
 export const ConversationSchema = SchemaFactory.createForClass(Conversation);

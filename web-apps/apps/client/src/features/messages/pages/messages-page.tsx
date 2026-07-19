@@ -3,7 +3,10 @@ import { useTranslation } from "react-i18next";
 import { Add01Icon, Message01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
-import { useConversations } from "@workspace/shared/lib/hooks/useMessaging";
+import {
+    useConversations,
+    useMarkConversationRead,
+} from "@workspace/shared/lib/hooks/useMessaging";
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import { EmptyState } from "@workspace/ui/components/empty-state";
@@ -25,7 +28,6 @@ import {
 import { ConversationList } from "../components/conversation-list";
 import { ConversationThread } from "../components/conversation-thread";
 import { NewConversationDialog } from "../components/new-conversation-dialog";
-import { useConversationReadMarkers } from "../hooks/use-conversation-read-markers";
 import {
     conversationInitials,
     conversationLabel,
@@ -41,7 +43,7 @@ export function MessagesPage({ conversation }: { conversation?: string }) {
     const [sheetOpen, setSheetOpen] = useState(false);
     const [newConvOpen, setNewConvOpen] = useState(false);
     const { data: conversations } = useConversations();
-    const { readMarkers, markConversationRead } = useConversationReadMarkers();
+    const markConversationRead = useMarkConversationRead();
     const { onlineUserIds } = useRealtime();
     const activeTypingUserIds = useTypingUserIds(activeConversationId);
 
@@ -110,7 +112,6 @@ export function MessagesPage({ conversation }: { conversation?: string }) {
                                                     handleSelectConversation
                                                 }
                                                 currentUserId={user.sub}
-                                                readMarkers={readMarkers}
                                             />
                                         </ScrollArea>
                                     </SheetContent>
@@ -139,7 +140,6 @@ export function MessagesPage({ conversation }: { conversation?: string }) {
                                 activeId={activeConversationId}
                                 onSelect={setActiveConversationId}
                                 currentUserId={user.sub}
-                                readMarkers={readMarkers}
                             />
                         </ScrollArea>
                     </aside>
@@ -174,7 +174,7 @@ export function MessagesPage({ conversation }: { conversation?: string }) {
                                     key={activeConversationId}
                                     conversationId={activeConversationId}
                                     currentUserId={user.sub}
-                                    onRead={markConversationRead}
+                                    onRead={markConversationRead.mutate}
                                 />
                             </>
                         ) : (

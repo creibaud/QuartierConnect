@@ -176,9 +176,9 @@ export function waitForNextTotpWindow(): Promise<void> {
 }
 
 /**
- * alice, bob and admin share one TOTP secret, so two of them logging in during
- * the same window submit the same code and the replay guard rejects the second.
- * Retrying on the next window is the only way out — the code is the collision.
+ * Every account carries its own secret, so a rejected code is almost always a
+ * window that turned over between minting and posting. The next window mints a
+ * fresh code, which is why retrying — rather than resending — is the way out.
  */
 export async function login(
   email: string,

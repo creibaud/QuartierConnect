@@ -6,183 +6,13 @@ import {
 import { BASE_URL, fetchList, login, request } from "./seed/client";
 import { seedContent, type DemoNeighborhood } from "./seed/content";
 import { seedContracts } from "./seed/contracts";
+import { NEIGHBORHOOD_SHAPES } from "./seed/geo";
 import { ROSTER } from "./seed/roster";
 import { seedSocial } from "./seed/social";
 
 const ADMIN_EMAIL = "admin@demo.fr";
 const DEMO_NEIGHBORHOOD_NAME = "Montmartre";
-
-const PARIS_NEIGHBORHOODS: Array<{
-  name: string;
-  city: string;
-  coordinates: number[][];
-}> = [
-  {
-    name: "Montmartre",
-    city: "Paris",
-    coordinates: [
-      [2.338, 48.883],
-      [2.347, 48.883],
-      [2.347, 48.892],
-      [2.338, 48.892],
-      [2.338, 48.883],
-    ],
-  },
-  {
-    name: "Marais",
-    city: "Paris",
-    coordinates: [
-      [2.355, 48.854],
-      [2.368, 48.854],
-      [2.368, 48.862],
-      [2.355, 48.862],
-      [2.355, 48.854],
-    ],
-  },
-  {
-    name: "Belleville",
-    city: "Paris",
-    coordinates: [
-      [2.376, 48.87],
-      [2.392, 48.87],
-      [2.392, 48.879],
-      [2.376, 48.879],
-      [2.376, 48.87],
-    ],
-  },
-  {
-    name: "Quartier Latin",
-    city: "Paris",
-    coordinates: [
-      [2.338, 48.846],
-      [2.355, 48.846],
-      [2.355, 48.855],
-      [2.338, 48.855],
-      [2.338, 48.846],
-    ],
-  },
-  {
-    name: "Batignolles",
-    city: "Paris",
-    coordinates: [
-      [2.31, 48.883],
-      [2.325, 48.883],
-      [2.325, 48.893],
-      [2.31, 48.893],
-      [2.31, 48.883],
-    ],
-  },
-  {
-    name: "Bastille",
-    city: "Paris",
-    coordinates: [
-      [2.369, 48.848],
-      [2.38, 48.848],
-      [2.38, 48.858],
-      [2.369, 48.858],
-      [2.369, 48.848],
-    ],
-  },
-  {
-    name: "Buttes-Chaumont",
-    city: "Paris",
-    coordinates: [
-      [2.376, 48.88],
-      [2.392, 48.88],
-      [2.392, 48.889],
-      [2.376, 48.889],
-      [2.376, 48.88],
-    ],
-  },
-  {
-    name: "Père-Lachaise",
-    city: "Paris",
-    coordinates: [
-      [2.386, 48.856],
-      [2.4, 48.856],
-      [2.4, 48.866],
-      [2.386, 48.866],
-      [2.386, 48.856],
-    ],
-  },
-  {
-    name: "Montparnasse",
-    city: "Paris",
-    coordinates: [
-      [2.31, 48.833],
-      [2.33, 48.833],
-      [2.33, 48.843],
-      [2.31, 48.843],
-      [2.31, 48.833],
-    ],
-  },
-  {
-    name: "La Villette",
-    city: "Paris",
-    coordinates: [
-      [2.376, 48.89],
-      [2.392, 48.89],
-      [2.392, 48.899],
-      [2.376, 48.899],
-      [2.376, 48.89],
-    ],
-  },
-  {
-    name: "Bercy",
-    city: "Paris",
-    coordinates: [
-      [2.372, 48.828],
-      [2.39, 48.828],
-      [2.39, 48.84],
-      [2.372, 48.84],
-      [2.372, 48.828],
-    ],
-  },
-  {
-    name: "Auteuil",
-    city: "Paris",
-    coordinates: [
-      [2.252, 48.842],
-      [2.27, 48.842],
-      [2.27, 48.853],
-      [2.252, 48.853],
-      [2.252, 48.842],
-    ],
-  },
-  {
-    name: "Charonne",
-    city: "Paris",
-    coordinates: [
-      [2.386, 48.843],
-      [2.4, 48.843],
-      [2.4, 48.855],
-      [2.386, 48.855],
-      [2.386, 48.843],
-    ],
-  },
-  {
-    name: "Saint-Germain-des-Prés",
-    city: "Paris",
-    coordinates: [
-      [2.32, 48.848],
-      [2.337, 48.848],
-      [2.337, 48.858],
-      [2.32, 48.858],
-      [2.32, 48.848],
-    ],
-  },
-  {
-    name: "Canal Saint-Martin",
-    city: "Paris",
-    coordinates: [
-      [2.356, 48.866],
-      [2.372, 48.866],
-      [2.372, 48.876],
-      [2.356, 48.876],
-      [2.356, 48.866],
-    ],
-  },
-];
+const NEIGHBORHOOD_CITY = "Paris";
 
 /** The one login the seed performs: everything else goes through register + SQL
  *  to stay clear of the TOTP replay guard. */
@@ -205,8 +35,8 @@ async function neighborhoodIdsByName(
 async function seedNeighborhoods(token: string): Promise<void> {
   const existing = await neighborhoodIdsByName(token);
   let created = 0;
-  for (const nbh of PARIS_NEIGHBORHOODS) {
-    if (existing.has(nbh.name)) continue;
+  for (const shape of NEIGHBORHOOD_SHAPES) {
+    if (existing.has(shape.name)) continue;
     const res = await request("/neighborhoods", {
       method: "POST",
       headers: {
@@ -214,12 +44,17 @@ async function seedNeighborhoods(token: string): Promise<void> {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        name: nbh.name,
-        city: nbh.city,
-        geometry: { type: "Polygon", coordinates: [nbh.coordinates] },
+        name: shape.name,
+        city: NEIGHBORHOOD_CITY,
+        geometry: { type: "Polygon", coordinates: [shape.coordinates] },
       }),
     });
-    if (res.ok) created++;
+    // Carrying on would attach addresses to a neighborhood that was never
+    // created and leave its residents quietly unlocated, so stop here instead.
+    if (!res.ok) {
+      throw new Error(`${shape.name} rejected: ${await res.text()}`);
+    }
+    created++;
   }
   console.log(`  ✓ ${created} Paris neighborhood(s) created`);
 }

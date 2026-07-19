@@ -21,6 +21,7 @@ function conversation(overrides: Partial<Conversation> = {}): Conversation {
         neighborhoodId: null,
         lastMessageAt: null,
         createdAt: "2026-01-01T00:00:00.000Z",
+        unreadCount: 0,
         ...overrides,
     };
 }
@@ -101,43 +102,25 @@ describe("isConversationUnread", () => {
     it("is never unread when the conversation is active", () => {
         expect(
             isConversationUnread({
-                conversation: conversation({
-                    lastMessageAt: "2026-05-01T00:00:00.000Z",
-                }),
-                newestMessage: undefined,
-                readAt: undefined,
-                currentUserId: "me",
+                conversation: conversation({ unreadCount: 3 }),
                 isActive: true,
             }),
         ).toBe(false);
     });
 
-    it("is unread when the latest activity is newer than the read marker", () => {
+    it("is unread when the server counted messages from others", () => {
         expect(
             isConversationUnread({
-                conversation: conversation({
-                    lastMessageAt: "2026-05-02T00:00:00.000Z",
-                }),
-                newestMessage: undefined,
-                readAt: "2026-05-01T00:00:00.000Z",
-                currentUserId: "me",
+                conversation: conversation({ unreadCount: 2 }),
                 isActive: false,
             }),
         ).toBe(true);
     });
 
-    it("is read once your own message is the latest activity", () => {
+    it("is read once the server count is back to zero", () => {
         expect(
             isConversationUnread({
-                conversation: conversation({
-                    lastMessageAt: "2026-05-01T00:00:00.000Z",
-                }),
-                newestMessage: message({
-                    senderId: "me",
-                    createdAt: "2026-05-03T00:00:00.000Z",
-                }),
-                readAt: undefined,
-                currentUserId: "me",
+                conversation: conversation({ unreadCount: 0 }),
                 isActive: false,
             }),
         ).toBe(false);

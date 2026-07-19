@@ -141,19 +141,22 @@ The remaining variables (`PYTHON_BIN`, `DSL_PATH`, `DEMO_TOTP_SECRET`,
 
 ## Demo accounts
 
-All three accounts use password `Demo1234!` and the same demo TOTP secret.
+All three accounts use password `Demo1234!`. Each has its own TOTP secret: the
+replay guard is keyed on `secret:token`, so accounts sharing a secret lock each
+other out for the rest of the 30-second window.
 
 | Email         | Password  | Role      | TOTP secret                        |
 | ------------- | --------- | --------- | ---------------------------------- |
 | alice@demo.fr | Demo1234! | resident  | `4PX635D55YS6JJV3NYIXKZPREIO6YIIV` |
-| bob@demo.fr   | Demo1234! | moderator | `4PX635D55YS6JJV3NYIXKZPREIO6YIIV` |
-| admin@demo.fr | Demo1234! | admin     | `4PX635D55YS6JJV3NYIXKZPREIO6YIIV` |
+| bob@demo.fr   | Demo1234! | moderator | `K7QM4TZBX2VNHR5CJWYD6LPS3AF4EGU2` |
+| admin@demo.fr | Demo1234! | admin     | `P4WDGNQ7RJ25XKTCVBM3ZLHY6SFA4EDN` |
 
-Login requires a 6-digit TOTP code (valid 30s). Generate one:
+Login requires a 6-digit TOTP code (valid 30s). `make totp` prints one per
+account:
 
 ```bash
 make totp
-# Or: oathtool --totp --base32 4PX635D55YS6JJV3NYIXKZPREIO6YIIV
+# Or, for a single account: oathtool --totp --base32 <secret>
 ```
 
 ---

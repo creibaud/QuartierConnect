@@ -493,9 +493,39 @@ async function seedConversations(
     );
   }
 
+  seedReadMarkers(conversationIds.filter((id): id is string => id !== null));
+
   console.log(
     `  ✓ ${THREADS.length} conversation(s) in place (${messages} message(s) written)`,
   );
+}
+
+/**
+ * Everyone has read their own thread up to their last reply. Alice therefore
+ * keeps an unread badge on exactly the threads that close on someone else.
+ * Derived from the stored messages, not from the thread definitions, so a
+ * replay cannot drift the markers.
+ */
+function seedReadMarkers(conversationIds: string[]): void {
+  mongoEval(`
+    for (const id of ${JSON.stringify(conversationIds)}) {
+      const conversation = db.conversations.findOne({ _id: new ObjectId(id) });
+      if (!conversation) continue;
+      const lastReadAt = {};
+      for (const participant of conversation.participants) {
+        const own = db.messages
+          .find({ conversationId: id, senderId: participant, deleted: false })
+          .sort({ createdAt: -1 })
+          .limit(1)
+          .toArray()[0];
+        if (own) lastReadAt[participant] = own.createdAt;
+      }
+      db.conversations.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { lastReadAt } },
+      );
+    }
+  `);
 }
 
 interface ServiceRow {

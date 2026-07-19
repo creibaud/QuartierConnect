@@ -74,7 +74,7 @@ info: ## Show project info
 	@echo "    $(CYAN)Admin   $(RESET) http://localhost/admin"
 	@echo "    $(CYAN)API docs$(RESET) http://localhost/api/docs"
 	@echo ""
-	@echo "  Demo accounts (TOTP: oathtool --totp --base32 4PX635D55YS6JJV3NYIXKZPREIO6YIIV)"
+	@echo "  Demo accounts (one TOTP secret each — run make totp)"
 	@echo "    alice@demo.fr / Demo1234!  (resident)"
 	@echo "    bob@demo.fr   / Demo1234!  (moderator)"
 	@echo "    admin@demo.fr / Demo1234!  (admin)"
@@ -228,6 +228,7 @@ test-web: ## Web Vitest tests (shared hooks + UI components)
 	@echo "$(RUN) Web tests (Vitest)..."
 	@cd web-apps && pnpm --filter @workspace/shared test
 	@cd web-apps && pnpm --filter @workspace/ui test
+	@cd web-apps && pnpm --filter client test
 	@echo "$(OK) Web tests OK"
 
 test-watch: ## API tests in interactive watch mode
@@ -390,13 +391,18 @@ seed-neo4j: ## Populate Neo4j with nodes from MongoDB (neighborhoods, services, 
 	           NODE_PATH=./node_modules npx tsx ../scripts/seed-neo4j.ts
 	@echo "$(OK) Neo4j graph populated"
 
-totp: ## Generate a TOTP code for the demo accounts (secret: DEMO_TOTP_SECRET in .env)
+totp: ## Generate a TOTP code for each demo login (alice's secret: DEMO_TOTP_SECRET in .env)
 	@echo ""
-	@echo "$(BOLD)  TOTP code (valid 30s):$(RESET)"
-	@SECRET=$$(grep -E '^DEMO_TOTP_SECRET=' .env 2>/dev/null | cut -d= -f2- | tr -d '"'); \
-	 [ -n "$$SECRET" ] || SECRET=4PX635D55YS6JJV3NYIXKZPREIO6YIIV; \
-	 oathtool --totp --base32 "$$SECRET" 2>/dev/null && echo "" \
-		|| echo "  $(YELLOW)oathtool not available. Install: sudo apt install oathtool$(RESET)"
+	@echo "$(BOLD)  TOTP codes (valid 30s):$(RESET)"
+	@ALICE=$$(grep -E '^DEMO_TOTP_SECRET=' .env 2>/dev/null | cut -d= -f2- | tr -d '"'); \
+	 [ -n "$$ALICE" ] || ALICE=4PX635D55YS6JJV3NYIXKZPREIO6YIIV; \
+	 command -v oathtool >/dev/null 2>&1 \
+		|| { echo "  $(YELLOW)oathtool not available. Install: sudo apt install oathtool$(RESET)"; exit 0; }; \
+	 for pair in "alice@demo.fr:$$ALICE" \
+	             "bob@demo.fr:K7QM4TZBX2VNHR5CJWYD6LPS3AF4EGU2" \
+	             "admin@demo.fr:P4WDGNQ7RJ25XKTCVBM3ZLHY6SFA4EDN"; do \
+	   printf '  %-18s %s\n' "$${pair%%:*}" "$$(oathtool --totp --base32 "$${pair#*:}")"; \
+	 done; echo ""
 
 # ─── Git hooks ───────────────────────────────────────────────────────────────
 hooks: ## Enable the shared git hooks (pre-commit) — run once per clone

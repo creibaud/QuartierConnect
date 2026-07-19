@@ -1,0 +1,934 @@
+{
+ "neighborhoods": {
+  "Montmartre": [
+   {
+    "label": "8 Rue du Nord 75018 Paris",
+    "lng": 2.351738,
+    "lat": 48.892795
+   },
+   {
+    "label": "44 Rue Custine 75018 Paris",
+    "lng": 2.345603,
+    "lat": 48.889169
+   },
+   {
+    "label": "28 Rue Ganneron 75018 Paris",
+    "lng": 2.32863,
+    "lat": 48.887163
+   },
+   {
+    "label": "14 Rue Forest 75018 Paris",
+    "lng": 2.329087,
+    "lat": 48.885733
+   },
+   {
+    "label": "3 Rue Dejean 75018 Paris",
+    "lng": 2.350656,
+    "lat": 48.887196
+   },
+   {
+    "label": "6 Rue Steinlen 75018 Paris",
+    "lng": 2.332706,
+    "lat": 48.888854
+   },
+   {
+    "label": "31 Rue Simart 75018 Paris",
+    "lng": 2.347124,
+    "lat": 48.891342
+   },
+   {
+    "label": "180 Boulevard Ney 75018 Paris",
+    "lng": 2.330422,
+    "lat": 48.897842
+   },
+   {
+    "label": "6 Impasse Massonnet 75018 Paris",
+    "lng": 2.351727,
+    "lat": 48.895754
+   },
+   {
+    "label": "10 Rue de Trétaigne 75018 Paris",
+    "lng": 2.342293,
+    "lat": 48.891843
+   },
+   {
+    "label": "4 Place Marcel Aymé 75018 Paris",
+    "lng": 2.337753,
+    "lat": 48.887702
+   },
+   {
+    "label": "143B Rue Ordener 75018 Paris",
+    "lng": 2.339341,
+    "lat": 48.893121
+   },
+   {
+    "label": "128B Boulevard de Clichy 75018 Paris",
+    "lng": 2.329114,
+    "lat": 48.884631
+   },
+   {
+    "label": "4 Villa Dancourt 75018 Paris",
+    "lng": 2.341077,
+    "lat": 48.883044
+   },
+   {
+    "label": "4 Rue Henri Brisson 75018 Paris",
+    "lng": 2.335014,
+    "lat": 48.898336
+   },
+   {
+    "label": "51 Rue d'Orsel 75018 Paris",
+    "lng": 2.340585,
+    "lat": 48.883465
+   },
+   {
+    "label": "5 Rue Puget 75018 Paris",
+    "lng": 2.333571,
+    "lat": 48.884121
+   },
+   {
+    "label": "4 Rue Carpeaux 75018 Paris",
+    "lng": 2.330252,
+    "lat": 48.890398
+   },
+   {
+    "label": "40 Rue du Poteau 75018 Paris",
+    "lng": 2.341271,
+    "lat": 48.894521
+   },
+   {
+    "label": "48 Rue Vauvenargues 75018 Paris",
+    "lng": 2.331692,
+    "lat": 48.89526
+   },
+   {
+    "label": "18 Rue Camille Flammarion 75018 Paris",
+    "lng": 2.340179,
+    "lat": 48.89897
+   },
+   {
+    "label": "146 Avenue de Saint-Ouen 75018 Paris",
+    "lng": 2.328919,
+    "lat": 48.896886
+   },
+   {
+    "label": "36B Avenue Junot 75018 Paris",
+    "lng": 2.33666,
+    "lat": 48.889158
+   },
+   {
+    "label": "100 Rue de Clignancourt 75018 Paris",
+    "lng": 2.348809,
+    "lat": 48.891544
+   },
+   {
+    "label": "39 Rue Labat 75018 Paris",
+    "lng": 2.348559,
+    "lat": 48.889109
+   },
+   {
+    "label": "17 Rue Cauchois 75018 Paris",
+    "lng": 2.333008,
+    "lat": 48.885413
+   },
+   {
+    "label": "1 Place Jacques Froment 75018 Paris",
+    "lng": 2.330896,
+    "lat": 48.890898
+   },
+   {
+    "label": "7 Rue des Saules 75018 Paris",
+    "lng": 2.339652,
+    "lat": 48.887537
+   },
+   {
+    "label": "14 Place Jean-Baptiste Clément 75018 Paris",
+    "lng": 2.339536,
+    "lat": 48.886968
+   },
+   {
+    "label": "4 Villa Montcalm 75018 Paris",
+    "lng": 2.336921,
+    "lat": 48.893074
+   },
+   {
+    "label": "160 Rue Marcadet 75018 Paris",
+    "lng": 2.337986,
+    "lat": 48.891504
+   },
+   {
+    "label": "111 Rue Belliard 75018 Paris",
+    "lng": 2.338016,
+    "lat": 48.89665
+   },
+   {
+    "label": "21B Rue Joseph de Maistre 75018 Paris",
+    "lng": 2.331429,
+    "lat": 48.889532
+   },
+   {
+    "label": "75 Rue Championnet 75018 Paris",
+    "lng": 2.344094,
+    "lat": 48.895737
+   }
+  ],
+  "Marais": [
+   {
+    "label": "41 Rue de Turenne 75003 Paris",
+    "lng": 2.364332,
+    "lat": 48.85736
+   },
+   {
+    "label": "21 Rue des Minimes 75003 Paris",
+    "lng": 2.364825,
+    "lat": 48.857347
+   },
+   {
+    "label": "21A Place des Vosges 75003 Paris",
+    "lng": 2.365098,
+    "lat": 48.856703
+   },
+   {
+    "label": "7 Rue Charlot 75003 Paris",
+    "lng": 2.360451,
+    "lat": 48.861129
+   }
+  ],
+  "Belleville": [
+   {
+    "label": "38 Rue des Maronites 75020 Paris",
+    "lng": 2.384715,
+    "lat": 48.868486
+   },
+   {
+    "label": "26 Rue Henri Chevreau 75020 Paris",
+    "lng": 2.389378,
+    "lat": 48.869953
+   },
+   {
+    "label": "18 Rue Julien Lacroix 75020 Paris",
+    "lng": 2.385506,
+    "lat": 48.869592
+   },
+   {
+    "label": "31 Rue du Transvaal 75020 Paris",
+    "lng": 2.388698,
+    "lat": 48.871889
+   }
+  ],
+  "Quartier Latin": [
+   {
+    "label": "23 Rue Valette 75005 Paris",
+    "lng": 2.346575,
+    "lat": 48.846849
+   },
+   {
+    "label": "12 Rue Laplace 75005 Paris",
+    "lng": 2.347419,
+    "lat": 48.847371
+   },
+   {
+    "label": "21 Rue Cujas 75005 Paris",
+    "lng": 2.342061,
+    "lat": 48.847957
+   },
+   {
+    "label": "23 Rue Clovis 75005 Paris",
+    "lng": 2.347384,
+    "lat": 48.846358
+   }
+  ],
+  "Batignolles": [
+   {
+    "label": "36 Avenue de la Porte d'Asnières 75017 Paris",
+    "lng": 2.300954,
+    "lat": 48.892586
+   },
+   {
+    "label": "82 Place du Docteur Félix Lobligeois 75017 Paris",
+    "lng": 2.317876,
+    "lat": 48.887058
+   },
+   {
+    "label": "51 Rue Truffaut 75017 Paris",
+    "lng": 2.320108,
+    "lat": 48.886638
+   },
+   {
+    "label": "147P29 Rue Cardinet 75017 Paris",
+    "lng": 2.315519,
+    "lat": 48.89121
+   }
+  ],
+  "Bastille": [
+   {
+    "label": "9B Rue Michel Chasles 75012 Paris",
+    "lng": 2.37371,
+    "lat": 48.847154
+   },
+   {
+    "label": "167 Rue de Bercy 75012 Paris",
+    "lng": 2.375239,
+    "lat": 48.842607
+   },
+   {
+    "label": "59 Avenue Daumesnil 75012 Paris",
+    "lng": 2.376313,
+    "lat": 48.847023
+   },
+   {
+    "label": "9P2 Rue de Rambouillet 75012 Paris",
+    "lng": 2.379929,
+    "lat": 48.844054
+   }
+  ],
+  "Butte-aux-Cailles": [
+   {
+    "label": "25 Rue Gandon 75013 Paris",
+    "lng": 2.361182,
+    "lat": 48.820766
+   },
+   {
+    "label": "5 Rue Fernand Widal 75013 Paris",
+    "lng": 2.360749,
+    "lat": 48.818421
+   },
+   {
+    "label": "16 Square André Dreyer 75013 Paris",
+    "lng": 2.343291,
+    "lat": 48.827168
+   },
+   {
+    "label": "29 Avenue Léon Bollée 75013 Paris",
+    "lng": 2.361764,
+    "lat": 48.817846
+   }
+  ],
+  "Canal Saint-Martin": [
+   {
+    "label": "16 Rue Eugène Varlin 75010 Paris",
+    "lng": 2.363987,
+    "lat": 48.878784
+   },
+   {
+    "label": "21 Rue du Terrage 75010 Paris",
+    "lng": 2.362756,
+    "lat": 48.877361
+   },
+   {
+    "label": "7 Rue Juliette Dodu 75010 Paris",
+    "lng": 2.369852,
+    "lat": 48.874253
+   },
+   {
+    "label": "16B Rue de la Grange aux Belles 75010 Paris",
+    "lng": 2.367513,
+    "lat": 48.875282
+   }
+  ],
+  "Grenelle": [
+   {
+    "label": "71 Quai de Grenelle 75015 Paris",
+    "lng": 2.282294,
+    "lat": 48.84933
+   },
+   {
+    "label": "14 Passage du Guesclin 75015 Paris",
+    "lng": 2.297012,
+    "lat": 48.852203
+   },
+   {
+    "label": "4 Place du Cardinal Amette 75015 Paris",
+    "lng": 2.296926,
+    "lat": 48.850879
+   },
+   {
+    "label": "Rue de la Cavalerie 75015 Paris,Paris 15e Arrondissement",
+    "lng": 2.300373,
+    "lat": 48.84978
+   }
+  ],
+  "La Villette": [
+   {
+    "label": "2P Impasse des Anglais 75019 Paris",
+    "lng": 2.375756,
+    "lat": 48.889089
+   },
+   {
+    "label": "8 Impasse des Anglais 75019 Paris",
+    "lng": 2.376167,
+    "lat": 48.88887
+   },
+   {
+    "label": "14 Avenue Secrétan 75019 Paris",
+    "lng": 2.371483,
+    "lat": 48.881882
+   },
+   {
+    "label": "80A Quai de la Loire 75019 Paris",
+    "lng": 2.378753,
+    "lat": 48.886615
+   }
+  ],
+  "Montparnasse": [
+   {
+    "label": "283 Boulevard Raspail 75014 Paris",
+    "lng": 2.332072,
+    "lat": 48.836117
+   },
+   {
+    "label": "271 Boulevard Raspail 75014 Paris",
+    "lng": 2.331786,
+    "lat": 48.836883
+   },
+   {
+    "label": "18 Rue d'Odessa 75014 Paris",
+    "lng": 2.324533,
+    "lat": 48.841923
+   },
+   {
+    "label": "12 Rue Delambre 75014 Paris",
+    "lng": 2.328181,
+    "lat": 48.841786
+   }
+  ],
+  "Oberkampf": [
+   {
+    "label": "11 Rue Auguste Barbier 75011 Paris",
+    "lng": 2.371318,
+    "lat": 48.868948
+   },
+   {
+    "label": "104 Rue de la Folie-Méricourt 75011 Paris",
+    "lng": 2.368885,
+    "lat": 48.867727
+   },
+   {
+    "label": "77 Rue Jean-Pierre Timbaud 75011 Paris",
+    "lng": 2.377057,
+    "lat": 48.867657
+   },
+   {
+    "label": "8 Rue de Vaucouleurs 75011 Paris",
+    "lng": 2.377959,
+    "lat": 48.868659
+   }
+  ],
+  "Passy": [
+   {
+    "label": "18 Rue Chalgrin 75116 Paris",
+    "lng": 2.288958,
+    "lat": 48.874818
+   },
+   {
+    "label": "27 Rue de Longchamp 75116 Paris",
+    "lng": 2.290318,
+    "lat": 48.86491
+   },
+   {
+    "label": "26 Avenue Pierre Ier de Serbie 75116 Paris",
+    "lng": 2.298687,
+    "lat": 48.867046
+   },
+   {
+    "label": "19 Rue de Lubeck 75116 Paris",
+    "lng": 2.293196,
+    "lat": 48.865931
+   }
+  ],
+  "Père-Lachaise": [
+   {
+    "label": "31 Villa Godin 75020 Paris",
+    "lng": 2.400277,
+    "lat": 48.859449
+   },
+   {
+    "label": "73B Rue Villiers de l'Isle Adam 75020 Paris",
+    "lng": 2.397438,
+    "lat": 48.868045
+   },
+   {
+    "label": "115A Rue des Amandiers 75020 Paris",
+    "lng": 2.388201,
+    "lat": 48.867871
+   },
+   {
+    "label": "96 Boulevard de Ménilmontant 75020 Paris",
+    "lng": 2.38546,
+    "lat": 48.865025
+   }
+  ],
+  "Saint-Germain-des-Prés": [
+   {
+    "label": "13 Rue de l'Abbaye 75006 Paris",
+    "lng": 2.334369,
+    "lat": 48.854264
+   },
+   {
+    "label": "20 Rue du Dragon 75006 Paris",
+    "lng": 2.330832,
+    "lat": 48.853332
+   },
+   {
+    "label": "3 Rue Jacob 75006 Paris",
+    "lng": 2.336276,
+    "lat": 48.85466
+   },
+   {
+    "label": "8 Rue de Grenelle 75006 Paris",
+    "lng": 2.329679,
+    "lat": 48.852596
+   }
+  ]
+ },
+ "suburbs": [
+  {
+   "label": "42 Avenue Gabriel Péri 93100 Montreuil",
+   "lng": 2.442272,
+   "lat": 48.856882,
+   "commune": "Montreuil"
+  },
+  {
+   "label": "18 Rue du Pré Saint Gervais 93500 Pantin",
+   "lng": 2.402991,
+   "lat": 48.890308,
+   "commune": "Pantin"
+  },
+  {
+   "label": "Square Pierre de Geyter 93200 Saint-Denis,Saint-Denis",
+   "lng": 2.351752,
+   "lat": 48.931474,
+   "commune": "Saint-Denis"
+  },
+  {
+   "label": "43 Rue Gabriel Péri 94200 Ivry-sur-Seine",
+   "lng": 2.382626,
+   "lat": 48.813824,
+   "commune": "Ivry-sur-Seine"
+  },
+  {
+   "label": "189 Rue du Vieux Pont de Sèvres 92100 Boulogne-Billancourt",
+   "lng": 2.23718,
+   "lat": 48.82954,
+   "commune": "Boulogne-Billancourt"
+  },
+  {
+   "label": "4 Rue du Chemin Vert 93300 Aubervilliers",
+   "lng": 2.377537,
+   "lat": 48.918803,
+   "commune": "Aubervilliers"
+  },
+  {
+   "label": "37 Rue Edouard Nortier 92200 Neuilly-sur-Seine",
+   "lng": 2.268798,
+   "lat": 48.889595,
+   "commune": "Levallois-Perret"
+  },
+  {
+   "label": "6 Square Nungesser 94160 Saint-Mandé",
+   "lng": 2.416588,
+   "lat": 48.840493,
+   "commune": "Vincennes"
+  },
+  {
+   "label": "59 Avenue de la Résistance 93100 Montreuil",
+   "lng": 2.43676,
+   "lat": 48.861077,
+   "commune": "Montreuil"
+  },
+  {
+   "label": "30 Avenue Jean Lolive 93500 Pantin",
+   "lng": 2.399599,
+   "lat": 48.890322,
+   "commune": "Pantin"
+  },
+  {
+   "label": "16 Rue Auguste Gillot 93200 Saint-Denis",
+   "lng": 2.353436,
+   "lat": 48.940218,
+   "commune": "Saint-Denis"
+  },
+  {
+   "label": "35 Quai Marcel Boyer 94200 Ivry-sur-Seine",
+   "lng": 2.394243,
+   "lat": 48.820998,
+   "commune": "Ivry-sur-Seine"
+  },
+  {
+   "label": "159 Rue du Vieux Pont de Sèvres 92100 Boulogne-Billancourt",
+   "lng": 2.241804,
+   "lat": 48.831316,
+   "commune": "Boulogne-Billancourt"
+  },
+  {
+   "label": "26 Rue de Valmy 93120 La Courneuve",
+   "lng": 2.379704,
+   "lat": 48.921843,
+   "commune": "Aubervilliers"
+  },
+  {
+   "label": "95 Rue de Chézy 92200 Neuilly-sur-Seine",
+   "lng": 2.274747,
+   "lat": 48.890938,
+   "commune": "Levallois-Perret"
+  },
+  {
+   "label": "25 Rue de la République 93100 Montreuil",
+   "lng": 2.421806,
+   "lat": 48.85298,
+   "commune": "Vincennes"
+  }
+ ],
+ "content": [
+  {
+   "label": "19 Rue d'Oslo 75018 Paris",
+   "lng": 2.329418,
+   "lat": 48.892327
+  },
+  {
+   "label": "15 Passage des Abbesses 75018 Paris",
+   "lng": 2.338363,
+   "lat": 48.885481
+  },
+  {
+   "label": "168 Boulevard Ney 75018 Paris",
+   "lng": 2.332139,
+   "lat": 48.897879
+  },
+  {
+   "label": "9 Place Saint-Pierre 75018 Paris",
+   "lng": 2.343823,
+   "lat": 48.884327
+  },
+  {
+   "label": "2 Rue Jean Cocteau 75018 Paris",
+   "lng": 2.351992,
+   "lat": 48.899686
+  },
+  {
+   "label": "5 Place Django Reinhardt 75018 Paris",
+   "lng": 2.343237,
+   "lat": 48.900374
+  },
+  {
+   "label": "3 Rue René Binet 75018 Paris",
+   "lng": 2.343319,
+   "lat": 48.899222
+  },
+  {
+   "label": "1 Rue Girardon 75018 Paris",
+   "lng": 2.337207,
+   "lat": 48.887394
+  },
+  {
+   "label": "Place Émile Goudeau 75018 Paris,Paris 18e Arrondissement",
+   "lng": 2.337783,
+   "lat": 48.886046
+  },
+  {
+   "label": "4 Villa Armand 75018 Paris",
+   "lng": 2.330929,
+   "lat": 48.893312
+  },
+  {
+   "label": "46 Rue Caulaincourt 75018 Paris",
+   "lng": 2.334582,
+   "lat": 48.888809
+  },
+  {
+   "label": "5 Rue Belliard 75018 Paris",
+   "lng": 2.351749,
+   "lat": 48.89787
+  },
+  {
+   "label": "129 Rue Belliard 75018 Paris",
+   "lng": 2.335629,
+   "lat": 48.896349
+  },
+  {
+   "label": "111 Rue du Mont Cenis 75018 Paris",
+   "lng": 2.345589,
+   "lat": 48.89493
+  },
+  {
+   "label": "68 Boulevard Barbès 75018 Paris",
+   "lng": 2.349806,
+   "lat": 48.88879
+  },
+  {
+   "label": "9 Rue de Trétaigne 75018 Paris",
+   "lng": 2.342135,
+   "lat": 48.891938
+  },
+  {
+   "label": "229B Rue Marcadet 75018 Paris",
+   "lng": 2.33109,
+   "lat": 48.89227
+  },
+  {
+   "label": "Rue Hégésippe Moreau 75018 Paris,Paris 18e Arrondissement",
+   "lng": 2.327405,
+   "lat": 48.887323
+  },
+  {
+   "label": "56 Rue des Saules 75018 Paris",
+   "lng": 2.340681,
+   "lat": 48.891086
+  },
+  {
+   "label": "26 Rue Bachelet 75018 Paris",
+   "lng": 2.344696,
+   "lat": 48.889106
+  },
+  {
+   "label": "5 Rue Letort 75018 Paris",
+   "lng": 2.342956,
+   "lat": 48.893898
+  },
+  {
+   "label": "10 Rue de la Barrière Blanche 75018 Paris",
+   "lng": 2.330619,
+   "lat": 48.88943
+  },
+  {
+   "label": "13 Passage Duhesme 75018 Paris",
+   "lng": 2.347748,
+   "lat": 48.896018
+  },
+  {
+   "label": "15 Rue Louis Pasteur Valléry-Radot 75018 Paris",
+   "lng": 2.332519,
+   "lat": 48.90018
+  },
+  {
+   "label": "96 Boulevard Ney 75018 Paris",
+   "lng": 2.346318,
+   "lat": 48.898334
+  },
+  {
+   "label": "52B Rue de Clignancourt 75018 Paris",
+   "lng": 2.347967,
+   "lat": 48.887827
+  },
+  {
+   "label": "7 Place Saint-Pierre 75018 Paris",
+   "lng": 2.344325,
+   "lat": 48.884351
+  },
+  {
+   "label": "3 Square de Clignancourt 75018 Paris",
+   "lng": 2.345982,
+   "lat": 48.892611
+  },
+  {
+   "label": "46 Rue Duhesme 75018 Paris",
+   "lng": 2.340771,
+   "lat": 48.891916
+  },
+  {
+   "label": "58 Rue Ramey 75018 Paris",
+   "lng": 2.345131,
+   "lat": 48.891289
+  },
+  {
+   "label": "6B Passage Lepic 75018 Paris",
+   "lng": 2.334508,
+   "lat": 48.884579
+  },
+  {
+   "label": "91 Rue Duhesme 75018 Paris",
+   "lng": 2.344453,
+   "lat": 48.894706
+  },
+  {
+   "label": "4 Passage des Abbesses 75018 Paris",
+   "lng": 2.338151,
+   "lat": 48.88486
+  },
+  {
+   "label": "7 Place Django Reinhardt 75018 Paris",
+   "lng": 2.34323,
+   "lat": 48.900527
+  },
+  {
+   "label": "3 Rue du Ruisseau 75018 Paris",
+   "lng": 2.339641,
+   "lat": 48.891547
+  },
+  {
+   "label": "1 Avenue Rachel 75018 Paris",
+   "lng": 2.33046,
+   "lat": 48.884607
+  },
+  {
+   "label": "2 Rue d'Oslo 75018 Paris",
+   "lng": 2.329044,
+   "lat": 48.891423
+  },
+  {
+   "label": "18 Rue Bernard Dimey 75018 Paris",
+   "lng": 2.33054,
+   "lat": 48.897056
+  },
+  {
+   "label": "44 Rue Damrémont 75018 Paris",
+   "lng": 2.333958,
+   "lat": 48.889786
+  },
+  {
+   "label": "71 Rue des Poissonniers 75018 Paris",
+   "lng": 2.351579,
+   "lat": 48.891394
+  },
+  {
+   "label": "114 Rue de Clignancourt 75018 Paris",
+   "lng": 2.349166,
+   "lat": 48.893173
+  },
+  {
+   "label": "12 Rue Germain Pilon 75018 Paris",
+   "lng": 2.336696,
+   "lat": 48.883656
+  },
+  {
+   "label": "37 Rue Vauvenargues 75018 Paris",
+   "lng": 2.332031,
+   "lat": 48.894599
+  },
+  {
+   "label": "63B Rue Ramey 75018 Paris",
+   "lng": 2.345153,
+   "lat": 48.890714
+  },
+  {
+   "label": "5 Impasse Robert 75018 Paris",
+   "lng": 2.338846,
+   "lat": 48.895294
+  },
+  {
+   "label": "49B Rue Custine 75018 Paris",
+   "lng": 2.343884,
+   "lat": 48.889429
+  },
+  {
+   "label": "47 Rue du Simplon 75018 Paris",
+   "lng": 2.347833,
+   "lat": 48.894377
+  },
+  {
+   "label": "15 Passage du Champ Marie 75018 Paris",
+   "lng": 2.337045,
+   "lat": 48.896283
+  },
+  {
+   "label": "10 Rue Jean Cocteau 75018 Paris",
+   "lng": 2.350206,
+   "lat": 48.89965
+  },
+  {
+   "label": "34 Boulevard Ornano 75018 Paris",
+   "lng": 2.348127,
+   "lat": 48.893755
+  },
+  {
+   "label": "14A Rue Georgette Agutte 75018 Paris",
+   "lng": 2.333468,
+   "lat": 48.895365
+  },
+  {
+   "label": "16 Rue de la Barrière Blanche 75018 Paris",
+   "lng": 2.330082,
+   "lat": 48.889713
+  },
+  {
+   "label": "7 Rue Nicolet 75018 Paris",
+   "lng": 2.346122,
+   "lat": 48.888082
+  },
+  {
+   "label": "8 Rue de l'Abreuvoir 75018 Paris",
+   "lng": 2.339051,
+   "lat": 48.888255
+  },
+  {
+   "label": "31 Rue Belliard 75018 Paris",
+   "lng": 2.348438,
+   "lat": 48.897804
+  },
+  {
+   "label": "3 Rue Ronsard 75018 Paris",
+   "lng": 2.344088,
+   "lat": 48.884767
+  },
+  {
+   "label": "28 Boulevard Ornano 75018 Paris",
+   "lng": 2.348438,
+   "lat": 48.893384
+  },
+  {
+   "label": "18 Rue Baudelique 75018 Paris",
+   "lng": 2.34755,
+   "lat": 48.892869
+  },
+  {
+   "label": "149 Rue des Poissonniers 75018 Paris",
+   "lng": 2.352577,
+   "lat": 48.896853
+  },
+  {
+   "label": "4 Place Albert Kahn 75018 Paris",
+   "lng": 2.346579,
+   "lat": 48.895908
+  },
+  {
+   "label": "134 Boulevard de Clichy 75018 Paris",
+   "lng": 2.328324,
+   "lat": 48.884123
+  },
+  {
+   "label": "11 Rue Belhomme 75018 Paris",
+   "lng": 2.34847,
+   "lat": 48.884237
+  },
+  {
+   "label": "4 Rue des Saules 75018 Paris",
+   "lng": 2.339809,
+   "lat": 48.887408
+  },
+  {
+   "label": "46 Rue Henri Huchard 75018 Paris",
+   "lng": 2.330921,
+   "lat": 48.899124
+  },
+  {
+   "label": "1 Avenue de la Porte des Poissonniers 75018 Paris",
+   "lng": 2.352268,
+   "lat": 48.898639
+  },
+  {
+   "label": "27 Rue Henri Huchard 75018 Paris",
+   "lng": 2.330438,
+   "lat": 48.898949
+  },
+  {
+   "label": "14 Passage Penel 75018 Paris",
+   "lng": 2.341966,
+   "lat": 48.896223
+  },
+  {
+   "label": "15 Rue Nicolet 75018 Paris",
+   "lng": 2.345453,
+   "lat": 48.887989
+  },
+  {
+   "label": "7 Rue Ferdinand Flocon 75018 Paris",
+   "lng": 2.346029,
+   "lat": 48.891889
+  },
+  {
+   "label": "128 Boulevard Ney 75018 Paris",
+   "lng": 2.340308,
+   "lat": 48.898051
+  }
+ ]
+}

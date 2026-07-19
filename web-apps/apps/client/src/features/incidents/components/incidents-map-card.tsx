@@ -21,14 +21,21 @@ import { incidentStatusLabels } from "../lib/status-labels";
 export function IncidentsMapCard({ incidents }: { incidents: Incident[] }) {
     const { t } = useTranslation();
     const { data: neighborhoods } = useNeighborhoods();
-    const { data: myLocation } = useMyLocation();
-    const firstNeighborhood = neighborhoods?.find((n) => n.geometry);
+    const { data: myLocation, isPending: locationPending } = useMyLocation();
     const incidentsWithCoords = incidents.filter(
         (i) => i.lat !== null && i.lng !== null,
     );
     const statusLabels = incidentStatusLabels(t);
 
-    if (!firstNeighborhood?.geometry) return null;
+    // The map reads `center` once, at mount. Mounting before the location
+    // resolves would freeze the view on whichever neighborhood came first.
+    if (locationPending) return null;
+
+    const focusGeometry =
+        myLocation?.neighborhood?.geometry ??
+        neighborhoods?.find((n) => n.geometry)?.geometry ??
+        null;
+    if (!focusGeometry) return null;
 
     return (
         <Card>
@@ -45,7 +52,7 @@ export function IncidentsMapCard({ incidents }: { incidents: Incident[] }) {
             <CardContent>
                 <div className="relative isolate">
                     <Map
-                        center={centroidOf(firstNeighborhood.geometry)}
+                        center={centroidOf(focusGeometry)}
                         zoom={14}
                         className="h-[40dvh] min-h-64 w-full md:h-[400px] md:min-h-[400px]"
                     >
@@ -86,9 +93,7 @@ export function IncidentsMapCard({ incidents }: { incidents: Incident[] }) {
                                     ? [myLocation.lat, myLocation.lng]
                                     : null
                             }
-                            fitGeometry={
-                                myLocation?.neighborhood?.geometry ?? null
-                            }
+                            fitGeometry={focusGeometry}
                         />
                     </Map>
                 </div>

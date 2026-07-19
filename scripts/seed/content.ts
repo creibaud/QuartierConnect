@@ -8,6 +8,7 @@ import {
   type ServiceSeed,
   type VoteSeed,
 } from "./content-data";
+import { CONTENT_ADDRESSES } from "./geo";
 import { ROSTER } from "./roster";
 import { postAs, primeToken, sendAs, warnIfFailed } from "./session";
 
@@ -63,18 +64,26 @@ class AuthorRotation {
   }
 }
 
-const LATTICE_COLUMNS = 8;
-// ~500 m across: every pin stays inside the demo neighborhood's polygon.
-const LATTICE_SPAN = 0.007;
+/**
+ * Pins every demo-neighborhood listing to a real street of that neighborhood,
+ * handed out in declaration order. Built once over the three lists so the
+ * mapping never depends on which seeder runs first. There are 121 pinned
+ * listings for 70 addresses, so the pool wraps and 51 of them host two: a
+ * doorway shared by two listings reads as normal, the lattice this replaces
+ * drew a visible grid on the dashboard map.
+ */
+const PINNED_PLACES = new Map<string, Point>(
+  [...SERVICES, ...INCIDENTS, ...EVENTS]
+    .filter((item) => item.neighborhood === undefined)
+    .map((item, index) => {
+      const place = CONTENT_ADDRESSES[index % CONTENT_ADDRESSES.length];
+      return [item.title, { lng: place.lng, lat: place.lat }];
+    }),
+);
 
-function scatter(demo: DemoNeighborhood, index: number): Point {
-  const step = LATTICE_SPAN / (LATTICE_COLUMNS - 1);
-  const column = index % LATTICE_COLUMNS;
-  const row = Math.floor(index / LATTICE_COLUMNS) % LATTICE_COLUMNS;
-  return {
-    lng: demo.lng - LATTICE_SPAN / 2 + column * step,
-    lat: demo.lat - LATTICE_SPAN / 2 + row * step,
-  };
+/** Only demo-neighborhood listings carry a pin: the map screen shows that one. */
+function placeOf(title: string): Point | null {
+  return PINNED_PLACES.get(title) ?? null;
 }
 
 function inDays(days: number): string {
@@ -109,15 +118,14 @@ async function seedServices(
   const rotation = new AuthorRotation();
   let created = 0;
 
-  for (const [index, service] of SERVICES.entries()) {
+  for (const service of SERVICES) {
     const neighborhood = service.neighborhood ?? demo.name;
     // A pinned author skips the rotation, so inserting one leaves every other
     // listing's author untouched.
     const author = service.author ?? rotation.next(neighborhood);
     if (existing.has(service.title)) continue;
 
-    // Only demo-neighborhood listings carry a pin: the map screen shows that one.
-    const place = service.neighborhood ? null : scatter(demo, index);
+    const place = placeOf(service.title);
     const res = await postAs(author, "/services", serviceBody(service, place));
     if (await warnIfFailed(`service "${service.title}"`, res)) created++;
   }
@@ -157,12 +165,12 @@ async function seedIncidents(
   }> = [];
   let created = 0;
 
-  for (const [index, incident] of INCIDENTS.entries()) {
+  for (const incident of INCIDENTS) {
     const neighborhood = incident.neighborhood ?? demo.name;
     const author = incident.author ?? rotation.next(neighborhood);
     if (existing.has(incident.title)) continue;
 
-    const place = incident.neighborhood ? null : scatter(demo, index);
+    const place = placeOf(incident.title);
     const res = await postAs(author, "/incidents", {
       title: incident.title,
       description: incident.description,
@@ -229,7 +237,7 @@ async function seedEvents(
     const author = rotation.next(neighborhood);
     if (existing.has(event.title)) continue;
 
-    const place = event.neighborhood ? null : scatter(demo, index);
+    const place = placeOf(event.title);
     const res = await postAs(author, "/events", {
       title: event.title,
       description: event.description,

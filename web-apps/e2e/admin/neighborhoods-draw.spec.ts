@@ -280,6 +280,10 @@ test.describe("Admin — Neighborhoods polygon draw", () => {
         const dialog = await openCreateDialog(page);
         const canvas = await waitForDrawReady(dialog);
 
+        // Zoom out first: the seeded neighborhoods follow real Paris quartier
+        // boundaries, so they no longer tile the default view and a square drawn
+        // at this zoom can land in a gap between them.
+        await zoomOut(dialog, 3);
         await drawSquare(page, canvas, 50);
         await expect(dialog.getByText(/Polygone défini/)).toBeVisible();
 

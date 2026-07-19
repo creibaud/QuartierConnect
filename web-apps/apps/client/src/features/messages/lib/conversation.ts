@@ -1,4 +1,7 @@
-import type { Conversation, Message } from "@workspace/shared/lib/types";
+import type {
+    Conversation,
+    LastMessagePreview,
+} from "@workspace/shared/lib/types";
 import type { TFunction } from "i18next";
 
 export function conversationLabel(
@@ -51,7 +54,7 @@ export function formatConversationTimestamp(
 }
 
 export function messagePreview(
-    message: Message,
+    message: LastMessagePreview,
     currentUserId: string,
     t: TFunction,
 ): string {
@@ -68,32 +71,16 @@ export function messagePreview(
         : body;
 }
 
+/**
+ * The count is the server's, computed against a persisted read marker. Opening
+ * the thread clears it, so an active conversation never shows the badge.
+ */
 export function isConversationUnread({
     conversation,
-    newestMessage,
-    readAt,
-    currentUserId,
     isActive,
 }: {
     conversation: Conversation;
-    newestMessage: Message | undefined;
-    readAt: string | undefined;
-    currentUserId: string;
     isActive: boolean;
 }): boolean {
-    if (isActive) return false;
-    const newestMessageAt = newestMessage
-        ? Date.parse(newestMessage.createdAt)
-        : 0;
-    const listActivityAt = conversation.lastMessageAt
-        ? Date.parse(conversation.lastMessageAt)
-        : 0;
-    const latestActivityAt = Math.max(newestMessageAt, listActivityAt);
-    if (latestActivityAt === 0) return false;
-    const latestIsOwnMessage =
-        newestMessage !== undefined &&
-        newestMessageAt >= listActivityAt &&
-        newestMessage.senderId === currentUserId;
-    if (latestIsOwnMessage) return false;
-    return !readAt || latestActivityAt > Date.parse(readAt);
+    return !isActive && conversation.unreadCount > 0;
 }

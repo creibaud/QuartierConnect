@@ -21,12 +21,10 @@ export function ConversationList({
     activeId,
     onSelect,
     currentUserId,
-    readMarkers,
 }: {
     activeId: string | null;
     onSelect: (id: string) => void;
     currentUserId: string;
-    readMarkers: Record<string, string>;
 }) {
     const { t, i18n } = useTranslation();
     const { data: conversations, isLoading, isError } = useConversations();
@@ -81,15 +79,15 @@ export function ConversationList({
             {sorted.map((conv) => {
                 const label = conversationLabel(conv, currentUserId, t);
                 const isActive = activeId === conv._id;
-                const newestMessage = newestCachedById.get(conv._id);
+                // The cache only holds threads already opened; the list payload
+                // covers the rest, including a cold load.
+                const newestMessage =
+                    newestCachedById.get(conv._id) ?? conv.lastMessage;
                 const preview = newestMessage
                     ? messagePreview(newestMessage, currentUserId, t)
                     : null;
                 const unread = isConversationUnread({
                     conversation: conv,
-                    newestMessage,
-                    readAt: readMarkers[conv._id],
-                    currentUserId,
                     isActive,
                 });
                 const isOtherOnline = otherParticipantIds(

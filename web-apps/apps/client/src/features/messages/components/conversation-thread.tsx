@@ -49,7 +49,7 @@ export function ConversationThread({
 }: {
     conversationId: string;
     currentUserId: string;
-    onRead: (conversationId: string, readAt: string) => void;
+    onRead: (conversationId: string) => void;
 }) {
     const { t } = useTranslation();
     const [inputValue, setInputValue] = useState("");
@@ -91,8 +91,9 @@ export function ConversationThread({
 
     const newestMessageAt = allMessages[allMessages.length - 1]?.createdAt;
 
+    // Re-runs as messages land so a thread read live never keeps a stale badge.
     useEffect(() => {
-        onRead(conversationId, newestMessageAt ?? new Date().toISOString());
+        onRead(conversationId);
     }, [conversationId, newestMessageAt, onRead]);
 
     function handleSend(e: React.FormEvent) {

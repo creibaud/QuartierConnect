@@ -41,6 +41,7 @@ function makeConvModel(overrides?: object) {
 function makeMsgModel(overrides?: object) {
     const self = {
         find: jest.fn(),
+        aggregate: jest.fn().mockResolvedValue([]),
         ...overrides,
     };
     return self;
@@ -109,15 +110,84 @@ describe("MessagingService", () => {
     });
 
     describe("findConversations", () => {
-        it("returns conversations where user participates", async () => {
+        beforeEach(() => {
             convModel.find.mockReturnValue({
                 sort: jest.fn().mockReturnValue({
                     exec: jest.fn().mockResolvedValue([mockConversation]),
                 }),
             });
+        });
 
+        it("returns conversations where user participates", async () => {
             const result = await service.findConversations("user-1");
             expect(result).toHaveLength(1);
+        });
+
+        it("reports the unread count the aggregation returned", async () => {
+            msgModel.aggregate
+                .mockResolvedValueOnce([])
+                .mockResolvedValueOnce([{ _id: "conv-1", count: 3 }]);
+
+            const [conversation] = await service.findConversations("user-1");
+            expect(conversation.unreadCount).toBe(3);
+        });
+
+        it("reports zero unread when the aggregation skipped the conversation", async () => {
+            const [conversation] = await service.findConversations("user-1");
+            expect(conversation.unreadCount).toBe(0);
+        });
+
+        it("counts only messages newer than the caller read marker", async () => {
+            const readAt = new Date("2026-05-01T00:00:00.000Z");
+            convModel.find.mockReturnValue({
+                sort: jest.fn().mockReturnValue({
+                    exec: jest.fn().mockResolvedValue([
+                        {
+                            ...mockConversation,
+                            lastReadAt: new Map([["user-1", readAt]]),
+                        },
+                    ]),
+                }),
+            });
+
+            await service.findConversations("user-1");
+
+            const [, unreadPipeline] = msgModel.aggregate.mock.calls;
+            expect(unreadPipeline[0][0].$match.$or).toEqual([
+                { conversationId: "conv-1", createdAt: { $gt: readAt } },
+            ]);
+        });
+    });
+
+    describe("markConversationRead", () => {
+        it("stamps the caller marker on the conversation", async () => {
+            convModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockConversation),
+            });
+            const updateOne = jest.fn().mockReturnValue({
+                exec: jest.fn().mockResolvedValue({}),
+            });
+            Object.assign(convModel, { updateOne });
+
+            const { readAt } = await service.markConversationRead(
+                "conv-1",
+                "user-1",
+            );
+
+            expect(updateOne).toHaveBeenCalledWith(
+                { _id: "conv-1" },
+                { $set: { "lastReadAt.user-1": new Date(readAt) } },
+            );
+        });
+
+        it("refuses a non-participant", async () => {
+            convModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockConversation),
+            });
+
+            await expect(
+                service.markConversationRead("conv-1", "intruder"),
+            ).rejects.toThrow(ForbiddenException);
         });
     });
 

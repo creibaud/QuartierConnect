@@ -22,6 +22,14 @@ import {
     MessageType,
 } from "./schemas/message.schema";
 
+export interface LastMessagePreview {
+    senderId: string;
+    type: MessageType;
+    content: string | null;
+    fileName: string | null;
+    createdAt: Date;
+}
+
 @Injectable()
 export class MessagingService {
     constructor(
@@ -83,14 +91,119 @@ export class MessagingService {
             ]),
         );
 
-        return conversations.map((conv) => ({
-            ...conv.toObject(),
-            participantsInfo: conv.participants.map((id) => ({
-                id,
-                email: emailById.get(id) ?? null,
-                name: nameById.get(id) ?? null,
-            })),
-        }));
+        const [lastMessageById, unreadCountById] = await Promise.all([
+            this.findLastMessages(conversations),
+            this.countUnreadMessages(conversations, userId),
+        ]);
+
+        return conversations.map((conv) => {
+            const plain = conv.toObject();
+            // Holds one marker per participant. The caller's own is already
+            // folded into unreadCount, and the others are not theirs to read.
+            delete (plain as { lastReadAt?: unknown }).lastReadAt;
+            return {
+                ...plain,
+                participantsInfo: conv.participants.map((id) => ({
+                    id,
+                    email: emailById.get(id) ?? null,
+                    name: nameById.get(id) ?? null,
+                })),
+                lastMessage: lastMessageById.get(String(conv._id)) ?? null,
+                unreadCount: unreadCountById.get(String(conv._id)) ?? 0,
+            };
+        });
+    }
+
+    /**
+     * The list needs a preview and a sender without loading every thread, so the
+     * newest surviving message of each conversation is folded in here.
+     */
+    private async findLastMessages(
+        conversations: ConversationDocument[],
+    ): Promise<Map<string, LastMessagePreview>> {
+        if (conversations.length === 0) return new Map();
+
+        const rows = await this.messageModel.aggregate<
+            { _id: string } & LastMessagePreview
+        >([
+            {
+                $match: {
+                    conversationId: {
+                        $in: conversations.map((conv) => String(conv._id)),
+                    },
+                    deleted: false,
+                },
+            },
+            { $sort: { createdAt: -1 } },
+            {
+                $group: {
+                    _id: "$conversationId",
+                    senderId: { $first: "$senderId" },
+                    type: { $first: "$type" },
+                    content: { $first: "$content" },
+                    fileName: { $first: "$fileName" },
+                    createdAt: { $first: "$createdAt" },
+                },
+            },
+        ]);
+
+        return new Map(
+            rows.map(({ _id, ...preview }) => [
+                _id,
+                preview as LastMessagePreview,
+            ]),
+        );
+    }
+
+    /**
+     * Counts what the user has not seen: messages from someone else, newer than
+     * their own read marker. A conversation they never opened counts everything.
+     */
+    private async countUnreadMessages(
+        conversations: ConversationDocument[],
+        userId: string,
+    ): Promise<Map<string, number>> {
+        if (conversations.length === 0) return new Map();
+
+        const perConversation = conversations.map((conv) => {
+            const readAt = conv.lastReadAt?.get(userId);
+            return {
+                conversationId: String(conv._id),
+                ...(readAt ? { createdAt: { $gt: readAt } } : {}),
+            };
+        });
+
+        const rows = await this.messageModel.aggregate<{
+            _id: string;
+            count: number;
+        }>([
+            {
+                $match: {
+                    deleted: false,
+                    senderId: { $ne: userId },
+                    $or: perConversation,
+                },
+            },
+            { $group: { _id: "$conversationId", count: { $sum: 1 } } },
+        ]);
+
+        return new Map(rows.map((row) => [row._id, row.count]));
+    }
+
+    /** The marker is server-stamped so a wrong client clock cannot hide messages. */
+    async markConversationRead(
+        conversationId: string,
+        userId: string,
+    ): Promise<{ readAt: string }> {
+        await this.assertParticipant(conversationId, userId);
+        const readAt = new Date();
+        await this.conversationModel
+            .updateOne(
+                { _id: conversationId },
+                { $set: { [`lastReadAt.${userId}`]: readAt } },
+            )
+            .exec();
+        return { readAt: readAt.toISOString() };
     }
 
     async createConversation(dto: CreateConversationDto, userId: string) {

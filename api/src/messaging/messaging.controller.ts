@@ -137,6 +137,22 @@ export class MessagingController {
         );
     }
 
+    @Post("conversations/:id/read")
+    @ApiOperation({
+        summary: "Mark a conversation as read",
+        description:
+            "Moves the caller's read marker to now, clearing the unread count.",
+    })
+    @ApiParam({ name: "id", description: "MongoDB ID of the conversation" })
+    @ApiResponse({
+        status: 201,
+        schema: { example: { readAt: "2026-04-05T12:00:00.000Z" } },
+    })
+    @ApiResponse({ status: 403, description: "Not a participant" })
+    markConversationRead(@Param("id") id: string, @Request() req: AuthRequest) {
+        return this.messagingService.markConversationRead(id, req.user.sub);
+    }
+
     @Post("conversations/:id/upload")
     @ApiOperation({
         summary: "Send a file in a conversation (GridFS)",

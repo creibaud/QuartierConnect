@@ -164,6 +164,17 @@ export interface Conversation {
     neighborhoodId: string | null;
     lastMessageAt: string | null;
     createdAt: string;
+    /** Messages from others newer than my read marker. */
+    unreadCount: number;
+    lastMessage?: LastMessagePreview | null;
+}
+
+export interface LastMessagePreview {
+    senderId: string;
+    type: "text" | "file" | "image" | "audio";
+    content: string | null;
+    fileName: string | null;
+    createdAt: string;
 }
 
 export interface Message {

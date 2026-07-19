@@ -188,9 +188,17 @@ pnpm dlx shadcn@latest add <component>
 | bob@demo.fr   | Demo1234!    | moderator |
 | admin@demo.fr | Demo1234!    | admin     |
 
-Shared TOTP secret: `4PX635D55YS6JJV3NYIXKZPREIO6YIIV`
+Each account has its own TOTP secret, because the replay guard is keyed on
+`secret:token` and a shared secret would let only one of them log in per
+30-second window:
+
+| Email         | TOTP secret                        |
+| ------------- | ---------------------------------- |
+| alice@demo.fr | `4PX635D55YS6JJV3NYIXKZPREIO6YIIV` |
+| bob@demo.fr   | `K7QM4TZBX2VNHR5CJWYD6LPS3AF4EGU2` |
+| admin@demo.fr | `P4WDGNQ7RJ25XKTCVBM3ZLHY6SFA4EDN` |
 
 ```bash
 make totp
-# or: oathtool --totp --base32 4PX635D55YS6JJV3NYIXKZPREIO6YIIV
+# or, for a single account: oathtool --totp --base32 <secret>
 ```

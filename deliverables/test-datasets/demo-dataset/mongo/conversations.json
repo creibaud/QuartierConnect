@@ -1,244 +1,338 @@
 [{
 	"_id": {
-		"$oid": "6a5ca52c76d969f391133336"
+		"$oid": "6a5cca152cf0e1ce2a3c9db3"
 	},
 	"participants": [
-		"0b653a65-ed00-4bff-8363-87db61282945",
-		"4de869de-be0a-47b9-9f6a-772041cdc24f"
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587",
+		"20c07cb0-abf1-44bc-9c10-4111e876b7d0"
 	],
 	"neighborhoodId": null,
 	"isGroup": false,
 	"groupName": null,
 	"lastMessageAt": {
-		"$date": "2026-07-19T10:16:33.131Z"
+		"$date": "2026-07-19T12:54:01.938Z"
+	},
+	"lastReadAt": {
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587": {
+			"$date": "2026-07-19T12:34:01.938Z"
+		},
+		"20c07cb0-abf1-44bc-9c10-4111e876b7d0": {
+			"$date": "2026-07-19T12:54:01.938Z"
+		}
 	},
 	"createdAt": {
-		"$date": "2026-07-19T10:21:32.728Z"
+		"$date": "2026-07-19T12:59:01.533Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T10:21:33.266Z"
+		"$date": "2026-07-19T12:59:02.007Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ca52c76d969f391133337"
+		"$oid": "6a5cca152cf0e1ce2a3c9db4"
 	},
 	"participants": [
-		"0b653a65-ed00-4bff-8363-87db61282945",
-		"84ec11af-7898-463a-8cca-525ac60cbf59"
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587",
+		"230a605b-3731-42c3-8048-ded936016833"
 	],
 	"neighborhoodId": null,
 	"isGroup": false,
 	"groupName": null,
 	"lastMessageAt": {
-		"$date": "2026-07-19T05:16:33.595Z"
+		"$date": "2026-07-19T07:54:02.359Z"
+	},
+	"lastReadAt": {
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587": {
+			"$date": "2026-07-19T07:50:02.359Z"
+		},
+		"230a605b-3731-42c3-8048-ded936016833": {
+			"$date": "2026-07-19T07:54:02.359Z"
+		}
 	},
 	"createdAt": {
-		"$date": "2026-07-19T10:21:32.739Z"
+		"$date": "2026-07-19T12:59:01.54Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T10:21:32.739Z"
+		"$date": "2026-07-19T12:59:01.54Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ca52c76d969f391133338"
+		"$oid": "6a5cca152cf0e1ce2a3c9db5"
 	},
 	"participants": [
-		"0b653a65-ed00-4bff-8363-87db61282945",
-		"e9b6a3de-1139-47c6-b834-fa08f43850cb",
-		"a1476d02-7f97-4d44-8546-4debcf9ca26c",
-		"faa4f168-5dfe-4683-b0dc-34cad4ab4928"
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587",
+		"1df836dd-03fe-4959-91ab-fec29eb08043",
+		"ce910b86-e82f-4ae3-8fde-12fc0895edd1",
+		"9b131e55-bb65-4d53-8731-e518eae2fd69"
 	],
-	"neighborhoodId": "6a5c9fdda6f783f8fe6b09d6",
+	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
 	"isGroup": true,
 	"groupName": "Vide-grenier de la rue Lepic",
 	"lastMessageAt": {
-		"$date": "2026-07-19T00:16:33.91Z"
+		"$date": "2026-07-19T02:54:02.691Z"
+	},
+	"lastReadAt": {
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587": {
+			"$date": "2026-07-19T02:54:02.691Z"
+		},
+		"1df836dd-03fe-4959-91ab-fec29eb08043": {
+			"$date": "2026-07-19T02:42:02.691Z"
+		},
+		"ce910b86-e82f-4ae3-8fde-12fc0895edd1": {
+			"$date": "2026-07-19T02:46:02.691Z"
+		},
+		"9b131e55-bb65-4d53-8731-e518eae2fd69": {
+			"$date": "2026-07-19T02:50:02.691Z"
+		}
 	},
 	"createdAt": {
-		"$date": "2026-07-19T10:21:32.747Z"
+		"$date": "2026-07-19T12:59:01.547Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T10:21:32.747Z"
+		"$date": "2026-07-19T12:59:01.547Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ca52c76d969f391133339"
+		"$oid": "6a5cca152cf0e1ce2a3c9db6"
 	},
 	"participants": [
-		"0b653a65-ed00-4bff-8363-87db61282945",
-		"93445062-fc71-4130-be5c-bd7ad9661bf2"
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587",
+		"9b7f94b0-59b2-4955-92c3-aeb94364dad6"
 	],
 	"neighborhoodId": null,
 	"isGroup": false,
 	"groupName": null,
 	"lastMessageAt": {
-		"$date": "2026-07-18T19:16:34.238Z"
+		"$date": "2026-07-18T21:54:02.992Z"
+	},
+	"lastReadAt": {
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587": {
+			"$date": "2026-07-18T21:54:02.992Z"
+		},
+		"9b7f94b0-59b2-4955-92c3-aeb94364dad6": {
+			"$date": "2026-07-18T21:50:02.992Z"
+		}
 	},
 	"createdAt": {
-		"$date": "2026-07-19T10:21:32.756Z"
+		"$date": "2026-07-19T12:59:01.555Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T10:21:32.756Z"
+		"$date": "2026-07-19T12:59:01.555Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ca52c76d969f39113333a"
+		"$oid": "6a5cca152cf0e1ce2a3c9db7"
 	},
 	"participants": [
-		"0b653a65-ed00-4bff-8363-87db61282945",
-		"4b0f4b82-9992-4280-acd4-2eb871f90c15"
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587",
+		"34a9eeac-d838-4199-9e63-ec1152d08548"
 	],
 	"neighborhoodId": null,
 	"isGroup": false,
 	"groupName": null,
 	"lastMessageAt": {
-		"$date": "2026-07-18T14:16:34.552Z"
+		"$date": "2026-07-18T16:54:03.29Z"
+	},
+	"lastReadAt": {
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587": {
+			"$date": "2026-07-18T16:54:03.29Z"
+		},
+		"34a9eeac-d838-4199-9e63-ec1152d08548": {
+			"$date": "2026-07-18T16:50:03.29Z"
+		}
 	},
 	"createdAt": {
-		"$date": "2026-07-19T10:21:32.764Z"
+		"$date": "2026-07-19T12:59:01.562Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T10:21:32.764Z"
+		"$date": "2026-07-19T12:59:01.562Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ca52c76d969f39113333b"
+		"$oid": "6a5cca152cf0e1ce2a3c9db8"
 	},
 	"participants": [
-		"0b653a65-ed00-4bff-8363-87db61282945",
-		"9d9d446c-f58d-4237-ba5a-163cbf3eddd6"
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587",
+		"49ace41a-b57d-4488-af9f-a7b9eef68d82"
 	],
 	"neighborhoodId": null,
 	"isGroup": false,
 	"groupName": null,
 	"lastMessageAt": {
-		"$date": "2026-07-18T09:16:34.851Z"
+		"$date": "2026-07-18T11:54:03.604Z"
+	},
+	"lastReadAt": {
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587": {
+			"$date": "2026-07-18T11:54:03.604Z"
+		},
+		"49ace41a-b57d-4488-af9f-a7b9eef68d82": {
+			"$date": "2026-07-18T11:46:03.604Z"
+		}
 	},
 	"createdAt": {
-		"$date": "2026-07-19T10:21:32.773Z"
+		"$date": "2026-07-19T12:59:01.569Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T10:21:32.773Z"
+		"$date": "2026-07-19T12:59:01.569Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ca52c76d969f39113333c"
+		"$oid": "6a5cca152cf0e1ce2a3c9db9"
 	},
 	"participants": [
-		"0b653a65-ed00-4bff-8363-87db61282945",
-		"8f1be472-8d4c-40ec-bb31-6464b435975a"
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587",
+		"118f6a6e-5a9b-4a2e-bcd7-6b98fb97b99f"
 	],
 	"neighborhoodId": null,
 	"isGroup": false,
 	"groupName": null,
 	"lastMessageAt": {
-		"$date": "2026-07-18T04:16:35.164Z"
+		"$date": "2026-07-18T06:54:03.91Z"
+	},
+	"lastReadAt": {
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587": {
+			"$date": "2026-07-18T06:54:03.91Z"
+		},
+		"118f6a6e-5a9b-4a2e-bcd7-6b98fb97b99f": {
+			"$date": "2026-07-18T06:46:03.91Z"
+		}
 	},
 	"createdAt": {
-		"$date": "2026-07-19T10:21:32.782Z"
+		"$date": "2026-07-19T12:59:01.578Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T10:21:32.782Z"
+		"$date": "2026-07-19T12:59:01.578Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ca52c76d969f39113333d"
+		"$oid": "6a5cca152cf0e1ce2a3c9dba"
 	},
 	"participants": [
-		"0b653a65-ed00-4bff-8363-87db61282945",
-		"fac2acc3-190b-43cd-baed-122358be1259"
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587",
+		"33d63063-8c8e-484f-8f22-8112a5d65048"
 	],
 	"neighborhoodId": null,
 	"isGroup": false,
 	"groupName": null,
 	"lastMessageAt": {
-		"$date": "2026-07-17T23:16:35.472Z"
+		"$date": "2026-07-18T01:54:04.237Z"
+	},
+	"lastReadAt": {
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587": {
+			"$date": "2026-07-18T01:54:04.237Z"
+		},
+		"33d63063-8c8e-484f-8f22-8112a5d65048": {
+			"$date": "2026-07-18T01:46:04.237Z"
+		}
 	},
 	"createdAt": {
-		"$date": "2026-07-19T10:21:32.791Z"
+		"$date": "2026-07-19T12:59:01.589Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T10:21:32.791Z"
+		"$date": "2026-07-19T12:59:01.589Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ca52c76d969f39113333e"
+		"$oid": "6a5cca152cf0e1ce2a3c9dbb"
 	},
 	"participants": [
-		"0b653a65-ed00-4bff-8363-87db61282945",
-		"0c05a6eb-4191-4b8f-8a4e-e9489251eaee"
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587",
+		"c3a1977f-e375-4577-91a4-61c8bf2866d2"
 	],
 	"neighborhoodId": null,
 	"isGroup": false,
 	"groupName": null,
 	"lastMessageAt": {
-		"$date": "2026-07-17T18:16:35.781Z"
+		"$date": "2026-07-17T20:54:04.539Z"
+	},
+	"lastReadAt": {
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587": {
+			"$date": "2026-07-17T20:54:04.539Z"
+		},
+		"c3a1977f-e375-4577-91a4-61c8bf2866d2": {
+			"$date": "2026-07-17T20:46:04.539Z"
+		}
 	},
 	"createdAt": {
-		"$date": "2026-07-19T10:21:32.799Z"
+		"$date": "2026-07-19T12:59:01.598Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T10:21:32.799Z"
+		"$date": "2026-07-19T12:59:01.598Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ca52c76d969f39113333f"
+		"$oid": "6a5cca152cf0e1ce2a3c9dbc"
 	},
 	"participants": [
-		"0b653a65-ed00-4bff-8363-87db61282945",
-		"f7025b74-7036-4140-890d-85eecf174883"
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587",
+		"94a51625-b29b-4eac-aba8-d14e6faced1b"
 	],
 	"neighborhoodId": null,
 	"isGroup": false,
 	"groupName": null,
 	"lastMessageAt": {
-		"$date": "2026-07-17T13:16:36.112Z"
+		"$date": "2026-07-17T15:54:04.857Z"
+	},
+	"lastReadAt": {
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587": {
+			"$date": "2026-07-17T15:54:04.857Z"
+		},
+		"94a51625-b29b-4eac-aba8-d14e6faced1b": {
+			"$date": "2026-07-17T15:46:04.857Z"
+		}
 	},
 	"createdAt": {
-		"$date": "2026-07-19T10:21:32.807Z"
+		"$date": "2026-07-19T12:59:01.607Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T10:21:32.807Z"
+		"$date": "2026-07-19T12:59:01.607Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ca52c76d969f391133340"
+		"$oid": "6a5cca152cf0e1ce2a3c9dbd"
 	},
 	"participants": [
-		"0b653a65-ed00-4bff-8363-87db61282945",
-		"f8f4a6d7-5239-40a9-b1cd-f5b98e347e18"
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587",
+		"0a34e935-b202-43c7-823d-190fea2fb663"
 	],
 	"neighborhoodId": null,
 	"isGroup": false,
 	"groupName": null,
 	"lastMessageAt": {
-		"$date": "2026-07-17T08:16:36.432Z"
+		"$date": "2026-07-17T10:54:05.163Z"
+	},
+	"lastReadAt": {
+		"9f148a9f-e8b2-4d46-a0f2-40f231f78587": {
+			"$date": "2026-07-17T10:54:05.163Z"
+		},
+		"0a34e935-b202-43c7-823d-190fea2fb663": {
+			"$date": "2026-07-17T10:46:05.163Z"
+		}
 	},
 	"createdAt": {
-		"$date": "2026-07-19T10:21:32.815Z"
+		"$date": "2026-07-19T12:59:01.618Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T10:21:32.815Z"
+		"$date": "2026-07-19T12:59:01.618Z"
 	},
 	"__v": 0
 }]

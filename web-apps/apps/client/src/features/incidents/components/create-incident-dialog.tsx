@@ -53,7 +53,12 @@ export function CreateIncidentDialog({
     const createIncident = useCreateIncident();
     const { data: neighborhoods } = useNeighborhoods();
     const { data: myLocation } = useMyLocation();
-    const firstNeighborhood = neighborhoods?.find((n) => n.geometry);
+    // Must match the polygon `address.outsideQuartier` validates against,
+    // otherwise the picker draws one neighborhood and warns about another.
+    const focusGeometry =
+        myLocation?.neighborhood?.geometry ??
+        neighborhoods?.find((n) => n.geometry)?.geometry ??
+        null;
     const missingRequiredFields = !title.trim() || !description.trim();
 
     function handleSubmit(e: React.FormEvent) {
@@ -138,7 +143,11 @@ export function CreateIncidentDialog({
                             </SelectTrigger>
                             <SelectContent>
                                 {(
-                                    ["neighborhood", "reporting", "bug"] as const
+                                    [
+                                        "neighborhood",
+                                        "reporting",
+                                        "bug",
+                                    ] as const
                                 ).map((c) => (
                                     <SelectItem key={c} value={c}>
                                         {t(`pages.incidents.categories.${c}`)}
@@ -174,7 +183,7 @@ export function CreateIncidentDialog({
                                 </p>
                             )}
                     </div>
-                    {firstNeighborhood?.geometry && (
+                    {focusGeometry && (
                         <div className="space-y-2">
                             <Label>
                                 {t("pages.incidents.locationPick")}
@@ -184,14 +193,12 @@ export function CreateIncidentDialog({
                             </Label>
                             <div className="relative isolate">
                                 <Map
-                                    center={centroidOf(
-                                        firstNeighborhood.geometry,
-                                    )}
+                                    center={centroidOf(focusGeometry)}
                                     zoom={15}
                                     className="h-64 min-h-64"
                                 >
                                     <NeighborhoodPolygon
-                                        geometry={firstNeighborhood.geometry}
+                                        geometry={focusGeometry}
                                     />
                                     <MapClickHandler
                                         onClick={(lat, lng) => {
@@ -203,14 +210,20 @@ export function CreateIncidentDialog({
                                         pickedLng !== null && (
                                             <Marker
                                                 variant="incident"
-                                                position={[pickedLat, pickedLng]}
+                                                position={[
+                                                    pickedLat,
+                                                    pickedLng,
+                                                ]}
                                             />
                                         )}
                                     <MapControls
                                         home={
                                             myLocation?.lat != null &&
                                             myLocation?.lng != null
-                                                ? [myLocation.lat, myLocation.lng]
+                                                ? [
+                                                      myLocation.lat,
+                                                      myLocation.lng,
+                                                  ]
                                                 : null
                                         }
                                         fitGeometry={
