@@ -1,0 +1,20 @@
+{
+    "title": "QuartierConnect Help",
+    "pages": [
+        "index",
+        "tableau-de-bord",
+        "compte",
+        "profil",
+        "signalements",
+        "evenements",
+        "votes",
+        "services",
+        "reservations",
+        "recommandations",
+        "points",
+        "contrats",
+        "carte",
+        "messagerie",
+        "faq"
+    ]
+}

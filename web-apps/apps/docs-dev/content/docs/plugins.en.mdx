@@ -1,0 +1,217 @@
+---
+title: Plugins
+description: Extension system
+---
+
+## What the plugin system is for
+
+A plugin is a JAR file that extends the QuartierConnect desktop application without touching its source code. Plugins are loaded at startup by `PluginRegistry` and can bring background tasks, extra views or integrations with external services.
+
+Plugins talk to the running application exclusively through the `AppContext` interface. They have **no direct access** to databases or internal services.
+
+## Plugin interface
+
+Every plugin must implement `fr.quartierconnect.desktopapp.plugin.QuartierConnectPlugin`:
+
+```java
+public interface QuartierConnectPlugin {
+    String getId();       // Reverse-domain identifier, e.g. "fr.example.weather"
+    String getName();     // Readable name shown in the plugin manager
+    String getVersion();  // Semver version, e.g. "1.0.0"
+    void onLoad();        // Called once after registration — initialise resources
+    void onUnload();      // Called once at shutdown — release resources
+    default String getDescription() { return ""; }
+}
+```
+
+### Plugin lifecycle
+
+`onLoad()` is called once at registration (after the context is injected, if any), `onUnload()` at shutdown. The plugin manager (`PluginsView`) adds a switch per plugin: turning it off calls `onUnload()` again, turning it back on calls `onLoad()` again — **without ever removing the plugin from the registry**. `unregister(id)` and `unregisterAll()` (at shutdown) call `onUnload()` then close the `URLClassLoader` of external plugins. Any exception thrown in `onLoad`/`onUnload` is caught and logged; the plugin stays registered and shutdown continues.
+
+<Mermaid
+  chart={`stateDiagram-v2
+  state "Registered" as reg
+  state "Active" as actif
+  state "Disabled" as off
+  state "Unloaded" as gone
+  [*] --> reg: register(plugin, ctx)
+  reg --> actif: onLoad()
+  actif --> off: disable, onUnload()
+  off --> actif: enable, onLoad()
+  actif --> gone: unregister, onUnload()
+  off --> gone: unregisterAll
+  gone --> [*]: URLClassLoader close`}
+/>
+
+## AppContext — what plugins get access to
+
+The registry injects an `AppContext` at load time (through `setContext`), which exposes **exactly four getters — and nothing else**. It is the only contact surface between a plugin and the running application:
+
+| Getter | Type | Role |
+|--------|------|------|
+| `getScene()` | `Scene` | Main JavaFX scene — stylesheet injection, UI extension |
+| `getIncidentRepository()` | `IncidentRepository` | Read/write access to the local SQLite incident cache |
+| `getToastManager()` | `ToastManager` | Shows toast notifications |
+| `getEventBus()` | `PluginEventBus` | Publish/subscribe to application events |
+
+`AppContext` is an immutable `final` class; its constructor takes exactly those four dependencies:
+
+```java
+public AppContext(Scene scene, IncidentRepository incidentRepository,
+                  ToastManager toastManager, PluginEventBus eventBus) { ... }
+```
+
+`AppContext` **exposes neither `ApiService`, nor `AuthService`, nor `SyncService`**. A plugin that needs to drive the network goes through the static entry points of `ApiService`: `OfflineModePlugin`, for instance, calls `ApiService.setOfflineMode(...)` and `ApiService.isReachable()` directly.
+
+To receive the `AppContext`, implement `PluginRegistry.ContextAwarePlugin` in addition to `QuartierConnectPlugin`:
+
+```java
+public class WeatherPlugin implements QuartierConnectPlugin, PluginRegistry.ContextAwarePlugin {
+    private AppContext context;
+
+    @Override
+    public void setContext(AppContext context) {
+        this.context = context;
+    }
+    // ... other interface methods
+}
+```
+
+Plugins **must not** access `SQLiteDatabase` directly; every interaction with the UI goes through the provided extension points or through the `Scene`.
+
+## UI extension points
+
+Beyond the `AppContext` services, a plugin has four levers to extend the interface, all exact to the code:
+
+| Lever | Access | Consumer | Example |
+|-------|--------|----------|---------|
+| `incidentSlot` | `PluginRegistry.getIncidentSlot()` — `ObservableList<Node>` | `IncidentsView` (table action bar) | `ExportPlugin` inserts a "CSV export" button there |
+| `topBarSlot` | `PluginRegistry.getTopBarSlot()` — `ObservableList<Node>` | `AppTopBar` | `OfflineModePlugin` inserts an offline switch there |
+| `ViewablePlugin.getPanel()` | optional interface | `PluginsView` ("Configure" modal) | `ThemePlugin`, `CompactModePlugin`, `NotificationPlugin` |
+| Stylesheets | `getScene().getStylesheets()` | JavaFX scene | `ThemePlugin` swaps themes, `CompactModePlugin` injects a data-URI CSS |
+
+Slots are observable lists: the plugin adds its `Node` in `onLoad()` and removes it in `onUnload()`. The view listens to the list and updates itself automatically — no direct coupling between the plugin and the view.
+
+<Mermaid
+  chart={`flowchart LR
+  plug["Plugin"]
+  subgraph ctxg["AppContext (setContext)"]
+    scene["getScene()<br/>CSS injection"]
+    repo["getIncidentRepository()<br/>SQLite cache"]
+    toast["getToastManager()"]
+    bus["getEventBus()"]
+  end
+  islot["getIncidentSlot()"]
+  tslot["getTopBarSlot()"]
+  panel["ViewablePlugin.getPanel()"]
+  inc["IncidentsView<br/>table bar"]
+  top["AppTopBar"]
+  pv["PluginsView<br/>config panel"]
+  plug --> scene
+  plug --> repo
+  plug --> toast
+  plug --> bus
+  plug -->|"Node"| islot --> inc
+  plug -->|"Node"| tslot --> top
+  plug -->|"getPanel"| panel --> pv`}
+/>
+
+## EventBus — plugin-to-plugin communication
+
+`PluginEventBus` provides a thread-safe publish/subscribe mechanism (`CopyOnWriteArrayList`), avoiding polling. The available events:
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `INCIDENTS_CHANGED` | null | Local incidents have changed |
+| `SYNC_STARTED` | null | A synchronization cycle has started |
+| `SYNC_COMPLETED` | null | Synchronization completed successfully |
+| `SYNC_FAILED` | String (message) | Synchronization failed |
+| `ONLINE_STATUS_CHANGED` | Boolean | Network connectivity has changed |
+
+Subscribing and publishing:
+
+```java
+context.getEventBus().subscribe(eventData -> {
+    switch (eventData.event()) {
+        case INCIDENTS_CHANGED -> context.getToastManager().show("Incidents updated");
+        case ONLINE_STATUS_CHANGED -> updateStatusIndicator((Boolean) eventData.payload());
+        default -> {}
+    }
+});
+
+context.getEventBus().publish(PluginEventBus.Event.SYNC_FAILED, "Connection timeout");
+```
+
+> Exceptions thrown by a subscriber are caught and silently ignored — a faulty listener breaks neither the other listeners nor the publisher.
+
+## Writing a plugin step by step
+
+1. **Create a Maven module** depending on `fr.quartierconnect:quartierconnect-desktop-api` with scope `provided`, packaging `jar`.
+2. **Implement the interface** `QuartierConnectPlugin` (and `ContextAwarePlugin` if the `AppContext` is needed).
+3. **Declare the implementation through ServiceLoader**: create the file `src/main/resources/META-INF/services/fr.quartierconnect.desktopapp.plugin.QuartierConnectPlugin` containing the fully qualified class name. This is how `PluginRegistry.loadFromJar()` discovers the plugin at runtime.
+4. **Package as a fat JAR**:
+
+```bash
+./mvnw clean package -q
+# Produces: target/qc-weather-plugin-1.0.0.jar
+```
+
+## Loading a plugin
+
+**From an external JAR** — copy the JAR into the `plugins/` folder (resolved relative to the application working directory, through `Paths.get("plugins")`). It is scanned at startup by `loadFromDirectory()`, and can be hot-reloaded from the plugin manager ("rescan" button, which unloads external plugins then rescans the folder):
+
+```bash
+mkdir -p plugins/
+cp target/qc-weather-plugin-1.0.0.jar plugins/
+```
+
+```java
+AppContext ctx = new AppContext(stage.getScene(), new IncidentRepository(), toast, eventBus);
+PluginRegistry.getInstance().loadFromDirectory(Paths.get("plugins"), ctx);
+```
+
+`loadFromDirectory()` lists the `.jar` files in the folder in alphabetical order and delegates each one to `loadFromJar()`, which opens a dedicated `URLClassLoader` then discovers implementations through `ServiceLoader`. A JAR without a valid `META-INF/services` entry is logged ("No plugins found") and its classloader closed.
+
+**Programmatic registration (internal plugins)** — the six built-in plugins are registered in `MainView`, once the scene is available (the `AppContext` depends on it), before the folder scan:
+
+```java
+PluginRegistry registry = PluginRegistry.getInstance();
+registry.register(new ThemePlugin(), ctx);
+registry.register(new CompactModePlugin(), ctx);
+registry.register(new ExportPlugin(), ctx);
+// ... NotificationPlugin, OfflineModePlugin, SpanishLanguagePackPlugin
+```
+
+Use the context-less overload `register(plugin)` if the plugin does not implement `ContextAwarePlugin`.
+
+Internal plugins share the application classloader; JAR plugins each get their own `URLClassLoader` — that is what tells an "external" plugin apart from a "built-in" one in the manager.
+
+<Mermaid
+  chart={`sequenceDiagram
+  participant Main as MainView
+  participant Reg as PluginRegistry
+  participant CL as URLClassLoader
+  participant SL as ServiceLoader
+  participant Plug as Plugin
+  Main->>Reg: register(internal, ctx)
+  Reg->>Plug: setContext(ctx)
+  Reg->>Plug: onLoad()
+  Main->>Reg: loadFromDirectory(plugins folder, ctx)
+  loop for each .jar
+    Reg->>CL: new URLClassLoader(jar)
+    Reg->>SL: load(QuartierConnectPlugin, cl)
+    SL-->>Reg: implementations declared in META-INF
+    Reg->>Plug: register + setContext + onLoad()
+  end
+  Note over Reg,Plug: exception in onLoad caught and logged, plugin kept`}
+/>
+
+## Constraints
+
+| Rule | Detail |
+|------|--------|
+| API access only | Go through `ApiService`; no direct JDBC/MongoDB/Neo4j call |
+| No access to the `Stage` | The `AppContext` provides the `Scene`, never the `Stage`; inject your styles through `getScene().getStylesheets()` |
+| Clean `onUnload` | Cancel scheduled tasks and close connections; otherwise warnings and thread leaks |
+| No credential storage | Do not store tokens or passwords on disk |
+| Exception safety | Exceptions from `onLoad`/`onUnload` are caught and logged; the plugin stays registered, shutdown continues |

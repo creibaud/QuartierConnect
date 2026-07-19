@@ -1,0 +1,60 @@
+---
+title: Recommendations
+description: Suggested services, events and neighbors picked for you
+---
+
+The **Recommendations** page brings together, in one place, everything QuartierConnect suggests you discover: **services** offered near you, upcoming **events** in your neighborhood, and **neighbors** worth getting in touch with. These are personalized suggestions, built from your neighborhood activity — with nothing to ask for.
+
+## Where to find them
+
+Two paths lead to your recommendations:
+
+- **From the menu**, the **"Recommendations"** entry (recognizable by its little sparkles icon) opens the full list.
+- **From your dashboard**, the **"Recommendations for you"** card shows a preview of the first suggestions. One click takes you to the detailed list.
+
+Each suggestion appears as a card, with an icon matching its type, its name, a badge (**Service**, **Event** or **Neighbor**) and a short sentence explaining **why** it is being suggested to you.
+
+## What QuartierConnect suggests
+
+Recommendations fall into three families, each with its own reason:
+
+- **A service from your neighborhood** — *"Service offered in your neighborhood"*. A service listing near you that you haven't used yet.
+- **An upcoming event** — *"Upcoming event near you"*. A neighborhood gathering still to come that you aren't already attending.
+- **An event your neighbors like** — *"Popular with neighbors who share your interests"*. An event enjoyed by neighbors who showed interest in the same gatherings as you.
+- **A trusted neighbor** — *"Trusted neighbor, known for helping out"*. A resident of your neighborhood who has already made a name for themselves helping others around them.
+
+The most relevant suggestions rise to the top of the list, and the list stays deliberately short to keep to the essentials.
+
+## How these suggestions are built
+
+Nothing mysterious: QuartierConnect simply relies on what you already do in the app. Three things feed your recommendations.
+
+<Mermaid
+  chart={`flowchart LR
+  quartier["Your neighborhood<br/>(your address)"]
+  interets["Your interests<br/>(events you're interested in)"]
+  entraide["Neighborhood mutual aid<br/>(services exchanged between neighbors)"]
+  reco(["Your recommendations<br/>services, events, neighbors"])
+  quartier --> reco
+  interets --> reco
+  entraide --> reco`}
+/>
+
+- **Your neighborhood** determines what is suggested nearby: the services and events attached to your area.
+- **Your interests** are inferred from the [events](/en/evenements) you marked yourself interested in or are attending. They help spot the neighbors who resemble you and the events they like.
+- **Neighborhood mutual aid** highlights the neighbors recognized for the services they have provided, once the [contracts](/en/contrats) have run their course.
+
+> **Good to know:** these suggestions naturally leave out anything there is no longer any point in suggesting — a service you have already used, an event you are already attending, or your own listings. So you won't see things you already know coming back.
+
+## Acting on a suggestion
+
+Each card takes you straight to where the action happens:
+
+- A **service** or **event** suggestion leads you to the matching page — [Services](/en/services) or [Events](/en/evenements) — to find out more and, if you want, respond to it or sign up.
+- A **neighbor** suggestion offers a **"Contact"** button. One click opens a conversation in your [messaging](/en/messagerie), ready to start.
+
+## Why don't I see anything?
+
+If the list shows **"No recommendations yet"**, it simply means QuartierConnect doesn't have enough to go on yet to suggest anything relevant. The fix fits in a single sentence, the one the app whispers to you: **take part in neighborhood life to receive tailored suggestions**.
+
+In practice, the more you mark your interest in events, and the more services you exchange with your neighbors, the sharper and richer your recommendations get. This is a page that grows with you.

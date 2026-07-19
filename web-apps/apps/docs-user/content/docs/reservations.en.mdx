@@ -1,0 +1,108 @@
+---
+title: Your bookings
+description: Track your paid service requests, accept, decline or cancel them
+---
+
+The **Bookings** page gathers every paid service request that concerns you: the ones you sent to a neighbor, and the ones a neighbor sent you. It is your tracking point between the moment a booking is requested and the moment the exchange closes with a signed contract and a points transfer.
+
+Each booking shows up as a card recalling the essentials: the **service** involved, the **number of points** at stake, the **date** of the request and its current **status**.
+
+## Two tabs: Received and Sent
+
+The page splits into two tabs, and the counter in brackets tells you how many bookings sit in each:
+
+- **Received**: the requests a neighbor sent you on one of your paid services. This is where you **accept** or **decline** a pending request.
+- **Sent**: the bookings you requested from a neighbor yourself. You follow their progress there and can **cancel** them.
+
+One and the same exchange therefore appears in the **Sent** tab for the requester, and in the **Received** tab for the person who will provide the service. On opening, the page shows the **Received** tab; if you only have sent requests, it takes you straight to **Sent**.
+
+## Requesting a booking
+
+You do not create a booking from this page: it always starts from a **paid service**. From the details of a paid listing, on the [Services between neighbors](/en/services) page, you request the booking. The **number of points is calculated automatically** from the service's rate (its duration and its multiplier, if any): you do not have to set it yourself.
+
+The request then appears right away in your **Sent** tab, with the status **Pending**.
+
+A few safeguards apply when the request is made:
+
+- only **paid** services can be booked;
+- you cannot book **your own** listing;
+- a **closed** service can no longer be booked;
+- you cannot send a second request while a booking is still **active** (pending or accepted) on the same service.
+
+## A booking's status
+
+Each card carries a **status** telling you where the booking stands:
+
+| Status | What it means |
+|--------|---------------|
+| Pending | The request is sent; the service owner has not made a decision yet. |
+| Accepted | The owner accepted: a contract has just been generated. |
+| Declined | The owner turned the request down. No points are exchanged. |
+| Cancelled | The booking was cancelled before it closed. No points are exchanged. |
+| Completed | The contract was fully signed and the points transfer settled. |
+
+These statuses always follow the same order: a booking starts **Pending**, then takes one of the outcomes below.
+
+<Mermaid
+  chart={`stateDiagram-v2
+  state "Pending" as Attente
+  state "Accepted" as Acceptee
+  state "Declined" as Refusee
+  state "Cancelled" as Annulee
+  state "Completed" as Terminee
+  [*] --> Attente
+  Attente --> Acceptee : the owner accepts
+  Attente --> Refusee : the owner declines
+  Attente --> Annulee : the requester cancels
+  Acceptee --> Terminee : contract fully signed
+  Acceptee --> Annulee : cancelled before full signature
+  Terminee --> [*]`}
+/>
+
+## Accepting or declining a received request
+
+In the **Received** tab, any request still **Pending** offers you two buttons: **Accept** and **Decline**.
+
+- **Accept** moves the booking to the **Accepted** status and triggers the automatic creation of a **contract** between you and the requester. The matching points are **reserved** from then on, pending the signatures. A **View contract** button then appears on the card to go straight to the document.
+- **Decline** closes the request with the **Declined** status. Nothing is charged, and the requester is notified.
+
+> Only the service owner can accept or decline a received request. If an action cannot go through, a short **"Action failed"** message tells you so, and nothing changes.
+
+## Cancelling a booking
+
+From the **Sent** tab, a **Cancel** button is available on your bookings as long as they are **Pending** or **Accepted**. Cancelling moves the booking to the **Cancelled** status.
+
+If the booking had already produced a contract, cancelling **releases the reserved points** and **cancels** the associated contract. One important limit applies though:
+
+> A booking can no longer be cancelled once the **contract is fully signed**. The payment being settled by then, the exchange is considered closed and the booking moves to the **Completed** status. Cancelling stays possible **as long as the contract is not fully signed**.
+
+## From booking to contract to points transfer
+
+An accepted booking is not the end of the road: it opens the way to the contract that formalizes the exchange, then to the points transfer that closes it.
+
+1. You **accept** a received request: a **contract** is generated automatically, and the points are **reserved**.
+2. Both parties **sign** the contract. Signing happens in three steps (reading the terms, drawing your handwritten signature, then confirming with your six-digit code).
+3. As soon as the **last signature** lands, the **points transfer** fires automatically and seals the exchange. The booking then flips to the **Completed** status.
+
+For everything about signing, tracking and the contract PDF, see the [Contracts and signing](/en/contrats) page. To understand how the transfer credits and debits accounts, see the [Points and rewards](/en/points) page.
+
+<Mermaid
+  chart={`flowchart LR
+  demande["A neighbor<br/>requests the booking"]
+  accept["You accept<br/>(Received tab)"]
+  contrat(["Contract generated<br/>points reserved"])
+  signature["Both parties<br/>sign the contract"]
+  termine(["Booking completed<br/>points transferred"])
+  demande --> accept
+  accept --> contrat
+  contrat --> signature
+  signature --> termine`}
+/>
+
+## In short
+
+- The **Bookings** page tracks your paid service requests in two tabs: **Received** (to accept or decline) and **Sent** (to follow or cancel).
+- A booking always starts from a **paid service**; its points are calculated **automatically** from the rate.
+- The **status** (Pending, Accepted, Declined, Cancelled, Completed) tells you where each exchange stands.
+- Accepting a request **generates a contract** and **reserves the points**; the transfer settles **on the last signature**.
+- Cancelling stays possible **as long as the contract is not fully signed**.

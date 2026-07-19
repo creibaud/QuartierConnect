@@ -4,9 +4,25 @@
 	@static path_regexp \.(js|css|woff2?|ttf|svg|png|ico|json|txt)$
 	header @static Cache-Control "public, max-age=31536000, immutable"
 
+	# no index at the bare prefix: locale is always in the URL
+	@bare path /aide /aide/
+	redir @bare /aide/fr 308
+
+	# Every page exports as <slug>.html next to a <slug>/ directory of RSC
+	# payloads. try_files would match that directory first and serve a 404, so
+	# strip the trailing slash before it gets there.
+	@trailing path_regexp trailing ^(/aide/.+)/$
+	redir @trailing {re.trailing.1} 308
+
 	handle {
 		root * /srv
 		try_files {path} {path}.html {path}/index.html
+		file_server
+	}
+
+	handle_errors {
+		root * /srv
+		rewrite * /aide/404.html
 		file_server
 	}
 }

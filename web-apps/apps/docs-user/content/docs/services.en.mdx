@@ -1,0 +1,105 @@
+---
+title: Services between neighbors
+description: Offer, find and book services
+---
+
+The **Services** page is where neighbors help each other out. You will find the service offers and requests from your neighborhood, you can publish your own, and book a paid service in a few steps. A map sits alongside the list and pinpoints the listings that have a location.
+
+## Browse services
+
+The page lists every service offer and request in your neighborhood. Each listing is described by three pieces of information that let you understand at a glance what is on the table:
+
+- **The direction**: an **offer** (a neighbor is offering help) or a **request** (a neighbor is looking for help).
+- **The category**: gardening, handyman, transport, shopping, childcare, IT support, or other.
+- **The type**: **free**, **paid** (settled in points) or **exchange**.
+
+You can also say what you think of a listing with a thumbs up or a thumbs down. Those votes feed a community score visible to everyone.
+
+### Filter by direction
+
+A filter at the top of the page lets you narrow down the display. You choose to see:
+
+- **all** listings;
+- **offers only**;
+- **requests only**.
+
+It is the quickest way to focus on what you are after, for example seeing only the offers when you need a hand.
+
+## Publish your listing
+
+To offer your own service, use the **"Offer a service"** button. You then fill in:
+
+- a **title**;
+- a **description**;
+- a **category**;
+- a **type** (free, paid or exchange);
+- a **duration in minutes**, only if the service is **paid**;
+- an **address**.
+
+> **Paid service:** the **duration** (in minutes, at least 1) is **required**. It is
+> used to work out the number of points for the job automatically, and the publish
+> button stays disabled until it is filled in. For a **free** service or an
+> **exchange**, this field does not appear: there is nothing to enter.
+
+Once published, your listing shows up in the neighborhood list, and on the map if its address could be located. You will find all of your listings, along with the ones you have responded to, on the **"My services"** page.
+
+## Respond to a service
+
+Interested in a neighbor's listing? From its detail page, you **respond** to the service. The person behind the listing then sees the list of everyone who responded. If you change your mind, you can withdraw your response at any time.
+
+## Book a paid service
+
+For a **paid** service, you can go further than a simple response and request an actual **booking** in points. Here is how it works.
+
+1. **You request the booking.** The number of points is calculated automatically from the service's point rate. You do not have to set it yourself.
+2. **Each side tracks the request.** You will find your request in the **"Sent"** tab of the Bookings page. The service owner sees it in the **"Received"** tab.
+3. **The owner answers.** As long as the request is pending, they can **accept** it, **decline** it or **cancel** it.
+4. **A contract is generated.** As soon as the owner accepts, a **contract** is created automatically to put the exchange on record.
+5. **Both parties sign.** The contract is then signed by each of them. The points transfer is triggered **automatically as soon as the last signature lands** and seals the exchange.
+
+> **Good to know:** signing the contract happens in a three-step dialog (reading the terms, drawing your handwritten signature, then confirming with your six-digit code). The contract moves to the "Fully signed" status once every party has signed.
+
+Those three steps always follow the same order:
+
+<Mermaid
+  chart={`flowchart LR
+  lecture["Step 1<br/>Reading the terms"]
+  trace["Step 2<br/>Drawing your handwritten signature"]
+  code["Step 3<br/>Confirmation with a six-digit code"]
+  lecture --> trace
+  trace --> code`}
+/>
+
+The points transfer is only triggered once this last step has been validated by **both** parties: nobody can be charged until the contract is fully signed.
+
+## In short
+
+The full path of a paid mutual-help exchange always follows the same thread:
+
+**offer published → response from a neighbor → booking request → acceptance → contract → signature → points transfer.**
+
+The same path, illustrated step by step:
+
+<Mermaid
+  chart={`flowchart TD
+  annonce(["A neighbor publishes<br/>a paid service (offer)"])
+  reserve["An interested neighbor<br/>requests the booking"]
+  points["The points are calculated<br/>automatically from the rate"]
+  decision{"Does the owner<br/>accept the request?"}
+  refus["Request declined or cancelled<br/>no points exchanged"]
+  contrat["A contract is generated<br/>automatically"]
+  signature["Both parties<br/>sign the contract"]
+  transfert(["Points transferred<br/>as soon as the last signature lands"])
+
+  annonce --> reserve
+  reserve --> points
+  points --> decision
+  decision -->|No| refus
+  decision -->|Yes| contrat
+  contrat --> signature
+  signature --> transfert`}
+/>
+
+A **free** service or an **exchange** stops earlier: there is no points calculation, no contract and no transfer. A neighbor's response is enough to get things moving.
+
+From the plain free listing to the service settled in points with a signed contract, the Services page walks you through every step to keep helping out between neighbors simple and safe.

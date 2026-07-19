@@ -1,0 +1,211 @@
+---
+title: The DSL
+description: Query language syntax and execution
+---
+
+## What the DSL is for
+
+The QuartierConnect DSL is a **micro query language** that lets moderators and administrators query the application's collections without writing code. It is exposed through `POST /dsl/query` and consumed from the React admin back office. A **moderator** only reaches the data of their own neighborhood; only the **administrator** queries the whole dataset.
+
+Choosing a DSL over raw MongoDB serves three goals:
+
+- **Security**: raw MongoDB queries can express elaborate injections.
+- **Simplicity**: an almost natural-language syntax, usable without MongoDB training.
+- **Control**: an allowlist of collections and no destructive operation.
+
+Technically, the `dsl/` component is written in **Python** with **PLY** (lexer + LALR(1) parser), and invoked from NestJS through the **pythonia** bridge.
+
+## Syntax
+
+### Verbs and reserved words
+
+Two verbs only: `FIND` (returns documents) and `COUNT` (returns an integer). Reserved words — `FIND`, `WHERE`, `AND`, `OR`, `LIMIT`, `COUNT`, `IN`, `LIKE` — are **case-insensitive**: `find`, `FIND` and `Find` are equivalent.
+
+### Grammar
+
+```
+query : FIND IDENTIFIER
+      | FIND IDENTIFIER WHERE conditions
+      | FIND IDENTIFIER LIMIT NUMBER
+      | FIND IDENTIFIER WHERE conditions LIMIT NUMBER
+      | COUNT IDENTIFIER
+      | COUNT IDENTIFIER WHERE conditions
+
+conditions : condition
+           | conditions AND condition   → filters merged
+           | conditions OR condition    → {'$or': [left, right]}
+
+condition : IDENTIFIER EQ  value        → {field: value}
+          | IDENTIFIER NEQ value        → {field: {'$ne': value}}
+          | IDENTIFIER GT  value        → {field: {'$gt': value}}
+          | IDENTIFIER GTE value        → {field: {'$gte': value}}
+          | IDENTIFIER LT  value        → {field: {'$lt': value}}
+          | IDENTIFIER LTE value        → {field: {'$lte': value}}
+          | IDENTIFIER LIKE value       → {field: {'$regex': re.escape(v), '$options': 'i'}}
+
+value : STRING | NUMBER | IDENTIFIER
+```
+
+The available comparison operators are therefore `=`, `!=`, `>`, `>=`, `<`, `<=` and `LIKE`. `LIKE` is a case-insensitive **literal substring** search: the value is escaped with `re.escape` before being passed as `$regex`, so metacharacters (`.`, `*`, `[`, `(`, …) are treated **literally** and not as a pattern — it is not a live regular expression (ReDoS protection). Values are strings (`'open'`, `"Paris"`), numbers (`42`, `3.14`) or identifiers. Spaces, tabs and line breaks are ignored.
+
+### Examples
+
+```
+FIND incidents
+→ db.incidents.find({})
+
+FIND incidents LIMIT 5
+→ db.incidents.find({}).limit(5)
+
+COUNT incidents
+→ db.incidents.countDocuments({})
+
+FIND incidents WHERE status = 'open'
+→ db.incidents.find({status: 'open'})
+
+FIND services WHERE type = 'free' AND category = 'gardening'
+→ db.services.find({type:'free', category:'gardening'})
+
+FIND services WHERE type = 'free' OR type = 'exchange'
+→ db.services.find({$or:[{type:'free'},{type:'exchange'}]})
+
+FIND services WHERE title LIKE 'garden'
+→ db.services.find({title:{$regex:'garden',$options:'i'}})   # literal substring
+
+FIND services WHERE title LIKE 'a.b'
+→ db.services.find({title:{$regex:'a\.b',$options:'i'}})      # metacharacters escaped
+
+FIND events WHERE maxAttendees >= 50 LIMIT 10
+→ db.events.find({maxAttendees:{$gte:50}}).limit(10)
+```
+
+## How a query is executed
+
+The pipeline is linear, from text to JSON result:
+
+1. **HTTP request** — `DslController` receives the `POST /dsl/query`, protected by `JwtAuthGuard` + `RolesGuard` with `@Roles('moderator', 'admin')`. The `DslQueryDto` DTO caps the **query length at 500 characters** (`@MaxLength(500)`). The `req.user` (role + `neighborhoodId`) is passed to the service, which uses it for neighborhood scoping.
+2. **Lexer** (`dsl/lexer.py`) — splits the text into tokens (`FIND`, `IDENTIFIER`, `WHERE`, `STRING`…).
+3. **Parser** (`dsl/parser.py`) — **LALR(1)** grammar producing an AST as a Python `dict` (`type`, `collection`, `filter`, `limit`).
+4. **Compiler** (`dsl/compiler.py`) — validates the collection against an **allowlist** and returns the AST.
+5. **AST serialization** (`dsl/main.py`) — `main.py` returns the compiled AST **as JSON** through pythonia; the Python code no longer reaches any database (Motor is gone).
+6. **Execution** (NestJS `DslService`) — the Node service is the one running the query: **Mongoose** for `neighborhoods`, `services` and `events`, **Drizzle/PostgreSQL** for `incidents` and `users`. This is where the service applies **neighborhood scoping** (for every non-admin caller) and **caps results at 100** (`MAX_DSL_RESULTS`).
+7. **Return** — the result goes back up to NestJS: an array of documents for a `find`, `{ count: N }` for a `count`.
+
+The diagram below sums up this pipeline: access control and execution live in NestJS, while the Python gateway does nothing but turn text into a validated AST. No database is touched on the Python side.
+
+<Mermaid
+  chart={`flowchart TB
+  txt["Query text<br/>(max 500 characters)"]
+  guard["DslController<br/>JwtAuthGuard + RolesGuard"]
+  subgraph py["Python gateway (PLY)"]
+    lexer["lexer.py<br/>tokenization"]
+    parser["parser.py<br/>LALR(1) grammar"]
+    compiler["compiler.py<br/>collection allowlist"]
+  end
+  ast["AST serialized as JSON<br/>returned via pythonia"]
+  service["DslService (NestJS)<br/>neighborhood scoping + cap of 100"]
+  mongo[("Mongoose<br/>neighborhoods, services, events")]
+  pg[("Drizzle / PostgreSQL<br/>incidents, users")]
+  result["JSON result<br/>documents or count"]
+  txt --> guard
+  guard --> lexer
+  lexer --> parser
+  parser --> compiler
+  compiler --> ast
+  ast --> service
+  service --> mongo
+  service --> pg
+  mongo --> result
+  pg --> result`}
+/>
+
+The boundary is sharp: `lexer.py`, `parser.py` and `compiler.py` only produce a Python `dict` serialized as JSON (see `main.py`, where `execute` returns `json.dumps(result)`). `DslService` deserializes that JSON into a `CompiledQuery`, picks the engine based on the collection, adds the `neighborhoodId` filter for every non-admin caller, then bounds the output with `clampLimit` (`Math.min(limit ?? 100, 100)`).
+
+### Generated AST
+
+```python
+# "FIND incidents WHERE status = 'open' LIMIT 10"
+{
+    'type': 'find',
+    'collection': 'incidents',
+    'filter': {'status': 'open'},
+    'limit': 10,
+}
+```
+
+### Compilation on the Python side
+
+Python now only **compiles**: `main.py` returns the serialized AST, without ever touching a database.
+
+```python
+def execute(query_string: str) -> str:
+    # Compile and return the AST as JSON — no MongoDB execution here.
+    result = compile_query(query_string)
+    return json.dumps(result)
+```
+
+### Execution and scoping on the NestJS side
+
+`DslService` deserializes the AST then runs the query according to the collection, applying the **cap of 100 results** and the **neighborhood scoping** for every non-admin caller.
+
+```ts
+// dsl.service.ts
+const MAX_DSL_RESULTS = 100; // actual cap, enforced by clampLimit
+
+// neighborhoods        → Mongoose (public, never scoped)
+// services / events    → Mongoose + { neighborhoodId } filter if non-admin
+// incidents / users    → Drizzle/PostgreSQL + neighborhoodId filter if non-admin
+// A non-admin without a neighborhoodId gets an empty result (except neighborhoods).
+```
+
+> Scoping is enforced here, in NestJS — not in the Python. A moderator therefore cannot bypass neighborhood partitioning through the DSL.
+
+## Security and safeguards
+
+| Vector | Mitigation |
+|---------|-----------|
+| Arbitrary collections | Strict allowlist: `incidents`, `neighborhoods`, `services`, `events`, `users` |
+| Destructive operations | `FIND` and `COUNT` only — no `DELETE`/`UPDATE`/`INSERT` |
+| Injections (Mongo / SQL) | Values go through the engine (Mongoose or parameterized Drizzle queries) — no concatenation |
+| ReDoS via `LIKE` | The value is escaped with `re.escape`: `LIKE` is a literal substring, never a live regex pattern |
+| Unauthorized access | Route protected by `@Roles('moderator', 'admin')` |
+| Cross-neighborhood leak | A moderator is scoped to their `neighborhoodId` (services, events, incidents, users); only the administrator is global, `neighborhoods` stays public |
+| Excessive resources | 100 results maximum per query (`MAX_DSL_RESULTS`, enforced on the NestJS side) |
+
+These safeguards form a chain: every stage can reject the query, and only those clearing all the checks reach a parameterized read. The role is checked by the `RolesGuard` (403), the verb and the collection by the grammar then the compiler (400), while scoping, `LIKE` escaping and the cap are transformations applied on the NestJS side before the engine is reached.
+
+<Mermaid
+  chart={`flowchart TB
+  req["Incoming DSL query"]
+  role{"Role allowed?<br/>moderator or admin"}
+  verb{"Verb FIND or COUNT?"}
+  wl{"Collection in<br/>the allowlist?"}
+  scope["Neighborhood scoping<br/>if non-admin"]
+  like["LIKE escaped by re.escape<br/>literal substring"]
+  cap["Cap of 100 results<br/>via clampLimit"]
+  ok["Parameterized read<br/>Mongoose or Drizzle"]
+  reject["Rejected<br/>403 or 400"]
+  req --> role
+  role -- no --> reject
+  role -- yes --> verb
+  verb -- other --> reject
+  verb -- yes --> wl
+  wl -- no --> reject
+  wl -- yes --> scope
+  scope --> like
+  like --> cap
+  cap --> ok`}
+/>
+
+Two points deserve emphasis. First, **read-only** is not a rule bolted on but a property of the grammar: the lexer only knows `FIND`, `COUNT`, `WHERE`, `AND`, `OR`, `LIMIT` and `LIKE`; a word like `DELETE` therefore raises a `SyntaxError` before any access. Second, the collections backed by PostgreSQL (`incidents`, `users`) only accept a **simple equality** on a controlled field (`status`, `role`) through `extractEqualityFilter` — any richer filter is rejected with a `BadRequestException`, which rules out injecting Mongo operators (`$gt`, `$regex`, `$or`) into a SQL query.
+
+## Common errors
+
+| Error | Cause | Message |
+|--------|-------|---------|
+| `SyntaxError` | Illegal token (`FIND !@#`) | `Illegal character '!' at position 5` |
+| `SyntaxError` | Invalid grammar (`FIND WHERE incidents`) | `Syntax error at 'WHERE'` |
+| `SyntaxError` | Premature end (`FIND incidents WHERE`) | `Unexpected end of input` |
+| `ValueError` | Collection not allowed (`FIND passwords`) | `Unknown collection 'passwords'. Allowed: ...` |
+
+> A collection outside the allowlist is rejected by the compiler before any database access: the query never reaches MongoDB.

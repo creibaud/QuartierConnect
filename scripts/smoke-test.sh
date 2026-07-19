@@ -18,7 +18,7 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
     check_route() {
       local path="$1" expected="$2"
       local code
-      code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "${BASE_URL%/}${path}" 2>/dev/null || echo "000")
+      code=$(curl -sSL -o /dev/null -w '%{http_code}' --max-time 10 "${BASE_URL%/}${path}" 2>/dev/null || echo "000")
       if [ "$code" != "$expected" ]; then
         echo "✗ ${path} returned ${code} (expected ${expected})" >&2
         exit 1
@@ -29,7 +29,7 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
     check_route /dev/ 401    # dev docs, behind basic auth
     check_route /docs 401    # Scalar reference, behind basic auth
     if [ -n "${DOCS_AUTH_USER:-}" ] && [ -n "${DOCS_AUTH_PLAINTEXT:-}" ]; then
-      auth_code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 -u "${DOCS_AUTH_USER}:${DOCS_AUTH_PLAINTEXT}" "${BASE_URL%/}/dev/" 2>/dev/null || echo "000")
+      auth_code=$(curl -sSL -o /dev/null -w '%{http_code}' --max-time 10 -u "${DOCS_AUTH_USER}:${DOCS_AUTH_PLAINTEXT}" "${BASE_URL%/}/dev/" 2>/dev/null || echo "000")
       if [ "$auth_code" != "200" ]; then
         echo "✗ /dev/ with credentials returned ${auth_code} (expected 200 — broken hash or wrong credentials?)" >&2
         exit 1

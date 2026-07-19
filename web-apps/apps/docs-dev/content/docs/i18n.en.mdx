@@ -1,0 +1,127 @@
+---
+title: Internationalization
+description: Shared i18next instance, FR/EN translation modules and parity checking
+---
+
+The monorepo's two React SPAs — the resident client (`:3000`) and the admin back office (`:3001`) — share a single [i18next](https://www.i18next.com/) instance, declared once in `packages/shared`. French is the default language **and** the fallback language; English is the only other locale. All interface text lives in a single `translation` namespace, and the language choice is stored in the browser's `localStorage` under the key `qc_locale`.
+
+## The shared i18next instance
+
+Everything is centralized in `packages/shared/src/lib/i18n/index.ts`. The module assembles the resources, initializes i18next once and registers it with React:
+
+```ts
+export const resources = {
+    fr: { translation: fr },
+    en: { translation: en },
+} as const;
+
+if (!i18n.isInitialized) {
+    const savedLocale = (localStorage.getItem(STORAGE_KEY) ?? "fr") as Locale;
+
+    void i18n.use(initReactI18next).init({
+        resources,
+        lng: savedLocale,
+        fallbackLng: "fr",
+        interpolation: { escapeValue: false },
+    });
+}
+```
+
+Key points:
+
+- **A single namespace.** The resources only expose the `translation` key (i18next's default namespace). Components therefore never have to specify a namespace: they call `t("pages.events.title")` directly.
+- **FR as default and fallback.** `lng` is the saved locale, or `"fr"` if there is none; `fallbackLng: "fr"` guarantees that a key missing from English falls back to French rather than displaying the raw key.
+- **Persistence.** `STORAGE_KEY = "qc_locale"`. `setLocale(locale)` writes to `localStorage` then calls `i18n.changeLanguage(locale)`.
+- **`escapeValue: false`.** React already escapes HTML: i18next's escaping is disabled to avoid double escaping.
+- **Initialization guard.** The `if (!i18n.isInitialized)` block makes the module idempotent — importing it never reinitializes an instance that is already ready.
+
+The module exports the `Locale = "fr" | "en"` type, the `setLocale` function, and the `i18n` instance itself (as both a named and a default export).
+
+Each application triggers initialization with a side-effect import at the very top of its entry point — `apps/client/src/main.tsx` and `apps/admin/src/main.tsx`:
+
+```ts
+import "@workspace/shared/lib/i18n/index";
+```
+
+On the component side, the `useLocale()` hook (`packages/shared/src/lib/hooks/useLocale.ts`) wraps `useTranslation()` and exposes `t`, `locale`, `setLocale`, `isFR` and `isEN`. The language switcher lives in the user menu of both apps (`nav-user.tsx`).
+
+## The two translation modules
+
+The translations are two TypeScript modules sitting side by side in the same folder:
+
+- `packages/shared/src/lib/i18n/fr.ts`
+- `packages/shared/src/lib/i18n/en.ts`
+
+Each one does an `export default { … } as const` of a **nested** object. The `as const` freezes the values as literals, which gives key-path autocompletion on `t(...)` calls.
+
+Both modules share the same tree, organized into top-level groups by domain:
+
+| Group | Purpose |
+|--------|------|
+| `common` | cross-cutting labels (`loading`, `save`, `cancel`, `theme` subgroup) |
+| `auth` | login / registration, `validation` and `errors` subgroups |
+| `nav` | navigation entries, `groups` subgroup (menu groupings) |
+| `address` | autocompletion and out-of-neighborhood warning |
+| `map` | Leaflet map, `draw` subgroup (boundary drawing) |
+| `roles` | role labels (`resident`, `moderator`, `admin`, `banned`) |
+| `incidents`, `contracts`, `bookings`, `votes`, `documents`, `recommendations` | strings specific to each business domain |
+| `messaging`, `realtime` | messaging and real-time notifications |
+| `rgpd` | wording related to personal data |
+| `pages` | screen-by-screen strings for the resident client (the largest group) |
+| `adminPages` | screen-by-screen strings for the admin back office |
+
+The `pages` and `adminPages` groups hold most of the volume: they are themselves split by screen, across several levels. A key then reads as a dotted path, for example `pages.login.pageTitle`, `pages.register.mfaStep1`, `common.theme.light`, `auth.validation.invalidEmail`, `map.draw.drawPolygon` or `nav.groups.home`.
+
+## Adding a translation or a key
+
+1. **Pick the location.** Find the right top-level group (a screen string goes under `pages`/`adminPages`; a reused label goes under `common`). Reuse an existing key rather than duplicating one.
+2. **Add the key in both modules.** Insert the same key path in `fr.ts` **and** `en.ts`. Since the objects are `as const`, a key present on only one side will not show up in the other language.
+3. **Consume the key.** In the component, `const { t } = useTranslation()` (or `useLocale()`), then `t("my.key.path")`. Interpolations use the i18next syntax: `t("key", { count })` with `{{count}}` in the value.
+4. **Check parity** with `pnpm i18n:check` (see below) before committing.
+
+## Checking FR/EN parity
+
+Since FR and EN are two separate objects maintained by hand, they can drift apart: a key added on one side only, a group renamed in one language but not the other. The `web-apps/scripts/check-i18n-parity.mjs` script detects those gaps.
+
+It loads both modules, flattens each tree into dotted key paths, then compares the two sets. Any key present in one language but missing from the other is reported, and the script exits with a non-zero code on divergence — enough to wire it up as a local guard rail or in continuous integration.
+
+Run it from `web-apps/`:
+
+```bash
+pnpm i18n:check
+```
+
+> A fallback (`fallbackLng: "fr"`) hides a missing English key at runtime: the user sees the French text instead of a raw key, but the translation is still incomplete. The parity check makes that hole visible instead of letting it slip through silently.
+
+## The production trap: duplicated i18next
+
+The monorepo is installed with **pnpm**, which resolves `i18next` twice (against different transitive `typescript` peers). Left alone, the production bundle ships **two copies** of the library: the shared package initializes one instance, while the application's `useTranslation()` reads the **other** — never initialized. In development the problem is invisible, but the production build then displays the **raw keys** (`auth.password` instead of "Password").
+
+The fix is a `resolve.dedupe` in both Vite configs (`apps/client/vite.config.ts` and `apps/admin/vite.config.ts`), which forces a single copy into the bundle:
+
+```ts
+resolve: {
+    dedupe: ["i18next", "react-i18next"],
+    // …
+}
+```
+
+<Mermaid
+  chart={`flowchart TB
+  subgraph sans["Without dedupe (two copies)"]
+    s1["shared/i18n/index.ts<br/>init() → instance A"]
+    a1["useTranslation()<br/>reads instance B (not initialized)"]
+    r1["Prod render:<br/>raw keys"]
+    s1 -. separate instances .-> a1
+    a1 --> r1
+  end
+  subgraph avec["With resolve.dedupe (single copy)"]
+    s2["shared/i18n/index.ts<br/>init() → single instance"]
+    a2["useTranslation()<br/>reads the same instance"]
+    r2["Prod render:<br/>translated text"]
+    s2 --> a2
+    a2 --> r2
+  end`}
+/>
+
+Any new application in the monorepo that consumes the shared i18n package must carry over this `resolve.dedupe`, or it will hit the same symptom in production only.

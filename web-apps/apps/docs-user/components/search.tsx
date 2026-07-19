@@ -15,8 +15,12 @@ import { oramaStaticClient } from 'fumadocs-core/search/client/orama-static';
 import { create } from '@orama/orama';
 import { useI18n } from 'fumadocs-ui/contexts/i18n';
 
-function initOrama() {
-  return create({ schema: { _: 'string' }, language: 'english' });
+// Orama wants the language name, not the locale code.
+function initOrama(locale?: string) {
+  return create({
+    schema: { _: 'string' },
+    language: locale === 'fr' ? 'french' : 'english',
+  });
 }
 
 export default function StaticSearchDialog(props: SharedProps) {

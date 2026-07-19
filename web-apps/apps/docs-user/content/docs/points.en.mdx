@@ -1,0 +1,127 @@
+---
+title: Points and rewards
+description: Earning, checking and transferring your points
+---
+
+Points are QuartierConnect's mutual-help currency. They let you thank a neighbor who
+helped you out and pay for the services offered in the neighborhood. This page explains
+how to earn them, where to check your balance and your history, and how to transfer some
+to a neighbor.
+
+At a glance, points always follow the same cycle: you **earn** them by helping out, they
+feed your **balance**, then you **spend** them to pay for a service or **transfer** them
+straight to a neighbor. That neighbor can in turn send them back around the neighborhood.
+
+<Mermaid
+  chart={`flowchart LR
+  gagner["You provide<br/>a paid service"]
+  solde(["Your points<br/>balance"])
+  payer["You pay for<br/>a service received"]
+  transfert["You thank<br/>a neighbor (transfer)"]
+  voisin(["A neighbor<br/>in the neighborhood"])
+
+  gagner -->|"Points received"| solde
+  solde -->|"Points spent"| payer
+  solde -->|"Points sent"| transfert
+  transfert --> voisin
+  voisin -.->|"In turn"| gagner`}
+/>
+
+## How do you earn points?
+
+You earn points when a neighbor calls on you and the exchange is completed. On
+QuartierConnect, services between neighbors come in three types:
+
+- **free**: you help out with no points in return;
+- **paid (in points)**: the service is settled with points;
+- **exchange**: you help each other out.
+
+For a paid service, the flow goes like this:
+
+1. You publish a service listing with its title, description, category and type.
+2. An interested neighbor **responds** to your listing, then requests a **booking**.
+   The number of points is calculated automatically from the service's points rate.
+3. You **accept** the booking: a **contract** is then generated automatically.
+4. Both parties **sign** the contract. The **points transfer** is triggered
+   **automatically as soon as the last signature is added** and seals the exchange.
+
+That final signature is what credits your balance: the points move as soon as the
+contract is complete, with no extra step to confirm. Conversely, when you are the one
+requesting a paid service, the same mechanism debits your points to the benefit of
+the neighbor who helped you.
+
+## Checking your balance and your history
+
+Your balance is visible in two places.
+
+- On the **dashboard** (home page), a card shows a summary of your points balance along
+  with your latest transactions.
+- On the **Points** page, you get your full balance and the **detailed history of your
+  transactions**.
+
+The history gathers every movement on your account:
+
+- **points received**,
+- **points sent**,
+- **service payments**.
+
+> Good to know: your balance and your history are updated immediately after each
+> operation. So the amount you see is always up to date.
+
+## Transferring points to a neighbor
+
+You can send points straight to a neighbor from the **Points** page, without waiting for
+a service. Handy to thank someone or to share your balance.
+
+To make a transfer:
+
+1. Open the **Points** page.
+2. **Search for the recipient** among your neighbors.
+3. Enter the **amount** to transfer.
+4. Optionally add a **note** (it is optional) to explain why you are sending them.
+5. **Confirm** the transfer.
+
+As soon as you confirm, the points leave your account for your neighbor's. Your
+**balance** and your **history** are updated right away, and the operation appears in
+your transactions as points sent. On their side, the recipient sees the movement appear
+as points received.
+
+A transfer therefore has only two possible outcomes: either it goes through and the
+points change accounts, or it is refused and **no points move**.
+
+<Mermaid
+  chart={`flowchart LR
+  vous["You<br/>balance debited"]
+  controle{"Transfer<br/>approved?"}
+  voisin["Your neighbor<br/>balance credited"]
+  echec["No points move<br/>explanation shown"]
+
+  vous --> controle
+  controle -->|"Yes"| voisin
+  controle -->|"Refused"| echec`}
+/>
+
+### If the transfer does not go through
+
+A transfer can be refused. In that case, **no points leave your account** and a message
+explains why:
+
+- **"Insufficient balance for this transfer"**: the amount requested is more than you
+  have. Check your balance and try again with a lower amount.
+- **"You cannot transfer points to yourself"**: you entered your own account as the
+  recipient. Pick another neighbor.
+- **"This recipient does not exist"**: the target account is no longer available.
+- **"Unable to transfer points"**: a temporary problem interrupted the operation. Try
+  again in a moment.
+
+## In short
+
+| Action | Where it happens | Effect on your balance |
+|--------|------------------|------------------------|
+| Providing a paid service | Bookings and Contracts | Credited on the contract's last signature |
+| Paying for a service | Bookings and Contracts | Debited on the contract's last signature |
+| Checking balance and history | Dashboard and Points page | None |
+| Transferring points | Points page | Debited immediately |
+
+Points reflect the mutual-help life of your neighborhood: the more you help out, the
+more you build up so you can, in turn, call on your neighbors.

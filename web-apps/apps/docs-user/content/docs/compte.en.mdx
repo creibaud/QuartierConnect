@@ -1,0 +1,97 @@
+---
+title: Create an account and sign in
+description: Registration, two-factor authentication (TOTP) and joining your neighborhood
+---
+
+Welcome to QuartierConnect, the online space for your neighborhood. This page walks you through creating your account, securing your sign-in and joining your neighborhood. Take all the time you need: every step is simple.
+
+## Overview
+
+Getting started always follows the same path: you create your account, you enable two-factor authentication by scanning a QR code, then you enter your address so you can be attached to your neighborhood. The diagram below sums up that path.
+
+<Mermaid chart={`
+flowchart TD
+    A["Create the account<br/>(profile + GDPR consent)"] --> B["Enable two-factor<br/>authentication (TOTP)"]
+    B --> C["Scan the QR code<br/>with your phone"]
+    C --> D["Enter the first<br/>six-digit code"]
+    D --> E["Sign in<br/>(email, password, code)"]
+    E --> F["Enter your address"]
+    F --> G["Attached to the neighborhood"]
+`} />
+
+## Step 1: create your account
+
+Registration happens in two stages on the sign-up page. The first stage is filling in your profile.
+
+You provide:
+
+- your **first name** and your **last name**;
+- your **email address**;
+- your **password**, typed twice for confirmation;
+- your **phone number**.
+
+The form automatically checks the format of your email, the minimum password length and that both password entries match.
+
+### Consent, a required step
+
+Before continuing, you must tick the **GDPR consent box**. Without it, account creation is blocked. This is your agreement for your data to be processed.
+
+## Step 2: enable two-factor authentication
+
+To protect your account, QuartierConnect uses **two-factor authentication** (also called TOTP). On top of your password, a six-digit code is asked for at every sign-in. That code changes every few seconds, which makes your account far harder to break into.
+
+Once your profile is validated, the application displays a **QR code** along with the matching secret in plain text, which you can copy.
+
+To enable it:
+
+1. Install an **authenticator app** on your phone if you don't already have one. The best known are Google Authenticator, Aegis and FreeOTP.
+2. Open that app and **scan the QR code** shown on screen. If you prefer, you can enter the secret by hand by copying it.
+3. Your authenticator app then generates a **first six-digit code**. Enter it in QuartierConnect to confirm the pairing and finish creating your account.
+
+> Keep access to your authenticator app safe: it is what produces the code asked for at every sign-in.
+
+## Step 3: sign in
+
+Once your account is created, signing in takes two simple steps:
+
+1. Enter your **email address** and your **password**.
+2. Enter the **six-digit code** shown in your authenticator app.
+
+<Mermaid chart={`
+flowchart LR
+    A["Email<br/>and password"] --> B["Six-digit code<br/>from the app"]
+    B --> C["Signed in"]
+`} />
+
+If your credentials are wrong or the code is invalid, a clear error message appears to help you fix it.
+
+## Step 4: join your neighborhood
+
+To reach local content (services between neighbors, events, votes and so on), your account has to be attached to a neighborhood. After your first sign-in, if no address is associated with your account yet, the application shows an **address entry screen with autocomplete**.
+
+Enter your address using the suggestions offered. Two cases are possible.
+
+- **Your address is in a covered neighborhood.** Your account is automatically attached to that neighborhood, and you reach your dashboard right away.
+- **Your address is recognised but outside every covered neighborhood.** You are then taken to a "pending coverage" screen. Your address is saved so the administration team can extend coverage to your area.
+
+The diagram below illustrates these two cases.
+
+<Mermaid chart={`
+flowchart TD
+    A["Your address is entered<br/>(with autocomplete)"] --> B{"Address in a<br/>covered neighborhood?"}
+    B -->|"Yes"| C["Automatically attached<br/>and access to the dashboard"]
+    B -->|"No"| D["Pending coverage screen<br/>address saved for the team"]
+`} />
+
+In every case, you can **correct your address at any time** if you made a mistake or if you move.
+
+## Summary
+
+| Step | What you do |
+|------|-------------|
+| 1. Account | Profile, password and GDPR consent |
+| 2. Security | Scan the QR code and first six-digit code |
+| 3. Sign-in | Email, password then six-digit code |
+| 4. Neighborhood | Enter your address to be attached |
+
+You are now set to take part in your neighborhood's life. Welcome among your neighbors.

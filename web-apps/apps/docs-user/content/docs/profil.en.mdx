@@ -1,0 +1,204 @@
+---
+title: Profile and personal data
+description: Edit your profile, secure your account and manage your data (GDPR)
+---
+
+The **Profile** page brings together everything about you: your identity, your account
+security and the control of your personal data. You reach it from your account menu.
+This page walks you through each of these settings step by step, without the jargon.
+
+## Overview
+
+Your profile is laid out as **cards**, which you go through from top to bottom:
+
+- **Profile**: your photo, your first name and your last name.
+- **Neighborhood**: the address that links you to your neighborhood.
+- **Security**: your password and your two-factor authentication.
+- **Email address**: the email you sign in with.
+- **Phone**: your number, optional.
+- **Privacy (GDPR)**: exporting and deleting your data.
+
+One principle runs through this whole page: **every sensitive change** (password, email,
+phone, account deletion) asks you for the **six-digit code** from your authenticator app.
+That code is what guarantees the change really comes from you, even if someone got hold
+of your screen for a moment.
+
+## Editing your profile information
+
+The **Profile** card shows your photo, your full name, your email address and a label
+indicating your role (for example "Resident"). To change your name or your photo:
+
+1. Click **Edit** at the top of the card.
+2. Fill in your **first name** and your **last name**.
+3. For the photo, click the avatar or **Change photo**, then pick an image from your
+   device. It is automatically cropped and resized before upload, so it stays light. If a
+   photo is already set, you can **Remove** it.
+4. Click **Save**.
+
+> Worth knowing: your **email address** and your **role** are shown here but cannot be
+> changed from this card. Email is changed in its own card (see further down); the role
+> is managed by the administration team.
+
+### Your neighborhood
+
+Just below, the **Neighborhood** card reminds you which neighborhood you are linked to
+and lets you **correct your address** at any time, with the help of autocompletion. How
+the linking works in detail (address covered or "waiting for coverage") is described on
+the **Create an account and sign in** page.
+
+## The Security card
+
+This card gathers two things: **changing your password** and the state of your
+**two-factor authentication**.
+
+### Changing your password
+
+To set a new password, fill in:
+
+1. your **current password**;
+2. your **new password** (at least eight characters);
+3. the **confirmation** of that new password;
+4. the **six-digit code** from your authenticator app.
+
+A **strength indicator** rates your new password live, from "very weak" to "strong", to
+help you pick a solid one. The **Update password** button stays disabled until the
+conditions are met (password too short, confirmation not matching, or incomplete code).
+
+If an error message appears, it tells you exactly what to fix:
+
+- **current password is incorrect**: check what you typed;
+- **invalid six-digit code**: wait for a new code to appear in your app, then try again.
+
+### Two-factor authentication
+
+The card confirms that your **two-factor authentication is active**. It is enabled as
+soon as your account is created and stays on permanently: it is what protects your access
+and validates each of your sensitive actions.
+
+In practice, for every important operation, the application asks you for the six-digit
+code. The table below sums up the actions concerned.
+
+| Action | Six-digit code required? |
+|--------|--------------------------|
+| Change your first name, last name or photo | No |
+| Correct your address | No |
+| Change your password | Yes |
+| Change your email address | Yes |
+| Change or remove your phone number | Yes |
+| Delete your account | Yes |
+
+## Changing your email address
+
+Your email address is also the identifier you sign in with. To change it, open the
+**Email address** card and click **Edit**. A dialog asks you for:
+
+1. your **new email address**;
+2. your current **password**;
+3. the **six-digit code**.
+
+Once the change is validated, since your sign-in identifier has changed, you are
+**automatically signed out** and invited to **sign in again** with your new address. This
+is normal, and it is an extra safeguard.
+
+<Mermaid chart={`
+flowchart LR
+    A["New address,<br/>password and code"] --> B["Change validated"]
+    B --> C["Automatic<br/>sign-out"]
+    C --> D["Sign in again with<br/>the new address"]
+`} />
+
+If the address you enter is **already used** by another account, a message warns you and
+the change is refused. Pick a different address in that case.
+
+## Changing or removing your phone number
+
+The phone number is **optional**. From the **Phone** card, click **Edit**. In the dialog:
+
+1. enter your number in **international format**, for example `+33612345678`;
+2. enter the **six-digit code**;
+3. confirm with **Save**.
+
+If the number format is not recognised, a message asks you to fix it before you can save.
+To **remove** your number, open the same dialog, **clear the field**, enter your code,
+then save: your number is deleted from your account.
+
+## Two-factor authentication: phone lost or replaced
+
+Your authenticator app produces the six-digit code asked for at every sign-in and every
+sensitive action. That **secret** never changes: it was shown to you **only once, when
+your account was created**, as a QR code and as text to copy. Planning ahead is therefore
+the best protection.
+
+- **You are changing phones**: while you still have access to your old device, install an
+  authenticator app on the new one and **add the same secret** to it (the one you kept
+  when you signed up). Both devices will then produce the same code, and you can part
+  with the old one with peace of mind.
+- **A code is refused**: the code is renewed every thirty seconds. Check that your phone's
+  time is set **automatically**, wait for the next code to appear, then try again.
+
+> Useful habit: keep the secret shown at sign-up somewhere safe (screenshot, password
+> manager, secure note). It is what lets you set up your two-factor authentication again
+> on a new device.
+
+If you have lost both your app **and** the original secret, you can no longer produce a
+code and therefore can no longer sign in on your own: **get in touch with the platform's
+administration team** to restore your access.
+
+## Privacy (GDPR)
+
+The last card puts you in charge of your data. It offers two clearly separate actions:
+**exporting** your data or **deleting** your account.
+
+<Mermaid chart={`
+flowchart TD
+    A["Privacy (GDPR) card"] --> B["Data export"]
+    A --> C["Account deletion"]
+    B --> D["Download of a file<br/>containing your data"]
+    C --> E["Six-digit code"]
+    E --> F["Sign-out and<br/>anonymized account (permanent)"]
+`} />
+
+### Exporting your data
+
+The **Export my data** button gathers all your information and downloads it as a **file**
+named `quartierconnect-mes-donnees.json`. This file corresponds to your right to data
+portability (article 20 of the GDPR).
+
+It contains in particular:
+
+- your **profile** and the **date of your consent**;
+- your **incident reports**;
+- your **points balance** and the history of your **transactions** (both sent and
+  received);
+- your **sent messages**, your **contracts**, your **bookings**;
+- your **votes** and your **participations in the neighborhood's consultations**;
+- the **services** you have published.
+
+Some sensitive information **never** appears in this export: your password (which is only
+ever stored encrypted anyway) and your two-factor authentication secret.
+
+### Deleting your account
+
+Deletion is **permanent**. From the card, click **Delete my account**: a dialog asks you
+to confirm by entering your **six-digit code**. This confirmation prevents any accidental
+or malicious deletion.
+
+As soon as you confirm, you are **immediately signed out**. Your account is then
+**anonymized**: your email address is replaced by a meaningless identifier, your password
+and your two-factor authentication secret are erased, and your profile no longer appears
+as yours on the platform. The content you published may remain in anonymized form, for as
+long as neighborhood life and moderation require.
+
+## In short
+
+| Card | What you manage there | Six-digit code |
+|------|-----------------------|----------------|
+| Profile | First name, last name, photo | No |
+| Neighborhood | Your address and your link to a neighborhood | No |
+| Security | Password, two-factor authentication | Yes (password) |
+| Email address | Sign-in email (then sign in again) | Yes |
+| Phone | Optional number (added or removed) | Yes |
+| Privacy (GDPR) | Export and deletion of your data | Yes (deletion) |
+
+You stay in control of your identity, the security of your access and what becomes of
+your data, at any time and in a few clicks.

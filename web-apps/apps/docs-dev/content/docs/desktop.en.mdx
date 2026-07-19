@@ -1,0 +1,144 @@
+---
+title: Desktop application
+description: JavaFX administration client, offline mode and synchronization
+---
+
+The `fr.quartierconnect.desktopapp` desktop application is a native **JavaFX 21** client aimed at **administrators and moderators**. It gives access to neighborhood incident administration even without a connection: data is cached locally in SQLite and a `SyncService` reconciles changes with the API through a Git-inspired three-way merge.
+
+The `fr.quartierconnect:desktop-app` Maven module targets Java 21. It relies on JavaFX (`javafx-controls`, `javafx-fxml`), the [AtlantaFX](https://mvnrepository.com/artifact/io.github.mkpaz/atlantafx-base) theme, the Ikonli/FontAwesome icons, the `sqlite-jdbc` driver (org.xerial), Jackson for JSON and `java-keyring` for the system keyring. The bootstrap class is `fr.quartierconnect.desktopapp.Launcher`, which delegates to `MainApp` (a `javafx.application.Application`).
+
+## What the application is for
+
+On startup, `MainApp.start()` initializes the SQLite database (`SQLiteDatabase.initialize()`) then shows `LoginView`. Signing in happens **through the browser**: the main button launches an SSO PKCE flow (`startSsoPkceFlow`) whose return is captured by a small local loopback server `SsoCallbackServer`, then exchanged for a token pair by `AuthService.exchangeSsoToken` (endpoint `/auth/sso/exchange`). A direct email / password / TOTP sign-in also exists (`AuthService.login` → `/auth/login`). The role (`admin` / `moderator`) is read from the JWT payload by `AuthService.getCurrentUserRole()`.
+
+Once authenticated, the user works on incidents (`IncidentsView`, `IncidentDetailPane`, `IncidentCreateForm`): creation, status change, conflict resolution (`ConflictResolutionForm`). All these actions write **locally** first, then flow up to the API on the next synchronization cycle.
+
+## Offline mode
+
+Offline mode rests on three mechanisms:
+
+- **Session resume without network.** `AuthService.tryResumeFromDatabase()` restores the email (SQLite `session` table) and the token pair (via `TokenVault`). It returns `true` if a non-expired access token is found, or if only a refresh token remains — in which case the session stays open offline (`isAuthenticated()` returns `true` as long as a refresh token exists).
+- **Explicit toggle.** `ApiService.setOfflineMode(true)` (driven by `OfflineModePlugin` from the top bar) forces every HTTP call to raise an immediate `IOException` instead of attempting the network. `ApiService.isReachable()` probes `/health` with a 3 s timeout.
+- **Local writes first.** `IncidentRepository.insertDirty`, `updateLocally` and `updateStatusLocally` mark the row `is_dirty = 1`. Those "dirty" incidents are pushed the next time the app goes online, with no loss.
+
+While online, any `ApiService` `execute()` that receives a `401` attempts **one** refresh (`AuthService.refreshAccessToken`, endpoint `/auth/refresh`) then replays the request a single time.
+
+## Synchronization — `SyncService`
+
+`SyncService` runs on a single-threaded `ScheduledExecutorService` (daemon thread `sync-worker`). `start()` schedules `poll()` every **30 seconds** (`POLL_INTERVAL_SECONDS`); `syncNow()` triggers an immediate cycle and `syncNowAndWait()` blocks until it finishes (used by the tests and a few flows). An `isSyncing` lock prevents two concurrent cycles.
+
+Each `poll()` chains:
+
+1. **Valid token.** Fetches the access token; if it is missing or expired, tries `refreshAccessToken()`. On failure, notifies "offline" and exits.
+2. **Push.** `pushDirtyIncidents(token)` sends the `is_dirty = 1 AND is_conflict = 0` incidents.
+3. **Pull.** `pullIncidents(token, justPushed)` fetches the server incidents while avoiding re-applying what was just pushed.
+4. Logs the result (`SQLiteDatabase.logSync`), notifies the UI and publishes the plugin bus events (`SYNC_STARTED`, `INCIDENTS_CHANGED`, `SYNC_COMPLETED`, or `SYNC_FAILED`).
+
+<Mermaid
+  chart={`sequenceDiagram
+  participant Sched as scheduler (30s)
+  participant Sync as SyncService.poll
+  participant Auth as AuthService
+  participant Api as API
+  participant Repo as IncidentRepository
+  Sched->>Sync: poll()
+  Sync->>Auth: getAccessToken / refresh if expired
+  Sync->>Repo: listDirty()
+  Sync->>Api: POST /incidents/sync
+  Api-->>Sync: skippedIds
+  Sync->>Repo: markSynced + updateBase (except skipped)
+  Sync->>Api: GET /incidents?limit=100&page=N[&since=ts]
+  Api-->>Sync: page of incidents
+  Sync->>Repo: upsertFromServer (3-way merge)
+  Note over Sync,Repo: tombstoneOrphans only after a complete full pull`}
+/>
+
+### Push — `/incidents/sync`
+
+`pushDirtyIncidents` builds a `{ id, title, description, status, createdBy, updatedAt }` array for each dirty incident. The `id` sent is the existing `remote_id`, or a freshly drawn UUID if the incident is purely local. The body `{ "incidents": [...] }` is posted to `/incidents/sync`. The response may contain a `skippedIds` array (`parseSkippedIds`): those incidents **stay dirty** for another attempt. For the others, the `remote_id` is assigned (`assignRemoteId`), the `is_dirty` flag is cleared (`markSynced`) and the ancestor base snapshot is updated (`updateBase`) for use by later merges.
+
+### Pull — `/incidents?since=`
+
+`pullIncidents` pages through the whole scope in pages of **100** (`PULL_PAGE_SIZE`), with a `MAX_PULL_PAGES` safety bound (10000) against an infinite loop. The path is built by `buildPullPath`:
+
+- **First pull** (no timestamp recorded): `/incidents?limit=100&page=N`.
+- **Subsequent pulls (delta)**: `/incidents?limit=100&page=N&since=<encoded updatedAt>`, where `since` is the most recent `updatedAt` seen on the previous pull (`lastPullTimestamp`).
+
+Every remote incident not present in `justPushed` goes through `IncidentRepository.upsertFromServer`. The `tombstoneOrphans` — which locally deletes the incidents the server no longer returns — only runs **after a first complete pull** (all pages walked); giving up on `MAX_PULL_PAGES` leaves the set partial and erases nothing.
+
+### Three-way merge — `ThreeWayMerger`
+
+Each incident row keeps three snapshots in SQLite: the **local** version (`title`, `description`, `status`), the **base** version (`base_*`, the common ancestor at the last synchronization point) and, in case of conflict, the pending **remote** version (`remote_*`). `IncidentRepository.applyMerge` calls `ThreeWayMerger.merge(base, local, remote)` field by field (title, description, status):
+
+<Mermaid
+  chart={`flowchart TD
+  start["Field: base, local, remote"]
+  nobase{"base == null ?"}
+  lww["LWW: take remote"]
+  lc{"local changed ?"}
+  rc1{"remote changed ?"}
+  rc2{"remote changed ?"}
+  same{"local == remote ?"}
+  keepLocalNoChange["keep local (no change)"]
+  takeRemote["take remote"]
+  keepLocal["keep local"]
+  conflict["CONFLICT: is_conflict = 1"]
+  start --> nobase
+  nobase -->|yes| lww
+  nobase -->|no| lc
+  lc -->|no| rc1
+  rc1 -->|no| keepLocalNoChange
+  rc1 -->|yes| takeRemote
+  lc -->|yes| rc2
+  rc2 -->|no| keepLocal
+  rc2 -->|yes| same
+  same -->|yes| keepLocal
+  same -->|no| conflict`}
+/>
+
+- If **no base snapshot** exists (never synchronized), it falls back to **last-write-wins** (`applyLww`): the remote overwrites the local only if the incident is not dirty and `serverUpdatedAt` is more recent.
+- A **clean** merge (`applyCleanMerge`) writes the result, resets `is_dirty = 0` and refreshes the base snapshot.
+- A **conflict** on at least one field (`flagConflict`) sets `is_conflict = 1` and stores the remote values in `remote_*`. The incident then shows up in `listConflicts()` and the user decides through `ConflictResolutionForm` → `resolveConflict(localId, acceptRemote)`, which resets the base snapshot to the retained version.
+
+> An incident deleted locally is **tombstoned** (`deleted_at` filled in) rather than actually erased: `upsertFromServer` refuses to resurrect it as long as the tombstone exists.
+
+## Token storage — `TokenVault`
+
+`TokenVault` keeps the tokens in the **operating system keyring** through the `java-keyring` library: SecretService on Linux, Keychain on macOS, Credential Manager on Windows. The entries use the `QuartierConnect` service and the `access_token` / `refresh_token` accounts. `AuthService.applyTokens` calls `TokenVault.saveTokens` on every sign-in or refresh, `loadTokens` restores them at startup and `clearTokens` wipes them on sign-out.
+
+If no keyring backend is available (`BackendNotSupportedException`), `TokenVault` silently falls back to **in-memory only** storage (never on disk). Tokens are **never** persisted in clear text: `SQLiteDatabase.initialize()` goes as far as dropping (`ALTER TABLE ... DROP COLUMN`) any `access_token` / `refresh_token` columns inherited from pre-keyring databases. Only the email is cached in the `session` table (for offline display).
+
+## Local SQLite cache
+
+`SQLiteDatabase` opens a `quartierconnect.db` file database in the OS **per-user data directory** — a location that is writable even for an app installed under `C:\Program Files`:
+
+| OS | Location |
+|----|-------------|
+| Windows | `%APPDATA%\QuartierConnect` (default `~\AppData\Roaming`) |
+| macOS | `~/Library/Application Support/QuartierConnect` |
+| Linux / others | `$XDG_DATA_HOME/QuartierConnect` (default `~/.local/share`) |
+
+The `-Dsqlite.url` system property overrides this URL (used by the tests, which point at an ephemeral database). `initialize()` creates three tables if needed:
+
+- **`incidents`** — the main cache. Besides the business fields (`title`, `description`, `status`), it carries the `is_dirty` and `is_conflict` flags, the base snapshot (`base_title`, `base_description`, `base_status`, `base_updated_at`), the pending remote version (`remote_title`, `remote_description`, `remote_status`) and a `deleted_at` soft-delete marker.
+- **`sync_log`** — timestamped history (`synced_at`, `success`) fed by `logSync`.
+- **`session`** — a single row (`id = 1`) holding the email and `saved_at` for offline resume.
+
+On an empty database, `seedIfEmpty` inserts demo incidents (including two prepared conflict cases) so the application is usable without a server.
+
+## Plugin system
+
+The application is extensible without touching the source code: a plugin is a JAR discovered at startup (`PluginRegistry.loadFromDirectory`) or registered internally, which talks to the application through the `AppContext` interface — which notably exposes `getIncidentRepository()` (the SQLite cache above) and `getEventBus()` (the `SYNC_*` events published by `SyncService`). Six built-in plugins ship with the app, among them `OfflineModePlugin` (offline toggle) and `ThemePlugin`.
+
+The full contract — lifecycle, `AppContext`, UI extension points, event bus and packaging a plugin — is described on the dedicated page: **[Plugins](/en/plugins)**.
+
+## Packaging and distribution
+
+The build produces two formats from the same code:
+
+- **Fat JAR** — the `maven-shade-plugin` plugin assembles every dependency into `target/quartierconnect-desktop.jar` (manifest `Main-Class: fr.quartierconnect.desktopapp.Launcher`, `module-info.class` excluded). This is the "Portable (Java)" deliverable, runnable on any JVM.
+- **Native installers** — the `packaging/jpackage-build.sh` script (and its PowerShell counterpart `.ps1`) calls `jpackage` on the JAR with a trimmed runtime (`--add-modules`). `jpackage` only builds for the current OS, so the release CI runs it on every platform: **`.deb` / `.rpm` / `.tar.gz`** on Linux, **`.dmg`** on macOS, **`.msi`** on Windows. The default type depends on the OS; `tar.gz` first builds a portable `app-image` then archives it.
+
+The URL of the target server is **burned into the JAR** at build time: `packaging/write-server-properties.sh` writes a `server.properties` (`api.url` / `web.url`) from `QC_SERVER_URL`, and `ServerConfig` reads it with priority — after `-Dapi.url=...`, before the `localhost` defaults. A JAR downloaded from a deployed instance therefore points back at it automatically, with no configuration.
+
+The artifacts are served in production by Caddy under **`/telechargements/*`** (`file_server` on `/srv/downloads`, see [Deployment](/en/deploiement)). The back office offers them for download through the `DownloadDesktopDialog` component (`web-apps/apps/admin/src/components/download-desktop-dialog.tsx`), which lists Windows (`.msi`), macOS (`.dmg`), Linux (`.deb` / `.rpm` / `.tar.gz`) and the portable JAR. Finally, `UpdateService` (started in the background by `MainApp`) raises a toast when a newer version is available.

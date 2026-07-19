@@ -1,0 +1,174 @@
+---
+title: Real-time messaging
+description: Socket.io gateway, socket authentication, rooms, delivery acknowledgements, typing, presence and attachments
+---
+
+QuartierConnect messaging is built on a Socket.io gateway — the `MessagingGateway` (`api/src/messaging/messaging.gateway.ts`) — mounted alongside the NestJS REST API and exposed under the same `/api` prefix (the `wss://` upgrade is handled by Caddy). Conversations and messages are persisted in MongoDB through Mongoose (`MessagingService`), while participant identities are resolved in PostgreSQL through Drizzle. The real-time part is transport only: every message is written to the database first, then broadcast to the connected participants.
+
+## The Socket.io gateway
+
+The gateway is declared on a dedicated namespace and shares the API CORS policy:
+
+```ts
+@WebSocketGateway({
+    namespace: "/messaging",
+    cors: { origin: corsOrigins, credentials: true },
+})
+```
+
+Allowed origins come from the `CORS_ORIGINS` variable (comma-separated list), falling back to `http://localhost:3000` and `http://localhost:3001`. The `MessagingGateway` implements `OnGatewayConnection` and `OnGatewayDisconnect`, and keeps two in-memory tables for presence tracking:
+
+| Table | Type | Role |
+|-------|------|------|
+| `socketsByUser` | `Map<string, Set<string>>` | The socket ids open per user — a single account can be connected from several devices |
+| `conversationPeersByUser` | `Map<string, Set<string>>` | The peers (other participants) of all of a user's conversations, computed at connection time |
+
+Two families of Socket.io rooms structure the broadcasting:
+
+- `user:<userId>` — one personal room per user, the target of notifications and presence updates.
+- `conversation:<conversationId>` — one room per conversation, the target of messages and typing indicators.
+
+## Socket authentication
+
+Authentication happens during the handshake, before any application message is processed. `handleConnection` stores the authentication promise on the socket (`authReady`) **synchronously**, then awaits it, so that a message emitted very early by the client can hook onto it instead of reading a still-undefined `userId`.
+
+`authenticateAndSetup` runs the following checks:
+
+1. Extract the token from `handshake.auth.token`, or failing that from the `Authorization: Bearer …` header. If it is missing, the socket is disconnected.
+2. Signature verification through `jwtService.verify<JwtPayload>(token)`; a `payload.sub` is required.
+3. `isTokenStillValid(payload)` rejects the socket if the `jti` is among the revoked tokens (`tokenService.isAccessTokenRevoked`), or if the account is missing, `banned` or `deleted` (reading `users.role` from PostgreSQL through Drizzle).
+
+Any error or failed check leads to `client.disconnect()`. On success, `userId` is set on the socket, the user joins their `user:<userId>` room, and the conversation rooms start being rebuilt.
+
+Every application handler goes through `requireUserId(client)`, which awaits `authReady` then returns the authenticated `userId` — or throws a `WsException("Unauthorized")` if the socket has no identity. Since WebSocket payloads do not go through the HTTP `ValidationPipe`, shape validation is done by hand in each handler.
+
+<Mermaid
+  chart={`sequenceDiagram
+  participant Cli as Client (socket.io-client)
+  participant Gw as MessagingGateway
+  participant Tok as TokenService
+  participant Pg as PostgreSQL (Drizzle)
+  participant Mongo as MongoDB (Mongoose)
+  Cli->>Gw: handshake (auth.token = JWT)
+  Gw->>Gw: jwtService.verify(token)
+  Gw->>Tok: isAccessTokenRevoked(jti) ?
+  Gw->>Pg: user role (banned / deleted ?)
+  Pg-->>Gw: valid role
+  Gw->>Cli: join user:<userId>
+  Gw->>Mongo: findConversations(userId)
+  Mongo-->>Gw: conversations
+  Gw->>Cli: join conversation:<id> (for each conversation)
+  Gw-->>Cli: presence:snapshot { onlineUserIds }`}
+/>
+
+## Rebuilding and managing rooms
+
+Socket.io does not keep room membership across connections: it has to be **rebuilt on every `handleConnection`**. The gateway calls `messagingService.findConversations(userId)` (sorted by `lastMessageAt` descending), then makes the socket join each `conversation:<_id>` room. It then computes the set of peers (`collectConversationPeers`) and caches it in `conversationPeersByUser`.
+
+During a session, the client can adjust its membership:
+
+- `join_conversation` — after `requireUserId`, the gateway checks that the caller really is a participant (`messagingService.isParticipant`); otherwise `WsException("Not a participant")`. On success, it joins the room and returns the acknowledgement `{ joined: conversationId }`.
+- `leave_conversation` — leaves the room and returns `{ left: conversationId }`.
+
+`handleDisconnect` removes the socket id from `socketsByUser`. As long as at least one socket remains open for that account (another tab, another device), the user is considered online. When the last socket closes, the entry is deleted, an offline presence update is broadcast to their peers, and the peer cache is purged.
+
+## Sending a message and delivery acknowledgement
+
+The `send_message` handler receives `{ conversationId, content }`. `validateSendMessage` requires a non-empty `conversationId`, a `content` of type string, non-empty after `trim`, and at most `MAX_MESSAGE_CONTENT_LENGTH` (4000) characters — any violation throws a `WsException`. The message is then persisted by `messagingService.sendMessage(conversationId, userId, content, MessageType.TEXT)`, which checks that the conversation exists and that the sender is a participant, writes the `Message` document, then updates `lastMessageAt` on the conversation.
+
+Two feedback mechanisms coexist, and should not be confused:
+
+- **The broadcast** — `server.to("conversation:<id>").emit("new_message", message)` pushes the persisted document to every member of the room, sender included.
+- **The acknowledgement (ack)** — the value returned by the handler (`return message`) is sent back to the caller as the ack of the `emitWithAck`. It confirms a **server-side write and broadcast**, not that the recipients have read the message.
+
+On the client side, `useSocketMessages` (`web-apps/packages/shared/src/lib/hooks/useMessaging.ts`) emits the send with a guard delay: `socket.timeout(5000).emitWithAck("send_message", { conversationId, content })`. A disconnected socket or an ack lost after 5 seconds rejects the promise, which surfaces as a send error in the interface. The sender therefore receives their message twice — through the ack and through the `new_message` broadcast — hence the systematic deduplication by `_id` on the client.
+
+<Mermaid
+  chart={`sequenceDiagram
+  participant Snd as Sender
+  participant Gw as MessagingGateway
+  participant Mongo as MongoDB
+  participant Rcv as Recipients (room)
+  Snd->>Gw: emitWithAck("send_message", { conversationId, content })
+  Note over Gw: requireUserId + validateSendMessage
+  Gw->>Mongo: sendMessage() — insert + lastMessageAt
+  Mongo-->>Gw: persisted message
+  Gw->>Rcv: emit("new_message", message)
+  Gw-->>Snd: ack = message
+  Note over Snd,Rcv: deduplication by _id (ack + broadcast)`}
+/>
+
+## Typing indicators
+
+The `typing:start` and `typing:stop` events are relayed by `relayTypingUpdate`. After `requireUserId` and a check on `conversationId`, if the socket is not already in the room, participation is verified. The gateway then broadcasts `typing:update` **to everyone but the sender** (`client.to(room).emit(…)`) with `{ conversationId, userId, typing }`.
+
+On the client side, `useTypingEmitter` (`web-apps/apps/client/src/features/realtime/use-typing-emitter.ts`) emits a single `typing:start` on the first keystroke, then arms a 2-second idle timer (`TYPING_IDLE_DELAY_MS`) that emits `typing:stop` — also triggered when the message is sent or when the component unmounts. The `RealtimeProvider` aggregates the incoming `typing:update` events into `typingUserIdsByConversation`, exposed through `useRealtime` / `useTypingUserIds`, and clears a user from every typing state as soon as they go offline.
+
+## Presence
+
+Presence is derived from `socketsByUser`. On connection, the gateway sends the newcomer a `presence:snapshot` listing, among their peers, those with at least one open socket. When a user goes from offline to online (first socket) or the other way around (last socket closed), `emitPresenceUpdate` broadcasts `presence:update` `{ userId, online }` to the `user:` rooms of their peers only — presence is never disclosed to users with no conversation in common. The `RealtimeProvider` maintains an `onlineUserIds` `Set`, reset on the socket's `disconnect` event.
+
+## Cross-cutting notifications
+
+The gateway also acts as an application notification channel. `sendNotification(userIds, type, payload)` maps the ids to their `user:` rooms and emits `notification` `{ type, payload }`. The `NotificationsListener` (`api/src/messaging/notifications.listener.ts`) listens to the lifecycle events of bookings, contracts and points settlements (`BOOKING_*`, `CONTRACT_SIGNED`, `CONTRACT_FULLY_SIGNED`, `POINTS_SETTLED`) through `@OnEvent` and notifies the counterparties involved. On the client side, `handleRealtimeNotification` turns those events into toasts and invalidates the matching react-query caches (`bookings`, `contracts`, `points`).
+
+## Attachments
+
+Attachments do not travel over the WebSocket: they go through a multipart REST route, `POST /messaging/conversations/:id/upload` (`MessagingController`), protected by `JwtAuthGuard` and capped at 10 MB by the `FileInterceptor`. The flow:
+
+1. Non-participants are rejected before any write (`assertParticipant`).
+2. `resolveUploadMessageType(mimetype)` (`message-upload.policy.ts`) determines the message type:
+
+| MIME type | `MessageType` |
+|-----------|---------------|
+| `audio/*` (limited to `audio/webm`, `audio/ogg`, `audio/mpeg`, `audio/mp4`) | `AUDIO` |
+| `image/svg+xml` | `FILE` (never served inline — potentially scriptable) |
+| any other `image/*` | `IMAGE` |
+| everything else | `FILE` |
+
+3. For audio, `assertAudioSizeWithinLimit` enforces a 5 MB cap (otherwise `413 PayloadTooLarge`).
+4. The binary is written to the GridFS bucket `messaging_files` (`openUploadStreamWithId`), with `uploadedBy`, `conversationId` and `contentType` metadata. A failed write rejects the request, which guarantees that no message ever points at a missing file.
+5. `sendFileMessage` creates the `Message` document (with `fileId`/`fileName`, without `content`) then the gateway broadcasts `new_message` through `gateway.emitToConversation` — attachments therefore show up in real time just like text messages.
+
+Downloads go through `GET /messaging/files/:fileId`, which checks participation from the `conversationId` stored in the GridFS metadata. Only allow-listed MIME types (`INLINE_SAFE_MIME_TYPES`: PNG, JPEG, WebP, GIF and the accepted audio formats) are served `inline`; everything else forces `attachment` / `application/octet-stream`, and the file name is stripped of control characters.
+
+> **Voice message** — the interface records straight in the browser through `useVoiceRecorder` (`MediaRecorder`, preferred format `audio/webm;codecs=opus`, fallback `audio/mp4`, 2 min maximum duration), then sends the resulting blob to the same `upload` route. So it is a plain `MessageType.AUDIO`.
+>
+> Since the file endpoints require a JWT, the client cannot point an `<img>`/`<audio>` tag directly at them: `useAuthedFileUrl` fetches the authenticated binary as a `blob`, creates an object URL and revokes it on unmount.
+
+## Web client consumption
+
+The web client opens a single socket, shared across the whole application (`web-apps/packages/shared/src/lib/realtime.ts`):
+
+```ts
+activeSocket = io("/messaging", {
+    path: "/api/socket.io",
+    auth: (provideAuth) => provideAuth({ token: getAccessToken() }),
+    transports: ["websocket"],
+});
+```
+
+The `auth` callback re-reads the access token on every (re)connection, which lets a reconnected socket present a fresh token. Two layers share this socket:
+
+- **`RealtimeProvider`** (`web-apps/apps/client/src/features/realtime/realtime-provider.tsx`) — mounted at the root of the app, it listens to `presence:snapshot`, `presence:update`, `typing:update`, `notification` and `new_message` (the last one to invalidate the conversation list), and exposes presence + typing states through the `useRealtime` context.
+- **`useSocketMessages`** (shared) — at the level of an open conversation: joins the room (`join_conversation`) on connection, listens to `new_message` for the current conversation and invalidates the `["messages", conversationId]` cache, and provides `sendMessage` (the `emitWithAck` described above).
+
+The conversation thread (`conversation-thread.tsx`) merges the paginated history (fetched over REST) with the local optimistic messages, deduplicated by `_id`. Sending is optimistic: the field is cleared immediately and the draft restored if the ack promise fails.
+
+### Unread message tracking
+
+Unread tracking is **entirely client-side**: the server keeps no read receipts. When a conversation is displayed, `ConversationThread` calls `onRead(conversationId, newestMessageAt)`, and `useConversationReadMarkers` (`web-apps/apps/client/src/features/messages/hooks/use-conversation-read-markers.ts`) persists that marker in `localStorage` (key `quartierconnect.messages.readMarkers`). The `isConversationUnread` function (`features/messages/lib/conversation.ts`) then compares the conversation's last activity (`lastMessageAt` / last message) with the local read marker: an active conversation is always considered read, as is one whose last message comes from the current user.
+
+## Event reference
+
+| Direction | Event | Payload | Effect |
+|------|-----------|--------------|-------|
+| Client → server | `join_conversation` | `conversationId` | Joins the room (ack `{ joined }`), participant guard |
+| Client → server | `leave_conversation` | `conversationId` | Leaves the room (ack `{ left }`) |
+| Client → server | `send_message` | `{ conversationId, content }` | Persists + broadcasts; ack = persisted message |
+| Client → server | `typing:start` / `typing:stop` | `{ conversationId }` | Relays `typing:update` to the other members |
+| Server → client | `new_message` | `Message` | New text message or attachment in the room |
+| Server → client | `typing:update` | `{ conversationId, userId, typing }` | A peer is typing (or stopped) |
+| Server → client | `presence:snapshot` | `{ onlineUserIds }` | Peers online at connection time |
+| Server → client | `presence:update` | `{ userId, online }` | A peer went online / offline |
+| Server → client | `notification` | `{ type, payload }` | Booking / contract / points notification |

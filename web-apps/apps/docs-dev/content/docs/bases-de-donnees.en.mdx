@@ -1,0 +1,149 @@
+---
+title: Databases
+description: PostgreSQL, MongoDB, Neo4j and migrations
+---
+
+QuartierConnect spreads its data across **four** databases: PostgreSQL for ACID relational data, MongoDB for flexible documents and binaries, Neo4j for the social graph, and a SQLite cache embedded in the JavaFX desktop client.
+
+Overview of the split: every piece of data has **one** owning database on the server side, and the desktop client only holds a synchronized local cache.
+
+<Mermaid
+  chart={`flowchart TB
+  api["NestJS API<br/>(server source of truth)"]
+  desk["JavaFX desktop<br/>client (offline)"]
+  pg[("PostgreSQL<br/>ACID relational")]
+  mongo[("MongoDB<br/>documents + GridFS")]
+  neo[("Neo4j<br/>social graph")]
+  sqlite[("SQLite<br/>local cache")]
+  pgOwns["users, incidents<br/>points_balances<br/>points_transactions<br/>revoked_tokens"]
+  mongoOwns["neighborhoods, services<br/>events, contracts<br/>conversations, messages<br/>votes, documents"]
+  neoOwns["User, Neighborhood<br/>Service, Event<br/>+ social relationships"]
+  sqliteOwns["incidents (cache)<br/>sync_log, session"]
+  api --> pg
+  api --> mongo
+  api --> neo
+  desk --> sqlite
+  pg --> pgOwns
+  mongo --> mongoOwns
+  neo --> neoOwns
+  sqlite --> sqliteOwns
+  sqlite -.->|"delta sync"| api`}
+/>
+
+## PostgreSQL — ACID relational
+
+ORM: **Drizzle ORM** (TypeScript), source of truth `api/src/database/schema.ts`. **5 tables**: `users`, `incidents`, `points_balances`, `points_transactions`, `revoked_tokens`.
+
+- **`users`** — identity and security. `email` unique and lowercased, `password_hash` in **Argon2id** (never bcrypt), `totp_secret` base32 (RFC 6238), `refresh_token_hash` (strict rotation, `NULL` when signed out). `role` follows the state machine `resident → moderator → admin`, with `banned` terminal but reversible; on a ban, the current role is copied into `previous_role` then restored on reactivation. `address_lat` / `address_lng` are geocoded through Nominatim (OpenStreetMap).
+- **`incidents`** — `status` follows `open → in_progress → resolved` (transitions validated on the API side). `category` (`neighborhood` by default, otherwise `reporting` or `bug`) and `neighborhood_id` govern **visibility**: a resident only sees the `neighborhood` incidents of their own neighborhood plus their own `reporting`/`bug` reports, a moderator sees their whole neighborhood, the administrator sees everything. **Soft** deletion via `deleted_at` (tombstone) to propagate deletions to the offline desktop client; `updated_at` feeds the **delta sync** (`GET /incidents?since=<ISO>`, filter `updated_at > since`) behind the desktop client's paginated pull. Indexes on `status` and `deleted_at`.
+- **`points_balances`** — one balance per user (`user_id` UNIQUE), with a `CHECK (balance >= -10)` constraint enforced **at the database level**, not only in the application.
+- **`points_transactions`** — `type` (`service_payment` | `bonus` | `correction`) and `status` (`pending` | `completed` | `cancelled`) enforced by `CHECK`. A `service_payment` references a MongoDB `contract_id`.
+- **`revoked_tokens`** — revocation list keyed by the JWT `jti`. The `JwtAuthGuard` rejects any access token whose `jti` is listed there; `expires_at` allows purging expired entries.
+
+A points transfer runs inside a **PostgreSQL transaction**. Both balance rows (sender and recipient) are first created if needed (`onConflictDoNothing`), then **locked in a deterministic order** — sorted by `user_id`, `... WHERE user_id IN (...) ORDER BY user_id FOR UPDATE` — which rules out the crossed deadlock `A→B ‖ B→A`. The service then checks the `-10` threshold before applying the deltas. PostgreSQL errors are mapped to `400` responses: `40P01` (deadlock detected) → `{ code: CONCURRENT_UPDATE }`, violation of `CHECK (balance >= -10)` — `23514` → `{ code: INSUFFICIENT_BALANCE }`.
+
+Full sequence of a points transfer, entirely inside a PostgreSQL transaction. Balance locks are taken in a deterministic order (sorted by `user_id`) to rule out the crossed deadlock, the application guard checks the `-10` threshold, and the database `CHECK` constraint acts as the last line of defence should a concurrent write slip through.
+
+<Mermaid
+  chart={`sequenceDiagram
+  participant C as Client
+  participant S as PointsService
+  participant PG as PostgreSQL
+  C->>S: POST /points/transfer (recipientId, amount)
+  S->>S: rejects self-transfer (SELF_TRANSFER)
+  S->>PG: BEGIN transaction
+  S->>PG: SELECT role FROM users WHERE id = recipient
+  Note over S: recipient banned or deleted, returns 400 RECIPIENT_NOT_FOUND
+  S->>PG: INSERT missing balances (onConflictDoNothing)
+  S->>PG: SELECT balances WHERE user_id IN (a, b) ORDER BY user_id FOR UPDATE
+  Note over S,PG: locks taken in user_id order (anti-deadlock A to B and B to A)
+  PG-->>S: balances locked
+  alt sufficient balance after debit
+    S->>PG: UPDATE sender minus amount, recipient plus amount
+    Note over PG: CHECK constraint (minimum balance -10) enforced in the database
+    S->>PG: INSERT points_transactions
+    S->>PG: COMMIT
+    PG-->>S: OK
+    S-->>C: 200 (updated balances)
+  else insufficient balance
+    S->>PG: ROLLBACK
+    S-->>C: 400 INSUFFICIENT_BALANCE
+  end
+  Note over S: Postgres errors mapped to 400 (40P01 CONCURRENT_UPDATE, 23514 INSUFFICIENT_BALANCE)`}
+/>
+
+The same locked path serves the settlement of service payments (`settleServicePayment`): the `points_transactions` row of type `service_payment` is locked `FOR UPDATE`, the operation is **idempotent** (an already `completed` status returns without double-debiting) and a `cancelled` status is refused.
+
+## MongoDB — flexible documents
+
+ODM: **Mongoose** (NestJS `MongooseModule`). **17 collections** in total: **11 document collections**, plus **3 GridFS buckets**, each materialized by a `.files` + `.chunks` pair (that is, 6 physical collections).
+
+| Collection | Contents |
+|-----------|---------|
+| `neighborhoods` | GeoJSON polygons, `2dsphere` index |
+| `services` / `serviceresponses` / `servicebookings` | Service listings, responses, paid bookings |
+| `events` | Neighborhood events (`interestedUserIds` via `$addToSet`) |
+| `contracts` | Contracts, SHA-256 `contentHash` and signatures |
+| `conversations` / `messages` | Messaging |
+| `votes` | Reaction votes (Strategy Pattern) |
+| `communityvotes` | Multi-type ballots (`binary`, `single_choice`, `multiple_choice`, `weighted`) |
+| `documents` | GridFS metadata + audit log |
+
+GridFS buckets: `pdfs` (contract PDFs), `avatars` (avatar images), `messaging_files` (message attachments).
+
+Key points:
+
+- Documents reference users by their **PostgreSQL UUID** (`createdBy`, `senderId` and similar fields).
+- `neighborhoods.geometry` carries a **`2dsphere`** index for `$geoIntersects` (overlapping neighborhoods, whether an address belongs to one).
+- Business unique indexes: `{ serviceId, responderId }` on `serviceresponses`, `{ userId, targetId, targetType }` on `votes`.
+- The ephemeral **`ssotokens`** collection (`SsoToken` model) uses a **300 s TTL** index for the cross-surface SSO exchange; it is not part of the persistent inventory of 17 collections.
+
+## Neo4j — social graph
+
+Writes go **exclusively** through `SocialService` (`api/src/social/social.service.ts`), fire-and-forget. Labels: `User`, `Neighborhood`, `Service`, `Event`. Relationships: `LIVES_IN`, `LOCATED_IN`, `HELD_IN`, `INTERESTED_IN`, `ATTENDING`, `NOT_INTERESTED_IN`, `HELPED` (carries `serviceId` and `points`).
+
+The graph model is deliberately kept simple: four node labels and six directed relationships. The location relationships (`LIVES_IN`, `LOCATED_IN`, `HELD_IN`) all point to a `Neighborhood`; interest in an event is expressed through `INTERESTED_IN` or `ATTENDING` (plus `NOT_INTERESTED_IN` for an explicit dismissal); mutual help between neighbors is carried by `HELPED`, whose `serviceId` and `points` properties feed the "trusted neighbor" score.
+
+<Mermaid
+  chart={`flowchart LR
+  U["User"]
+  V["User<br/>(neighbor)"]
+  N["Neighborhood"]
+  S["Service"]
+  E["Event"]
+  U -->|LIVES_IN| N
+  S -->|LOCATED_IN| N
+  E -->|HELD_IN| N
+  U -->|INTERESTED_IN| E
+  U -->|ATTENDING| E
+  U -->|"HELPED (serviceId, points)"| V`}
+/>
+
+The recommendation endpoint unions four ranked sources (`RECOMMENDATIONS_QUERY`): `serviceInNeighborhood` (score 3), `upcomingEventNearby` (score 2), `sharedInterests` (`3 + peerCount`) and `reliableNeighbor` (`4 + helpCount + sharedEvents`). Results are sorted by descending score, deduplicated by `type + name` and capped at 10.
+
+Resilience: every write goes through `withRetry` (3 attempts, 100/200/400 ms backoff). A Neo4j outage never blocks the API; reads then fall back to an empty list.
+
+Consistency of location relationships. On a neighborhood change, `LIVES_IN` (`syncUser`), `LOCATED_IN` (`syncService`) and `HELD_IN` (`syncEvent`) are rewritten in **delete-then-merge** — `OPTIONAL MATCH (x)-[old]->(other) WHERE other <> n DELETE old MERGE (x)-[...]->(n)` — which guarantees a **single** location relationship and removes the duplicates left behind after a move. On the PostgreSQL side, **deleting a neighborhood** resets its residents' `neighborhood_id` to `NULL` (they then go back through address onboarding), and **enlarging a polygon** on `PATCH` reassigns the residents left "pending" who are now covered by the new geometry.
+
+## SQLite — desktop client cache
+
+Embedded in the JavaFX client (`quartierconnect.db`, overridable via `sqlite.url`). Schema: `desktop-app/.../database/SQLiteDatabase.java`. **3 tables**: `incidents`, `sync_log`, `session`.
+
+Synchronization applies a **Three-Way Merge**: each field (`title`, `description`, `status`) is compared between the common ancestor (`base_*`), the local value and the server value (`remote_*`). Unambiguous cases merge automatically (LWW when the server is more recent); a genuine conflict raises `is_conflict = 1` for manual resolution. Server-side deletions are propagated via `deleted_at` (tombstone).
+
+> **Security.** The `session` table stores **only** the email. Access and refresh tokens are **never** persisted in SQLite: they live in the OS keychain through `TokenVault`.
+
+## Migrations
+
+On the PostgreSQL side, the schema is driven by **Drizzle ORM**; the file `api/src/database/schema.ts` is authoritative (tables, `CHECK` constraints, indexes). On the desktop client side, SQLite runs migrations **at startup**: adding the `deleted_at` column (tombstone) to `incidents` and dropping the old `access_token` / `refresh_token` columns now handled by the keychain.
+
+## Usage rules
+
+| Rule | Detail |
+|------|--------|
+| Points in ACID PostgreSQL | Never a MongoDB transaction — balances + `CHECK >= -10` |
+| No auth in MongoDB | Users, roles and token hashes only in PostgreSQL |
+| Neo4j is read-oriented | Writes through `SocialService`, fire-and-forget with retry |
+| SQLite = local cache | Never the source of truth — the PostgreSQL API is authoritative |
+| GridFS = binaries | Metadata goes into the `documents` collection |
+| Tokens never in SQLite | OS keychain through `TokenVault` |

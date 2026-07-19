@@ -1,0 +1,107 @@
+---
+title: Local setup
+description: Prerequisites, configuration and local startup
+---
+
+This guide covers bringing up a full QuartierConnect instance on a development machine. The platform runs as **9 Docker containers** orchestrated by Docker Compose: `caddy` (reverse proxy), `client` and `admin` (React SPAs served by Vite), `docs-user` and `docs-dev` (Fumadocs documentation sites), `api` (NestJS + Python PLY DSL gateway), and the three databases `mongo`, `postgres`, `neo4j`.
+
+## Prerequisites
+
+| Tool | Version / role |
+|-------|----------------|
+| Docker + Docker Compose v2 | Runs the whole stack (`docker compose`) |
+| Git | Cloning the repository |
+| GNU Make | Command orchestration (`make setup`, `make seed`…) |
+| Node 22 + pnpm 9 | Running the seed on the host (`npx tsx`) |
+
+> The web applications, the documentation sites and the API run **inside the containers**: Docker and Docker Compose v2 are enough for a full startup. Node and pnpm are only needed to run scripts outside the containers (the seed in particular).
+
+## Cloning the repository
+
+```bash
+git clone https://github.com/creibaud/QuartierConnect.git
+cd QuartierConnect
+```
+
+## Configuring the `.env` file
+
+The simplest path is `make setup`, which checks the prerequisites, generates `.env` from `.env.example` with random secrets, starts the stack and imports the demo dataset — in which case the sections below are already taken care of.
+
+For a manual setup, copy the provided template **at the root of the repository** as `.env`, then fill in the secrets:
+
+```bash
+cp .env.example .env
+chmod 600 .env
+```
+
+Generate each value with `openssl rand -base64 24` (no spaces and no `<` `>` in passwords) and fill in:
+
+- `JWT_SECRET`
+- `MONGO_ROOT_PASSWORD` — copy the **same** value into `MONGO_URI`
+- `POSTGRES_PASSWORD` — copy the **same** value into `POSTGRES_URL`
+- `NEO4J_AUTH=neo4j/<password>` — keep `NEO4J_USER` / `NEO4J_PASSWORD` in sync
+
+Check that no placeholder is left:
+
+```bash
+grep 'CHANGE_ME' .env && echo "⚠ Placeholders remaining" || echo "✓"
+```
+
+> The MongoDB password is only applied when initializing an empty volume. If you change it after a first startup, MongoDB will keep the old one until the volume is recreated.
+
+## Starting the Docker stack
+
+In development, only `docker-compose.yml` is used (Caddy listens over HTTP on `:80`, without TLS or Let's Encrypt):
+
+```bash
+make docker-up-build
+# equivalent: docker compose -f docker/docker-compose.yml --env-file .env up -d --build
+```
+
+This command builds and starts the 9 containers, **API, web applications and documentation sites included** — there is no separate startup step. Check their state:
+
+```bash
+make status
+```
+
+Caddy exposes a single entry point and routes internally:
+
+```
+/          → client:3000
+/admin     → admin:3001
+/aide      → docs-user:3002
+/dev       → docs-dev:3003   (basic auth)
+/api       → api:5000
+/api/docs  → api:5000/docs (Scalar, basic auth)
+```
+
+The applications are therefore reachable at `http://localhost/` (resident), `http://localhost/admin` (admin area), `http://localhost/aide` (user help) and the API under `http://localhost/api`. The developer site (`/dev`) and the Scalar reference (`/api/docs`) are protected by Caddy basic auth: the credentials come from the `DOCS_AUTH_USER` / `DOCS_AUTH_HASH` variables (a development default is provided in `docker/docker-compose.yml`).
+
+## Seeding the demo data
+
+The seed runs **on the host** (the API image only contains compiled code): install the API dependencies first, then run the full seed.
+
+```bash
+make install-api   # once (pnpm install in api/)
+make seed          # Drizzle migrations + demo accounts + Neo4j graph
+```
+
+`make seed` chains three steps: `db-migrate` (Drizzle migrations on PostgreSQL), `seed-demo` (alice/bob/admin accounts via `npx tsx scripts/seed-demo.ts`) and `seed-neo4j` (populating the graph from MongoDB).
+
+> If the API bootstrap migrator replays migration `0000` and crashes, insert a baseline row into `drizzle.__drizzle_migrations` (see the RUNBOOK, migrations section).
+
+## Verification
+
+The API exposes a health endpoint aggregating the state of the three databases:
+
+```bash
+curl http://localhost/api/health
+```
+
+The response must return `status:"ok"` with `mongo`, `postgres` and `neo4j` reported as available. For an end-to-end check (client/admin routes, `/api/docs`, messaging WebSocket, security headers), use the smoke test script:
+
+```bash
+./scripts/smoke-test.sh http://localhost
+```
+
+Once those checks are green, your local instance is up: register an account at `http://localhost/` or log in with a demo account from the seed.

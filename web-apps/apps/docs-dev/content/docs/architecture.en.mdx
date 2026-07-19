@@ -1,0 +1,129 @@
+---
+title: Architecture
+description: Monorepo, API, databases and desktop application
+---
+
+QuartierConnect is a multi-component platform: several running applications and three server databases, orchestrated with Docker Compose, plus a SQLite cache embedded in the desktop client. The API is the only component that opens outbound connections to the Internet (the Nominatim / OpenStreetMap geocoding API).
+
+<Mermaid
+  chart={`flowchart TB
+  subgraph clients[Clients]
+    web["Resident client<br/>(React / Vite)"]
+    admin["Admin back office<br/>(React / Vite)"]
+    desk["Desktop application<br/>(JavaFX + SQLite cache)"]
+  end
+  caddy["Caddy<br/>(reverse proxy, HTTPS)"]
+  api["NestJS API<br/>(REST + WebSocket)"]
+  dsl["DSL gateway<br/>(Python PLY)"]
+  pg[("PostgreSQL<br/>ACID")]
+  mongo[("MongoDB<br/>documents + GridFS")]
+  neo[("Neo4j<br/>social graph")]
+  nomi["Nominatim / OSM<br/>(geocoding)"]
+  web --> caddy
+  admin --> caddy
+  desk --> caddy
+  caddy --> api
+  api --> dsl
+  api --> pg
+  api --> mongo
+  api --> neo
+  api -.-> nomi`}
+/>
+
+## The monorepo
+
+The repository holds four application building blocks, each with its own stack.
+
+- **NestJS API** (`api`, Node 22, port `:5000`) — the business core, exposing a REST API and a WebSocket gateway. Organized into 16 NestJS modules (`AuthModule`, `UsersModule`, `IncidentsModule`, `ServicesModule`, `BookingsModule`, `EventsModule`, `PointsModule`, `ContractsModule`, `MessagingModule`, `VotesModule`, `CommunityVotesModule`, `DocumentsModule`, `NeighborhoodsModule`, `SocialModule`, `GeocodingModule`, `DslModule`). The `api` container also embeds the Python PLY DSL gateway.
+- **Web-apps (Turbo)** — two React SPAs served by Vite: the resident **client** (`:3000`) and the **admin** back office (`:3001`), plus two Fumadocs documentation sites: the user help `docs-user` (`:3002`) and the developer documentation `docs-dev` (`:3003`). The web monorepo shares packages, among them the `<Map>` map component (`packages/ui`) built on `react-leaflet`, and geo helpers (`packages/shared`).
+- **JavaFX desktop application** — shipped as a fat JAR, aimed at administrators and moderators. It talks to the API over HTTP REST, has an offline mode, a plugin system and a local SQLite cache.
+- **DSL** — a query language compiled by a Python PLY pipeline (lexer → LALR parser → compiler with a collection allowlist) that produces a validated AST. Execution does not happen on the Python side: the API's `DslService` is what queries the databases — **Mongoose** for `neighborhoods`/`services`/`events`, **Drizzle/PostgreSQL** for `incidents` and `users` — applying the per-neighborhood scoping of moderators and a 100-result cap. Exposed by the API through `DslModule`.
+
+These modules are not isolated: they rest on a cross-cutting foundation declared once in `AppModule`. The `ThrottlerGuard` is mounted as a global `APP_GUARD` (15 min window, 1000 requests), the `MongooseExceptionFilter` as a global `APP_FILTER`, and `main.ts` registers a global `ValidationPipe` in `whitelist` mode (any field absent from the DTO is stripped from the request). `ConfigModule` (global), `EventEmitterModule` and `I18nModule` (fallback language `fr`) round out that foundation. Drizzle migrations run automatically at startup, before the listening port opens.
+
+Grouped by functional domain, the 16 business modules break down as follows. `GeocodingModule` is not mounted directly in `AppModule`: it is re-imported by `Users`, `Services` and `Events`, which need it to validate addresses.
+
+<Mermaid
+  chart={`flowchart TB
+  api["NestJS API<br/>16 business modules"]
+  ident["Identity and access<br/>AuthModule<br/>UsersModule"]
+  signal["Incident reporting<br/>IncidentsModule<br/>VotesModule"]
+  entraide["Mutual help and payment<br/>ServicesModule<br/>BookingsModule<br/>ContractsModule<br/>PointsModule"]
+  quartier["Neighborhood life<br/>EventsModule<br/>NeighborhoodsModule<br/>CommunityVotesModule"]
+  comm["Communication and social<br/>MessagingModule<br/>SocialModule"]
+  transverse["Cross-cutting<br/>GeocodingModule<br/>DslModule<br/>DocumentsModule"]
+  api --> ident
+  api --> signal
+  api --> entraide
+  api --> quartier
+  api --> comm
+  api --> transverse`}
+/>
+
+## The three databases
+
+Each database is picked for its own strengths, following a strict split of the data.
+
+| Database | Role | Contents |
+|------|------|---------|
+| **PostgreSQL** (`:5432`) | Strict ACID relational | `users` (auth, roles, token hashes), `incidents` (state machine + soft delete), `points_balances`, `points_transactions`, `revoked_tokens` |
+| **MongoDB** (`:27017`) | Flexible documents + binaries | `neighborhoods` (GeoJSON), `services`, `events`, `contracts`, `conversations`/`messages`, `votes`, `communityvotes`, `documents`, plus the GridFS buckets (`pdfs`, `avatars`, `messaging_files`) and the short-lived `ssotokens` collection (5 min TTL) |
+| **Neo4j** (`:7474`/`:7687`) | Social graph | `User`, `Neighborhood`, `Service`, `Event` nodes and relationships (`LIVES_IN`, `LOCATED_IN`, `HELD_IN`, `INTERESTED_IN`, `ATTENDING`, `HELPED`) powering the Cypher recommendations |
+
+The PostgreSQL ORM is **Drizzle** (source of truth `api/src/database/schema.ts`); MongoDB uses **Mongoose**. Points transfers run inside a PostgreSQL transaction with a `FOR UPDATE` lock, and the minimum balance of `-10` is enforced by a `CHECK` constraint in the database. Neo4j writes go exclusively through `SocialService`, fire-and-forget: a Neo4j outage never blocks the API.
+
+> A fourth database, **SQLite**, acts as the local cache for the JavaFX desktop client (tables `incidents`, `sync_log`, `session`). It is never the source of truth: the PostgreSQL API is authoritative. Tokens are not persisted in SQLite but in the OS keychain (`TokenVault`).
+
+## The Caddy reverse proxy
+
+Caddy (`:80`/`:443`) is the only HTTP/HTTPS entry point. It terminates TLS (automatic Let's Encrypt in production) and routes internally:
+
+```
+/       → client:3000
+/admin  → admin:3001
+/aide   → docs-user:3002
+/dev    → docs-dev:3003   (basic auth DOCS_AUTH_USER / DOCS_AUTH_HASH)
+/api    → api:5000   (strips the /api prefix)
+/api/docs → api:5000/docs (Scalar, basic auth)
+```
+
+The stack runs on nine containers (`caddy`, `client`, `admin`, `docs-user`, `docs-dev`, `api`, `mongo`, `postgres`, `neo4j`). In production, only ports **22, 80 and 443** are exposed to the Internet; the other services are bound to `127.0.0.1`, reachable only over the internal Docker network. The WebSocket (Socket.io messaging) goes through the same `/api` with a `wss://` upgrade.
+
+## Main flows
+
+- **Authentication** — sign-up with an Argon2id hash and a TOTP secret (RFC 6238); sign-in in three sequential checks (account, password, TOTP with replay protection). The API issues a JWT access token (15 min, revocable `jti`) and a refresh token in an `httpOnly` `qc_rt` cookie, with strict rotation protected by a transactional anti-TOCTOU lock.
+- **Cross-surface SSO** — an administrator signs in to the JavaFX application from the web admin using a single-use SSO token (UUID v4, 5 min TTL) stored in `ssotokens`, exchanged atomically (replay impossible).
+- **Java ↔ API synchronisation** — the desktop creates incidents offline in SQLite, then `SyncService` pushes and pulls changes with **Three-Way Merge** conflict resolution (ancestor / local / remote) and tombstone-based deletion propagation.
+- **Neo4j synchronisation** — every social CRUD operation triggers a fire-and-forget sync to the graph, with `withRetry` (3 attempts, 100/200/400 ms backoff).
+- **Real-time messaging** — the Socket.io `MessagingGateway` rebuilds the rooms from MongoDB on every connection and broadcasts messages to the connected participants.
+- **Contract signature** — each signature claims its slot through a conditional `findOneAndUpdate` (`draft`/`partial` status re-checked in the database), which rules out any double signature or any resurrection of a cancelled contract. The signature that completes the contract triggers the points settlement **before** the switch to `fully_signed`: a fully signed service contract can never exist without payment, and a failed settlement removes the signature that was pushed.
+- **Service booking (saga)** — `accept`/`decline`/`cancel` run as an atomic status claim: a single concurrent `accept` wins, with compensation (cancelling the contract and the pending payment) if the next step fails. In a cancel-vs-settle race, if the settlement wins the booking moves to `COMPLETED` rather than cancelled — the "cancelled + paid" state is therefore unreachable. The underlying points transfer locks both balances in a deterministic order to eliminate cross-lock deadlocks.
+- **Request cycle** — Caddy → Helmet → ThrottlerGuard → `JwtAuthGuard` (revoked `jti` check) → `ValidationPipe` → controller → service → database.
+
+Every request goes through the same chain of responsibility before reaching the business logic. Caddy terminates TLS and strips the `/api` prefix; Helmet applies application-level HTTP hardening (most security headers — CSP, HSTS, `X-Frame-Options`, `Referrer-Policy`, `X-Content-Type-Options` — are disabled on the API side because Caddy owns the edge and sets them); the global `ThrottlerGuard` caps the rate at 1000 requests per 15 min window; `JwtAuthGuard` verifies the token signature **and** the absence of the `jti` from `revoked_tokens`, so a token revoked at sign-out is rejected even if it has not expired yet; finally `ValidationPipe` cleans the request body (`whitelist` mode) before handing it to the controller.
+
+<Mermaid
+  chart={`sequenceDiagram
+  participant Cli as Client
+  participant Cad as Caddy
+  participant Hel as Helmet
+  participant Thr as ThrottlerGuard
+  participant Jwt as JwtAuthGuard
+  participant Val as ValidationPipe
+  participant Ctl as Controller
+  participant Svc as Service
+  participant Db as Database
+  Cli->>Cad: HTTPS request
+  Cad->>Hel: Proxy to API, /api prefix stripped
+  Hel->>Thr: Hardened headers
+  Note over Thr: Cap 1000 requests / 15 min
+  Thr->>Jwt: Rate under the limit
+  Note over Jwt: Rejected if jti found in revoked_tokens
+  Jwt->>Val: Valid JWT, active jti
+  Val->>Ctl: Validated DTO, non-whitelisted fields stripped
+  Ctl->>Svc: Business call
+  Svc->>Db: Query or transaction
+  Db-->>Svc: Result
+  Svc-->>Ctl: Data
+  Ctl-->>Cli: JSON response`}
+/>

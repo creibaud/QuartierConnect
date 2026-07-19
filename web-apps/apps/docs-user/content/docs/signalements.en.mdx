@@ -1,0 +1,140 @@
+---
+title: Report an incident
+description: Create and track a report in your neighborhood
+---
+
+A streetlight out of order, illegal dumping on the street corner, a problem on the
+public road? The **Incidents** page lets you report a problem in your neighborhood in
+moments, then follow its handling through to resolution.
+
+## Creating a report
+
+Go to the **Incidents** page, then create a new report. Every report is made up of four
+elements:
+
+- **A title**: a short phrase summing up the problem (for example "Broken streetlight
+  on Rue des Tilleuls").
+- **A description**: the details needed to understand the situation.
+- **A category**: picked from a list, it determines **who will see your report** (see
+  below).
+- **A location**: the exact spot concerned, which you choose directly **on a map**.
+
+Once this information is filled in, your report is saved.
+
+At a glance, here is the full journey, from your report to its resolution: you choose,
+you locate, you describe, then you follow its progress.
+
+<Mermaid
+  chart={`flowchart LR
+  debut(["A problem<br/>in the neighborhood"]) --> cat["Choose<br/>a category"]
+  cat --> loc["Place a point<br/>on the map"]
+  loc --> desc["Add a title<br/>and a description"]
+  desc --> ouvert["Status:<br/>open"]
+  ouvert --> encours["Status:<br/>in progress"]
+  encours --> resolu["Status:<br/>resolved"]`}
+/>
+
+The first three steps are yours: together they make up the creation of the report. The
+statuses then change without any action on your part (see below).
+
+### Choosing the right category
+
+The category is not just a label: it decides **who can see your report**. Three
+categories are available:
+
+| Category | What it is for | Who sees it |
+|-----------|------------------|-------------|
+| **Neighborhood issue** | A concrete problem in the public space: broken lighting, illegal dumping, pothole, etc. | The whole neighborhood |
+| **Report (moderation)** | Content to bring to the moderators' attention (misplaced listing, inappropriate behavior, etc.). | You and the moderators |
+| **Technical bug** | A malfunction in the application. | You and the moderators |
+
+A **neighborhood issue** joins the public list and is visible to every resident, since
+it concerns life in common.
+
+> **Moderation** and **technical bug** reports stay **private**: they do **not** appear
+> in the neighborhood's public list. Only you, their author, and the moderators have
+> access to them. So you never see the moderation reports filed by other residents, and
+> they do not see yours.
+
+In other words, the category you choose directly decides who will have access to your
+report:
+
+<Mermaid
+  chart={`flowchart TB
+  sig["Your report"] --> choix{"Which<br/>category?"}
+  choix -->|"Neighborhood issue"| tous["Visible to the<br/>whole neighborhood"]
+  choix -->|"Report (moderation)"| prive["Visible to you<br/>and the moderators"]
+  choix -->|"Technical bug"| prive`}
+/>
+
+When in doubt, remember the simple rule: a **neighborhood issue** is public, everything
+else stays **private**.
+
+### Choosing the right spot
+
+The location is set by placing a point on the map. Take the time to position it as close
+as possible to the problem: it helps the people who will follow up on the report find it
+on the ground.
+
+> If the point you choose sits **outside your neighborhood**, a warning appears. It is
+> not a block: you can still save your report. It is simply an invitation to check the
+> location.
+
+## The life cycle of a report
+
+Every incident has a **status** showing where its handling stands. That status changes
+over time:
+
+| Status | What it means |
+|--------|----------------------|
+| **Open** | The report has just been created and is waiting to be picked up. |
+| **In progress** | The problem has been acknowledged and is being handled. |
+| **Resolved** | The problem has been dealt with: the report is closed. |
+
+You have nothing to do to move this status along yourself: it is the moderators of your
+neighborhood who follow up on incidents and move each report from one state to the next
+as it progresses.
+
+Here is how a report travels from one status to another, and who triggers each step:
+
+<Mermaid
+  chart={`stateDiagram-v2
+  state "Open" as ouvert
+  state "In progress" as encours
+  state "Resolved" as resolu
+  [*] --> ouvert
+  ouvert --> encours : a moderator picks it up
+  encours --> resolu : problem handled on the ground
+  resolu --> [*]`}
+/>
+
+A report always follows this reading direction, from left to right: it does not go back
+once resolved.
+
+## Following progress
+
+To find out the state of a report, open its **detail page**. It presents the incident
+along with its **position** on the map, which lets you follow its progress at a glance.
+
+In practice, an incident you report follows a simple journey:
+
+1. You create the report from your application: it appears with the **open** status.
+2. The neighborhood moderators pick it up and move it to **in progress**.
+3. Once the problem has been handled on the ground, the report is marked **resolved**.
+
+You can come back to the Incidents page at any time to browse the list of the
+neighborhood's reports and check their status.
+
+## In short
+
+- A report is created with a **title**, a **description**, a **category** and a
+  **location** picked on the map.
+- The **category** decides visibility: a **neighborhood issue** is seen by everyone, a
+  **moderation report** or a **technical bug** stays **private** (you and the
+  moderators).
+- A point placed outside your neighborhood triggers a **non-blocking warning**, not a
+  refusal.
+- Every incident goes through the **open**, **in progress** and **resolved** statuses in
+  turn.
+- The **detail page** lets you follow the incident and its position throughout its
+  handling.

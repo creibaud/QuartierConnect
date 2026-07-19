@@ -1,0 +1,110 @@
+---
+title: Messaging
+description: Chat with your neighbors
+---
+
+The **Messages** page is your live messaging space with the residents of your
+neighborhood. It lets you keep in touch, help each other out and organize
+neighborhood life, all in one place. Here is how to use it day to day.
+
+At a glance, here is the flow of a conversation, from the moment you pick a
+neighbor to the messages going back and forth live:
+
+<Mermaid
+  chart={`flowchart LR
+  demarrer(["Pick a neighbor<br/>by email address"]) --> conv["Open the<br/>conversation"]
+  conv --> texte["Write<br/>a message"]
+  conv --> photo["Attach a photo<br/>or a file"]
+  conv --> vocal["Record a<br/>voice message"]
+  texte --> direct(["Messages exchanged<br/>live"])
+  photo --> direct
+  vocal --> direct`}
+/>
+
+Every format (text, attachment, voice message) starts from the same conversation and
+joins the same thread, which updates live for you and for your neighbor alike.
+
+## Starting a conversation
+
+To write to a neighbor, you start a new conversation. The search is done
+**by email address**: enter the address of the person you want to contact,
+then start the exchange.
+
+Once the conversation is created, it stays available: you won't have to create it again
+to keep talking to the same person later on.
+
+> **Good to know:** remember to ask your neighbor for their email address so you can
+> find them easily in the messaging space.
+
+## Sending a message
+
+Inside a conversation, you have several ways to express yourself:
+
+- **Text messages** — write and send a message just like in any chat
+  application.
+- **Photos and files** — attach a photo or a file to your message, for example
+  to share a picture or a useful document.
+- **Voice messages** — record your voice and send it directly. The first
+  time, the application will ask for **permission to access the microphone**; just
+  accept it to be able to record.
+
+These formats mix freely as the conversation goes on, depending on what you
+feel like sharing.
+
+When you send a text message, the application waits for a **delivery
+confirmation**: your message is only considered sent once that confirmation
+comes back.
+
+> **If sending fails:** if something goes wrong (a dropped connection, for example), a
+> message warns you that the text did not go out, and what you had typed **stays
+> in the input box**. All you have to do is try again: nothing you write is
+> lost silently.
+
+In practice, a text message is only marked as sent once the confirmation
+arrives; otherwise you are warned and can try again without having to retype your
+text:
+
+<Mermaid
+  chart={`flowchart LR
+  ecrire["You write<br/>and send"] --> attente{"Delivery<br/>confirmation?"}
+  attente -->|Yes| ok(["Message sent"])
+  attente -->|No| echec["You are warned<br/>the text stays in the input"]
+  echec --> ecrire`}
+/>
+
+This only applies to **text messages**: it is that confirmation which
+guarantees a message is never treated as sent until it has actually been
+received.
+
+## Following your conversations live
+
+Messaging works **in real time**: new messages appear as they
+come in, with no need to refresh the page.
+
+Several indicators help you follow your conversations:
+
+| Indicator | What it means |
+| --- | --- |
+| Typing | Your neighbor is writing a message. |
+| Unread messages | You have received messages you haven't read yet. |
+
+These cues keep you from missing a reply and show you when the person you are
+talking to is answering.
+
+## Receiving and opening attachments
+
+When a neighbor sends you a photo or a file, it appears directly in
+the conversation. **Attachments can be downloaded from the conversation**:
+you can therefore save them to your device to view them at any time.
+
+## Finding your conversations again
+
+All your conversations are gathered on the **Messages** page. There you'll find the
+list of your conversations and can pick up an exchange where you left off.
+
+Thanks to the **unread messages** indicator, you can spot at a glance the
+conversations that contain new messages, so nothing goes unanswered.
+
+In short, QuartierConnect messaging gives you a simple, friendly way to
+stay connected with your neighbors: a quick note, a photo to share or a voice
+message, each has its place in bringing your neighborhood to life.

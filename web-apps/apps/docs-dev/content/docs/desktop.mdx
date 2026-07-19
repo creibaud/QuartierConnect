@@ -130,7 +130,7 @@ Sur une base vide, `seedIfEmpty` insère des incidents de démonstration (dont d
 
 L'application est extensible sans modification du code source : un plugin est un JAR découvert au démarrage (`PluginRegistry.loadFromDirectory`) ou enregistré en interne, qui dialogue avec l'application via l'interface `AppContext` — laquelle expose notamment `getIncidentRepository()` (le cache SQLite ci-dessus) et `getEventBus()` (les événements `SYNC_*` publiés par `SyncService`). Six plugins intégrés sont livrés, dont `OfflineModePlugin` (bascule hors ligne) et `ThemePlugin`.
 
-Le contrat complet — cycle de vie, `AppContext`, points d'extension de l'UI, bus d'événements et empaquetage d'un plugin — est décrit sur la page dédiée : **[Plugins](/docs/plugins)**.
+Le contrat complet — cycle de vie, `AppContext`, points d'extension de l'UI, bus d'événements et empaquetage d'un plugin — est décrit sur la page dédiée : **[Plugins](/fr/plugins)**.
 
 ## Empaquetage et distribution
 
@@ -141,4 +141,4 @@ Le build produit deux formats à partir du même code :
 
 L'URL du serveur ciblé est **gravée dans le JAR** au build : `packaging/write-server-properties.sh` écrit un `server.properties` (`api.url` / `web.url`) à partir de `QC_SERVER_URL`, et `ServerConfig` le lit en priorité — après `-Dapi.url=...`, avant les défauts `localhost`. Un JAR téléchargé depuis une instance déployée pointe donc automatiquement vers elle, sans configuration.
 
-Les artefacts sont servis en production par Caddy sous **`/telechargements/*`** (`file_server` sur `/srv/downloads`, voir [Déploiement](/docs/deploiement)). Le back-office propose leur téléchargement via le composant `DownloadDesktopDialog` (`web-apps/apps/admin/src/components/download-desktop-dialog.tsx`), qui liste Windows (`.msi`), macOS (`.dmg`), Linux (`.deb` / `.rpm` / `.tar.gz`) et le JAR portable. Enfin, `UpdateService` (lancé en arrière-plan par `MainApp`) signale par un toast lorsqu'une version plus récente est disponible.
+Les artefacts sont servis en production par Caddy sous **`/telechargements/*`** (`file_server` sur `/srv/downloads`, voir [Déploiement](/fr/deploiement)). Le back-office propose leur téléchargement via le composant `DownloadDesktopDialog` (`web-apps/apps/admin/src/components/download-desktop-dialog.tsx`), qui liste Windows (`.msi`), macOS (`.dmg`), Linux (`.deb` / `.rpm` / `.tar.gz`) et le JAR portable. Enfin, `UpdateService` (lancé en arrière-plan par `MainApp`) signale par un toast lorsqu'une version plus récente est disponible.

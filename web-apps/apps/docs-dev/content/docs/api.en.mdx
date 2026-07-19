@@ -1,0 +1,224 @@
+---
+title: API guide
+description: Authentication, pagination, roles and Scalar reference
+---
+
+The QuartierConnect REST API is built with NestJS and exposes 86 routes across 16 functional modules. The current version is `3.0`. This guide covers the cross-cutting mechanisms — authentication, pagination and roles — shared by every endpoint. For route-by-route detail (request and response schemas, live try-outs), see the interactive Scalar reference.
+
+## Servers
+
+Two servers are declared in the OpenAPI specification:
+
+- `http://localhost:5000` — direct access to the service.
+- `http://localhost/api` — through the Caddy reverse proxy.
+
+## Authentication
+
+Every protected route relies on a **JWT Bearer** signed with **HS256**, with a lifetime of **15 minutes**. The token is sent in the HTTP header:
+
+```
+Authorization: Bearer <accessToken>
+```
+
+### Authentication cycle
+
+1. **Account creation** through `POST /auth/register`: the **TOTP** secret is returned in the `otpauthUrl` field.
+2. **Sign-in** through `POST /auth/login` with email + password + 6-digit TOTP code.
+3. The returned `accessToken` is used in the `Authorization` header.
+
+The access token (15 min) comes with a 7-day **refresh token**, set in an **httpOnly** `qc_rt` cookie (`SameSite=strict`, `Secure` in production). Renewal goes through `POST /auth/refresh`, with refresh token **rotation**: the old one is invalidated on every exchange. On sign-out (`POST /auth/logout`), the refresh token hash is cleared from the database and the current access token is revoked through a blocked-JTI list.
+
+The `AuthService.login` method chains **three server-side checks** before issuing the token pair: the account exists (and is not banned), the password (hashed with **Argon2**), then the replay-protected **TOTP** code. The refresh token is never stored in clear text — only its Argon2 hash is kept on the PostgreSQL user row (`refreshTokenHash`), and the `accessToken` carries a unique `jti` for revocation.
+
+<Mermaid
+  chart={`sequenceDiagram
+  participant C as Client
+  participant Ctrl as Controller
+  participant Svc as AuthService
+  participant Totp as TotpService
+  participant DB as PostgreSQL
+  C->>Ctrl: POST /auth/login (email, password, TOTP code)
+  Ctrl->>Svc: login(dto)
+  Svc->>DB: SELECT user by email
+  Note over Svc,DB: Step 1 — account exists and role not banned
+  Svc->>Svc: argon2.verify(password)
+  Note over Svc: Step 2 — failure returns 401 INVALID_PASSWORD
+  Svc->>Totp: verify(secret, TOTP code)
+  Note over Totp: Step 3 — replay guard: an already used code is rejected (TTL 90 s)
+  Totp-->>Svc: code valid
+  Svc->>DB: store the Argon2 hash of the refresh token
+  Svc-->>Ctrl: accessToken 15 min + refreshToken 7 d
+  Ctrl-->>C: 200 + qc_rt httpOnly cookie (SameSite strict)`}
+/>
+
+The replay guard lives in `TotpService`: every accepted `secret:code` pair is remembered for 90 seconds, so an intercepted code cannot be replayed even while it is still inside its 30 s validity window. The `speakeasy` check uses `window: 1` (one time step of tolerance for clock drift).
+
+> A single-use token SSO mode (`POST /auth/sso/generate` then `POST /auth/sso/exchange`, TTL 5 min) opens a session on the JavaFX desktop client without re-entering credentials. The optional `state` parameter (PKCE-style CSRF protection) is checked during the exchange.
+
+### Refresh token rotation
+
+`TokenService.rotateRefreshToken` runs inside a **PostgreSQL transaction** with a `SELECT ... FOR UPDATE` row lock. That lock guards against a **TOCTOU** race (*time-of-check to time-of-use*): if two `POST /auth/refresh` requests arrive with the same token, only one gets past the check. The first invalidates the hash (`refreshTokenHash = null`) in the same transaction; the second, released after the `COMMIT`, no longer finds a hash and fails with `401 TOKEN_REVOKED`. An account that became `banned` in the meantime is rejected too (`ACCOUNT_BANNED`). A new pair is only signed once validation passes, and its hash is written back outside the transaction.
+
+<Mermaid
+  chart={`sequenceDiagram
+  participant C as Client
+  participant Ctrl as Controller
+  participant Tok as TokenService
+  participant DB as PostgreSQL
+  C->>Ctrl: POST /auth/refresh (qc_rt cookie or body)
+  Ctrl->>Tok: rotateRefreshToken(token)
+  Tok->>Tok: jwtService.verify — otherwise 401 TOKEN_INVALID
+  Tok->>DB: BEGIN then SELECT ... FOR UPDATE
+  Note over Tok,DB: Row lock — anti-TOCTOU: only one concurrent rotation passes
+  Tok->>Tok: argon2.verify(stored hash, token)
+  Note over Tok: hash missing or invalid — 401 TOKEN_REVOKED
+  Tok->>DB: UPDATE refreshTokenHash = null (invalidates the previous one)
+  Tok->>DB: COMMIT
+  Tok->>DB: store the hash of the new refresh token
+  Tok-->>Ctrl: new pair — access 15 min + refresh 7 d
+  Ctrl-->>C: 200 + new qc_rt cookie`}
+/>
+
+The renewal token is read from the `qc_rt` cookie first, falling back to the request body (`refreshToken`) for compatibility with the JavaFX desktop client, which does not handle cookies.
+
+### TOTP MFA on sensitive actions
+
+A **TOTP** code (30 s validity, 6 digits) is required, on top of the session, for the following sensitive operations:
+
+| Action | Route |
+|--------|-------|
+| Sign-in | `POST /auth/login` |
+| Signing a contract | `POST /contracts/:id/sign` |
+| Password change | `PATCH /users/me/password` |
+| Email change | `PATCH /users/me/email` |
+| Phone change | `PATCH /users/me/phone` |
+| Account deletion | `DELETE /users/me` |
+
+Two rate limits protect the flow: sign-in is capped at **5 attempts per 15 minutes**, token renewal at **10 per minute**.
+
+## Pagination and lists
+
+List endpoints share a **common contract** implemented in `api/src/common/pagination.ts` (`parsePagination`, `resolveSort`, `escapeLike` / `escapeRegex`, `setPageHeaders`). Search, sorting and filters are applied **server-side** — they therefore cover the whole matching dataset, not just the page already loaded. Every endpoint accepts the following query parameters:
+
+| Parameter | Role | Default |
+|-----------|------|---------|
+| `page` | Page number (starting at `1`) | `1` |
+| `limit` | Page size — clamped to the `1`–`100` range by `parsePagination` | `20` |
+| `search` | Case-insensitive substring (fields depend on the endpoint) | — |
+| `sort` | Sort field (allowlist per endpoint) | `createdAt` |
+| `order` | Sort direction: `asc` or `desc` | `desc` |
+
+```
+GET /incidents?page=2&limit=20&search=poutre&sort=createdAt&order=desc
+```
+
+### Filters per endpoint
+
+On top of these common parameters, each list has its own filters, along with the fields `search` covers and the `sort` allowlist:
+
+| Endpoint | Additional filters | `search` covers | Allowed `sort` fields |
+|----------|--------------------|-----------------|-----------------------|
+| `GET /incidents` | `status` (`open`/`in_progress`/`resolved`), `category` (`neighborhood`/`reporting`/`bug`) | title + description | `createdAt`, `updatedAt`, `status` |
+| `GET /services` | `category`, `type` (`free`/`paid`/`exchange`), `direction` (`offer`/`request`) | title + description | `createdAt`, `title` |
+| `GET /events` | `category`, `date` (`YYYY-MM-DD`, whole day) | title | `createdAt`, `date`, `title` |
+| `GET /neighborhoods` | — | name + city | `createdAt`, `name` |
+| `GET /community-votes` | `status` (`open`/`closed`, based on `endsAt`) | title | `createdAt`, `endsAt` |
+| `GET /users` (admin) | `role` (`resident`/`moderator`/`admin`/`banned`, unknown value ignored) | email | `createdAt`, `email`, `role` |
+
+### Response body and metadata
+
+The **response body stays a bare array** of entities — unchanged for existing consumers, in particular the desktop client's incremental pull (`GET /incidents?since=…`). Pagination metadata travels in two **response headers** set by `setPageHeaders`:
+
+- `X-Total-Count` — total number of items matching the filter, across all pages.
+- `X-Total-Pages` — total number of pages (`ceil(total / limit)`, at least `1`).
+
+Both headers are **exposed through CORS** (`exposedHeaders` in `api/src/main.ts`) so they can be read from the browser. On the web side, the `apiGetPage` helper (`web-apps/packages/shared/src/lib/api.ts`) reads them and returns `{ data, total, totalPages }`; when they are missing it falls back to `data.length` and `1`.
+
+```http
+GET /incidents?page=2&limit=20&status=open HTTP/1.1
+Authorization: Bearer <accessToken>
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+X-Total-Count: 137
+X-Total-Pages: 7
+
+[
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "title": "Poutre fissurée hall B",
+    "status": "open",
+    "category": "neighborhood",
+    "createdAt": "2026-07-08T09:12:00.000Z"
+  }
+]
+```
+
+### Input robustness
+
+Two safeguards in the contract neutralise malicious input:
+
+- **escaped `search`** — the term is always read literally. On the PostgreSQL stores (incidents, users) `escapeLike` escapes `%`, `_` and `\` before the `ILIKE`; on the MongoDB stores (services, events, neighborhoods, votes) `escapeRegex` escapes regular-expression metacharacters before the `$regex`. Neither `LIKE` pattern injection nor Mongo regex injection is possible.
+- **allowlisted `sort`** — `resolveSort` matches the requested field against the endpoint's allowed list and falls back to `createdAt` when the value is unknown; a forged `sort` value can never reach the query. `order` only accepts `asc`, any other value (or none) yielding `desc`.
+
+MongoDB filters also only accept strings (`typeof … === "string"`), which blocks operator injection such as `?category[$ne]=`.
+
+### Delta synchronisation (desktop client)
+
+- `GET /incidents?since=<ISO>` — delta synchronisation: returns only the incidents modified after the given ISO timestamp (compared on `updatedAt`). Used by the JavaFX desktop client's incremental pull. An unparsable value returns `400`. This parameter adds to the common parameters without changing the response format (still a bare array).
+
+## Roles and permissions
+
+The role hierarchy is `resident` → `moderator` → `admin`, plus the `banned` state. Permissions are enforced by the `JwtAuthGuard` and `RolesGuard` guards, driven by the `@Roles` decorator on each route.
+
+| Role / level | Scope |
+|--------------|-------|
+| Public | No authentication required |
+| Authenticated | Any signed-in account (resident, moderator or administrator) |
+| moderator / admin | Moderation: incident status, soft delete, DSL execution |
+| admin | Full administration: users, neighborhoods, statistics |
+
+Key points of the permission model:
+
+- **resident** — standard authenticated access, scoped to the neighborhood. A resident sees the services of their neighborhood and the `neighborhood`-category incidents of their neighborhood (even those they did not author), plus **their own** moderation reports (`reporting`, `bug`). Other people's moderation reports are hidden from the list, and `GET /incidents/:id` returns **404** (not 403) on such a report, so its existence is never revealed.
+- **moderator** — same neighborhood limits as a resident (bounded to their own neighborhood), but **all incident categories included**, plus moderation: `PATCH /incidents/:id/status`, `DELETE /incidents/:id` and running `POST /dsl/query` queries (also scoped to their neighborhood).
+- **admin** — global scope (lists all neighborhoods, services and incidents) and access to administration: `GET /users`, `PATCH /users/:id/role`, neighborhood management, `GET /stats`.
+- **banned** — blocking account state. Banning records the current role (`previousRole`) so it can be restored on reactivation.
+
+> The "Required role" column of the Scalar reference reflects the guards actually applied on each route.
+
+Endpoint families split by the guard applied. Each level inherits the access of the level below, following the `resident` → `moderator` → `admin` hierarchy:
+
+<Mermaid
+  chart={`flowchart LR
+  root["REST API — 86 routes, 16 modules"]
+  pub["Public (no token)"]
+  auth["Authenticated — JwtAuthGuard"]
+  mod["moderator / admin — RolesGuard"]
+  adm["admin — RolesGuard"]
+  root --> pub
+  root --> auth
+  auth --> mod
+  mod --> adm
+  pub --> p1["register, login, refresh, sso/exchange"]
+  auth --> a1["users/me, incidents, messages,<br/>contracts, votes, sso/generate, logout"]
+  mod --> m1["PATCH incidents/:id/status,<br/>DELETE incidents/:id, POST dsl/query"]
+  adm --> d1["GET users, PATCH users/:id/role,<br/>neighborhoods, GET stats"]`}
+/>
+
+## Conventions
+
+- **Identifiers**: PostgreSQL uses UUIDs, MongoDB uses `ObjectId`s.
+- **Error responses**: standard HTTP codes, complemented where relevant by an application code in the body (e.g. `EMAIL_ALREADY_EXISTS`, `TOKEN_REVOKED`).
+
+## Interactive Scalar reference
+
+The OpenAPI specification is generated from the controller decorators (`@nestjs/swagger`) and exposed through a **Scalar** interface:
+
+```
+GET /docs
+```
+
+The Scalar bundle is self-hosted (`/scalar/standalone.js`), with no dependency on an external CDN. The interface lets you browse each route, inspect request and response schemas, enter a token via the **Authorize** button, then run calls straight from the browser.

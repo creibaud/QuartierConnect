@@ -1,0 +1,190 @@
+---
+title: Security
+description: Authentication, encryption, headers and GDPR
+---
+
+This page describes the security measures implemented on the API and client sides. It covers password hashing, multi-factor authentication, JWT tokens, HTTP headers, rate limiting and GDPR compliance.
+
+## Defence in depth
+
+The API does not put up a single barrier — it stacks independent layers. Every request goes through the edge proxy, the HTTP middlewares, the NestJS guard chain (global `ThrottlerGuard`, then `JwtAuthGuard` and `RolesGuard`), input validation, and finally filter coercion before reaching the business logic. Getting past one layer gains nothing: all of them have to be cleared.
+
+<Mermaid
+  chart={`flowchart TB
+  edge["Caddy at the edge<br/>HTTPS + CSP + HSTS"]
+  mw["NestJS middleware<br/>Helmet + CORS + cookieParser"]
+  thr["Global ThrottlerGuard<br/>1000 req / 15 min"]
+  jwt["JwtAuthGuard<br/>valid JWT and jti not revoked"]
+  roles["RolesGuard<br/>role re-read from DB + neighborhood scope"]
+  pipe["ValidationPipe<br/>whitelist, undeclared fields stripped"]
+  coerce["Mongo filter coercion<br/>client values forced to String"]
+  svc["Controller and service<br/>business logic"]
+  edge --> mw --> thr --> jwt --> roles --> pipe --> coerce --> svc`}
+/>
+
+In production, **Caddy owns the edge headers** (CSP, HSTS, `X-Frame-Options`): the API's Helmet configuration therefore disables those same headers (`contentSecurityPolicy: false`, `strictTransportSecurity: false`…) so they are not duplicated, while keeping its other default protections. The global `ValidationPipe` is declared with `whitelist: true`, which **silently strips** any property not declared in the DTO — an attacker cannot slip an unexpected field into the body. Finally, client-supplied values used as MongoDB filters are forced to strings (`String(...)`) before the query, neutralising operator injection (`{ $ne: null }`, `{ $gt: "" }`…).
+
+## Password hashing — Argon2id
+
+Passwords are hashed with **Argon2id** (winner of the 2015 Password Hashing Competition), which combines GPU resistance (memory cost) with side-channel resistance. The `argon2` package defaults are used:
+
+- `type: argon2id`
+- `memoryCost: 65536` (64 MB)
+- `timeCost: 3`
+- `parallelism: 4`
+
+Registration calls `argon2.hash(dto.password)`; login verifies with `argon2.verify(user.passwordHash, dto.password)`.
+
+The **JWT refresh token is itself Argon2-hashed** before storage (`token.service.ts`). Read access to the database is therefore not enough to replay a refresh token.
+
+## Multi-factor authentication — TOTP RFC 6238
+
+The application enforces a TOTP second factor compliant with RFC 6238:
+
+```
+code = HOTP(secret, floor(Unix_timestamp / 30))
+HOTP(K, C) = truncate(HMAC-SHA1(K, C_bytes))
+```
+
+The code is valid for 30 seconds with a tolerance of ±1 period (`window: 1`). At registration, `speakeasy.generateSecret` produces a base32 secret stored in PostgreSQL, plus an `otpauth_url` returned to the client to generate a QR code.
+
+Verification includes an **in-memory replay guard**: every accepted `secret:token` pair is remembered for 90 s (TanStack Store), and any second presentation of the same code is rejected. Even if intercepted, a valid code cannot be reused.
+
+## JWT — Access and refresh
+
+Two HS256 tokens are issued:
+
+| Token | Lifetime | Storage | JS access |
+|-------|--------------|----------|----------|
+| access | 15 minutes | `localStorage` | Yes — `Authorization: Bearer` header |
+| refresh | 7 days | httpOnly cookie `qc_rt` (SameSite=strict) | No |
+
+The payload contains `sub`, `email`, `role`, `jti`, `iat` and `exp`. The refresh token, inaccessible to JavaScript (httpOnly), removes the main XSS vector; in production the `secure` flag enforces HTTPS. The `SameSite=strict` cookie combined with the use of the `Authorization` header for the access token makes CSRF impossible.
+
+**Strict rotation** — refresh rotation is protected against race conditions (TOCTOU) by a `SELECT FOR UPDATE` inside a PostgreSQL transaction. The old hash is set to `NULL` before the new token is issued: two simultaneous `POST /auth/refresh` requests cannot reuse the same token, and a stolen refresh token is detected at the next legitimate renewal (mutual revocation).
+
+The diagram below traces the full path, from login to rotation: Argon2id password verification, TOTP second factor with replay guard, HS256 pair issuance, then refresh rotation under a PostgreSQL row lock.
+
+<Mermaid
+  chart={`sequenceDiagram
+  participant C as Client
+  participant A as API
+  participant DB as PostgreSQL
+  Note over C,A: Login POST /auth/login
+  C->>A: email + password + TOTP code
+  A->>DB: SELECT user by email
+  DB-->>A: passwordHash, totpSecret, role
+  A->>A: argon2.verify of the password
+  A->>A: TOTP RFC6238 window +/-1 + 90s replay guard
+  Note over A: failure returns 401 INVALID_PASSWORD / INVALID_TOTP / ACCOUNT_BANNED
+  A->>A: sign access 15m + refresh 7d in HS256 with jti
+  A->>DB: UPDATE refreshTokenHash = argon2 of the refresh
+  A-->>C: access in body + refresh httpOnly cookie qc_rt
+  Note over C,A: Rotation POST /auth/refresh
+  C->>A: cookie qc_rt
+  A->>DB: SELECT ... FOR UPDATE row lock
+  A->>A: argon2.verify of the stored refresh
+  A->>DB: UPDATE refreshTokenHash to NULL then new hash
+  A-->>C: new access + refresh pair`}
+/>
+
+Password verification and TOTP verification are **indistinguishable from the error's point of view**: a wrong password and a non-existent account both return the same `INVALID_PASSWORD`, which avoids telling an attacker which factor failed. The role is re-read from PostgreSQL on every rotation, so a ban (`role = "banned"`) cuts access at the next renewal without waiting for the current access token to expire.
+
+**Instant revocation** — on logout (`POST /auth/logout`), the current access token is revoked through its `jti` in the `revoked_tokens` table, without waiting for expiry. The JWT strategy rejects any revoked token with `{ code: "TOKEN_REVOKED" }`. Expired entries are purged on every revocation, with no Redis and no cron job.
+
+## HTTP security headers
+
+**Helmet.js** is applied to every response, with a per-route CSP (Caddy + NestJS):
+
+| Header | Protection |
+|---------|-----------|
+| `Content-Security-Policy` | Restricts scripts/styles/images — XSS mitigation |
+| `X-Content-Type-Options: nosniff` | MIME sniffing |
+| `X-Frame-Options: DENY` | Clickjacking |
+| `Strict-Transport-Security` | HTTPS → HTTP downgrade |
+| `X-XSS-Protection: 1; mode=block` | XSS in legacy browsers |
+
+`'unsafe-inline'` has been removed from the client, admin and API routes; only the `/docs` and `/scalar` routes (third-party Scalar UI) keep it in `script-src`. The React applications rely on implicit nonces via Vite.
+
+## Serving user files
+
+Files uploaded by users — messaging attachments and avatars — are stored in MongoDB GridFS and then served by the API. Since the MIME type is declared by the client at upload time, it is treated as **untrusted** when the file is served:
+
+- **Inline allowlist** — only an allowlist is served with `Content-Disposition: inline`: raster images (`png`, `jpeg`, `webp`, `gif`) and audio (`webm`, `ogg`, `mpeg`, `mp4`). Everything else — **HTML, SVG**, text… — is forced to `Content-Disposition: attachment` and served as `application/octet-stream`. An SVG sent through messaging is in fact classified as an attachment (`FILE`), never as an inline image.
+- **Avatars** — always served as `attachment`, and only with a raster type from the allowlist (otherwise `image/jpeg` is enforced).
+
+A booby-trapped HTML or SVG file can therefore no longer be opened and executed in the API origin's context: this measure neutralises stored XSS through uploads.
+
+## Rate limiting
+
+A global `ThrottlerGuard` limits each IP to **1000 requests / 15 minutes** (`ThrottlerModule.forRoot([{ ttl: 900000, limit: 1000 }])`). Sensitive routes have their own limits:
+
+| Route | Limit | Window | Reason |
+|-------|--------|---------|--------|
+| `POST /auth/login` | 5 attempts | 15 min | Brute-force protection (TOTP + password) |
+| `POST /auth/refresh` | 10 requests | 60 s | Limit abusive rotation |
+
+## Role-based authorisation
+
+The hierarchy is `resident → moderator → admin`, with `banned` as a terminal state (401 at login). The `RolesGuard` **re-reads the role from the database** on every refresh — the JWT alone is never trusted, so a ban takes effect immediately. Beyond roles, several controllers enforce **neighborhood partitioning** and a resource ownership check (`createdBy === req.user.sub`).
+
+### Confidentiality of moderation incidents
+
+Incident visibility is not just an ownership check. A resident sees **all** `neighborhood` incidents in their neighborhood — even ones they did not report — but **does not see** other people's moderation reports (`reporting`, `bug`): those are filtered out of the list. More importantly, `GET /incidents/:id` returns **404** (not 403) for someone else's report, so its existence is never revealed. A moderator sees every category, but stays bounded to their own neighborhood; only the admin is global.
+
+### DSL scope and injection
+
+The moderation DSL (`POST /dsl/query`) is open to the `moderator` and `admin` roles, but access is not global for all that:
+
+- **Neighborhood scoping** — every non-admin caller is bounded to their `neighborhoodId` on the `incidents`, `services`, `events` and `users` collections; only `neighborhoods` stays public. A moderator with no neighborhood gets an empty result. The DSL therefore cannot serve as a back door to read other neighborhoods.
+- **Result cap** — every `FIND` query is capped at **100 results**, with or without an explicit `LIMIT`.
+- **Escaped `LIKE`** — the `LIKE` operator compiles to an **escaped literal substring** search (the value goes through `re.escape`), not to an active regex pattern: metacharacters are treated literally, which neutralises regex injection and ReDoS.
+
+### Anonymity of community votes
+
+For a vote marked `isAnonymous`, the API **never** returns other voters' ballots: each response keeps only the caller's own ballot (the client derives "voted" and "my choices" from it). Aggregate totals stay available, without any user identifier. A voter therefore cannot reconstruct who voted for what.
+
+## Concurrency control — point balances
+
+Point transfers run inside a PostgreSQL transaction that locks **both** balance rows (sender and recipient) in a deterministic order (sorted by `user_id`, `SELECT … FOR UPDATE`). This fixed ordering eliminates the cross deadlock of two simultaneous A→B and B→A transfers. Residual Postgres errors are converted into actionable `400` responses rather than `500`:
+
+- `40P01` (deadlock detected) → `{ code: "CONCURRENT_UPDATE" }`
+- `23514` (balance `CHECK` constraint) → `{ code: "INSUFFICIENT_BALANCE" }`
+
+## Contract lifecycle — electronic signature
+
+The electronic signature reuses the login second factor: signing a contract requires a valid TOTP code (`totpService.verify`, the same replay guard as at authentication). Every signature is sealed with a **SHA-256 hash** of `content + userId + ISO timestamp`, pushed into the `signatures` array. The status follows four states — `draft`, `partial`, `fully_signed`, `cancelled` — two of them terminal (`fully_signed` and `cancelled`).
+
+<Mermaid
+  chart={`stateDiagram-v2
+  [*] --> draft
+  draft: draft - contract created or imported
+  partial: partial - at least one signatory has signed
+  fully_signed: fully_signed - terminal, everyone has signed
+  cancelled: cancelled - terminal, cancelled
+  draft --> partial : 1st signature - atomic claim
+  partial --> partial : next signature
+  partial --> fully_signed : last signature
+  draft --> cancelled : cancellation
+  partial --> cancelled : cancellation
+  fully_signed --> [*]
+  cancelled --> [*]
+  note right of fully_signed : points settled BEFORE this transition
+  note left of partial : read-time reconciliation, flip if the service payment is already settled`}
+/>
+
+**Atomic claim of the signature slot** — signing is not a naive `read-modify-write`. It goes through a MongoDB `findOneAndUpdate` whose filter atomically re-checks, in the same operation, that the status is `draft` or `partial`, that the caller is listed in `signatories`, and that they have not already signed (`"signatures.userId": { $ne: userId }`). Two concurrent requests from the same signatory therefore cannot insert two signatures.
+
+**Points settled BEFORE `fully_signed`** — for a service contract (a `bookingId` is present), the points payment (`completeServicePayment`) is settled *before* the switch to `fully_signed`. If settlement fails, the signature that was just pushed is removed (`rollbackSignature`) and the error propagates: a service contract can never be `fully_signed` without an effective payment. The final switch is itself conditional (filter `status: partial`); if a **read-time reconciliation** (`findOne`, *healable* statuses `draft`/`partial`) has already flipped it because the payment was settled, the already-`fully_signed` result is kept.
+
+**Defensive cancellation** — `cancelContract` switches to `cancelled` via a `findOneAndUpdate` filtered by `status: { $nin: [fully_signed, cancelled] }`. A late cancellation can therefore never wipe out an already fully signed contract: on a `fully_signed` contract, cancellation is rejected with a `400`.
+
+## GDPR — Data protection
+
+**Personal data export** — `GET /me/export` returns a complete JSON archive (profile, incidents, services, events, contracts, points, conversations). It **never** includes `passwordHash`, `totpSecret` or `refreshTokenHash`.
+
+**Account deletion** — the process runs through:
+
+1. Soft delete of incidents (retained for moderation)
+2. Refresh token revocation (immediate logout)
+3. Deletion of the Neo4j node via `deleteNode('User', id)`

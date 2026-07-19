@@ -1,0 +1,150 @@
+---
+title: Tests
+description: Unit tests, end-to-end tests and continuous integration
+---
+
+## Approach
+
+The QuartierConnect test strategy follows the **test pyramid** model: a broad base of fast unit tests, a middle layer of integration tests and API end-to-end tests, and a narrower top of end-to-end tests driving the real interfaces in a browser.
+
+<Mermaid
+  chart={`flowchart TB
+  subgraph sommet["Top — e2e on real interfaces (slow, few)"]
+    pw["Playwright<br/>127 tests (browser)"]
+    tfx["JUnit 5 + TestFX<br/>163 tests (JavaFX toolkit)"]
+  end
+  subgraph milieu["Middle — integration and API e2e"]
+    st["Jest + Supertest<br/>199 tests (HTTP + real databases)"]
+  end
+  subgraph base["Base — fast unit tests (in memory, test doubles)"]
+    jest["Jest<br/>678 tests (API)"]
+    vitest["Vitest<br/>127 tests (Web)"]
+    pytest["pytest<br/>22 tests (DSL)"]
+  end
+  sommet -.->|"builds on"| milieu
+  milieu -.->|"builds on"| base`}
+/>
+
+The base holds **827 fast unit tests** (678 API + 127 Web + 22 DSL), the middle layer **199** API end-to-end tests, and the top **290 tests** driving real interfaces (127 Playwright + 163 TestFX), for **1316 tests** in total.
+
+Every test follows the **F.I.R.S.T.** principles:
+
+- **Fast** — runs in memory, with no network dependency.
+- **Independent** — each case is isolated (databases reset, accounts generated on the fly, no implicit ordering).
+- **Repeatable** — same result in any environment (TOTP codes are computed from the secret, not hardcoded).
+- **Self-validating** — explicit assertions at the end of the test.
+- **Timely** — tests ship with the code and run continuously.
+
+## Suite summary
+
+| Suite | Tool | Tests | make target |
+|-------|------|-------|-------------|
+| API — unit | Jest | 678 (49 `.spec.ts`) | `make test-api` |
+| API — end-to-end | Jest + Supertest | 199 (13 `.e2e-spec.ts`) | `make test-e2e` |
+| Web — unit | Vitest | 127 (25 files) | `make test-web` |
+| Web — end-to-end | Playwright | 127 (27 files) | `make test-e2e-web` |
+| Desktop — unit/integration | JUnit 5 + TestFX | 163 (23 classes) | `make test-desktop` |
+| DSL — unit | pytest | 22 (2 files) | `make test-dsl` |
+| **Total** | | **1316** | `make test` |
+
+The `make test` target chains the unit tests of the four components (API, Web, Desktop, DSL). The end-to-end tests, which need running services, have dedicated targets. The `make validate` target runs everything in sequence: lint, typecheck, unit tests + coverage, API e2e, Web e2e, desktop, DSL, then the production build.
+
+## Unit tests — API (Jest)
+
+The 678 unit tests cover the business logic of the 16 NestJS modules, with external dependencies (databases, gateways) replaced by test doubles. They are split between controllers (input validation, guards, response mapping) and services (business rules), and cover the invariants tightened recently: atomicity of contract signature and settlement, the booking saga (accept/decline/cancel), ordered locking of point balances, neighborhood scoping of incidents and votes, and service/event DTO validation.
+
+Areas covered, among others:
+
+- **Authentication** (`auth.service.spec.ts`, `token.service.spec.ts`, `totp.service.spec.ts`): password hashing, TOTP secret generation and verification, JWT issuance and rotation.
+- **Contracts and points** (`contracts.service.spec.ts`, `points.service.spec.ts`, `points-settlement.spec.ts`): lifecycle of mutual help contracts and points settlement.
+- **Real-time messaging** (`messaging.gateway.spec.ts`, `messaging.service.spec.ts`, `notifications.listener.spec.ts`): WebSocket gateway, messages and notifications.
+- **Neighborhood services** (`services.controller.spec.ts`, `bookings.service.spec.ts`), **GDPR** (`gdpr-export.service.spec.ts`), **DSL** (`dsl.service.spec.ts`, `dsl.controller.spec.ts`) and **utilities** (`phone.util.spec.ts`, `geocoding.service.spec.ts`).
+
+```bash
+make test-api          # unit tests only
+make test-cov          # tests + coverage (thresholds: stmts 80%, branches 75%)
+```
+
+The coverage report is generated in `api/coverage/lcov-report/index.html`.
+
+## End-to-end tests — API (Supertest)
+
+The 199 end-to-end tests boot the full NestJS application and issue real HTTP requests through Supertest, against real databases (MongoDB and PostgreSQL). They validate the integration end to end: routing, validation, persistence and response serialization.
+
+The critical authentication flow is verified in `auth.e2e-spec.ts`, which covers: registration returning the `otpauthUrl` (the TOTP secret is never exposed directly), rejection without GDPR consent (`400`) and on an email already taken (`409`), a valid login returning the JWT token pair (`200`), rejection of a wrong password or TOTP code (`401`), rate limiting after 5 failures (`429`), token refresh and revocation, the desktop client SSO flow, and rejection of an expired token.
+
+```bash
+make docker-up
+make test-e2e
+```
+
+## Unit tests — Web (Vitest)
+
+The 127 Vitest tests (25 files) target the code shared across the monorepo, in the `@workspace/shared` (112 tests) and `@workspace/ui` (15 tests) packages, used by both the client and the admin:
+
+- **Pure functions** (`packages/shared/src/lib`): `geo.test.ts`, `phone.test.ts`, `pricing.test.ts`, `contract-import.test.ts`.
+- **Data hooks** (`packages/shared/src/lib/hooks/__tests__`): React Query hooks for incidents, services, bookings, events, points, votes, messaging, neighborhoods, statistics, contracts, profile and user administration.
+- **UI components** (`packages/ui/src/components`): `map.test.tsx` and `map-legend.test.tsx`.
+
+```bash
+make test-web
+```
+
+## End-to-end tests — Web (Playwright)
+
+The 127 Playwright tests drive the client (`:3000`) and the admin (`:3001`) in a real browser, against the API (`:5000`). They are split between `web-apps/e2e/client` (16 files) and `web-apps/e2e/admin` (10 files), plus a redesign baseline (`redesign-baseline.spec.ts`, whose assertions lock down the appearance). Coverage was widened by the recent audit waves, which added 27 end-to-end flows (incident detail, bookings, contracts, votes, recommendations, accounts, and more).
+
+The critical **login + TOTP** flow is covered on the client side in `login.spec.ts`: redirection of an unauthenticated user to `/login`, display of the TOTP step after valid credentials, error message on a wrong password, and a full login (password then a 6-digit TOTP code generated dynamically) leading to address onboarding.
+
+> The TOTP code is recomputed live through an RFC 6238 implementation with no external dependency (`web-apps/e2e/helpers/auth.ts`), which keeps the tests reproducible.
+
+`register.spec.ts` covers the full registration up to the TOTP QR code confirmation. On the admin side, `dsl.spec.ts` covers the domain-specific language editor, `neighborhoods-draw.spec.ts` the drawing of neighborhood boundaries, and the other files the management screens (users, incidents, events, services).
+
+```bash
+make dev          # terminal 1: databases + API + client + admin
+make test-e2e-web # terminal 2
+```
+
+## Tests — Desktop (JUnit 5 / TestFX)
+
+The 163 tests of the JavaFX desktop client are spread over 23 classes run by Maven Surefire: offline services, SQLite repository, the sync three-way merge, token vault (`TokenVault`), the plugin system, and paginated incident pull (`SyncServicePullTest`, which checks that the pull no longer deletes anything past 100 items).
+
+The `LoginViewSmokeTest` class relies on **TestFX** (`testfx-core`, `testfx-junit5`): it instantiates the real JavaFX toolkit and drives the login screen (3 smoke tests). Since it starts a graphical interface, it requires a display server — on a headless runner, `make test-desktop` and the CI job therefore wrap the run in `xvfb-run` (Xvfb virtual display):
+
+```bash
+make test-desktop   # xvfb-run -a ./mvnw test if xvfb-run is present
+```
+
+> With no display available (`DISPLAY` unset and `xvfb-run` missing), the TestFX tests fail when the toolkit starts. The `Makefile` falls back to a plain `./mvnw test` only when a display is already reachable.
+
+## Continuous integration
+
+The **unit** tests (API Jest, Web Vitest, Desktop JUnit under `xvfb-run`, DSL pytest) plus lint, typecheck and build run automatically through `ci.yml` on the `main` and `develop` branches as well as on every pull request.
+
+The **end-to-end** tests live in a separate, more expensive workflow (`.github/workflows/e2e.yml`):
+
+- **On pull request** — only a smoke subset of 3 specs runs (`client/login`, `client/points`, `admin/services`), and only if the PR touches `web-apps/`, `api/`, `scripts/`, `docker/` or the workflow itself, to keep feedback fast.
+- **Nightly** (`cron` at 3 a.m.), **on a `v*.*.*` tag** and on **`workflow_dispatch`** — the full Playwright suite then the Supertest API e2e tests run in full, with a "E2E nightly KO" Discord alert on failure.
+
+<Mermaid
+  chart={`flowchart TB
+  ev["Git event<br/>(push main/develop, PR, tag v*.*.*, cron, dispatch)"]
+  ev --> ci
+  subgraph ci["ci.yml — on push and PR"]
+    direction LR
+    apiJob["API<br/>Jest + coverage"]
+    webJob["Web<br/>Vitest"]
+    deskJob["Desktop<br/>JUnit under xvfb-run"]
+    dslJob["DSL<br/>pytest"]
+    valJob["make validate-fast"]
+  end
+  ci --> ok["CI Success<br/>(branch protection gate)"]
+  ev --> trig{"e2e.yml"}
+  trig -->|"pull request (paths web/api)"| smoke["Smoke: 3 specs<br/>login, points, services"]
+  trig -->|"cron 3 a.m. / tag v*.*.* / dispatch"| full["Full Playwright suite<br/>+ Supertest API e2e"]
+  full -.->|"failure"| discord["Discord alert"]`}
+/>
+
+In `ci.yml`, the five jobs (`api`, `web`, `desktop`, `dsl`, `make-validate`) run in parallel; the `ci-success` summary job fails if any of them fails or is cancelled, which makes it the single gate for branch protection. The desktop job runs its tests through `xvfb-run -a ./mvnw -B test` to give a virtual display to the JavaFX toolkit driven by TestFX.
+
+The `make validate` target reproduces the whole pipeline locally (lint of the 4 components, TypeScript typecheck, API unit tests with coverage, API e2e, Web e2e, desktop, DSL, then the production build): it lets you validate a contribution under the same conditions as CI, full e2e suite included, before pushing it.

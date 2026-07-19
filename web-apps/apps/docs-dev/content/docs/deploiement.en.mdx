@@ -1,0 +1,185 @@
+---
+title: Deployment and operations
+description: Going to production, Caddy, secrets and procedures
+---
+
+This page describes how QuartierConnect is deployed to production on a Linux VPS (Ubuntu 22.04+ / Debian 12), how Caddy is configured, how secrets are managed and what the day-to-day operational procedures are. It gathers the deployment steps and the routine operational gestures in a single place.
+
+The reference deployment is served on the `quartierconnect.duckdns.org` domain, using **path-prefix routing** (`/`, `/admin`, `/aide`, `/dev`, `/api`) rather than subdomains — which is why the Fumadocs documentation sites are configured with the `basePath` values `/dev` and `/aide`.
+
+## Requirements
+
+- **VPS**: 2 vCPU, 4 GB of RAM (8 GB recommended), 40 GB SSD, fixed public IP.
+- **Network**: ports **80** and **443** open.
+- **DNS**: DuckDNS subdomain `quartierconnect.duckdns.org` pointing to the VPS public IP.
+- **Software**: Docker + Docker Compose v2, plus `git make jq curl wget unzip awscli`.
+
+The server is hardened up front: non-root `deploy` user, SSH root login and password authentication disabled, UFW (80/443/22 only), fail2ban (**SSH** and **caddy-auth** jails), and a daily cron installed from `ops/`.
+
+Hardening goes all the way down to the application containers: the four web images (`client`, `admin`, `docs-user`, `docs-dev`) run as a **non-root user** (`USER appuser` in each `Dockerfile`), so no frontend process runs as `root` inside the Docker network.
+
+## Production topology
+
+Nine Docker containers run on the host: **Caddy** at the front, five application containers (`api`, `client`, `admin`, `docs-user`, `docs-dev`) and three databases (`mongo`, `postgres`, `neo4j`). **Only Caddy** publishes ports on the public interface (`0.0.0.0:80` and `:443`); every other service is published on `127.0.0.1` only (see `docker-compose.yml`), so it is unreachable from outside the VPS. Combined with UFW, which only opens **22 / 80 / 443**, this reduces the attack surface to SSH and Caddy.
+
+<Mermaid
+  chart={`flowchart TB
+  navigateur["Browser<br/>resident / admin"]
+  subgraph vps["OVH VPS — UFW opens 22 / 80 / 443"]
+    caddy["caddy<br/>only one exposed: 0.0.0.0:80 + 443<br/>Let's Encrypt TLS"]
+    subgraph loopback["Applications — published on 127.0.0.1"]
+      api["api: 5000"]
+      client["client: 3000"]
+      admin["admin: 3001"]
+      docsuser["docs-user: 3002"]
+      docsdev["docs-dev: 3003"]
+    end
+    subgraph bases["Databases — published on 127.0.0.1"]
+      mongo["mongo: 27017"]
+      postgres["postgres: 5432"]
+      neo4j["neo4j: 7687 / 7474"]
+    end
+  end
+  navigateur -->|"HTTPS 443"| caddy
+  caddy --> api
+  caddy --> client
+  caddy --> admin
+  caddy --> docsuser
+  caddy --> docsdev
+  api --> mongo
+  api --> postgres
+  api --> neo4j`}
+/>
+
+The memory limits in the prod overlay (`docker-compose.prod.yml`) size each container for a 4 to 8 GB VPS: `api` 512 MB, `mongo` 768 MB, `neo4j` 1280 MB (JVM heap pinned to 512 MB + 256 MB pagecache to stay within the cgroup limit), `postgres` 512 MB, `caddy` 128 MB, the frontends 64 to 192 MB. Every service carries `restart: unless-stopped` and bounded `json-file` logs (10 MB × 3).
+
+## Build and startup
+
+The production stack starts by layering two Compose files (the base file plus the prod overlay):
+
+```bash
+docker compose \
+  -f docker/docker-compose.yml \
+  -f docker/docker-compose.prod.yml \
+  up -d --build
+```
+
+Caddy takes 30 to 60 s to obtain its Let's Encrypt certificate; follow `logs -f caddy` to confirm it. Every service must reach `Up (healthy)` (`ps`). Startup ordering is guaranteed by `depends_on: condition: service_healthy`: the API only starts once the MongoDB, PostgreSQL and Neo4j databases are healthy.
+
+Seeding the demo accounts then running a smoke test validates the install:
+
+```bash
+./scripts/smoke-test.sh https://quartierconnect.duckdns.org
+```
+
+The smoke test checks `/api/health` (including the state of each database), the client, `/admin`, `/docs` (Scalar), rejection of invalid credentials (401), the presence of the **HSTS** and **CSP** headers, the absence of a `Server` header, HTTPS validity and the `/api/messaging` WebSocket.
+
+## Caddy
+
+Caddy acts as reverse proxy and TLS termination. It obtains and **automatically renews** Let's Encrypt certificates (~30 days before expiry) through the HTTP-01 challenge on port 80. The configuration lives in `docker/Caddyfile`, bind-mounted into the container.
+
+Caddy routes requests by **path prefix** to the right container and applies a dedicated CSP to each site. The `/docs*`, `/scalar*`, `/api/docs*`, `/api/scalar*` paths and the `/dev*` site are protected by `basic_auth` (`DOCS_AUTH_USER` / `DOCS_AUTH_HASH` credentials); the rest are public.
+
+<Mermaid
+  chart={`flowchart LR
+  req["HTTPS request<br/>quartierconnect.duckdns.org"]
+  caddy["Caddy<br/>reverse proxy + TLS"]
+  req --> caddy
+  caddy -->|"/api/*"| api["api: 5000"]
+  caddy -->|"/docs* /scalar* (auth)"| api
+  caddy -->|"/telechargements/*"| files["file_server<br/>/srv/downloads"]
+  caddy -->|"/admin*"| admin["admin: 3001"]
+  caddy -->|"/aide*"| docsuser["docs-user: 3002"]
+  caddy -->|"/dev* (auth)"| docsdev["docs-dev: 3003"]
+  caddy -->|"default"| client["client: 3000"]`}
+/>
+
+Things to watch in operation:
+
+- **Port 80 is required** for ACME renewal; if UFW blocks it, the renewal fails silently until expiry.
+- **Let's Encrypt rate limit**: 5 failures/hour per domain. To debug, temporarily switch to `acme_ca https://acme-staging-v02.api.letsencrypt.org/directory` in the Caddyfile global block, then remove it and reload.
+- **HTTP security**: HSTS enabled, CSP with `frame-ancestors 'none'`, no `Server` header. SSL Labs target ≥ A.
+- **Docs site auth**: failed authentication attempts on Caddy are watched by the **caddy-auth** fail2ban jail (filter `ops/fail2ban-filter-caddy-auth.conf`).
+
+Hot reload without downtime:
+
+```bash
+docker exec docker-caddy-1 caddy reload --config /etc/caddy/Caddyfile
+```
+
+> **The bind-mount trap.** Because the `Caddyfile` is mounted from the host, a deployment that modifies it is not necessarily picked up: `up -d --build` does not recreate the container (Compose does not compare bind-mount contents) and, since the file is replaced by a **new inode**, a `caddy reload` may keep serving the old version. To guarantee it is picked up, force recreation:
+
+```bash
+docker compose \
+  -f docker/docker-compose.yml \
+  -f docker/docker-compose.prod.yml \
+  up -d --force-recreate caddy
+```
+
+The Caddy certificates are backed up once a week and can be restored; the `quartierconnect_caddy_data` volume holds them.
+
+## Managing secrets
+
+The prod configuration starts from `docker/.env.prod.example`, copied to `.env` with `chmod 600`. Sensitive values come from `openssl rand -base64 32 | tr -d '/+='`:
+
+- `JWT_SECRET` (≥ 48 characters)
+- `MONGO_ROOT_PASSWORD`
+- `POSTGRES_PASSWORD`
+- `NEO4J_PASSWORD` (must also be carried over into `NEO4J_AUTH=neo4j/<password>`)
+
+> A DB password changed **after** the first `up` is not taken into account: it is only applied when initialising a blank volume. If authentication is refused, check that `.env` matches the volume that was initialised.
+
+Other prod settings: `LOGIN_RATE_LIMIT=5`, `CORS_ORIGINS` restricted to the HTTPS domain alone, and `BACKUP_S3_*` for archiving. A quick check confirms there are no leftover placeholders: `grep -E '<(generate|password|same|strong)' .env`.
+
+For automated deployment, the GitHub secrets (**production** environment) hold the SSH key of the `deploy` user (`VPS_SSH_PRIVATE_KEY`), the host, the deployment path, the domain and the Discord webhook.
+
+## Updates and rollback
+
+Manual deployment from the VPS:
+
+```bash
+./scripts/deploy-vps.sh main
+```
+
+The script captures the current SHA, runs `git pull`, rebuilds, smoke tests, then **rolls back automatically if the test fails**. In automated mode, `deploy.yml` triggers on a `v*.*.*` tag (reviewers required) or on `workflow_dispatch`.
+
+<Mermaid
+  chart={`flowchart TB
+  start["deploy-vps.sh main"]
+  sha["Capture the current SHA<br/>(rollback point)"]
+  backup["Pre-deployment backup<br/>backup-all.sh"]
+  pull["git fetch + checkout --force<br/>+ pull --ff-only"]
+  build["docker compose up -d<br/>--build --remove-orphans"]
+  smoke{"smoke-test.sh<br/>passed?"}
+  ok["Discord notification<br/>deployment validated"]
+  rollback["rollback.sh to the previous SHA<br/>Discord notification"]
+  start --> sha --> backup --> pull --> build --> smoke
+  smoke -->|"yes"| ok
+  smoke -->|"no"| rollback`}
+/>
+
+Targeted rollback:
+
+```bash
+git log --oneline -10
+./scripts/rollback.sh <git-sha>
+```
+
+## Backups
+
+A cron runs `backup-all.sh` every night at 2 a.m. It dumps MongoDB (`mongodump --gzip`), PostgreSQL (`pg_dumpall | gzip`), Neo4j (`neo4j-admin database dump`, cold, ~30 s of downtime) and, on Mondays, the Caddy certificates. Local retention 7 days (28 days for the certificates), tiered S3 retention (7 days + 4 weeks + 12 months). A Discord notification is only sent on failure.
+
+> **An untested backup is no backup at all.** Run a restore drill (`restore-mongo.sh`, `restore-postgres.sh`, `restore-neo4j.sh`) at least once and record the restore time you observed.
+
+## Common incidents
+
+First reflex: `ps` on the stack, then `smoke-test.sh`. The six most frequent incidents and how to handle them:
+
+- **MongoDB down**: restart the container; if it crash-loops (`unclean shutdown`), run `mongod --repair` on the volume; otherwise restore.
+- **Expired certificate**: check port 80, DNS (`dig +short`), the ACME rate limit; force a `caddy reload`.
+- **Disk full**: `docker image/builder/system prune`, purge old backups (already on S3) and logs. **Never** delete a `*_data` volume without a verified backup.
+- **Neo4j OOM**: adjust `NEO4J_server_memory_heap_max__size` and the container memory limit, or hunt down a Cypher query without a `LIMIT`.
+- **Stuck deploy**: identify the unhealthy service from its logs; if both versions are broken, `rollback.sh` to the last stable SHA.
+- **Emergency restore**: fetch the dump (local or S3), run the matching `restore-*` script (confirmation `oui` required), revalidate with a smoke test.
+
+> **PostgreSQL migrations (Drizzle)**: since the database is provisioned by `drizzle-kit push`, insert a baseline row into `drizzle.__drizzle_migrations` — otherwise the API bootstrap migrator replays `0000` and crashes.

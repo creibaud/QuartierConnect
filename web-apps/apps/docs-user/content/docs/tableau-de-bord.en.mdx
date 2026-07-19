@@ -1,0 +1,128 @@
+---
+title: The dashboard
+description: Your home page, a living overview of your neighborhood
+---
+
+The dashboard is your **home page**: it is the screen that greets you as soon as you sign
+in and your account is attached to a neighborhood. It gathers in a single place the gist
+of what is happening around you, in the form of clear cards you can go through at a
+glance. This page explains what each of those cards shows.
+
+At the top, a welcome message greets you **by your first name**, along with your email
+address and a badge recalling your role. Below it unfold the map of your neighborhood,
+then a series of overview cards that link out to the platform's main pages.
+
+<Mermaid
+  chart={`flowchart TD
+  accueil(["Dashboard<br/>your home page"])
+  carte["Neighborhood map"]
+  points["Your points"]
+  activite["Recent activity"]
+  votes["Ongoing votes"]
+  events["Upcoming events"]
+  services["Neighborhood services"]
+  recos["Recommendations"]
+
+  accueil --> carte
+  accueil --> points --> P["Points page"]
+  accueil --> activite --> P
+  accueil --> votes --> V["Votes page"]
+  accueil --> events --> E["Events page"]
+  accueil --> services --> S["Services page"]
+  accueil --> recos --> R["Recommendations page"]`}
+/>
+
+## The map of your neighborhood
+
+The first card shows an **interactive plan centered on your neighborhood**. It draws the
+boundary of the neighborhood you are assigned to and places markers on it so you can see,
+in an instant, what is going on near you:
+
+- the **service offers** and **service requests** that have a position set;
+- the located **events**;
+- the **neighborhood incidents** reported on the map;
+- your **home**, if your address could be positioned.
+
+A **legend** recalls what each type of marker stands for. Only the items whose position is
+known show up: a service or an event without a locatable address is still published, but
+without a point on the plan. For everything about the neighborhood boundary and the notion
+of coverage, see the page
+[The neighborhood map](/en/carte).
+
+> If your neighborhood does not have a boundary defined yet, the map is not displayed: the
+> rest of the dashboard, however, is still there.
+
+## Your points at a glance
+
+One card highlights your **points balance**, the neighborhood's mutual-help currency. The
+figure is shown in large type; as long as no balance is available, a plain dash takes its
+place. A **"View history"** link takes you straight to the page
+[Points and rewards](/en/points), where you find the detail of all your movements.
+
+## Your recent activity
+
+Right next to it, the recent activity card lists your **latest point transactions**. Each
+line indicates the neighbor involved and the amount:
+
+- in **green with a `+`** for the points you received;
+- in **grey with a `−`** for the points you sent or spent.
+
+This overview only shows the most recent movements; the **"See all"** button opens the
+full history on the Points page.
+
+## Ongoing votes
+
+This card lists the **neighborhood consultations under way**. For each vote, you see its
+title, the **number of participants** already counted and, where applicable, its **closing
+date**.
+
+- If you have already voted, a **"Voted"** badge confirms it.
+- Otherwise, a button invites you to **respond** and takes you to the Votes page.
+
+Only votes still open appear here: as soon as a consultation is closed, it makes way for
+the next ones.
+
+## Upcoming events
+
+The events card shows the **next local get-togethers**, sorted from the nearest to the
+furthest away. Each event shows its **date** (day and month), its title, its place when
+one is set and a **category** badge. Events that have already passed are not listed. The
+**"See all"** button opens the Events page.
+
+## Neighborhood services
+
+This card gives an overview of the **services offered around you**: for each one, its
+title, a short description and its **category**. It is a quick way to spot a helping hand
+available or a request you could answer. The link leads to the page
+[Services between neighbors](/en/services).
+
+## Recommendations for you
+
+Finally, one card suggests content **picked for you**: a service, an event or a neighbor.
+Each recommendation shows a name, a **reason** (for example a service in your
+neighborhood, an event nearby, shared interests or a trusted neighbor) and a badge
+indicating its type. The **"See all"** button opens the Recommendations page.
+
+## When a card is empty
+
+The dashboard adapts to your neighborhood's activity. If a section has nothing to show yet
+(no ongoing vote, no upcoming event, no transaction, etc.), the card shows a **friendly
+welcome message** rather than a blank, with a short hint about what will appear there one
+day. And if loading fails momentarily, a **"Retry"** button lets you reload the card
+concerned without leaving the page.
+
+## In short
+
+| Card | What it shows | To which page |
+|-------|-------------------|------------------|
+| Neighborhood map | Your neighborhood, the services, events, incidents and your home | Map |
+| Your points | Your points balance | Points |
+| Recent activity | Your latest point transactions | Points |
+| Ongoing votes | The consultations under way and your participation | Votes |
+| Upcoming events | The next local get-togethers | Events |
+| Neighborhood services | An overview of service offers and requests | Services |
+| Recommendations | Suggestions picked for you | Recommendations |
+
+The dashboard is not a page you linger on: it is a **starting point**. Each card gives you
+the gist and opens the door to the matching section, so you can explore your neighborhood
+at your own pace.
