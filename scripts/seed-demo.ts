@@ -13,8 +13,8 @@ function requireDemoTotpSecret(): string {
   const secret = process.env.DEMO_TOTP_SECRET;
   if (secret) return secret;
   console.error(
-    "DEMO_TOTP_SECRET manquant : définir un secret base32 dans l'environnement " +
-      "(voir .env.example) avant de lancer le seed.",
+    "DEMO_TOTP_SECRET is missing: set a base32 secret in the environment " +
+      "(see .env.example) before running the seed.",
   );
   process.exit(1);
 }
@@ -158,9 +158,7 @@ function grantWelcomeCredit(email: string): void {
       note: WELCOME_CREDIT_NOTE,
       email,
     });
-    console.log(
-      `  → crédit de bienvenue (+${WELCOME_CREDIT_POINTS} pts) assuré`,
-    );
+    console.log(`  → welcome credit (+${WELCOME_CREDIT_POINTS} pts) in place`);
   } catch {
     console.warn(
       `  ! Could not grant welcome credit for ${email} — is Docker running?`,
@@ -188,7 +186,7 @@ async function seedAccount(
     console.log(`  → already exists`);
     normalizeTotpSecret(email);
     promoteRole(email, role);
-    console.log(`  → code actuel : ${totp(DEMO_TOTP_SECRET)}`);
+    console.log(`  → current code: ${totp(DEMO_TOTP_SECRET)}`);
     return;
   }
 
@@ -215,6 +213,8 @@ async function seedAccount(
   promoteRole(email, role);
   console.log(`  ✓ created`);
 }
+
+const DEMO_NEIGHBORHOOD_NAME = "Montmartre";
 
 const PARIS_NEIGHBORHOODS: Array<{
   name: string;
@@ -265,6 +265,127 @@ const PARIS_NEIGHBORHOODS: Array<{
       [2.338, 48.846],
     ],
   },
+  {
+    name: "Batignolles",
+    city: "Paris",
+    coordinates: [
+      [2.31, 48.883],
+      [2.325, 48.883],
+      [2.325, 48.893],
+      [2.31, 48.893],
+      [2.31, 48.883],
+    ],
+  },
+  {
+    name: "Bastille",
+    city: "Paris",
+    coordinates: [
+      [2.369, 48.848],
+      [2.38, 48.848],
+      [2.38, 48.858],
+      [2.369, 48.858],
+      [2.369, 48.848],
+    ],
+  },
+  {
+    name: "Buttes-Chaumont",
+    city: "Paris",
+    coordinates: [
+      [2.376, 48.88],
+      [2.392, 48.88],
+      [2.392, 48.889],
+      [2.376, 48.889],
+      [2.376, 48.88],
+    ],
+  },
+  {
+    name: "Père-Lachaise",
+    city: "Paris",
+    coordinates: [
+      [2.386, 48.856],
+      [2.4, 48.856],
+      [2.4, 48.866],
+      [2.386, 48.866],
+      [2.386, 48.856],
+    ],
+  },
+  {
+    name: "Montparnasse",
+    city: "Paris",
+    coordinates: [
+      [2.31, 48.833],
+      [2.33, 48.833],
+      [2.33, 48.843],
+      [2.31, 48.843],
+      [2.31, 48.833],
+    ],
+  },
+  {
+    name: "La Villette",
+    city: "Paris",
+    coordinates: [
+      [2.376, 48.89],
+      [2.392, 48.89],
+      [2.392, 48.899],
+      [2.376, 48.899],
+      [2.376, 48.89],
+    ],
+  },
+  {
+    name: "Bercy",
+    city: "Paris",
+    coordinates: [
+      [2.372, 48.828],
+      [2.39, 48.828],
+      [2.39, 48.84],
+      [2.372, 48.84],
+      [2.372, 48.828],
+    ],
+  },
+  {
+    name: "Auteuil",
+    city: "Paris",
+    coordinates: [
+      [2.252, 48.842],
+      [2.27, 48.842],
+      [2.27, 48.853],
+      [2.252, 48.853],
+      [2.252, 48.842],
+    ],
+  },
+  {
+    name: "Charonne",
+    city: "Paris",
+    coordinates: [
+      [2.386, 48.843],
+      [2.4, 48.843],
+      [2.4, 48.855],
+      [2.386, 48.855],
+      [2.386, 48.843],
+    ],
+  },
+  {
+    name: "Saint-Germain-des-Prés",
+    city: "Paris",
+    coordinates: [
+      [2.32, 48.848],
+      [2.337, 48.848],
+      [2.337, 48.858],
+      [2.32, 48.858],
+      [2.32, 48.848],
+    ],
+  },
+  {
+    name: "Canal Saint-Martin",
+    city: "Paris",
+    coordinates: [
+      [2.356, 48.866],
+      [2.372, 48.866],
+      [2.372, 48.876],
+      [2.356, 48.876],
+      [2.356, 48.866],
+    ],
+  },
 ];
 
 async function loginAdmin(): Promise<string | null> {
@@ -278,12 +399,32 @@ async function loginAdmin(): Promise<string | null> {
   return data.accessToken;
 }
 
-async function existingNeighborhoodNames(token: string): Promise<Set<string>> {
-  const res = await fetch(`${BASE_URL}/neighborhoods`, {
+const MAX_PAGE_SIZE = 100;
+
+/**
+ * A full list endpoint, in one request. The API clamps `limit` to 100, and
+ * paging past it is unreliable: the default createdAt sort has no tiebreak, so
+ * skip/limit both repeats and drops rows. The seed stays under the ceiling and
+ * says so loudly when it no longer does.
+ */
+async function fetchList<T>(token: string, path: string): Promise<T[]> {
+  const res = await fetch(`${BASE_URL}${path}?limit=${MAX_PAGE_SIZE}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) return new Set();
-  const list = (await res.json()) as Array<{ name: string }>;
+  if (!res.ok) return [];
+  const items = (await res.json()) as T[];
+  if (!Array.isArray(items)) return [];
+  const total = Number(res.headers.get("x-total-count") ?? items.length);
+  if (total > MAX_PAGE_SIZE) {
+    console.warn(
+      `  ! ${path}: ${total} entries for a ${MAX_PAGE_SIZE} cap — idempotency not guaranteed`,
+    );
+  }
+  return items;
+}
+
+async function existingNeighborhoodNames(token: string): Promise<Set<string>> {
+  const list = await fetchList<{ name: string }>(token, "/neighborhoods");
   return new Set(list.map((n) => n.name));
 }
 
@@ -306,7 +447,7 @@ async function seedNeighborhoods(token: string): Promise<void> {
     });
     if (res.ok) created++;
   }
-  console.log(`  ✓ ${created} quartier(s) Paris créé(s)`);
+  console.log(`  ✓ ${created} Paris neighborhood(s) created`);
 }
 
 interface DemoNeighborhood {
@@ -335,18 +476,25 @@ function centroidOf(geometry: { coordinates: unknown }): [number, number] {
   return [lng, lat];
 }
 
-/** First neighborhood + its centroid; located demo content goes inside it. */
+/**
+ * Demo neighborhood + its centroid; located demo content goes inside it.
+ * Pinned by name: the list is sorted by createdAt DESC, so falling back to the
+ * first entry would move all demo content as soon as a neighborhood is added.
+ */
 async function getDemoNeighborhood(
   token: string,
 ): Promise<DemoNeighborhood | null> {
-  const res = await fetch(`${BASE_URL}/neighborhoods`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const nbhs = (res.ok ? await res.json() : []) as Array<{
+  const nbhs = await fetchList<{
     _id: string;
+    name?: string;
     geometry?: { coordinates: unknown };
-  }>;
-  const n = nbhs[0];
+  }>(token, "/neighborhoods");
+  const n = nbhs.find((x) => x.name === DEMO_NEIGHBORHOOD_NAME) ?? nbhs[0];
+  if (n?.name !== DEMO_NEIGHBORHOOD_NAME) {
+    console.warn(
+      `  ! neighborhood "${DEMO_NEIGHBORHOOD_NAME}" not found — falling back to "${n?.name ?? "none"}"`,
+    );
+  }
   if (!n?.geometry) return null;
   const [lng, lat] = centroidOf(n.geometry);
   return { id: n._id, lng, lat };
@@ -375,11 +523,7 @@ async function fetchExistingTitles(
   token: string,
   path: string,
 ): Promise<Set<string>> {
-  const res = await fetch(`${BASE_URL}${path}?limit=100`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) return new Set();
-  const items = (await res.json()) as Array<{ title?: string }>;
+  const items = await fetchList<{ title?: string }>(token, path);
   return new Set(
     items
       .map((item) => item.title)

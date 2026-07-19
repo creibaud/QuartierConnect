@@ -105,6 +105,10 @@
             "ts"
         ],
         "rootDir": "src",
+        "roots": [
+            "<rootDir>",
+            "<rootDir>/../../scripts"
+        ],
         "testRegex": ".*\\.spec\\.ts$",
         "transform": {
             "^.+\\.(t|j)s$": "ts-jest"
