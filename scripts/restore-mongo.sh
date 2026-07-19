@@ -11,20 +11,20 @@ cd "$ROOT_DIR"
 
 COMPOSE="docker compose -f docker/docker-compose.yml -f docker/docker-compose.prod.yml --env-file .env"
 ARCHIVE="${1:?Usage: restore-mongo.sh <mongo-archive.tar.gz>}"
-[ -f "$ARCHIVE" ] || { echo "✗ Fichier introuvable : $ARCHIVE" >&2; exit 1; }
+[ -f "$ARCHIVE" ] || { echo "✗ File not found: $ARCHIVE" >&2; exit 1; }
 
 env_get() { grep -E "^$1=" .env 2>/dev/null | head -1 | cut -d= -f2- || true; }
 MONGO_USER="$(env_get MONGO_ROOT_USER)"; MONGO_USER="${MONGO_USER:-root}"
 MONGO_PASS="$(env_get MONGO_ROOT_PASSWORD)"
 
-echo "⚠  Cela va ÉCRASER la base MongoDB 'quartierconnect' avec :"
+echo "⚠  This will OVERWRITE the 'quartierconnect' MongoDB database with:"
 echo "   $ARCHIVE"
-read -r -p "Confirmer ? Taper 'oui' : " CONFIRM
-[ "$CONFIRM" = "oui" ] || { echo "Annulé."; exit 1; }
+read -r -p "Confirm? Type 'yes': " CONFIRM
+[ "$CONFIRM" = "yes" ] || { echo "Aborted."; exit 1; }
 
 $COMPOSE exec -T mongo mongorestore \
   --username "$MONGO_USER" --password "$MONGO_PASS" \
   --authenticationDatabase admin --nsInclude 'quartierconnect.*' \
   --drop --gzip --archive < "$ARCHIVE"
 
-echo "✓ MongoDB restauré depuis $(basename "$ARCHIVE")"
+echo "✓ MongoDB restored from $(basename "$ARCHIVE")"

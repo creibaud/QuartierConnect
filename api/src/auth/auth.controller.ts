@@ -74,7 +74,8 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @Throttle({
         default: {
-            limit: parseInt(process.env.LOGIN_RATE_LIMIT ?? "5"),
+            // A NaN limit would never compare true and silently disable throttling.
+            limit: Number(process.env.LOGIN_RATE_LIMIT) || 5,
             ttl: 900000,
         },
     })

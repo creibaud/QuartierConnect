@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: "Branche / tag à déployer"
+        description: "Branch / tag to deploy"
         required: true
         default: "main"
 
@@ -42,7 +42,7 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Capture SHA actuel (pour rollback)
+      - name: Capture current SHA (for rollback)
         id: rollback
         env:
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -89,7 +89,7 @@ jobs:
           ssh "$VPS_USER@$VPS_HOST" \
             "cd '$DEPLOY_PATH' && ./scripts/smoke-test.sh '$PROD_URL'"
 
-      - name: Seed comptes démo (best effort)
+      - name: Seed demo accounts (best effort)
         if: success()
         continue-on-error: true
         env:
@@ -100,7 +100,7 @@ jobs:
           ssh "$VPS_USER@$VPS_HOST" \
             "cd '$DEPLOY_PATH' && ./scripts/seed-prod-demo.sh"
 
-      - name: Rollback si smoke test KO
+      - name: Rollback if the smoke test fails
         if: failure() && steps.deploy.outcome == 'success'
         env:
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -114,7 +114,7 @@ jobs:
             ./scripts/rollback.sh "$PREVIOUS_SHA"
           EOF
 
-      - name: Notification Discord — succès
+      - name: Discord notification — success
         if: success()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
@@ -123,10 +123,10 @@ jobs:
         run: |
           if [ -z "${DISCORD_WEBHOOK:-}" ]; then exit 0; fi
           curl -X POST -H 'Content-Type: application/json' \
-            -d "{\"content\":\"✅ **Deploy OK** — \`${REF}\` en prod sur ${PROD_URL}\"}" \
+            -d "{\"content\":\"✅ **Deploy OK** — \`${REF}\` live at ${PROD_URL}\"}" \
             "$DISCORD_WEBHOOK"
 
-      - name: Notification Discord — échec
+      - name: Discord notification — failure
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
@@ -136,5 +136,5 @@ jobs:
         run: |
           if [ -z "${DISCORD_WEBHOOK:-}" ]; then exit 0; fi
           curl -X POST -H 'Content-Type: application/json' \
-            -d "{\"content\":\"🔴 **Deploy KO** — \`${REF}\` — rollback vers \`${PREVIOUS_SHA:0:7}\` — [run](${RUN_URL})\"}" \
+            -d "{\"content\":\"🔴 **Deploy failed** — \`${REF}\` — rolled back to \`${PREVIOUS_SHA:0:7}\` — [run](${RUN_URL})\"}" \
             "$DISCORD_WEBHOOK"

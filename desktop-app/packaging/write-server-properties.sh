@@ -11,7 +11,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 if [ -z "${QC_SERVER_URL:-}" ]; then
-  echo "==> QC_SERVER_URL non défini : server.properties non généré (défauts localhost)"
+  echo "==> QC_SERVER_URL unset: skipping server.properties (localhost defaults)"
   exit 0
 fi
 
@@ -22,4 +22,4 @@ DEST="src/main/resources/server.properties"
   echo "web.url=${URL}/admin"
 } > "$DEST"
 
-echo "==> server.properties généré : ${URL}"
+echo "==> Wrote server.properties: ${URL}"

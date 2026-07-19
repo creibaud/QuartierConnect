@@ -1,0 +1,2895 @@
+[{
+	"_id": {
+		"$oid": "6a5ca00ba6f783f8fe6b0a3b"
+	},
+	"title": "Faut-il piétonniser la rue des Abbesses le dimanche ?",
+	"description": "Fermeture à la circulation de 10h à 19h, sauf riverains et livraisons.",
+	"voteType": "binary",
+	"options": [
+		{
+			"id": "oui",
+			"label": "Oui",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0a3c"
+			}
+		},
+		{
+			"id": "non",
+			"label": "Non",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0a3d"
+			}
+		}
+	],
+	"createdBy": "0b653a65-ed00-4bff-8363-87db61282945",
+	"endsAt": {
+		"$date": "2026-07-31T09:59:39.489Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "e9b6a3de-1139-47c6-b834-fa08f43850cb",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.512Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0a40"
+			}
+		},
+		{
+			"userId": "4de869de-be0a-47b9-9f6a-772041cdc24f",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.524Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0a47"
+			}
+		},
+		{
+			"userId": "84ec11af-7898-463a-8cca-525ac60cbf59",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.535Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0a50"
+			}
+		},
+		{
+			"userId": "93445062-fc71-4130-be5c-bd7ad9661bf2",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.545Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0a5b"
+			}
+		},
+		{
+			"userId": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.553Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0a68"
+			}
+		},
+		{
+			"userId": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.561Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0a77"
+			}
+		}
+	],
+	"status": "open",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:39.499Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:39.561Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00ba6f783f8fe6b0a80"
+	},
+	"title": "Installer des bancs supplémentaires square Louise-Michel ?",
+	"description": "Six bancs en bois seraient ajoutés le long de l'allée centrale.",
+	"voteType": "binary",
+	"options": [
+		{
+			"id": "oui",
+			"label": "Oui",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0a81"
+			}
+		},
+		{
+			"id": "non",
+			"label": "Non",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0a82"
+			}
+		}
+	],
+	"createdBy": "e9b6a3de-1139-47c6-b834-fa08f43850cb",
+	"endsAt": {
+		"$date": "2026-08-06T09:59:39.564Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "4de869de-be0a-47b9-9f6a-772041cdc24f",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.577Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0a85"
+			}
+		},
+		{
+			"userId": "84ec11af-7898-463a-8cca-525ac60cbf59",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.586Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0a8c"
+			}
+		},
+		{
+			"userId": "93445062-fc71-4130-be5c-bd7ad9661bf2",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.596Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0a95"
+			}
+		},
+		{
+			"userId": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.606Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0aa0"
+			}
+		},
+		{
+			"userId": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.616Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0aad"
+			}
+		},
+		{
+			"userId": "8f1be472-8d4c-40ec-bb31-6464b435975a",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.626Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0abc"
+			}
+		},
+		{
+			"userId": "fac2acc3-190b-43cd-baed-122358be1259",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.636Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0acd"
+			}
+		}
+	],
+	"status": "open",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:39.569Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:39.636Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00ba6f783f8fe6b0ad7"
+	},
+	"title": "Quel jour pour le marché de producteurs ?",
+	"description": "Le marché s'installerait place des Abbesses une fois par semaine.",
+	"voteType": "single_choice",
+	"options": [
+		{
+			"id": "mercredi",
+			"label": "Mercredi",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0ad8"
+			}
+		},
+		{
+			"id": "samedi",
+			"label": "Samedi",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0ad9"
+			}
+		},
+		{
+			"id": "dimanche",
+			"label": "Dimanche",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0ada"
+			}
+		}
+	],
+	"createdBy": "4de869de-be0a-47b9-9f6a-772041cdc24f",
+	"endsAt": {
+		"$date": "2026-08-09T09:59:39.64Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "84ec11af-7898-463a-8cca-525ac60cbf59",
+			"choices": [
+				"dimanche"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.656Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0ade"
+			}
+		},
+		{
+			"userId": "93445062-fc71-4130-be5c-bd7ad9661bf2",
+			"choices": [
+				"mercredi"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.666Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0ae7"
+			}
+		},
+		{
+			"userId": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+			"choices": [
+				"samedi"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.675Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0af2"
+			}
+		},
+		{
+			"userId": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+			"choices": [
+				"dimanche"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.686Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0aff"
+			}
+		},
+		{
+			"userId": "8f1be472-8d4c-40ec-bb31-6464b435975a",
+			"choices": [
+				"mercredi"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.699Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0b0e"
+			}
+		},
+		{
+			"userId": "fac2acc3-190b-43cd-baed-122358be1259",
+			"choices": [
+				"samedi"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.71Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0b1f"
+			}
+		},
+		{
+			"userId": "0c05a6eb-4191-4b8f-8a4e-e9489251eaee",
+			"choices": [
+				"dimanche"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.721Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0b32"
+			}
+		},
+		{
+			"userId": "f7025b74-7036-4140-890d-85eecf174883",
+			"choices": [
+				"mercredi"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.732Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0b47"
+			}
+		}
+	],
+	"status": "open",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:39.646Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:39.732Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00ba6f783f8fe6b0b53"
+	},
+	"title": "Quels équipements ajouter au jardin partagé ?",
+	"description": "Le budget permet de financer deux équipements cette année.",
+	"voteType": "multiple_choice",
+	"options": [
+		{
+			"id": "composteur",
+			"label": "Composteur collectif",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0b54"
+			}
+		},
+		{
+			"id": "cabane",
+			"label": "Cabane à outils",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0b55"
+			}
+		},
+		{
+			"id": "recuperateur",
+			"label": "Récupérateur d'eau de pluie",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0b56"
+			}
+		},
+		{
+			"id": "rempotage",
+			"label": "Table de rempotage",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0b57"
+			}
+		}
+	],
+	"createdBy": "84ec11af-7898-463a-8cca-525ac60cbf59",
+	"endsAt": {
+		"$date": "2026-08-12T09:59:39.735Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "93445062-fc71-4130-be5c-bd7ad9661bf2",
+			"choices": [
+				"rempotage",
+				"composteur"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.749Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0b5c"
+			}
+		},
+		{
+			"userId": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+			"choices": [
+				"composteur",
+				"cabane"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.758Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0b67"
+			}
+		},
+		{
+			"userId": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+			"choices": [
+				"cabane",
+				"recuperateur"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.765Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0b74"
+			}
+		},
+		{
+			"userId": "8f1be472-8d4c-40ec-bb31-6464b435975a",
+			"choices": [
+				"recuperateur",
+				"rempotage"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.774Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0b83"
+			}
+		},
+		{
+			"userId": "fac2acc3-190b-43cd-baed-122358be1259",
+			"choices": [
+				"rempotage",
+				"composteur"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.781Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0b94"
+			}
+		},
+		{
+			"userId": "0c05a6eb-4191-4b8f-8a4e-e9489251eaee",
+			"choices": [
+				"composteur",
+				"cabane"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.788Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0ba7"
+			}
+		},
+		{
+			"userId": "f7025b74-7036-4140-890d-85eecf174883",
+			"choices": [
+				"cabane",
+				"recuperateur"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.795Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0bbc"
+			}
+		},
+		{
+			"userId": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+			"choices": [
+				"recuperateur",
+				"rempotage"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.804Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0bd3"
+			}
+		},
+		{
+			"userId": "a1476d02-7f97-4d44-8546-4debcf9ca26c",
+			"choices": [
+				"rempotage",
+				"composteur"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.813Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0bec"
+			}
+		}
+	],
+	"status": "open",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:39.741Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:39.813Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00ba6f783f8fe6b0bfa"
+	},
+	"title": "Répartition du budget participatif du quartier",
+	"description": "Répartissez 100 points entre les quatre postes de dépense proposés.",
+	"voteType": "weighted",
+	"options": [
+		{
+			"id": "voirie",
+			"label": "Voirie et trottoirs",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0bfb"
+			}
+		},
+		{
+			"id": "verdure",
+			"label": "Espaces verts",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0bfc"
+			}
+		},
+		{
+			"id": "culture",
+			"label": "Culture et animations",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0bfd"
+			}
+		},
+		{
+			"id": "proprete",
+			"label": "Propreté",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0bfe"
+			}
+		}
+	],
+	"createdBy": "93445062-fc71-4130-be5c-bd7ad9661bf2",
+	"endsAt": {
+		"$date": "2026-08-18T09:59:39.817Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+			"choices": [
+				"voirie",
+				"verdure",
+				"culture",
+				"proprete"
+			],
+			"weights": {
+				"voirie": 1,
+				"verdure": 2,
+				"culture": 3,
+				"proprete": 4
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.829Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0c03"
+			}
+		},
+		{
+			"userId": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+			"choices": [
+				"voirie",
+				"verdure",
+				"culture",
+				"proprete"
+			],
+			"weights": {
+				"voirie": 2,
+				"verdure": 3,
+				"culture": 4,
+				"proprete": 1
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.837Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0c0e"
+			}
+		},
+		{
+			"userId": "8f1be472-8d4c-40ec-bb31-6464b435975a",
+			"choices": [
+				"voirie",
+				"verdure",
+				"culture",
+				"proprete"
+			],
+			"weights": {
+				"voirie": 3,
+				"verdure": 4,
+				"culture": 1,
+				"proprete": 2
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.845Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0c1b"
+			}
+		},
+		{
+			"userId": "fac2acc3-190b-43cd-baed-122358be1259",
+			"choices": [
+				"voirie",
+				"verdure",
+				"culture",
+				"proprete"
+			],
+			"weights": {
+				"voirie": 4,
+				"verdure": 1,
+				"culture": 2,
+				"proprete": 3
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.854Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0c2a"
+			}
+		},
+		{
+			"userId": "0c05a6eb-4191-4b8f-8a4e-e9489251eaee",
+			"choices": [
+				"voirie",
+				"verdure",
+				"culture",
+				"proprete"
+			],
+			"weights": {
+				"voirie": 1,
+				"verdure": 2,
+				"culture": 3,
+				"proprete": 4
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.863Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0c3b"
+			}
+		},
+		{
+			"userId": "f7025b74-7036-4140-890d-85eecf174883",
+			"choices": [
+				"voirie",
+				"verdure",
+				"culture",
+				"proprete"
+			],
+			"weights": {
+				"voirie": 2,
+				"verdure": 3,
+				"culture": 4,
+				"proprete": 1
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.875Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0c4e"
+			}
+		},
+		{
+			"userId": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+			"choices": [
+				"voirie",
+				"verdure",
+				"culture",
+				"proprete"
+			],
+			"weights": {
+				"voirie": 3,
+				"verdure": 4,
+				"culture": 1,
+				"proprete": 2
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.888Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0c63"
+			}
+		},
+		{
+			"userId": "a1476d02-7f97-4d44-8546-4debcf9ca26c",
+			"choices": [
+				"voirie",
+				"verdure",
+				"culture",
+				"proprete"
+			],
+			"weights": {
+				"voirie": 4,
+				"verdure": 1,
+				"culture": 2,
+				"proprete": 3
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.9Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0c7a"
+			}
+		},
+		{
+			"userId": "faa4f168-5dfe-4683-b0dc-34cad4ab4928",
+			"choices": [
+				"voirie",
+				"verdure",
+				"culture",
+				"proprete"
+			],
+			"weights": {
+				"voirie": 1,
+				"verdure": 2,
+				"culture": 3,
+				"proprete": 4
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.91Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0c93"
+			}
+		},
+		{
+			"userId": "42a660bf-233e-45c9-81c3-947a509a44c1",
+			"choices": [
+				"voirie",
+				"verdure",
+				"culture",
+				"proprete"
+			],
+			"weights": {
+				"voirie": 2,
+				"verdure": 3,
+				"culture": 4,
+				"proprete": 1
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.922Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0cae"
+			}
+		}
+	],
+	"status": "open",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:39.822Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:39.922Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00ba6f783f8fe6b0cbd"
+	},
+	"title": "Créer une boîte à livres place Émile-Goudeau ?",
+	"description": "Installation d'une boîte à livres en libre accès, entretenue par les bénévoles.",
+	"voteType": "binary",
+	"options": [
+		{
+			"id": "oui",
+			"label": "Oui",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0cbe"
+			}
+		},
+		{
+			"id": "non",
+			"label": "Non",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0cbf"
+			}
+		}
+	],
+	"createdBy": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+	"endsAt": {
+		"$date": "2026-08-23T09:59:39.926Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.94Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0cc2"
+			}
+		},
+		{
+			"userId": "8f1be472-8d4c-40ec-bb31-6464b435975a",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.948Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0cc9"
+			}
+		},
+		{
+			"userId": "fac2acc3-190b-43cd-baed-122358be1259",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.955Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0cd2"
+			}
+		},
+		{
+			"userId": "0c05a6eb-4191-4b8f-8a4e-e9489251eaee",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.964Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0cdd"
+			}
+		},
+		{
+			"userId": "f7025b74-7036-4140-890d-85eecf174883",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.973Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0cea"
+			}
+		},
+		{
+			"userId": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:39.983Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0cf9"
+			}
+		}
+	],
+	"status": "open",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:39.932Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:39.983Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00ba6f783f8fe6b0d02"
+	},
+	"title": "Étendre les horaires du local à vélos ?",
+	"description": "Passage d'une ouverture 8h-20h à un accès continu 24h/24.",
+	"voteType": "binary",
+	"options": [
+		{
+			"id": "oui",
+			"label": "Oui",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0d03"
+			}
+		},
+		{
+			"id": "non",
+			"label": "Non",
+			"_id": {
+				"$oid": "6a5ca00ba6f783f8fe6b0d04"
+			}
+		}
+	],
+	"createdBy": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+	"endsAt": {
+		"$date": "2026-08-03T09:59:39.987Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.001Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0d07"
+			}
+		},
+		{
+			"userId": "8f1be472-8d4c-40ec-bb31-6464b435975a",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.01Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0d0e"
+			}
+		},
+		{
+			"userId": "fac2acc3-190b-43cd-baed-122358be1259",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.02Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0d17"
+			}
+		},
+		{
+			"userId": "0c05a6eb-4191-4b8f-8a4e-e9489251eaee",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.029Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0d22"
+			}
+		},
+		{
+			"userId": "f7025b74-7036-4140-890d-85eecf174883",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.039Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0d2f"
+			}
+		},
+		{
+			"userId": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.048Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0d3e"
+			}
+		},
+		{
+			"userId": "a1476d02-7f97-4d44-8546-4debcf9ca26c",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.061Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0d4f"
+			}
+		},
+		{
+			"userId": "faa4f168-5dfe-4683-b0dc-34cad4ab4928",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.073Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0d62"
+			}
+		}
+	],
+	"status": "open",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:39.993Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:40.073Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00ca6f783f8fe6b0d6d"
+	},
+	"title": "Quelle couleur dominante pour la fresque de la rue Burq ?",
+	"description": "Trois palettes proposées par le collectif d'artistes.",
+	"voteType": "single_choice",
+	"options": [
+		{
+			"id": "bleu",
+			"label": "Camaïeu de bleus",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0d6e"
+			}
+		},
+		{
+			"id": "vert",
+			"label": "Verts et ocres",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0d6f"
+			}
+		},
+		{
+			"id": "vif",
+			"label": "Couleurs vives",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0d70"
+			}
+		}
+	],
+	"createdBy": "8f1be472-8d4c-40ec-bb31-6464b435975a",
+	"endsAt": {
+		"$date": "2026-08-08T09:59:40.081Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+			"choices": [
+				"vert"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.091Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0d74"
+			}
+		},
+		{
+			"userId": "fac2acc3-190b-43cd-baed-122358be1259",
+			"choices": [
+				"vert"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.097Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0d7d"
+			}
+		},
+		{
+			"userId": "0c05a6eb-4191-4b8f-8a4e-e9489251eaee",
+			"choices": [
+				"vif"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.106Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0d88"
+			}
+		},
+		{
+			"userId": "f7025b74-7036-4140-890d-85eecf174883",
+			"choices": [
+				"bleu"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.119Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0d95"
+			}
+		},
+		{
+			"userId": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+			"choices": [
+				"vert"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.131Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0da4"
+			}
+		},
+		{
+			"userId": "a1476d02-7f97-4d44-8546-4debcf9ca26c",
+			"choices": [
+				"vif"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.143Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0db5"
+			}
+		},
+		{
+			"userId": "faa4f168-5dfe-4683-b0dc-34cad4ab4928",
+			"choices": [
+				"bleu"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.156Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0dc8"
+			}
+		},
+		{
+			"userId": "42a660bf-233e-45c9-81c3-947a509a44c1",
+			"choices": [
+				"vert"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.167Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0ddd"
+			}
+		},
+		{
+			"userId": "1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+			"choices": [
+				"vif"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.178Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0df4"
+			}
+		}
+	],
+	"status": "open",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:40.085Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:40.178Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00ca6f783f8fe6b0e01"
+	},
+	"title": "Quelles animations pour la fête des voisins ?",
+	"description": "Sélectionnez toutes les animations que vous souhaitez voir.",
+	"voteType": "multiple_choice",
+	"options": [
+		{
+			"id": "concert",
+			"label": "Concert",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0e02"
+			}
+		},
+		{
+			"id": "repas",
+			"label": "Repas partagé",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0e03"
+			}
+		},
+		{
+			"id": "jeux",
+			"label": "Jeux pour enfants",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0e04"
+			}
+		},
+		{
+			"id": "brocante",
+			"label": "Mini-brocante",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0e05"
+			}
+		}
+	],
+	"createdBy": "fac2acc3-190b-43cd-baed-122358be1259",
+	"endsAt": {
+		"$date": "2026-08-14T09:59:40.181Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+			"choices": [
+				"concert",
+				"repas"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.197Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0e0a"
+			}
+		},
+		{
+			"userId": "0c05a6eb-4191-4b8f-8a4e-e9489251eaee",
+			"choices": [
+				"concert",
+				"repas"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.208Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0e15"
+			}
+		},
+		{
+			"userId": "f7025b74-7036-4140-890d-85eecf174883",
+			"choices": [
+				"repas",
+				"jeux"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.218Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0e22"
+			}
+		},
+		{
+			"userId": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+			"choices": [
+				"jeux",
+				"brocante"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.228Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0e31"
+			}
+		},
+		{
+			"userId": "a1476d02-7f97-4d44-8546-4debcf9ca26c",
+			"choices": [
+				"brocante",
+				"concert"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.238Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0e42"
+			}
+		},
+		{
+			"userId": "faa4f168-5dfe-4683-b0dc-34cad4ab4928",
+			"choices": [
+				"concert",
+				"repas"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.248Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0e55"
+			}
+		},
+		{
+			"userId": "42a660bf-233e-45c9-81c3-947a509a44c1",
+			"choices": [
+				"repas",
+				"jeux"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.26Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0e6a"
+			}
+		},
+		{
+			"userId": "1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+			"choices": [
+				"jeux",
+				"brocante"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.273Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0e81"
+			}
+		},
+		{
+			"userId": "542f9288-29cc-4675-8ed7-bb39c1f5929a",
+			"choices": [
+				"brocante",
+				"concert"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.285Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0e9a"
+			}
+		},
+		{
+			"userId": "51b9e03e-0681-453b-b96d-a0a71b6cf2d8",
+			"choices": [
+				"concert",
+				"repas"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.298Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0eb5"
+			}
+		}
+	],
+	"status": "open",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:40.187Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:40.298Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00ca6f783f8fe6b0ec4"
+	},
+	"title": "Priorités de rénovation des escaliers de la Butte",
+	"description": "Répartissez votre budget d'attention entre les trois chantiers.",
+	"voteType": "weighted",
+	"options": [
+		{
+			"id": "eclairage",
+			"label": "Éclairage",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0ec5"
+			}
+		},
+		{
+			"id": "rambardes",
+			"label": "Rambardes",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0ec6"
+			}
+		},
+		{
+			"id": "revetement",
+			"label": "Revêtement des marches",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0ec7"
+			}
+		}
+	],
+	"createdBy": "0c05a6eb-4191-4b8f-8a4e-e9489251eaee",
+	"endsAt": {
+		"$date": "2026-08-21T09:59:40.302Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+			"choices": [
+				"eclairage",
+				"rambardes",
+				"revetement"
+			],
+			"weights": {
+				"eclairage": 2,
+				"rambardes": 3,
+				"revetement": 4
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.319Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0ecb"
+			}
+		},
+		{
+			"userId": "f7025b74-7036-4140-890d-85eecf174883",
+			"choices": [
+				"eclairage",
+				"rambardes",
+				"revetement"
+			],
+			"weights": {
+				"eclairage": 2,
+				"rambardes": 3,
+				"revetement": 4
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.329Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0ed4"
+			}
+		},
+		{
+			"userId": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+			"choices": [
+				"eclairage",
+				"rambardes",
+				"revetement"
+			],
+			"weights": {
+				"eclairage": 3,
+				"rambardes": 4,
+				"revetement": 1
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.342Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0edf"
+			}
+		},
+		{
+			"userId": "a1476d02-7f97-4d44-8546-4debcf9ca26c",
+			"choices": [
+				"eclairage",
+				"rambardes",
+				"revetement"
+			],
+			"weights": {
+				"eclairage": 4,
+				"rambardes": 1,
+				"revetement": 2
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.353Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0eec"
+			}
+		},
+		{
+			"userId": "faa4f168-5dfe-4683-b0dc-34cad4ab4928",
+			"choices": [
+				"eclairage",
+				"rambardes",
+				"revetement"
+			],
+			"weights": {
+				"eclairage": 1,
+				"rambardes": 2,
+				"revetement": 3
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.364Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0efb"
+			}
+		},
+		{
+			"userId": "42a660bf-233e-45c9-81c3-947a509a44c1",
+			"choices": [
+				"eclairage",
+				"rambardes",
+				"revetement"
+			],
+			"weights": {
+				"eclairage": 2,
+				"rambardes": 3,
+				"revetement": 4
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.372Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0f0c"
+			}
+		},
+		{
+			"userId": "1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+			"choices": [
+				"eclairage",
+				"rambardes",
+				"revetement"
+			],
+			"weights": {
+				"eclairage": 3,
+				"rambardes": 4,
+				"revetement": 1
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.38Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0f1f"
+			}
+		},
+		{
+			"userId": "542f9288-29cc-4675-8ed7-bb39c1f5929a",
+			"choices": [
+				"eclairage",
+				"rambardes",
+				"revetement"
+			],
+			"weights": {
+				"eclairage": 4,
+				"rambardes": 1,
+				"revetement": 2
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.388Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0f34"
+			}
+		},
+		{
+			"userId": "51b9e03e-0681-453b-b96d-a0a71b6cf2d8",
+			"choices": [
+				"eclairage",
+				"rambardes",
+				"revetement"
+			],
+			"weights": {
+				"eclairage": 1,
+				"rambardes": 2,
+				"revetement": 3
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.397Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0f4b"
+			}
+		},
+		{
+			"userId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+			"choices": [
+				"eclairage",
+				"rambardes",
+				"revetement"
+			],
+			"weights": {
+				"eclairage": 2,
+				"rambardes": 3,
+				"revetement": 4
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.407Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0f64"
+			}
+		},
+		{
+			"userId": "98b72c78-8549-4aac-874c-c19391150b07",
+			"choices": [
+				"eclairage",
+				"rambardes",
+				"revetement"
+			],
+			"weights": {
+				"eclairage": 3,
+				"rambardes": 4,
+				"revetement": 1
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.415Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0f7f"
+			}
+		}
+	],
+	"status": "open",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:40.308Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:40.415Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00ca6f783f8fe6b0f8e"
+	},
+	"title": "Quel horaire pour le café des voisins ?",
+	"description": "Le créneau retenu deviendra le rendez-vous mensuel fixe.",
+	"voteType": "single_choice",
+	"options": [
+		{
+			"id": "matin",
+			"label": "Samedi matin",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0f8f"
+			}
+		},
+		{
+			"id": "apresmidi",
+			"label": "Samedi après-midi",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0f90"
+			}
+		},
+		{
+			"id": "soiree",
+			"label": "Jeudi en soirée",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0f91"
+			}
+		}
+	],
+	"createdBy": "f7025b74-7036-4140-890d-85eecf174883",
+	"endsAt": {
+		"$date": "2026-08-28T09:59:40.419Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+			"choices": [
+				"apresmidi"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.434Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0f95"
+			}
+		},
+		{
+			"userId": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+			"choices": [
+				"apresmidi"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.446Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0f9e"
+			}
+		},
+		{
+			"userId": "a1476d02-7f97-4d44-8546-4debcf9ca26c",
+			"choices": [
+				"soiree"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.459Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0fa9"
+			}
+		},
+		{
+			"userId": "faa4f168-5dfe-4683-b0dc-34cad4ab4928",
+			"choices": [
+				"matin"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.471Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0fb6"
+			}
+		},
+		{
+			"userId": "42a660bf-233e-45c9-81c3-947a509a44c1",
+			"choices": [
+				"apresmidi"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.48Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0fc5"
+			}
+		},
+		{
+			"userId": "1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+			"choices": [
+				"soiree"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.489Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0fd6"
+			}
+		},
+		{
+			"userId": "542f9288-29cc-4675-8ed7-bb39c1f5929a",
+			"choices": [
+				"matin"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.5Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0fe9"
+			}
+		}
+	],
+	"status": "open",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:40.424Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:40.5Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00ca6f783f8fe6b0ff4"
+	},
+	"title": "Fallait-il maintenir le vide-grenier en septembre ?",
+	"description": "Consultation menée après l'édition perturbée par les intempéries.",
+	"voteType": "binary",
+	"options": [
+		{
+			"id": "oui",
+			"label": "Oui",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0ff5"
+			}
+		},
+		{
+			"id": "non",
+			"label": "Non",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0ff6"
+			}
+		}
+	],
+	"createdBy": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+	"endsAt": {
+		"$date": "2026-07-28T09:59:40.503Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.517Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b0ff9"
+			}
+		},
+		{
+			"userId": "a1476d02-7f97-4d44-8546-4debcf9ca26c",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.525Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1000"
+			}
+		},
+		{
+			"userId": "faa4f168-5dfe-4683-b0dc-34cad4ab4928",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.534Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1009"
+			}
+		},
+		{
+			"userId": "42a660bf-233e-45c9-81c3-947a509a44c1",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.542Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1014"
+			}
+		},
+		{
+			"userId": "1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.551Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1021"
+			}
+		},
+		{
+			"userId": "542f9288-29cc-4675-8ed7-bb39c1f5929a",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.559Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1030"
+			}
+		},
+		{
+			"userId": "51b9e03e-0681-453b-b96d-a0a71b6cf2d8",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.569Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1041"
+			}
+		},
+		{
+			"userId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.58Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1054"
+			}
+		}
+	],
+	"status": "closed",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:40.509Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:40.592Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00ca6f783f8fe6b1069"
+	},
+	"title": "Installer un totem de tri rue Marcadet ?",
+	"description": "Point d'apport volontaire pour le verre, le papier et le PET.",
+	"voteType": "binary",
+	"options": [
+		{
+			"id": "oui",
+			"label": "Oui",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b106a"
+			}
+		},
+		{
+			"id": "non",
+			"label": "Non",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b106b"
+			}
+		}
+	],
+	"createdBy": "a1476d02-7f97-4d44-8546-4debcf9ca26c",
+	"endsAt": {
+		"$date": "2026-07-29T09:59:40.597Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.614Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b106e"
+			}
+		},
+		{
+			"userId": "faa4f168-5dfe-4683-b0dc-34cad4ab4928",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.624Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1075"
+			}
+		},
+		{
+			"userId": "42a660bf-233e-45c9-81c3-947a509a44c1",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.633Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b107e"
+			}
+		},
+		{
+			"userId": "1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.642Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1089"
+			}
+		},
+		{
+			"userId": "542f9288-29cc-4675-8ed7-bb39c1f5929a",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.65Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1096"
+			}
+		},
+		{
+			"userId": "51b9e03e-0681-453b-b96d-a0a71b6cf2d8",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.661Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b10a5"
+			}
+		},
+		{
+			"userId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.673Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b10b6"
+			}
+		},
+		{
+			"userId": "98b72c78-8549-4aac-874c-c19391150b07",
+			"choices": [
+				"oui"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.684Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b10c9"
+			}
+		},
+		{
+			"userId": "1399ce7a-1294-4dfb-bfe7-0387c9b89431",
+			"choices": [
+				"non"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.693Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b10de"
+			}
+		}
+	],
+	"status": "closed",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:40.604Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:40.703Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00ca6f783f8fe6b10f5"
+	},
+	"title": "Quel prestataire pour l'entretien du jardin partagé ?",
+	"description": "Trois candidatures reçues après l'appel à propositions.",
+	"voteType": "single_choice",
+	"options": [
+		{
+			"id": "association",
+			"label": "Association locale",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b10f6"
+			}
+		},
+		{
+			"id": "entreprise",
+			"label": "Entreprise d'insertion",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b10f7"
+			}
+		},
+		{
+			"id": "benevoles",
+			"label": "Roulement de bénévoles",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b10f8"
+			}
+		}
+	],
+	"createdBy": "faa4f168-5dfe-4683-b0dc-34cad4ab4928",
+	"endsAt": {
+		"$date": "2026-07-30T09:59:40.705Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+			"choices": [
+				"entreprise"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.718Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b10fc"
+			}
+		},
+		{
+			"userId": "42a660bf-233e-45c9-81c3-947a509a44c1",
+			"choices": [
+				"entreprise"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.728Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1105"
+			}
+		},
+		{
+			"userId": "1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+			"choices": [
+				"benevoles"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.738Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1110"
+			}
+		},
+		{
+			"userId": "542f9288-29cc-4675-8ed7-bb39c1f5929a",
+			"choices": [
+				"association"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.746Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b111d"
+			}
+		},
+		{
+			"userId": "51b9e03e-0681-453b-b96d-a0a71b6cf2d8",
+			"choices": [
+				"entreprise"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.758Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b112c"
+			}
+		},
+		{
+			"userId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+			"choices": [
+				"benevoles"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.766Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b113d"
+			}
+		},
+		{
+			"userId": "98b72c78-8549-4aac-874c-c19391150b07",
+			"choices": [
+				"association"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.773Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1150"
+			}
+		},
+		{
+			"userId": "1399ce7a-1294-4dfb-bfe7-0387c9b89431",
+			"choices": [
+				"entreprise"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.78Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1165"
+			}
+		},
+		{
+			"userId": "b8b1125d-d27b-47dc-98ae-7150ffcb0fe3",
+			"choices": [
+				"benevoles"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.787Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b117c"
+			}
+		},
+		{
+			"userId": "a7febe13-1bc7-427d-8a44-e3b3a2e62c8d",
+			"choices": [
+				"association"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.795Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1195"
+			}
+		}
+	],
+	"status": "closed",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:40.71Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:40.804Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00ca6f783f8fe6b11b0"
+	},
+	"title": "Quel nom donner au nouveau square ?",
+	"description": "Proposition transmise ensuite à la mairie d'arrondissement pour délibération.",
+	"voteType": "single_choice",
+	"options": [
+		{
+			"id": "valadon",
+			"label": "Square Suzanne-Valadon",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b11b1"
+			}
+		},
+		{
+			"id": "ayme",
+			"label": "Square Marcel-Aymé",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b11b2"
+			}
+		},
+		{
+			"id": "poulbot",
+			"label": "Square Poulbot",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b11b3"
+			}
+		}
+	],
+	"createdBy": "42a660bf-233e-45c9-81c3-947a509a44c1",
+	"endsAt": {
+		"$date": "2026-08-01T09:59:40.806Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+			"choices": [
+				"poulbot"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.818Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b11b7"
+			}
+		},
+		{
+			"userId": "1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+			"choices": [
+				"poulbot"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.827Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b11c0"
+			}
+		},
+		{
+			"userId": "542f9288-29cc-4675-8ed7-bb39c1f5929a",
+			"choices": [
+				"valadon"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.835Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b11cb"
+			}
+		},
+		{
+			"userId": "51b9e03e-0681-453b-b96d-a0a71b6cf2d8",
+			"choices": [
+				"ayme"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.842Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b11d8"
+			}
+		},
+		{
+			"userId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+			"choices": [
+				"poulbot"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.85Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b11e7"
+			}
+		},
+		{
+			"userId": "98b72c78-8549-4aac-874c-c19391150b07",
+			"choices": [
+				"valadon"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.858Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b11f8"
+			}
+		},
+		{
+			"userId": "1399ce7a-1294-4dfb-bfe7-0387c9b89431",
+			"choices": [
+				"ayme"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.866Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b120b"
+			}
+		},
+		{
+			"userId": "b8b1125d-d27b-47dc-98ae-7150ffcb0fe3",
+			"choices": [
+				"poulbot"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.874Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1220"
+			}
+		},
+		{
+			"userId": "a7febe13-1bc7-427d-8a44-e3b3a2e62c8d",
+			"choices": [
+				"valadon"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.881Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1237"
+			}
+		},
+		{
+			"userId": "58b3df0d-2a0b-4f08-96f3-e0924d250b89",
+			"choices": [
+				"ayme"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.888Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1250"
+			}
+		},
+		{
+			"userId": "16850636-c1fa-4cf3-84c7-ad7664d6cad0",
+			"choices": [
+				"poulbot"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.896Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b126b"
+			}
+		}
+	],
+	"status": "closed",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:40.812Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:40.904Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00ca6f783f8fe6b1288"
+	},
+	"title": "Quels créneaux réserver au terrain de sport ?",
+	"description": "Créneaux réservés aux associations du quartier.",
+	"voteType": "multiple_choice",
+	"options": [
+		{
+			"id": "matin",
+			"label": "Matin en semaine",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1289"
+			}
+		},
+		{
+			"id": "soir",
+			"label": "Soir en semaine",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b128a"
+			}
+		},
+		{
+			"id": "samedi",
+			"label": "Samedi",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b128b"
+			}
+		},
+		{
+			"id": "dimanche",
+			"label": "Dimanche",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b128c"
+			}
+		}
+	],
+	"createdBy": "1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+	"endsAt": {
+		"$date": "2026-08-02T09:59:40.906Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "542f9288-29cc-4675-8ed7-bb39c1f5929a",
+			"choices": [
+				"dimanche",
+				"matin"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.917Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1291"
+			}
+		},
+		{
+			"userId": "51b9e03e-0681-453b-b96d-a0a71b6cf2d8",
+			"choices": [
+				"matin",
+				"soir"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.924Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b129c"
+			}
+		},
+		{
+			"userId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+			"choices": [
+				"soir",
+				"samedi"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.931Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b12a9"
+			}
+		},
+		{
+			"userId": "98b72c78-8549-4aac-874c-c19391150b07",
+			"choices": [
+				"samedi",
+				"dimanche"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.939Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b12b8"
+			}
+		},
+		{
+			"userId": "1399ce7a-1294-4dfb-bfe7-0387c9b89431",
+			"choices": [
+				"dimanche",
+				"matin"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.946Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b12c9"
+			}
+		},
+		{
+			"userId": "b8b1125d-d27b-47dc-98ae-7150ffcb0fe3",
+			"choices": [
+				"matin",
+				"soir"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.954Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b12dc"
+			}
+		}
+	],
+	"status": "closed",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:40.911Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:40.962Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00ca6f783f8fe6b12f1"
+	},
+	"title": "Quels travaux prioriser dans l'immeuble collectif ?",
+	"description": "Consultation préalable à l'assemblée générale des copropriétaires.",
+	"voteType": "multiple_choice",
+	"options": [
+		{
+			"id": "toiture",
+			"label": "Toiture",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b12f2"
+			}
+		},
+		{
+			"id": "facade",
+			"label": "Façade",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b12f3"
+			}
+		},
+		{
+			"id": "hall",
+			"label": "Hall d'entrée",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b12f4"
+			}
+		},
+		{
+			"id": "velos",
+			"label": "Local à vélos",
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b12f5"
+			}
+		}
+	],
+	"createdBy": "542f9288-29cc-4675-8ed7-bb39c1f5929a",
+	"endsAt": {
+		"$date": "2026-08-04T09:59:40.964Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "51b9e03e-0681-453b-b96d-a0a71b6cf2d8",
+			"choices": [
+				"toiture",
+				"facade"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.976Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b12fa"
+			}
+		},
+		{
+			"userId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+			"choices": [
+				"facade",
+				"hall"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.983Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1305"
+			}
+		},
+		{
+			"userId": "98b72c78-8549-4aac-874c-c19391150b07",
+			"choices": [
+				"hall",
+				"velos"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.991Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1312"
+			}
+		},
+		{
+			"userId": "1399ce7a-1294-4dfb-bfe7-0387c9b89431",
+			"choices": [
+				"velos",
+				"toiture"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:40.998Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00ca6f783f8fe6b1321"
+			}
+		},
+		{
+			"userId": "b8b1125d-d27b-47dc-98ae-7150ffcb0fe3",
+			"choices": [
+				"toiture",
+				"facade"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:41.005Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00da6f783f8fe6b1332"
+			}
+		},
+		{
+			"userId": "a7febe13-1bc7-427d-8a44-e3b3a2e62c8d",
+			"choices": [
+				"facade",
+				"hall"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:41.013Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00da6f783f8fe6b1345"
+			}
+		},
+		{
+			"userId": "58b3df0d-2a0b-4f08-96f3-e0924d250b89",
+			"choices": [
+				"hall",
+				"velos"
+			],
+			"castAt": {
+				"$date": "2026-07-19T09:59:41.02Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00da6f783f8fe6b135a"
+			}
+		}
+	],
+	"status": "closed",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:40.969Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:41.029Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca00da6f783f8fe6b1371"
+	},
+	"title": "Répartition de la subvention culturelle 2026",
+	"description": "Répartissez la dotation entre les trois familles d'actions.",
+	"voteType": "weighted",
+	"options": [
+		{
+			"id": "expositions",
+			"label": "Expositions",
+			"_id": {
+				"$oid": "6a5ca00da6f783f8fe6b1372"
+			}
+		},
+		{
+			"id": "concerts",
+			"label": "Concerts",
+			"_id": {
+				"$oid": "6a5ca00da6f783f8fe6b1373"
+			}
+		},
+		{
+			"id": "ateliers",
+			"label": "Ateliers",
+			"_id": {
+				"$oid": "6a5ca00da6f783f8fe6b1374"
+			}
+		}
+	],
+	"createdBy": "51b9e03e-0681-453b-b96d-a0a71b6cf2d8",
+	"endsAt": {
+		"$date": "2026-08-05T09:59:41.031Z"
+	},
+	"isAnonymous": false,
+	"quorum": 0,
+	"casts": [
+		{
+			"userId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+			"choices": [
+				"expositions",
+				"concerts",
+				"ateliers"
+			],
+			"weights": {
+				"expositions": 2,
+				"concerts": 3,
+				"ateliers": 4
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:41.044Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00da6f783f8fe6b1378"
+			}
+		},
+		{
+			"userId": "98b72c78-8549-4aac-874c-c19391150b07",
+			"choices": [
+				"expositions",
+				"concerts",
+				"ateliers"
+			],
+			"weights": {
+				"expositions": 3,
+				"concerts": 4,
+				"ateliers": 1
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:41.052Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00da6f783f8fe6b1381"
+			}
+		},
+		{
+			"userId": "1399ce7a-1294-4dfb-bfe7-0387c9b89431",
+			"choices": [
+				"expositions",
+				"concerts",
+				"ateliers"
+			],
+			"weights": {
+				"expositions": 4,
+				"concerts": 1,
+				"ateliers": 2
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:41.058Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00da6f783f8fe6b138c"
+			}
+		},
+		{
+			"userId": "b8b1125d-d27b-47dc-98ae-7150ffcb0fe3",
+			"choices": [
+				"expositions",
+				"concerts",
+				"ateliers"
+			],
+			"weights": {
+				"expositions": 1,
+				"concerts": 2,
+				"ateliers": 3
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:41.066Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00da6f783f8fe6b1399"
+			}
+		},
+		{
+			"userId": "a7febe13-1bc7-427d-8a44-e3b3a2e62c8d",
+			"choices": [
+				"expositions",
+				"concerts",
+				"ateliers"
+			],
+			"weights": {
+				"expositions": 2,
+				"concerts": 3,
+				"ateliers": 4
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:41.076Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00da6f783f8fe6b13a8"
+			}
+		},
+		{
+			"userId": "58b3df0d-2a0b-4f08-96f3-e0924d250b89",
+			"choices": [
+				"expositions",
+				"concerts",
+				"ateliers"
+			],
+			"weights": {
+				"expositions": 3,
+				"concerts": 4,
+				"ateliers": 1
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:41.085Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00da6f783f8fe6b13b9"
+			}
+		},
+		{
+			"userId": "16850636-c1fa-4cf3-84c7-ad7664d6cad0",
+			"choices": [
+				"expositions",
+				"concerts",
+				"ateliers"
+			],
+			"weights": {
+				"expositions": 4,
+				"concerts": 1,
+				"ateliers": 2
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:41.098Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00da6f783f8fe6b13cc"
+			}
+		},
+		{
+			"userId": "f7b74913-40ac-495c-981e-e46bce8b4d2b",
+			"choices": [
+				"expositions",
+				"concerts",
+				"ateliers"
+			],
+			"weights": {
+				"expositions": 1,
+				"concerts": 2,
+				"ateliers": 3
+			},
+			"castAt": {
+				"$date": "2026-07-19T09:59:41.109Z"
+			},
+			"_id": {
+				"$oid": "6a5ca00da6f783f8fe6b13e1"
+			}
+		}
+	],
+	"status": "closed",
+	"createdAt": {
+		"$date": "2026-07-19T09:59:41.036Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T09:59:41.12Z"
+	},
+	"__v": 0
+}]
+

@@ -41,7 +41,11 @@ import { VotesModule } from "./votes/votes.module";
                 ),
             }),
         }),
-        ThrottlerModule.forRoot([{ ttl: 900000, limit: 1000 }]),
+        // Raised locally when seeding, which needs a few hundred calls in one go.
+        // A NaN limit would never compare true and silently disable throttling.
+        ThrottlerModule.forRoot([
+            { ttl: 900000, limit: Number(process.env.THROTTLE_LIMIT) || 1000 },
+        ]),
         I18nModule.forRoot({
             fallbackLanguage: "fr",
             loaderOptions: {

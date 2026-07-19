@@ -1,220 +1,16 @@
-import * as crypto from "crypto";
-import { execFileSync } from "child_process";
+import {
+  assignAddresses,
+  grantWelcomeCredits,
+  seedAccounts,
+} from "./seed/accounts";
+import { BASE_URL, fetchList, login, request } from "./seed/client";
+import { seedContent, type DemoNeighborhood } from "./seed/content";
+import { seedContracts } from "./seed/contracts";
+import { ROSTER } from "./seed/roster";
+import { seedSocial } from "./seed/social";
 
-const BASE_URL = process.env.API_URL ?? "http://localhost:5000";
-const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? "Demo1234!";
-const DEMO_TOTP_SECRET = requireDemoTotpSecret();
-const PG_CONTAINER = process.env.PG_CONTAINER ?? "docker-postgres-1";
-const PG_USER = process.env.POSTGRES_USER ?? "qc";
-const PG_DB = process.env.POSTGRES_DB ?? "quartierconnect";
-
-/** No hardcoded fallback: a committed TOTP secret would be public. */
-function requireDemoTotpSecret(): string {
-  const secret = process.env.DEMO_TOTP_SECRET;
-  if (secret) return secret;
-  console.error(
-    "DEMO_TOTP_SECRET manquant : définir un secret base32 dans l'environnement " +
-      "(voir .env.example) avant de lancer le seed.",
-  );
-  process.exit(1);
-}
-
-const ACCOUNTS = [
-  {
-    email: "alice@demo.fr",
-    role: "resident",
-    firstName: "Alice",
-    lastName: "Martin",
-  },
-  {
-    email: "bob@demo.fr",
-    role: "moderator",
-    firstName: "Bob",
-    lastName: "Dupont",
-  },
-  {
-    email: "admin@demo.fr",
-    role: "admin",
-    firstName: "Admin",
-    lastName: "QuartierConnect",
-  },
-];
-
-async function post(path: string, body: unknown): Promise<Response> {
-  return fetch(`${BASE_URL}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-}
-
-function extractSecret(otpauthUrl: string): string {
-  const match = otpauthUrl.match(/[?&]secret=([A-Z2-7]+)/i);
-  if (!match) throw new Error(`Cannot extract TOTP secret from: ${otpauthUrl}`);
-  return match[1].toUpperCase();
-}
-
-function totp(secret: string): string {
-  const base32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-  let bits = "";
-  for (const c of secret.toUpperCase()) {
-    const v = base32.indexOf(c);
-    if (v >= 0) bits += v.toString(2).padStart(5, "0");
-  }
-  const key = Buffer.alloc(Math.floor(bits.length / 8));
-  for (let i = 0; i < key.length; i++) {
-    key[i] = parseInt(bits.slice(i * 8, (i + 1) * 8), 2);
-  }
-  const counter = Math.floor(Date.now() / 1000 / 30);
-  const buf = Buffer.alloc(8);
-  buf.writeBigUInt64BE(BigInt(counter));
-  const hmac = crypto.createHmac("sha1", key).update(buf).digest();
-  const off = hmac[hmac.length - 1] & 0x0f;
-  const code =
-    (((hmac[off] & 0x7f) << 24) |
-      ((hmac[off + 1] & 0xff) << 16) |
-      ((hmac[off + 2] & 0xff) << 8) |
-      (hmac[off + 3] & 0xff)) %
-    1_000_000;
-  return code.toString().padStart(6, "0");
-}
-
-function pgQuery(sql: string, vars: Record<string, string> = {}): string {
-  // No shell involved; values are bound via psql -v so psql handles quoting.
-  const varArgs = Object.entries(vars).flatMap(([name, value]) => [
-    "-v",
-    `${name}=${value}`,
-  ]);
-  return execFileSync(
-    "docker",
-    [
-      "exec",
-      "-i",
-      PG_CONTAINER,
-      "psql",
-      "-U",
-      PG_USER,
-      "-d",
-      PG_DB,
-      "-t",
-      ...varArgs,
-    ],
-    { input: sql, encoding: "utf8" },
-  ).trim();
-}
-
-function normalizeTotpSecret(email: string): void {
-  try {
-    pgQuery(`UPDATE users SET totp_secret=:'secret' WHERE email=:'email'`, {
-      secret: DEMO_TOTP_SECRET,
-      email,
-    });
-  } catch {
-    console.warn(
-      `  ! Could not normalize TOTP secret for ${email} — is Docker running?`,
-    );
-  }
-}
-
-function promoteRole(email: string, role: string): void {
-  if (role === "resident") return;
-  try {
-    pgQuery(`UPDATE users SET role=:'role' WHERE email=:'email'`, {
-      role,
-      email,
-    });
-    console.log(`  → role set to "${role}"`);
-  } catch {
-    console.warn(`  ! Could not set role "${role}" — is Docker running?`);
-  }
-}
-
-const WELCOME_CREDIT_POINTS = 20;
-const WELCOME_CREDIT_NOTE = "Crédit de bienvenue";
-
-/** One-time welcome credit so demo balances start positive; idempotent per note. */
-function grantWelcomeCredit(email: string): void {
-  const sql = `
-    WITH credited AS (
-      INSERT INTO points_transactions
-        (sender_id, recipient_id, amount, note, type, status, created_at, completed_at)
-      SELECT admin.id, u.id, :'points'::int, :'note',
-             'bonus', 'completed', u.created_at, u.created_at
-      FROM users u, users admin
-      WHERE u.email = :'email' AND admin.email = 'admin@demo.fr'
-        AND NOT EXISTS (
-          SELECT 1 FROM points_transactions t
-          WHERE t.recipient_id = u.id AND t.note = :'note'
-        )
-      RETURNING recipient_id, amount
-    )
-    INSERT INTO points_balances (user_id, balance)
-    SELECT recipient_id, amount FROM credited
-    ON CONFLICT (user_id) DO UPDATE
-    SET balance = points_balances.balance + excluded.balance, updated_at = now()`;
-  try {
-    pgQuery(sql, {
-      points: String(WELCOME_CREDIT_POINTS),
-      note: WELCOME_CREDIT_NOTE,
-      email,
-    });
-    console.log(
-      `  → crédit de bienvenue (+${WELCOME_CREDIT_POINTS} pts) assuré`,
-    );
-  } catch {
-    console.warn(
-      `  ! Could not grant welcome credit for ${email} — is Docker running?`,
-    );
-  }
-}
-
-async function seedAccount(
-  email: string,
-  role: string,
-  firstName: string,
-  lastName: string,
-): Promise<void> {
-  console.log(`Seeding ${email}…`);
-
-  const registerRes = await post("/auth/register", {
-    email,
-    password: DEMO_PASSWORD,
-    firstName,
-    lastName,
-    consent: true,
-  });
-
-  if (registerRes.status === 409) {
-    console.log(`  → already exists`);
-    normalizeTotpSecret(email);
-    promoteRole(email, role);
-    console.log(`  → code actuel : ${totp(DEMO_TOTP_SECRET)}`);
-    return;
-  }
-
-  if (!registerRes.ok) {
-    const err = (await registerRes.json()) as object;
-    throw new Error(`Register failed for ${email}: ${JSON.stringify(err)}`);
-  }
-
-  const data = (await registerRes.json()) as { otpauthUrl: string };
-  const registrationSecret = extractSecret(data.otpauthUrl);
-
-  const loginRes = await post("/auth/login", {
-    email,
-    password: DEMO_PASSWORD,
-    totpCode: totp(registrationSecret),
-  });
-
-  if (!loginRes.ok) {
-    const err = (await loginRes.json()) as object;
-    throw new Error(`Login failed for ${email}: ${JSON.stringify(err)}`);
-  }
-
-  normalizeTotpSecret(email);
-  promoteRole(email, role);
-  console.log(`  ✓ created`);
-}
+const ADMIN_EMAIL = "admin@demo.fr";
+const DEMO_NEIGHBORHOOD_NAME = "Montmartre";
 
 const PARIS_NEIGHBORHOODS: Array<{
   name: string;
@@ -265,34 +61,153 @@ const PARIS_NEIGHBORHOODS: Array<{
       [2.338, 48.846],
     ],
   },
+  {
+    name: "Batignolles",
+    city: "Paris",
+    coordinates: [
+      [2.31, 48.883],
+      [2.325, 48.883],
+      [2.325, 48.893],
+      [2.31, 48.893],
+      [2.31, 48.883],
+    ],
+  },
+  {
+    name: "Bastille",
+    city: "Paris",
+    coordinates: [
+      [2.369, 48.848],
+      [2.38, 48.848],
+      [2.38, 48.858],
+      [2.369, 48.858],
+      [2.369, 48.848],
+    ],
+  },
+  {
+    name: "Buttes-Chaumont",
+    city: "Paris",
+    coordinates: [
+      [2.376, 48.88],
+      [2.392, 48.88],
+      [2.392, 48.889],
+      [2.376, 48.889],
+      [2.376, 48.88],
+    ],
+  },
+  {
+    name: "Père-Lachaise",
+    city: "Paris",
+    coordinates: [
+      [2.386, 48.856],
+      [2.4, 48.856],
+      [2.4, 48.866],
+      [2.386, 48.866],
+      [2.386, 48.856],
+    ],
+  },
+  {
+    name: "Montparnasse",
+    city: "Paris",
+    coordinates: [
+      [2.31, 48.833],
+      [2.33, 48.833],
+      [2.33, 48.843],
+      [2.31, 48.843],
+      [2.31, 48.833],
+    ],
+  },
+  {
+    name: "La Villette",
+    city: "Paris",
+    coordinates: [
+      [2.376, 48.89],
+      [2.392, 48.89],
+      [2.392, 48.899],
+      [2.376, 48.899],
+      [2.376, 48.89],
+    ],
+  },
+  {
+    name: "Bercy",
+    city: "Paris",
+    coordinates: [
+      [2.372, 48.828],
+      [2.39, 48.828],
+      [2.39, 48.84],
+      [2.372, 48.84],
+      [2.372, 48.828],
+    ],
+  },
+  {
+    name: "Auteuil",
+    city: "Paris",
+    coordinates: [
+      [2.252, 48.842],
+      [2.27, 48.842],
+      [2.27, 48.853],
+      [2.252, 48.853],
+      [2.252, 48.842],
+    ],
+  },
+  {
+    name: "Charonne",
+    city: "Paris",
+    coordinates: [
+      [2.386, 48.843],
+      [2.4, 48.843],
+      [2.4, 48.855],
+      [2.386, 48.855],
+      [2.386, 48.843],
+    ],
+  },
+  {
+    name: "Saint-Germain-des-Prés",
+    city: "Paris",
+    coordinates: [
+      [2.32, 48.848],
+      [2.337, 48.848],
+      [2.337, 48.858],
+      [2.32, 48.858],
+      [2.32, 48.848],
+    ],
+  },
+  {
+    name: "Canal Saint-Martin",
+    city: "Paris",
+    coordinates: [
+      [2.356, 48.866],
+      [2.372, 48.866],
+      [2.372, 48.876],
+      [2.356, 48.876],
+      [2.356, 48.866],
+    ],
+  },
 ];
 
+/** The one login the seed performs: everything else goes through register + SQL
+ *  to stay clear of the TOTP replay guard. */
 async function loginAdmin(): Promise<string | null> {
-  const res = await post("/auth/login", {
-    email: "admin@demo.fr",
-    password: DEMO_PASSWORD,
-    totpCode: totp(DEMO_TOTP_SECRET),
-  });
-  if (!res.ok) return null;
-  const data = (await res.json()) as { accessToken: string };
-  return data.accessToken;
+  const admin = ROSTER.find((account) => account.email === ADMIN_EMAIL);
+  if (!admin) throw new Error(`${ADMIN_EMAIL} is missing from the roster`);
+  return login(admin.email, admin.password, admin.totpSecret);
 }
 
-async function existingNeighborhoodNames(token: string): Promise<Set<string>> {
-  const res = await fetch(`${BASE_URL}/neighborhoods`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) return new Set();
-  const list = (await res.json()) as Array<{ name: string }>;
-  return new Set(list.map((n) => n.name));
+async function neighborhoodIdsByName(
+  token: string,
+): Promise<Map<string, string>> {
+  const list = await fetchList<{ _id: string; name: string }>(
+    token,
+    "/neighborhoods",
+  );
+  return new Map(list.map((n) => [n.name, n._id]));
 }
 
 async function seedNeighborhoods(token: string): Promise<void> {
-  const existing = await existingNeighborhoodNames(token);
+  const existing = await neighborhoodIdsByName(token);
   let created = 0;
   for (const nbh of PARIS_NEIGHBORHOODS) {
     if (existing.has(nbh.name)) continue;
-    const res = await fetch(`${BASE_URL}/neighborhoods`, {
+    const res = await request("/neighborhoods", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -306,13 +221,7 @@ async function seedNeighborhoods(token: string): Promise<void> {
     });
     if (res.ok) created++;
   }
-  console.log(`  ✓ ${created} quartier(s) Paris créé(s)`);
-}
-
-interface DemoNeighborhood {
-  id: string;
-  lng: number;
-  lat: number;
+  console.log(`  ✓ ${created} Paris neighborhood(s) created`);
 }
 
 /** Centroid of a GeoJSON Polygon/MultiPolygon: mean of all its positions. */
@@ -335,294 +244,28 @@ function centroidOf(geometry: { coordinates: unknown }): [number, number] {
   return [lng, lat];
 }
 
-/** First neighborhood + its centroid; located demo content goes inside it. */
+/**
+ * Demo neighborhood + its centroid; located demo content goes inside it.
+ * Pinned by name: the list is sorted by createdAt DESC, so falling back to the
+ * first entry would move all demo content as soon as a neighborhood is added.
+ */
 async function getDemoNeighborhood(
   token: string,
 ): Promise<DemoNeighborhood | null> {
-  const res = await fetch(`${BASE_URL}/neighborhoods`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const nbhs = (res.ok ? await res.json() : []) as Array<{
+  const nbhs = await fetchList<{
     _id: string;
+    name: string;
     geometry?: { coordinates: unknown };
-  }>;
-  const n = nbhs[0];
+  }>(token, "/neighborhoods");
+  const n = nbhs.find((x) => x.name === DEMO_NEIGHBORHOOD_NAME) ?? nbhs[0];
+  if (n?.name !== DEMO_NEIGHBORHOOD_NAME) {
+    console.warn(
+      `  ! neighborhood "${DEMO_NEIGHBORHOOD_NAME}" not found — falling back to "${n?.name ?? "none"}"`,
+    );
+  }
   if (!n?.geometry) return null;
   const [lng, lat] = centroidOf(n.geometry);
-  return { id: n._id, lng, lat };
-}
-
-// Deterministic offsets (~150-350 m around the centroid) so markers spread out.
-const SPREAD: Array<[number, number]> = [
-  [0.003, 0.002],
-  [-0.004, 0.001],
-  [0.002, -0.003],
-  [-0.002, -0.002],
-  [0.004, 0.003],
-  [-0.003, 0.004],
-  [0.001, 0.003],
-  [-0.001, -0.004],
-];
-
-async function warnIfFailed(label: string, res: Response): Promise<void> {
-  if (res.ok) return;
-  const detail = await res.text();
-  console.warn(`  ! ${label} failed (${res.status}): ${detail}`);
-}
-
-/** Titles already present on a list endpoint, to keep seeding idempotent. */
-async function fetchExistingTitles(
-  token: string,
-  path: string,
-): Promise<Set<string>> {
-  const res = await fetch(`${BASE_URL}${path}?limit=100`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) return new Set();
-  const items = (await res.json()) as Array<{ title?: string }>;
-  return new Set(
-    items
-      .map((item) => item.title)
-      .filter((title): title is string => Boolean(title)),
-  );
-}
-
-async function seedContent(
-  token: string,
-  nbh: DemoNeighborhood,
-): Promise<void> {
-  const headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-  const neighborhoodId = nbh.id;
-  const at = (i: number): { type: "Point"; coordinates: [number, number] } => ({
-    type: "Point",
-    coordinates: [
-      nbh.lng + SPREAD[i % SPREAD.length][0],
-      nbh.lat + SPREAD[i % SPREAD.length][1],
-    ],
-  });
-
-  const existingEvents = await fetchExistingTitles(token, "/events");
-  const existingServices = await fetchExistingTitles(token, "/services");
-  const existingIncidents = await fetchExistingTitles(token, "/incidents");
-  const existingVotes = await fetchExistingTitles(token, "/community-votes");
-
-  const inDays = (d: number) =>
-    new Date(Date.now() + d * 86400000).toISOString();
-
-  const events = [
-    {
-      title: "Vide-grenier du quartier",
-      description:
-        "Grand vide-grenier annuel, de 9h à 18h sur la place du marché.",
-      category: "community",
-      date: inDays(6),
-      neighborhoodId,
-      location: at(0),
-    },
-    {
-      title: "Concert en plein air",
-      description: "Soirée musicale avec les artistes du quartier.",
-      category: "culture",
-      date: inDays(12),
-      neighborhoodId,
-      location: at(1),
-    },
-    {
-      title: "Tournoi de pétanque",
-      description: "Inscriptions sur place, ouvert à tous les habitants.",
-      category: "sport",
-      date: inDays(20),
-      neighborhoodId,
-      location: at(2),
-    },
-  ];
-  for (const e of events) {
-    if (existingEvents.has(e.title)) continue;
-    const res = await fetch(`${BASE_URL}/events`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(e),
-    });
-    await warnIfFailed(`event "${e.title}"`, res);
-  }
-
-  const services = [
-    {
-      title: "Aide au jardinage le week-end",
-      description:
-        "Je propose mon aide pour désherber et tailler les haies le samedi matin.",
-      category: "gardening",
-      type: "exchange",
-      direction: "offer",
-      neighborhoodId,
-      location: at(0),
-    },
-    {
-      title: "Cours de soutien scolaire",
-      description:
-        "Étudiant disponible pour aider collégiens et lycéens en maths.",
-      category: "other",
-      type: "paid",
-      duration: 60,
-      direction: "offer",
-      neighborhoodId,
-      location: at(1),
-    },
-    {
-      title: "Garde d'animaux",
-      description: "Je garde vos animaux de compagnie pendant vos absences.",
-      category: "childcare",
-      type: "free",
-      direction: "offer",
-      neighborhoodId,
-      location: at(2),
-    },
-    {
-      title: "Recherche covoiturage pour le marché",
-      description:
-        "Je cherche un trajet partagé vers le marché le dimanche matin.",
-      category: "transport",
-      type: "free",
-      direction: "request",
-      neighborhoodId,
-      location: at(3),
-    },
-    {
-      title: "Cherche aide pour petit déménagement",
-      description:
-        "Besoin d'un coup de main pour déplacer quelques meubles ce mois-ci.",
-      category: "handyman",
-      type: "paid",
-      duration: 90,
-      direction: "request",
-      neighborhoodId,
-      location: at(4),
-    },
-    {
-      title: "Massage thérapeutique",
-      description: "Massage relaxant pour détente et bien-être du quartier.",
-      category: "other",
-      type: "paid",
-      duration: 60,
-      direction: "offer",
-      neighborhoodId,
-      location: at(5),
-    },
-  ];
-  for (const s of services) {
-    if (existingServices.has(s.title)) continue;
-    const res = await fetch(`${BASE_URL}/services`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(s),
-    });
-    await warnIfFailed(`service "${s.title}"`, res);
-  }
-
-  const incidents = [
-    {
-      title: "Lampadaire cassé rue de la Paix",
-      description: "Le lampadaire est tombé et bloque en partie le trottoir.",
-      category: "neighborhood",
-      neighborhoodId,
-      lat: nbh.lat + SPREAD[0][1],
-      lng: nbh.lng + SPREAD[0][0],
-    },
-    {
-      title: "Dépôt sauvage de déchets",
-      description:
-        "Encombrants abandonnés depuis plusieurs jours au coin de la rue.",
-      category: "neighborhood",
-      neighborhoodId,
-      lat: nbh.lat + SPREAD[1][1],
-      lng: nbh.lng + SPREAD[1][0],
-    },
-    {
-      title: "Nid-de-poule dangereux",
-      description: "Trou important sur la chaussée, risque pour les cyclistes.",
-      category: "neighborhood",
-      neighborhoodId,
-      lat: nbh.lat + SPREAD[2][1],
-      lng: nbh.lng + SPREAD[2][0],
-    },
-    {
-      title: "Tag sur le mur de l'école",
-      description: "Graffiti à nettoyer sur la façade de l'école primaire.",
-      category: "neighborhood",
-      neighborhoodId,
-      lat: nbh.lat + SPREAD[3][1],
-      lng: nbh.lng + SPREAD[3][0],
-    },
-    {
-      title: "Bug : la page Votes ne charge pas",
-      description:
-        "Signalement technique de l'application (interne modération).",
-      category: "bug",
-      neighborhoodId,
-    },
-    {
-      title: "Signalement : contenu inapproprié",
-      description: "Un message à modérer dans la messagerie.",
-      category: "reporting",
-      neighborhoodId,
-    },
-  ];
-  for (const i of incidents) {
-    if (existingIncidents.has(i.title)) continue;
-    const res = await fetch(`${BASE_URL}/incidents`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(i),
-    });
-    await warnIfFailed(`incident "${i.title}"`, res);
-  }
-
-  const voteTitle =
-    "Faut-il installer des bancs supplémentaires dans le parc ?";
-  if (!existingVotes.has(voteTitle)) {
-    const voteRes = await fetch(`${BASE_URL}/community-votes`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        title: voteTitle,
-        description: "Vote consultatif pour les résidents du quartier.",
-        voteType: "binary",
-        options: [
-          { id: "oui", label: "Oui" },
-          { id: "non", label: "Non" },
-        ],
-        endsAt: inDays(14),
-      }),
-    });
-    await warnIfFailed("community vote", voteRes);
-  }
-}
-
-/** Non-admin residents need an address + neighborhood to pass the address gate. */
-async function assignNeighborhoodToResidents(
-  nbh: DemoNeighborhood,
-): Promise<void> {
-  // Centroid keeps the home marker inside the polygon.
-  for (const { email, role } of ACCOUNTS) {
-    if (role === "admin") continue;
-    try {
-      pgQuery(
-        `UPDATE users SET address='Centre du quartier, Paris', address_lat=:'lat'::float8, address_lng=:'lng'::float8, neighborhood_id=:'nbh' WHERE email=:'email'`,
-        {
-          lat: String(nbh.lat),
-          lng: String(nbh.lng),
-          nbh: nbh.id,
-          email,
-        },
-      );
-      process.stdout.write(`  → ${email} assigned to neighborhood ${nbh.id}\n`);
-    } catch {
-      process.stdout.write(`  ! could not assign neighborhood for ${email}\n`);
-    }
-  }
+  return { id: n._id, name: n.name, lng, lat };
 }
 
 async function main(): Promise<void> {
@@ -630,30 +273,37 @@ async function main(): Promise<void> {
   console.log(`API: ${BASE_URL}`);
   console.log("");
 
-  for (const { email, role, firstName, lastName } of ACCOUNTS) {
-    await seedAccount(email, role, firstName, lastName);
-  }
+  console.log("Seeding demo accounts…");
+  await seedAccounts();
 
-  console.log("\nGranting welcome credits…");
-  for (const { email } of ACCOUNTS) {
-    grantWelcomeCredit(email);
+  // Neighborhoods come after the accounts: creating one needs an admin token.
+  const adminToken = await loginAdmin();
+  if (!adminToken) {
+    throw new Error(`Login failed for ${ADMIN_EMAIL} — cannot seed further`);
   }
 
   console.log("\nSeeding Paris neighborhoods…");
-  const adminToken = await loginAdmin();
-  if (adminToken) {
-    await seedNeighborhoods(adminToken);
-    const nbh = await getDemoNeighborhood(adminToken);
-    if (nbh) {
-      await assignNeighborhoodToResidents(nbh);
-      await seedContent(adminToken, nbh);
-    } else {
-      process.stdout.write(
-        "  ! no neighborhood with geometry — content skipped\n",
-      );
-    }
-  } else {
-    console.warn("  ! admin login failed — skipping neighborhood seed");
+  await seedNeighborhoods(adminToken);
+
+  console.log("\nAssigning addresses…");
+  assignAddresses(await neighborhoodIdsByName(adminToken));
+
+  console.log("\nGranting welcome credits…");
+  grantWelcomeCredits();
+
+  console.log("\nSeeding demo content…");
+  const nbh = await getDemoNeighborhood(adminToken);
+  if (nbh) await seedContent(adminToken, nbh);
+  else console.warn("  ! no neighborhood with geometry — content skipped");
+
+  // Bookings need the paid listings the content phase just created.
+  console.log("\nSeeding bookings and contracts…");
+  await seedContracts(adminToken);
+
+  // Conversations, responses, likes and attendance all react to that content.
+  if (nbh) {
+    console.log("\nSeeding social activity…");
+    await seedSocial(adminToken, nbh);
   }
 
   console.log("\nDone.");

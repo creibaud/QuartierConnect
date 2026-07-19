@@ -1,29 +1,29 @@
-# DSL — Langage de requête MongoDB
+# DSL — MongoDB query language
 
-Micro-langage de requête permettant aux administrateurs d'interroger les
-collections MongoDB sans écrire de code. Il est écrit en **Python** avec
-**PLY** (lexer + parser LALR(1)) et invoqué depuis l'API NestJS via le pont
-**pythonia** (`POST /dsl/query`, rôle `admin` requis).
+A micro query language that lets administrators query MongoDB collections
+without writing code. It is written in **Python** with **PLY** (lexer +
+LALR(1) parser) and called from the NestJS API through the **pythonia**
+bridge (`POST /dsl/query`, `admin` role required).
 
 ## Pipeline
 
 ```
-texte → lexer.py → parser.py (LALR) → compiler.py (liste blanche) → JSON
+text → lexer.py → parser.py (LALR) → compiler.py (whitelist) → JSON
 ```
 
-- `lexer.py` — découpe la requête en tokens (`FIND`, `IDENTIFIER`, `WHERE`, `STRING`…)
-- `parser.py` — grammaire LALR(1) produisant un AST (`type`, `collection`, `filter`, `limit`)
-- `compiler.py` — valide la collection contre la liste blanche et renvoie l'AST
-- `main.py` — point d'entrée appelé depuis Node.js, sérialise le résultat en JSON ;
-  l'exécution MongoDB proprement dite est réalisée côté API
+- `lexer.py` — splits the query into tokens (`FIND`, `IDENTIFIER`, `WHERE`, `STRING`…)
+- `parser.py` — LALR(1) grammar producing an AST (`type`, `collection`, `filter`, `limit`)
+- `compiler.py` — checks the collection against the whitelist and returns the AST
+- `main.py` — entry point called from Node.js, serializes the result to JSON;
+  the MongoDB execution itself happens on the API side
 
-## Syntaxe
+## Syntax
 
-Deux verbes : `FIND` (documents) et `COUNT` (entier). Les mots réservés
-(`FIND`, `WHERE`, `AND`, `OR`, `LIMIT`, `COUNT`, `LIKE`) sont insensibles à la
-casse. Opérateurs : `=`, `!=`, `>`, `>=`, `<`, `<=`, `LIKE` (recherche de
-sous-chaîne littérale, insensible à la casse — la valeur est échappée, aucun
-motif regex n'atteint la base).
+Two verbs: `FIND` (documents) and `COUNT` (integer). Reserved words
+(`FIND`, `WHERE`, `AND`, `OR`, `LIMIT`, `COUNT`, `LIKE`) are case-insensitive.
+Operators: `=`, `!=`, `>`, `>=`, `<`, `<=`, `LIKE` (literal substring search,
+case-insensitive — the value is escaped, no regex pattern ever reaches the
+database).
 
 ```
 FIND incidents
@@ -36,33 +36,32 @@ FIND services WHERE title LIKE 'garden'
 FIND events WHERE maxAttendees >= 50 LIMIT 10
 ```
 
-## Garde-fous
+## Safeguards
 
-- Liste blanche stricte : `incidents`, `neighborhoods`, `services`, `events`, `users`
-- Lecture seule : `FIND` et `COUNT` uniquement, aucune opération destructive
-- Longueur de requête limitée (validée côté API) et `limit` plafonné à 100
-  (un `FIND` sans `LIMIT` ou avec une valeur excessive est tronqué)
-- Scoping par rôle côté API : un modérateur ne voit que son quartier
-  (incidents, services, événements, utilisateurs) ; seul l'admin interroge
-  toutes les données
-- Une collection hors liste blanche est rejetée avant tout accès à la base
+- Strict whitelist: `incidents`, `neighborhoods`, `services`, `events`, `users`
+- Read-only: `FIND` and `COUNT` only, no destructive operation
+- Query length capped (validated API-side) and `limit` capped at 100
+  (a `FIND` without `LIMIT`, or with an excessive value, is truncated)
+- Role scoping API-side: a moderator only sees their own neighborhood
+  (incidents, services, events, users); only an admin queries all data
+- A collection outside the whitelist is rejected before any database access
 
-## Commandes
+## Commands
 
-Les dépendances sont gérées par [uv](https://docs.astral.sh/uv/) :
+Dependencies are managed by [uv](https://docs.astral.sh/uv/):
 
 ```bash
-uv sync                       # installer les dépendances (crée .venv)
-uv run pytest                 # lancer les tests (dsl/tests/)
+uv sync                       # install dependencies (creates .venv)
+uv run pytest                 # run the tests (dsl/tests/)
 uv run ruff check .           # lint
 uv run ruff format .          # format
-uv run python main.py "FIND incidents WHERE status = 'open'"   # test manuel
+uv run python main.py "FIND incidents WHERE status = 'open'"   # manual check
 ```
 
-Depuis la racine du dépôt : `make install-dsl`, `make test-dsl`, `make lint-dsl`.
+From the repository root: `make install-dsl`, `make test-dsl`, `make lint-dsl`.
 
-L'API consomme ce répertoire via les variables `PYTHON_BIN`
-(`./dsl/.venv/bin/python`) et `DSL_PATH` (`./dsl`) définies dans `.env`.
+The API consumes this directory through the `PYTHON_BIN`
+(`./dsl/.venv/bin/python`) and `DSL_PATH` (`./dsl`) variables set in `.env`.
 
-Documentation détaillée : la page « Le DSL » du site développeur
+Detailed documentation: the "Le DSL" page on the developer site
 (`http://localhost/dev`).

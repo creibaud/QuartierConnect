@@ -75,7 +75,7 @@ export class IncidentsController {
         private readonly db: PostgresJsDatabase<typeof schema>,
     ) {}
 
-    // Non-admins are scoped to their own quartier; admins see all.
+    // Non-admins are scoped to their own neighborhood; admins see all.
     private assertNeighborhoodScope(
         incident: { neighborhoodId: string | null },
         req: AuthRequest,
@@ -180,7 +180,7 @@ export class IncidentsController {
     ) {
         const { limitNum, skip } = parsePagination(page, limit);
 
-        // Non-admins see only their own quartier's incidents.
+        // Non-admins see only their own neighborhood's incidents.
         const isAdmin = req.user.role === "admin";
         if (!isAdmin && !req.user.neighborhoodId) return [];
 
@@ -304,7 +304,7 @@ export class IncidentsController {
     })
     @ApiResponse({ status: 401, description: "Not authenticated" })
     create(@Body() dto: CreateIncidentDto, @Request() req: AuthRequest) {
-        // Anti-spoofing: only admins may target another quartier.
+        // Anti-spoofing: only admins may target another neighborhood.
         const neighborhoodId =
             req.user.role === "admin"
                 ? (dto.neighborhoodId ?? req.user.neighborhoodId ?? null)
@@ -461,8 +461,8 @@ export class IncidentsController {
                 skippedIds: dto.incidents.map((item) => item.id),
             };
 
-        // Residents can't set status or another quartier: forced to own
-        // neighborhood with status open.
+        // Residents can't choose status or neighborhood: forced to their own,
+        // status open.
         const upsert = this.db.insert(schema.incidents).values(
             allowedItems.map((item) => ({
                 id: item.id,

@@ -9,7 +9,7 @@ set -euo pipefail
 
 TARGET_SHA="${1:?Usage: rollback.sh <sha>}"
 
-echo "↩ Rollback vers ${TARGET_SHA}"
+echo "↩ Rolling back to ${TARGET_SHA}"
 
 git fetch --all --tags --prune
 git checkout --force "$TARGET_SHA"
@@ -19,4 +19,4 @@ docker compose --env-file .env \
   -f docker/docker-compose.prod.yml \
   up -d --build --remove-orphans
 
-echo "✓ Rollback terminé sur ${TARGET_SHA}"
+echo "✓ Rollback complete on ${TARGET_SHA}"

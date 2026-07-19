@@ -1,0 +1,641 @@
+[{
+	"_id": {
+		"$oid": "6a5ca54a76d969f39113334d"
+	},
+	"userId": "e9b6a3de-1139-47c6-b834-fa08f43850cb",
+	"targetId": "6a5ca3e776d969f39113303c",
+	"targetType": "service",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:02.887Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:02.887Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54a76d969f39113334e"
+	},
+	"userId": "4de869de-be0a-47b9-9f6a-772041cdc24f",
+	"targetId": "6a5ca3e776d969f39113303c",
+	"targetType": "service",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:02.897Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:02.897Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54a76d969f39113334f"
+	},
+	"userId": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+	"targetId": "6a5ca3e776d969f39113303b",
+	"targetType": "service",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:02.906Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:02.906Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54a76d969f391133350"
+	},
+	"userId": "8f1be472-8d4c-40ec-bb31-6464b435975a",
+	"targetId": "6a5ca3e776d969f39113303b",
+	"targetType": "service",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:02.913Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:02.913Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54a76d969f391133351"
+	},
+	"userId": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+	"targetId": "6a5ca3e776d969f39113303a",
+	"targetType": "service",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:02.921Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:02.921Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54a76d969f391133352"
+	},
+	"userId": "a1476d02-7f97-4d44-8546-4debcf9ca26c",
+	"targetId": "6a5ca3e776d969f39113303a",
+	"targetType": "service",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:02.929Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:02.929Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54a76d969f391133353"
+	},
+	"userId": "1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+	"targetId": "6a5ca006a6f783f8fe6b0a12",
+	"targetType": "service",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:02.938Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:02.938Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54a76d969f391133354"
+	},
+	"userId": "542f9288-29cc-4675-8ed7-bb39c1f5929a",
+	"targetId": "6a5ca006a6f783f8fe6b0a12",
+	"targetType": "service",
+	"voteType": "dislike",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:02.949Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:02.949Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54a76d969f391133355"
+	},
+	"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"targetId": "6a5ca006a6f783f8fe6b0a11",
+	"targetType": "service",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:02.96Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:02.96Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54a76d969f391133356"
+	},
+	"userId": "b8b1125d-d27b-47dc-98ae-7150ffcb0fe3",
+	"targetId": "6a5ca006a6f783f8fe6b0a11",
+	"targetType": "service",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:02.969Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:02.969Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54a76d969f391133357"
+	},
+	"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"targetId": "6a5ca006a6f783f8fe6b0a10",
+	"targetType": "service",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:02.979Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:02.979Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54a76d969f391133358"
+	},
+	"userId": "e9b6a3de-1139-47c6-b834-fa08f43850cb",
+	"targetId": "6a5ca006a6f783f8fe6b0a10",
+	"targetType": "service",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:02.987Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:02.987Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54a76d969f391133359"
+	},
+	"userId": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+	"targetId": "6a5ca006a6f783f8fe6b0a0f",
+	"targetType": "service",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:02.995Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:02.995Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f39113335a"
+	},
+	"userId": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+	"targetId": "6a5ca006a6f783f8fe6b0a0f",
+	"targetType": "service",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.005Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.005Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f39113335b"
+	},
+	"userId": "f7025b74-7036-4140-890d-85eecf174883",
+	"targetId": "6a5ca006a6f783f8fe6b0a0e",
+	"targetType": "service",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.019Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.019Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f39113335c"
+	},
+	"userId": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+	"targetId": "6a5ca006a6f783f8fe6b0a0e",
+	"targetType": "service",
+	"voteType": "dislike",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.036Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.036Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f39113335d"
+	},
+	"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"targetId": "6a5ca009a6f783f8fe6b0a29",
+	"targetType": "event",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.046Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.046Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f39113335e"
+	},
+	"userId": "1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+	"targetId": "6a5ca009a6f783f8fe6b0a29",
+	"targetType": "event",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.053Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.053Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f39113335f"
+	},
+	"userId": "b8b1125d-d27b-47dc-98ae-7150ffcb0fe3",
+	"targetId": "6a5ca009a6f783f8fe6b0a28",
+	"targetType": "event",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.062Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.062Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f391133360"
+	},
+	"userId": "a7febe13-1bc7-427d-8a44-e3b3a2e62c8d",
+	"targetId": "6a5ca009a6f783f8fe6b0a28",
+	"targetType": "event",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.07Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.07Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f391133361"
+	},
+	"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"targetId": "6a5ca009a6f783f8fe6b0a27",
+	"targetType": "event",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.078Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.078Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f391133362"
+	},
+	"userId": "e9b6a3de-1139-47c6-b834-fa08f43850cb",
+	"targetId": "6a5ca009a6f783f8fe6b0a27",
+	"targetType": "event",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.086Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.086Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f391133363"
+	},
+	"userId": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+	"targetId": "6a5ca009a6f783f8fe6b0a26",
+	"targetType": "event",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.093Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.093Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f391133364"
+	},
+	"userId": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+	"targetId": "6a5ca009a6f783f8fe6b0a26",
+	"targetType": "event",
+	"voteType": "dislike",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.102Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.102Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f391133365"
+	},
+	"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"targetId": "6a5ca009a6f783f8fe6b0a25",
+	"targetType": "event",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.11Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.11Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f391133366"
+	},
+	"userId": "f7025b74-7036-4140-890d-85eecf174883",
+	"targetId": "6a5ca009a6f783f8fe6b0a25",
+	"targetType": "event",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.117Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.117Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f391133367"
+	},
+	"userId": "542f9288-29cc-4675-8ed7-bb39c1f5929a",
+	"targetId": "6a5ca009a6f783f8fe6b0a24",
+	"targetType": "event",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.122Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.122Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f391133368"
+	},
+	"userId": "51b9e03e-0681-453b-b96d-a0a71b6cf2d8",
+	"targetId": "6a5ca009a6f783f8fe6b0a24",
+	"targetType": "event",
+	"voteType": "like",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.128Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.128Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f391133369"
+	},
+	"userId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+	"targetId": "0542377b-11be-4922-ac03-f883ea9a1e64",
+	"targetType": "incident",
+	"voteType": "up",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.136Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.136Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f39113336a"
+	},
+	"userId": "98b72c78-8549-4aac-874c-c19391150b07",
+	"targetId": "0542377b-11be-4922-ac03-f883ea9a1e64",
+	"targetType": "incident",
+	"voteType": "up",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.271Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.271Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f39113336b"
+	},
+	"userId": "58b3df0d-2a0b-4f08-96f3-e0924d250b89",
+	"targetId": "05db1aa6-0250-44d1-b361-ae9bb5283787",
+	"targetType": "incident",
+	"voteType": "up",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.278Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.278Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f39113336c"
+	},
+	"userId": "16850636-c1fa-4cf3-84c7-ad7664d6cad0",
+	"targetId": "05db1aa6-0250-44d1-b361-ae9bb5283787",
+	"targetType": "incident",
+	"voteType": "down",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.285Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.285Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f39113336d"
+	},
+	"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"targetId": "06723aa8-6cd1-48c1-afeb-eb58fb00230d",
+	"targetType": "incident",
+	"voteType": "up",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.291Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.291Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f39113336e"
+	},
+	"userId": "4de869de-be0a-47b9-9f6a-772041cdc24f",
+	"targetId": "06723aa8-6cd1-48c1-afeb-eb58fb00230d",
+	"targetType": "incident",
+	"voteType": "up",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.297Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.297Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f39113336f"
+	},
+	"userId": "8f1be472-8d4c-40ec-bb31-6464b435975a",
+	"targetId": "06d2ecd1-5860-4368-8575-8236224716bf",
+	"targetType": "incident",
+	"voteType": "up",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.304Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.304Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f391133370"
+	},
+	"userId": "fac2acc3-190b-43cd-baed-122358be1259",
+	"targetId": "06d2ecd1-5860-4368-8575-8236224716bf",
+	"targetType": "incident",
+	"voteType": "up",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.31Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.31Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f391133371"
+	},
+	"userId": "a1476d02-7f97-4d44-8546-4debcf9ca26c",
+	"targetId": "09c6583c-d5e3-40bd-99b1-88b206639d7f",
+	"targetType": "incident",
+	"voteType": "up",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.318Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.318Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f391133372"
+	},
+	"userId": "faa4f168-5dfe-4683-b0dc-34cad4ab4928",
+	"targetId": "09c6583c-d5e3-40bd-99b1-88b206639d7f",
+	"targetType": "incident",
+	"voteType": "up",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.324Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.324Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f391133373"
+	},
+	"userId": "51b9e03e-0681-453b-b96d-a0a71b6cf2d8",
+	"targetId": "0ae59d99-b016-4d11-8aad-23ec0219066e",
+	"targetType": "incident",
+	"voteType": "up",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.33Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.33Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca54b76d969f391133374"
+	},
+	"userId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+	"targetId": "0ae59d99-b016-4d11-8aad-23ec0219066e",
+	"targetType": "incident",
+	"voteType": "down",
+	"createdAt": {
+		"$date": "2026-07-19T10:22:03.336Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:22:03.336Z"
+	},
+	"__v": 0
+}]
+

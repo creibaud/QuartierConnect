@@ -70,19 +70,19 @@ if [ "$OS" = "Linux" ]; then
   fi
 fi
 
-# Cible une instance déployée : l'app installée pointe vers ce serveur sans
-# configuration (ServerConfig lit ces propriétés en priorité). Sinon, localhost.
+# Point the installed app at a deployed instance with no user configuration
+# (ServerConfig reads these properties first). Falls back to localhost.
 if [ -n "${QC_SERVER_URL:-}" ]; then
   URL="${QC_SERVER_URL%/}"
   ARGS+=(--java-options "-Dapi.url=${URL}/api" --java-options "-Dweb.url=${URL}/admin")
-  echo "==> Serveur ciblé : ${URL}"
+  echo "==> Target server: ${URL}"
 fi
 
 echo "==> jpackage --type ${BUILD_TYPE}"
 jpackage "${ARGS[@]}"
 
 if [ "$TYPE" = "tar.gz" ]; then
-  echo "==> Archivage tar.gz"
+  echo "==> Archiving tar.gz"
   tar -czf "${DEST}/${APP_NAME}.tar.gz" -C "$DEST" "$APP_NAME"
 fi
 

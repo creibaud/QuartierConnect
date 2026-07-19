@@ -33,7 +33,7 @@ notify() {
     -d "{\"content\":\"$1\"}" "$hook" >/dev/null 2>&1 || true
 }
 
-fail() { log "ERREUR : $*"; notify "🔴 Backup QuartierConnect KO : $*"; exit 1; }
+fail() { log "ERROR: $*"; notify "🔴 QuartierConnect backup failed: $*"; exit 1; }
 
 upload_s3() {
   local file="$1" prefix="$2" bucket endpoint
@@ -43,7 +43,7 @@ upload_s3() {
        --endpoint-url "https://${endpoint}" >/dev/null 2>&1; then
     log "  ↑ S3 ${prefix}/$(basename "$file")"
   else
-    log "  ⚠ Upload S3 échoué pour $(basename "$file")"
+    log "  ⚠ S3 upload failed for $(basename "$file")"
   fi
 }
 
@@ -51,7 +51,7 @@ MONGO_USER="$(env_get MONGO_ROOT_USER)"; MONGO_USER="${MONGO_USER:-root}"
 MONGO_PASS="$(env_get MONGO_ROOT_PASSWORD)"
 PG_USER="$(env_get POSTGRES_USER)"; PG_USER="${PG_USER:-qc}"
 
-log "=== Backup début ${DATE} ==="
+log "=== Backup start ${DATE} ==="
 
 # ── MongoDB: mongodump --gzip --archive (stdout → host file) ────────────────
 MONGO_FILE="${BACKUP_DIR}/mongo-${DATE}.tar.gz"
@@ -72,12 +72,12 @@ upload_s3 "$PG_FILE" postgres
 # ── Neo4j: cold dump (~30s downtime) ────────────────────────────────────────
 NEO_FILE="${BACKUP_DIR}/neo4j-${DATE}.tar.gz"
 NEO_CID="$($COMPOSE ps -q neo4j)"
-$COMPOSE stop neo4j >/dev/null || fail "arrêt neo4j"
+$COMPOSE stop neo4j >/dev/null || fail "neo4j stop"
 # neo4j-admin (uid 7474) can't write to the host bind-mount: dump to /tmp, stream out.
 if docker run --rm --volumes-from "$NEO_CID" neo4j:5 \
      sh -c "neo4j-admin database dump neo4j --to-path=/tmp --overwrite-destination=true >&2 && cat /tmp/neo4j.dump" \
      > "${BACKUP_DIR}/neo4j.dump"; then
-  $COMPOSE start neo4j >/dev/null || fail "redémarrage neo4j"
+  $COMPOSE start neo4j >/dev/null || fail "neo4j start"
   tar -C "$BACKUP_DIR" -czf "$NEO_FILE" neo4j.dump && rm -f "${BACKUP_DIR}/neo4j.dump"
   log "Neo4j → $(basename "$NEO_FILE") ($(du -h "$NEO_FILE" | cut -f1))"
   upload_s3 "$NEO_FILE" neo4j
@@ -95,7 +95,7 @@ if [ "$DOW" = "1" ]; then
     log "Caddy certs → $(basename "$CADDY_FILE")"
     upload_s3 "$CADDY_FILE" caddy
   else
-    log "⚠ Backup certificats Caddy échoué"
+    log "⚠ Caddy certs backup failed"
   fi
 fi
 
@@ -103,4 +103,4 @@ fi
 find "$BACKUP_DIR" -name '*.tar.gz' -mtime "+${RETENTION_DAYS}" -delete 2>/dev/null || true
 find "$BACKUP_DIR" -name '*.sql.gz'  -mtime "+${RETENTION_DAYS}" -delete 2>/dev/null || true
 
-log "=== Backup OK ${DATE} ==="
+log "=== Backup done ${DATE} ==="

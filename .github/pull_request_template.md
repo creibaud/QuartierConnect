@@ -1,22 +1,22 @@
 ## Description
 
-<!-- Que fait cette PR ? Pourquoi ? -->
+<!-- What does this PR do? Why? -->
 
-## Type de changement
+## Type of change
 
-- [ ] feat — Nouvelle fonctionnalité
-- [ ] fix — Correction de bug
+- [ ] feat — New feature
+- [ ] fix — Bug fix
 - [ ] refactor — Refactoring
-- [ ] test — Ajout ou correction de tests
-- [ ] docs — Documentation uniquement
+- [ ] test — Adding or fixing tests
+- [ ] docs — Documentation only
 - [ ] chore — Deps, config, Makefile
-- [ ] style — Formatage uniquement
+- [ ] style — Formatting only
 
-## Surface(s) touchée(s)
+## Surface(s) touched
 
 - [ ] API (`api/`)
-- [ ] Client web (`web-apps/apps/client/`)
-- [ ] Admin web (`web-apps/apps/admin/`)
+- [ ] Web client (`web-apps/apps/client/`)
+- [ ] Web admin (`web-apps/apps/admin/`)
 - [ ] Desktop (`desktop-app/`)
 - [ ] DSL (`dsl/`)
 - [ ] Infrastructure (`docker/`, `.github/`, `scripts/`, `ops/`)
@@ -24,13 +24,13 @@
 
 ## Checklist
 
-- [ ] `make validate-fast` passe en local
-- [ ] Tests ajoutés pour le code nouveau / modifié
-- [ ] Coverage API ≥ 80% maintenu
-- [ ] Pas de `console.log` ni de `TODO` dans le code commité
-- [ ] Pas de secret dans le code
-- [ ] `routeTree.gen.ts` non édité manuellement
+- [ ] `make validate-fast` passes locally
+- [ ] Tests added for new / changed code
+- [ ] API coverage ≥ 80% still met
+- [ ] No `console.log` or `TODO` in committed code
+- [ ] No secret in the code
+- [ ] `routeTree.gen.ts` not edited by hand
 
-## Notes pour le reviewer
+## Notes for the reviewer
 
-<!-- Points d'attention, décisions discutables -->
+<!-- Things to watch out for, debatable decisions -->

@@ -108,7 +108,7 @@ services:
       - "443:443"
     environment:
       DOCS_AUTH_USER: ${DOCS_AUTH_USER:-docs}
-      # Hash bcrypt : chaque $ doublé en $$ (interpolation Compose s'applique aussi au .env prod).
+      # bcrypt hash: every $ doubled to $$ (Compose interpolation applies to the prod .env too).
       DOCS_AUTH_HASH: ${DOCS_AUTH_HASH:-$$2a$$14$$hUWfdLnhOLdnbOyKO.ins.MqPcclORSRO.jAvMrRxA/FMtr8WSgVq}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile

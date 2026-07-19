@@ -18,41 +18,41 @@ It ships four surfaces from one monorepo:
 
 ---
 
-## Installation en une commande
+## One-command install
 
-Depuis un poste avec Docker, Docker Compose v2 et Git, tout s'installe et se
-lance automatiquement :
+On a machine with Docker, Docker Compose v2 and Git, everything installs and
+starts on its own:
 
 ```bash
-git clone <url-du-depot> QuartierConnect
+git clone <repository-url> QuartierConnect
 cd QuartierConnect
 make setup
 ```
 
-`make setup` :
+`make setup`:
 
-1. vérifie les prérequis (Docker, démon actif, Docker Compose v2, Git) avec des
-   messages d'erreur explicites ;
-2. génère `.env` depuis `.env.example` avec des secrets aléatoires
-   (`openssl rand -hex 32`) — un `.env` existant est conservé
-   (`make setup SETUP_FORCE=1` pour le régénérer) ;
-3. construit et démarre les 9 services Docker (`docker compose up -d --build`) ;
-4. attend que les bases et l'API soient saines (healthchecks + `/health`,
-   5 minutes maximum) ;
-5. importe le jeu de démonstration (`livrables/jeux-essais/import-dataset.sh`
-   s'il est présent, sinon `make seed`).
+1. checks the prerequisites (Docker, running daemon, Docker Compose v2, Git)
+   with explicit error messages;
+2. generates `.env` from `.env.example` with random secrets
+   (`openssl rand -hex 32`) — an existing `.env` is kept
+   (`make setup SETUP_FORCE=1` to regenerate it);
+3. builds and starts the 9 Docker services (`docker compose up -d --build`);
+4. waits for the databases and the API to become healthy (healthchecks +
+   `/health`, 5 minutes max);
+5. imports the demo dataset (`deliverables/test-datasets/import-dataset.sh`
+   if present, otherwise `make seed`).
 
-À la fin, un récapitulatif affiche les URLs (client http://localhost, admin
-http://localhost/admin, docs API http://localhost/api/docs), les comptes démo
-(mot de passe `Demo1234!`, code TOTP via `make totp`) et la commande du client
-lourd :
+It ends with a summary listing the URLs (client http://localhost, admin
+http://localhost/admin, API docs http://localhost/api/docs), the demo accounts
+(password `Demo1234!`, TOTP code via `make totp`) and the desktop client
+command:
 
 ```bash
 java -jar desktop-app/target/quartierconnect-desktop.jar
 ```
 
-Pour produire l'archive de rendu (sources complètes + exécutable desktop +
-jeux d'essai) : `make dist` → tout est déposé dans `dist/`.
+To produce the submission archive (full sources + desktop executable + test
+datasets): `make dist` → everything lands in `dist/`.
 
 ---
 
@@ -143,17 +143,17 @@ The remaining variables (`PYTHON_BIN`, `DSL_PATH`, `DEMO_TOTP_SECRET`,
 
 All three accounts use password `Demo1234!` and the same demo TOTP secret.
 
-| Email         | Password  | Role      | TOTP secret        |
-| ------------- | --------- | --------- | ------------------ |
-| alice@demo.fr | Demo1234! | resident  | `JBSWY3DPEHPK3PXP` |
-| bob@demo.fr   | Demo1234! | moderator | `JBSWY3DPEHPK3PXP` |
-| admin@demo.fr | Demo1234! | admin     | `JBSWY3DPEHPK3PXP` |
+| Email         | Password  | Role      | TOTP secret                        |
+| ------------- | --------- | --------- | ---------------------------------- |
+| alice@demo.fr | Demo1234! | resident  | `4PX635D55YS6JJV3NYIXKZPREIO6YIIV` |
+| bob@demo.fr   | Demo1234! | moderator | `4PX635D55YS6JJV3NYIXKZPREIO6YIIV` |
+| admin@demo.fr | Demo1234! | admin     | `4PX635D55YS6JJV3NYIXKZPREIO6YIIV` |
 
 Login requires a 6-digit TOTP code (valid 30s). Generate one:
 
 ```bash
 make totp
-# Or: oathtool --totp --base32 JBSWY3DPEHPK3PXP
+# Or: oathtool --totp --base32 4PX635D55YS6JJV3NYIXKZPREIO6YIIV
 ```
 
 ---

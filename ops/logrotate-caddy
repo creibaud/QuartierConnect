@@ -1,4 +1,4 @@
-# Rotation des logs Caddy de QuartierConnect.
+# Caddy log rotation for QuartierConnect.
 #   cp ops/logrotate-caddy /etc/logrotate.d/caddy
 /var/log/quartierconnect/caddy/*.log {
     daily

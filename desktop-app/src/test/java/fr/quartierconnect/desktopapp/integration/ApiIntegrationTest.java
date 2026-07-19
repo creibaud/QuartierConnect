@@ -172,7 +172,7 @@ class ApiIntegrationTest {
         return end < 0 ? otpauthUrl.substring(idx + 7) : otpauthUrl.substring(idx + 7, end);
     }
 
-    /** TOTP RFC 6238 — Java pur, sans bibliothèque externe. */
+    /** TOTP RFC 6238 — plain Java, no external library. */
     private static String generateTotp(String base32Secret) throws Exception {
         String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
         String upper = base32Secret.toUpperCase().replaceAll("=", "");

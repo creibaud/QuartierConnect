@@ -40,7 +40,8 @@ export class DslController {
         description: "Insufficient role (moderator/admin required)",
     })
     execute(@Body() dto: DslQueryDto, @Request() req: AuthRequest) {
-        // The requester scopes the query: moderators stay inside their own quartier.
+        // The requester scopes the query: moderators stay inside their own
+        // neighborhood.
         return this.dslService.execute(dto.query, req.user);
     }
 }

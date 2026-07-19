@@ -1,0 +1,65 @@
+[{
+	"_id": {
+		"$oid": "6a5ca52d76d969f391133341"
+	},
+	"length": 5279,
+	"chunkSize": 261120,
+	"uploadDate": {
+		"$date": "2026-07-19T10:21:33.202Z"
+	},
+	"filename": "carre-potager.png",
+	"metadata": {
+		"uploadedBy": "4de869de-be0a-47b9-9f6a-772041cdc24f",
+		"conversationId": "6a5ca52c76d969f391133336",
+		"contentType": "image/png"
+	}
+},
+{
+	"_id": {
+		"$oid": "6a5ca52d76d969f391133344"
+	},
+	"length": 1312,
+	"chunkSize": 261120,
+	"uploadDate": {
+		"$date": "2026-07-19T10:21:33.225Z"
+	},
+	"filename": "compte-rendu-reunion-jardin.pdf",
+	"metadata": {
+		"uploadedBy": "4de869de-be0a-47b9-9f6a-772041cdc24f",
+		"conversationId": "6a5ca52c76d969f391133336",
+		"contentType": "application/pdf"
+	}
+},
+{
+	"_id": {
+		"$oid": "6a5ca52d76d969f391133347"
+	},
+	"length": 40032,
+	"chunkSize": 261120,
+	"uploadDate": {
+		"$date": "2026-07-19T10:21:33.246Z"
+	},
+	"filename": "message-vocal.mp3",
+	"metadata": {
+		"uploadedBy": "4de869de-be0a-47b9-9f6a-772041cdc24f",
+		"conversationId": "6a5ca52c76d969f391133336",
+		"contentType": "audio/mpeg"
+	}
+},
+{
+	"_id": {
+		"$oid": "6a5ca52d76d969f39113334a"
+	},
+	"length": 3679,
+	"chunkSize": 261120,
+	"uploadDate": {
+		"$date": "2026-07-19T10:21:33.262Z"
+	},
+	"filename": "affiche-troc-plantes.png",
+	"metadata": {
+		"uploadedBy": "4de869de-be0a-47b9-9f6a-772041cdc24f",
+		"conversationId": "6a5ca52c76d969f391133336",
+		"contentType": "image/png"
+	}
+}]
+

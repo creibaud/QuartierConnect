@@ -8,7 +8,7 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-BASE_URL="${1:?Usage: prepare-desktop-download.sh <base-url> [dossier-destination]}"
+BASE_URL="${1:?Usage: prepare-desktop-download.sh <base-url> [dest-dir]}"
 BASE_URL="${BASE_URL%/}"
 DEST="${2:-docker/downloads}"
 
@@ -22,4 +22,4 @@ trap 'rm -rf "$WORK"' EXIT
 printf 'api.url=%s/api\nweb.url=%s/admin\n' "$BASE_URL" "$BASE_URL" > "$WORK/server.properties"
 ( cd "$WORK" && jar uf "$DEST_ABS/quartierconnect-desktop.jar" server.properties )
 
-echo "JAR pré-configuré pour $BASE_URL → $DEST_ABS/quartierconnect-desktop.jar"
+echo "JAR preconfigured for $BASE_URL → $DEST_ABS/quartierconnect-desktop.jar"

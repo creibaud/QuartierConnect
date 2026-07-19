@@ -32,36 +32,36 @@ warn() { echo "  ${YELLOW}⚠${RESET} $1"; }
 fail() { echo "  ${RED}✗ $1${RESET}" >&2; exit 1; }
 
 check_prerequisites() {
-    step "Vérification des prérequis"
+    step "Checking prerequisites"
     if ! command -v git >/dev/null 2>&1; then
-        fail "Git n'est pas installé. Installez-le (sudo apt install git) : https://git-scm.com"
+        fail "Git is not installed. Install it (sudo apt install git): https://git-scm.com"
     fi
     if ! command -v docker >/dev/null 2>&1; then
-        fail "Docker n'est pas installé. Installez-le : https://docs.docker.com/get-docker/"
+        fail "Docker is not installed. Install it: https://docs.docker.com/get-docker/"
     fi
     if ! docker info >/dev/null 2>&1; then
-        fail "Le démon Docker ne répond pas. Démarrez-le (sudo systemctl start docker, ou Docker Desktop) puis relancez make setup."
+        fail "The Docker daemon is not responding. Start it (sudo systemctl start docker, or Docker Desktop) then re-run make setup."
     fi
     if ! docker compose version >/dev/null 2>&1; then
-        fail "Docker Compose v2 est requis (commande « docker compose »). Mettez Docker à jour : https://docs.docker.com/compose/install/"
+        fail "Docker Compose v2 is required (the 'docker compose' command). Update Docker: https://docs.docker.com/compose/install/"
     fi
     if ! command -v openssl >/dev/null 2>&1; then
-        fail "openssl est requis pour générer les secrets du .env. Installez-le : sudo apt install openssl"
+        fail "openssl is required to generate the .env secrets. Install it: sudo apt install openssl"
     fi
     if ! command -v curl >/dev/null 2>&1; then
-        fail "curl est requis pour vérifier la santé de l'API. Installez-le : sudo apt install curl"
+        fail "curl is required to check API health. Install it: sudo apt install curl"
     fi
-    ok "git, docker, docker compose v2, openssl et curl sont disponibles"
+    ok "git, docker, docker compose v2, openssl and curl are available"
 }
 
 generate_env_file() {
-    step "Configuration du fichier .env"
+    step "Configuring .env"
     if [ -f .env ] && [ "$FORCE" != "1" ]; then
-        ok ".env existant conservé (make setup SETUP_FORCE=1 pour le régénérer)"
+        ok "Existing .env kept (make setup SETUP_FORCE=1 to regenerate it)"
         return
     fi
     if [ ! -f .env.example ]; then
-        fail "Fichier .env.example introuvable à la racine du dépôt."
+        fail ".env.example not found at the repo root."
     fi
     local jwt_secret mongo_password postgres_password neo4j_password
     jwt_secret=$(openssl rand -hex 32)
@@ -74,40 +74,40 @@ generate_env_file() {
         -e "s/CHANGE_ME_neo4j_password/${neo4j_password}/g" \
         .env.example > .env
     if grep -v '^[[:space:]]*#' .env | grep -q "CHANGE_ME"; then
-        fail "Des valeurs CHANGE_ME subsistent dans .env : complétez-les à la main (voir .env.example)."
+        fail "CHANGE_ME values remain in .env: fill them in by hand (see .env.example)."
     fi
     ENV_REGENERATED=1
-    ok ".env généré avec des secrets aléatoires (openssl rand -hex 32)"
+    ok ".env created with random secrets (openssl rand -hex 32)"
 }
 
 start_docker_services() {
-    step "Construction et démarrage des services Docker"
+    step "Building and starting the Docker services"
     if [ "$ENV_REGENERATED" = "1" ]; then
         # A fresh .env means fresh database secrets, but Mongo/Postgres only seed
         # their root user on an empty volume — a volume left over from a previous
         # install keeps the old password and every later connection fails auth.
         # Drop the volumes so the databases re-initialise with the new secrets.
         $COMPOSE down -v --remove-orphans >/dev/null 2>&1 || true
-        ok "Volumes de bases réinitialisés (identifiants alignés sur le nouveau .env)"
+        ok "Database volumes reset (credentials match the new .env)"
     fi
     $COMPOSE up -d --build
-    ok "Services lancés en arrière-plan"
+    ok "Services started in the background"
 }
 
 wait_for_container_health() {
     local service=$1 deadline=$2 container_id status
     container_id=$($COMPOSE ps -q "$service")
     if [ -z "$container_id" ]; then
-        fail "Le service ${service} n'a pas démarré (introuvable via docker compose ps)."
+        fail "Service ${service} did not start (not found via docker compose ps)."
     fi
     while true; do
-        status=$(docker inspect --format '{{.State.Health.Status}}' "$container_id" 2>/dev/null || echo "inconnu")
+        status=$(docker inspect --format '{{.State.Health.Status}}' "$container_id" 2>/dev/null || echo "unknown")
         if [ "$status" = "healthy" ]; then
-            ok "${service} est sain"
+            ok "${service} is healthy"
             return
         fi
         if [ "$(date +%s)" -ge "$deadline" ]; then
-            fail "Délai dépassé (5 min) : ${service} est « ${status} ». Consultez les logs : make docker-logs"
+            fail "Timed out (5 min): ${service} is '${status}'. Check the logs: make docker-logs"
         fi
         sleep "$POLL_INTERVAL_SECONDS"
     done
@@ -118,18 +118,18 @@ wait_for_http() {
     while true; do
         status=$(curl -fsS -o /dev/null -w '%{http_code}' --max-time 5 "$url" 2>/dev/null || echo "000")
         if [ "$status" = "200" ]; then
-            ok "${label} répond (HTTP 200)"
+            ok "${label} responds (HTTP 200)"
             return
         fi
         if [ "$(date +%s)" -ge "$deadline" ]; then
-            fail "Délai dépassé (5 min) : ${label} (${url}) répond HTTP ${status}. Consultez les logs : make docker-logs"
+            fail "Timed out (5 min): ${label} (${url}) returned HTTP ${status}. Check the logs: make docker-logs"
         fi
         sleep "$POLL_INTERVAL_SECONDS"
     done
 }
 
 wait_for_stack() {
-    step "Attente des healthchecks (${HEALTH_TIMEOUT_SECONDS}s maximum)"
+    step "Waiting for healthchecks (${HEALTH_TIMEOUT_SECONDS}s max)"
     local deadline=$(( $(date +%s) + HEALTH_TIMEOUT_SECONDS ))
     wait_for_container_health mongo "$deadline"
     wait_for_container_health postgres "$deadline"
@@ -139,20 +139,20 @@ wait_for_stack() {
 }
 
 import_demo_data() {
-    step "Import du jeu de démonstration"
-    if [ -f livrables/jeux-essais/import-dataset.sh ]; then
-        bash livrables/jeux-essais/import-dataset.sh jeu-demo
-        ok "Jeu de démonstration importé (livrables/jeux-essais)"
+    step "Importing the demo dataset"
+    if [ -f deliverables/test-datasets/import-dataset.sh ]; then
+        bash deliverables/test-datasets/import-dataset.sh demo-dataset
+        ok "Demo dataset imported (deliverables/test-datasets)"
         restart_api_after_import
     else
-        warn "livrables/jeux-essais/import-dataset.sh absent — repli sur make seed (nécessite make install au préalable)"
+        warn "deliverables/test-datasets/import-dataset.sh missing — falling back to make seed (needs make install first)"
         make seed
-        ok "Données de démonstration créées (make seed)"
+        ok "Demo data created (make seed)"
     fi
 }
 
 restart_api_after_import() {
-    step "Redémarrage de l'API (recréation des index MongoDB)"
+    step "Restarting the API (recreates the MongoDB indexes)"
     $COMPOSE restart api > /dev/null 2>&1
     local deadline=$(( $(date +%s) + HEALTH_TIMEOUT_SECONDS ))
     wait_for_http "API (/health)" "http://localhost:5000/health" "$deadline"
@@ -160,26 +160,26 @@ restart_api_after_import() {
 
 print_summary() {
     echo ""
-    echo "${BOLD}${GREEN}✓ Installation terminée — QuartierConnect est prêt${RESET}"
+    echo "${BOLD}${GREEN}✓ Install complete — QuartierConnect is ready${RESET}"
     echo ""
-    echo "${BOLD}  Accès${RESET}"
-    echo "    ${CYAN}Client résident ${RESET} http://localhost           (direct : http://localhost:3000)"
-    echo "    ${CYAN}Back-office     ${RESET} http://localhost/admin     (direct : http://localhost:3001)"
-    echo "    ${CYAN}Docs API        ${RESET} http://localhost/api/docs  (direct : http://localhost:5000/docs)"
+    echo "${BOLD}  Access${RESET}"
+    echo "    ${CYAN}Resident client ${RESET} http://localhost           (direct: http://localhost:3000)"
+    echo "    ${CYAN}Back-office     ${RESET} http://localhost/admin     (direct: http://localhost:3001)"
+    echo "    ${CYAN}API docs        ${RESET} http://localhost/api/docs  (direct: http://localhost:5000/docs)"
     echo "    ${CYAN}Neo4j Browser   ${RESET} http://localhost:7474"
     echo ""
-    echo "${BOLD}  Comptes démo${RESET} (mot de passe : Demo1234! — code TOTP : make totp)"
-    echo "    alice@demo.fr   résident"
-    echo "    bob@demo.fr     modérateur"
-    echo "    admin@demo.fr   administrateur"
+    echo "${BOLD}  Demo accounts${RESET} (password: Demo1234! — TOTP code: make totp)"
+    echo "    alice@demo.fr   resident"
+    echo "    bob@demo.fr     moderator"
+    echo "    admin@demo.fr   admin"
     echo ""
-    echo "${BOLD}  Client lourd (JavaFX)${RESET}"
+    echo "${BOLD}  Desktop client (JavaFX)${RESET}"
     echo "    make build-desktop && java -jar desktop-app/target/quartierconnect-desktop.jar"
     echo ""
 }
 
 main() {
-    echo "${BOLD}QuartierConnect — Installation automatique${RESET}"
+    echo "${BOLD}QuartierConnect — automated install${RESET}"
     check_prerequisites
     generate_env_file
     start_docker_services

@@ -23,13 +23,13 @@ Remove-Item -Recurse -Force $Dist, $Dest -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $Dist | Out-Null
 Copy-Item "target/$MainJar" $Dist
 
-# Cible une instance déployée : l'app installée pointe vers ce serveur sans
-# configuration (ServerConfig lit ces propriétés en priorité). Sinon, localhost.
+# Point the installed app at a deployed instance with no user configuration
+# (ServerConfig reads these properties first). Falls back to localhost.
 $JavaOptions = @()
 if ($env:QC_SERVER_URL) {
   $Url = $env:QC_SERVER_URL.TrimEnd('/')
   $JavaOptions = @("--java-options", "-Dapi.url=$Url/api", "--java-options", "-Dweb.url=$Url/admin")
-  Write-Host "==> Serveur ciblé : $Url"
+  Write-Host "==> Target server: $Url"
 }
 
 if ($Type -eq "app-image") {

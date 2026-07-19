@@ -55,7 +55,7 @@ export class EventsController {
         private readonly geocoding: GeocodingService,
     ) {}
 
-    // Non-admins are scoped to their own quartier; admins see all.
+    // Non-admins are scoped to their own neighborhood; admins see all.
     private assertNeighborhoodScope(
         event: { neighborhoodId?: string | null },
         req: AuthRequest,
@@ -208,7 +208,7 @@ export class EventsController {
     @ApiResponse({ status: 401, description: "Not authenticated" })
     async create(@Body() dto: CreateEventDto, @Request() req: AuthRequest) {
         const location = await this.resolveLocation(dto.address, dto.location);
-        // Anti-spoofing: only admins may target another quartier.
+        // Anti-spoofing: only admins may target another neighborhood.
         const neighborhoodId =
             req.user.role === "admin"
                 ? (dto.neighborhoodId ?? req.user.neighborhoodId ?? undefined)
@@ -299,7 +299,7 @@ export class EventsController {
             changes.description = dto.description;
         if (dto.category !== undefined) changes.category = dto.category;
         if (dto.date !== undefined) changes.date = dto.date;
-        // Anti-spoofing: only admins may move an event to another quartier.
+        // Anti-spoofing: only admins may move an event to another neighborhood.
         if (dto.neighborhoodId !== undefined && req.user.role === "admin")
             changes.neighborhoodId = dto.neighborhoodId;
         if (dto.location !== undefined)

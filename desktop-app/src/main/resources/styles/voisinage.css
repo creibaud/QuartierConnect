@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════
-   QuartierConnect — Thème « service public »
-   Base : AtlantaFX PrimerLight + tokens froids alignés sur le web
-   (bleu France, ardoise slate, rouge Marianne). Angles nets.
+   QuartierConnect — "public service" theme
+   Base: AtlantaFX PrimerLight + cool tokens matching the web app
+   (bleu France, slate, rouge Marianne). Sharp corners.
    ═══════════════════════════════════════════════════════════════ */
 
 .root {
@@ -11,22 +11,22 @@
     -color-accent-muted: #9a9ac8;
     -color-accent-subtle: #e9e9f8;
 
-    /* Backgrounds — froids (ardoise clair, cartes blanches) */
+    /* Backgrounds — cool (light slate, white cards) */
     -color-bg-default: #f1f3f6;
     -color-bg-subtle: #ffffff;
     -color-bg-inset: #e7eaf1;
     -color-bg-overlay: #ffffff;
 
-    /* Foregrounds — encre froide */
+    /* Foregrounds — cool ink */
     -color-fg-default: #16181d;
     -color-fg-muted: #565b67;
     -color-fg-subtle: #8a8f9c;
 
-    /* Borders — ardoise */
+    /* Borders — slate */
     -color-border-default: #c2c7d2;
     -color-border-muted: #dadee6;
 
-    /* Success — vert civique */
+    /* Success — civic green */
     -color-success-fg: #18753c;
     -color-success-emphasis: #18753c;
     -color-success-muted: #a9cdb5;
@@ -39,7 +39,7 @@
     -color-danger-subtle: #fbe6e7;
 }
 
-/* ── Radius net (4) sur les contrôles standards ──────────────── */
+/* ── Sharp radius (4) on standard controls ───────────────────── */
 
 .button,
 .toggle-button {
