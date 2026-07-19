@@ -1,135 +1,837 @@
-[
-	{
-		"_id": {
-			"$oid": "6a46cc2831b9e8b1eac99712"
-		},
-		"serviceId": "6a46c6c0f0d7122d4dc9c973",
-		"initiatorId": "ea7894ed-97f8-45ef-b955-35cd773830e5",
-		"payerId": "ea7894ed-97f8-45ef-b955-35cd773830e5",
-		"payeeId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"pointsAmount": 2,
-		"status": "cancelled",
-		"contractId": "6a46cc2831b9e8b1eac99713",
-		"createdAt": {
-			"$date": "2026-07-02T20:38:00.031Z"
-		},
-		"updatedAt": {
-			"$date": "2026-07-02T23:33:53.615Z"
-		},
-		"__v": 0
+[{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133108"
 	},
-	{
-		"_id": {
-			"$oid": "6a46f561cc59f9b84636dfaf"
-		},
-		"serviceId": "6a46c6c0f0d7122d4dc9c973",
-		"initiatorId": "ea7894ed-97f8-45ef-b955-35cd773830e5",
-		"payerId": "ea7894ed-97f8-45ef-b955-35cd773830e5",
-		"payeeId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"pointsAmount": 2,
-		"status": "completed",
-		"contractId": "6a46f561cc59f9b84636dfb0",
-		"createdAt": {
-			"$date": "2026-07-02T23:33:53.658Z"
-		},
-		"updatedAt": {
-			"$date": "2026-07-02T23:33:53.871Z"
-		},
-		"__v": 0
+	"serviceId": "6a5ca3e776d969f39113303a",
+	"initiatorId": "4de869de-be0a-47b9-9f6a-772041cdc24f",
+	"payerId": "4de869de-be0a-47b9-9f6a-772041cdc24f",
+	"payeeId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"pointsAmount": 3,
+	"status": "pending",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.207Z"
 	},
-	{
-		"_id": {
-			"$oid": "6a459509586efbb7cf0889fa"
-		},
-		"serviceId": "6a44346ed6ad48111c1abcad",
-		"initiatorId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"payerId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"payeeId": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-		"pointsAmount": 1,
-		"status": "completed",
-		"contractId": "6a459509586efbb7cf0889fb",
-		"createdAt": {
-			"$date": "2026-07-01T22:30:33.83Z"
-		},
-		"updatedAt": {
-			"$date": "2026-07-01T22:30:34.196Z"
-		},
-		"__v": 0
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:10.207Z"
 	},
-	{
-		"_id": {
-			"$oid": "6a46f580cc59f9b84636dfb8"
-		},
-		"serviceId": "6a46f580cc59f9b84636dfb7",
-		"initiatorId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"payerId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"payeeId": "ea7894ed-97f8-45ef-b955-35cd773830e5",
-		"pointsAmount": 2,
-		"status": "completed",
-		"contractId": "6a46f580cc59f9b84636dfb9",
-		"createdAt": {
-			"$date": "2026-07-02T23:34:24.363Z"
-		},
-		"updatedAt": {
-			"$date": "2026-07-02T23:35:30.252Z"
-		},
-		"__v": 0
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133109"
 	},
-	{
-		"_id": {
-			"$oid": "6a464eb2b9f349091fda07da"
-		},
-		"serviceId": "6a44346ed6ad48111c1abcad",
-		"initiatorId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"payerId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"payeeId": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-		"pointsAmount": 1,
-		"status": "completed",
-		"contractId": "6a475670ef7bb82ab044d3e5",
-		"createdAt": {
-			"$date": "2026-07-02T11:42:42.116Z"
-		},
-		"updatedAt": {
-			"$date": "2026-07-07T07:18:11.695Z"
-		},
-		"__v": 0
+	"serviceId": "6a5ca3e776d969f39113303a",
+	"initiatorId": "8f1be472-8d4c-40ec-bb31-6464b435975a",
+	"payerId": "8f1be472-8d4c-40ec-bb31-6464b435975a",
+	"payeeId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"pointsAmount": 3,
+	"status": "pending",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.224Z"
 	},
-	{
-		"_id": {
-			"$oid": "6a4ca7f85c5c3b730611c425"
-		},
-		"serviceId": "6a44346ed6ad48111c1abcb0",
-		"initiatorId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"payerId": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-		"payeeId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"pointsAmount": 1,
-		"status": "pending",
-		"contractId": null,
-		"createdAt": {
-			"$date": "2026-07-07T07:17:12.476Z"
-		},
-		"updatedAt": {
-			"$date": "2026-07-07T07:17:12.476Z"
-		},
-		"__v": 0
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:10.224Z"
 	},
-	{
-		"_id": {
-			"$oid": "6a4ca8135c5c3b730611c426"
-		},
-		"serviceId": "6a46f580cc59f9b84636dfb7",
-		"initiatorId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"payerId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"payeeId": "ea7894ed-97f8-45ef-b955-35cd773830e5",
-		"pointsAmount": 2,
-		"status": "pending",
-		"contractId": null,
-		"createdAt": {
-			"$date": "2026-07-07T07:17:39.288Z"
-		},
-		"updatedAt": {
-			"$date": "2026-07-07T07:17:39.288Z"
-		},
-		"__v": 0
-	}
-]
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113310a"
+	},
+	"serviceId": "6a5ca3e776d969f39113303b",
+	"initiatorId": "fac2acc3-190b-43cd-baed-122358be1259",
+	"payerId": "fac2acc3-190b-43cd-baed-122358be1259",
+	"payeeId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"pointsAmount": 3,
+	"status": "accepted",
+	"contractId": "6a5ca3ea76d969f391133134",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.237Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:10.798Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113310b"
+	},
+	"serviceId": "6a5ca3e776d969f39113303b",
+	"initiatorId": "f7025b74-7036-4140-890d-85eecf174883",
+	"payerId": "f7025b74-7036-4140-890d-85eecf174883",
+	"payeeId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"pointsAmount": 3,
+	"status": "declined",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.249Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:10.809Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113310c"
+	},
+	"serviceId": "6a5ca3e776d969f39113303c",
+	"initiatorId": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+	"payerId": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+	"payeeId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"pointsAmount": 4,
+	"status": "cancelled",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.262Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:10.82Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113310d"
+	},
+	"serviceId": "6a5ca3e776d969f39113303c",
+	"initiatorId": "faa4f168-5dfe-4683-b0dc-34cad4ab4928",
+	"payerId": "faa4f168-5dfe-4683-b0dc-34cad4ab4928",
+	"payeeId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"pointsAmount": 4,
+	"status": "completed",
+	"contractId": "6a5ca3ea76d969f391133137",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.276Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:01.09Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113310e"
+	},
+	"serviceId": "6a5ca3e776d969f39113303a",
+	"initiatorId": "42a660bf-233e-45c9-81c3-947a509a44c1",
+	"payerId": "42a660bf-233e-45c9-81c3-947a509a44c1",
+	"payeeId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"pointsAmount": 3,
+	"status": "accepted",
+	"contractId": "6a5ca3ea76d969f39113313a",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.289Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:10.885Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113310f"
+	},
+	"serviceId": "6a5ca003a6f783f8fe6b09e9",
+	"initiatorId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"payerId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"payeeId": "93445062-fc71-4130-be5c-bd7ad9661bf2",
+	"pointsAmount": 4,
+	"status": "pending",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.303Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:10.303Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133110"
+	},
+	"serviceId": "6a5ca003a6f783f8fe6b09ea",
+	"initiatorId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"payerId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"payeeId": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+	"pointsAmount": 2,
+	"status": "pending",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.32Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:10.32Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133111"
+	},
+	"serviceId": "6a5ca004a6f783f8fe6b09ee",
+	"initiatorId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"payerId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"payeeId": "0c05a6eb-4191-4b8f-8a4e-e9489251eaee",
+	"pointsAmount": 6,
+	"status": "accepted",
+	"contractId": "6a5ca3eb76d969f39113313d",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.334Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:11.065Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133112"
+	},
+	"serviceId": "6a5ca005a6f783f8fe6b09f6",
+	"initiatorId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"payerId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"payeeId": "51b9e03e-0681-453b-b96d-a0a71b6cf2d8",
+	"pointsAmount": 2,
+	"status": "declined",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.346Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:11.209Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133113"
+	},
+	"serviceId": "6a5ca007a6f783f8fe6b0a14",
+	"initiatorId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"payerId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"payeeId": "3c3a4d55-de41-4aab-92c5-ed692bba4c9b",
+	"pointsAmount": 3,
+	"status": "cancelled",
+	"contractId": "6a5ca3eb76d969f391133140",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.358Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.395Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133114"
+	},
+	"serviceId": "6a5ca005a6f783f8fe6b09f7",
+	"initiatorId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"payerId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"payeeId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+	"pointsAmount": 4,
+	"status": "completed",
+	"contractId": "6a5ca3eb76d969f391133143",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.37Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:31.087Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133115"
+	},
+	"serviceId": "6a5ca005a6f783f8fe6b09f8",
+	"initiatorId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"payerId": "0b653a65-ed00-4bff-8363-87db61282945",
+	"payeeId": "98b72c78-8549-4aac-874c-c19391150b07",
+	"pointsAmount": 2,
+	"status": "completed",
+	"contractId": "6a5ca3eb76d969f391133146",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.382Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:18:01.069Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133116"
+	},
+	"serviceId": "6a5ca003a6f783f8fe6b09ea",
+	"initiatorId": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+	"payerId": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+	"payeeId": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+	"pointsAmount": 2,
+	"status": "completed",
+	"contractId": "6a5ca3eb76d969f391133149",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.392Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.621Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133117"
+	},
+	"serviceId": "6a5ca003a6f783f8fe6b09ea",
+	"initiatorId": "a1476d02-7f97-4d44-8546-4debcf9ca26c",
+	"payerId": "a1476d02-7f97-4d44-8546-4debcf9ca26c",
+	"payeeId": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+	"pointsAmount": 2,
+	"status": "completed",
+	"contractId": "6a5ca3eb76d969f39113314c",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.403Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:01.138Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133118"
+	},
+	"serviceId": "6a5ca003a6f783f8fe6b09ea",
+	"initiatorId": "b8b1125d-d27b-47dc-98ae-7150ffcb0fe3",
+	"payerId": "b8b1125d-d27b-47dc-98ae-7150ffcb0fe3",
+	"payeeId": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+	"pointsAmount": 2,
+	"status": "completed",
+	"contractId": "6a5ca3eb76d969f39113314f",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.414Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:31.12Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133119"
+	},
+	"serviceId": "6a5ca005a6f783f8fe6b09f7",
+	"initiatorId": "a7febe13-1bc7-427d-8a44-e3b3a2e62c8d",
+	"payerId": "a7febe13-1bc7-427d-8a44-e3b3a2e62c8d",
+	"payeeId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+	"pointsAmount": 4,
+	"status": "completed",
+	"contractId": "6a5ca3eb76d969f391133152",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.425Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:01.182Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113311a"
+	},
+	"serviceId": "6a5ca005a6f783f8fe6b09f7",
+	"initiatorId": "58b3df0d-2a0b-4f08-96f3-e0924d250b89",
+	"payerId": "58b3df0d-2a0b-4f08-96f3-e0924d250b89",
+	"payeeId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+	"pointsAmount": 4,
+	"status": "completed",
+	"contractId": "6a5ca3eb76d969f391133155",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.434Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:31.157Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113311b"
+	},
+	"serviceId": "6a5ca005a6f783f8fe6b09f8",
+	"initiatorId": "8f1be472-8d4c-40ec-bb31-6464b435975a",
+	"payerId": "8f1be472-8d4c-40ec-bb31-6464b435975a",
+	"payeeId": "98b72c78-8549-4aac-874c-c19391150b07",
+	"pointsAmount": 2,
+	"status": "completed",
+	"contractId": "6a5ca3ec76d969f391133158",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.442Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:01.226Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113311c"
+	},
+	"serviceId": "6a5ca005a6f783f8fe6b09f8",
+	"initiatorId": "fac2acc3-190b-43cd-baed-122358be1259",
+	"payerId": "fac2acc3-190b-43cd-baed-122358be1259",
+	"payeeId": "98b72c78-8549-4aac-874c-c19391150b07",
+	"pointsAmount": 2,
+	"status": "completed",
+	"contractId": "6a5ca3ec76d969f39113315b",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.45Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:31.201Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113311d"
+	},
+	"serviceId": "6a5ca003a6f783f8fe6b09e9",
+	"initiatorId": "f7025b74-7036-4140-890d-85eecf174883",
+	"payerId": "f7025b74-7036-4140-890d-85eecf174883",
+	"payeeId": "93445062-fc71-4130-be5c-bd7ad9661bf2",
+	"pointsAmount": 4,
+	"status": "completed",
+	"contractId": "6a5ca3ec76d969f39113315e",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.458Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.818Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113311e"
+	},
+	"serviceId": "6a5ca005a6f783f8fe6b09f6",
+	"initiatorId": "4de869de-be0a-47b9-9f6a-772041cdc24f",
+	"payerId": "4de869de-be0a-47b9-9f6a-772041cdc24f",
+	"payeeId": "51b9e03e-0681-453b-b96d-a0a71b6cf2d8",
+	"pointsAmount": 2,
+	"status": "completed",
+	"contractId": "6a5ca3ec76d969f391133161",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.466Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.894Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113311f"
+	},
+	"serviceId": "6a5ca003a6f783f8fe6b09e6",
+	"initiatorId": "1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+	"payerId": "1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+	"payeeId": "e9b6a3de-1139-47c6-b834-fa08f43850cb",
+	"pointsAmount": 3,
+	"status": "accepted",
+	"contractId": "6a5ca3ff76d969f391133164",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.476Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.205Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133120"
+	},
+	"serviceId": "6a5ca006a6f783f8fe6b0a0f",
+	"initiatorId": "42a660bf-233e-45c9-81c3-947a509a44c1",
+	"payerId": "542f9288-29cc-4675-8ed7-bb39c1f5929a",
+	"payeeId": "42a660bf-233e-45c9-81c3-947a509a44c1",
+	"pointsAmount": 8,
+	"status": "accepted",
+	"contractId": "6a5ca3ff76d969f391133167",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.486Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.242Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133121"
+	},
+	"serviceId": "6a5ca006a6f783f8fe6b09fd",
+	"initiatorId": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+	"payerId": "16850636-c1fa-4cf3-84c7-ad7664d6cad0",
+	"payeeId": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+	"pointsAmount": 2,
+	"status": "pending",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.497Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:10.497Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133122"
+	},
+	"serviceId": "6a5ca006a6f783f8fe6b09fe",
+	"initiatorId": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+	"payerId": "f7b74913-40ac-495c-981e-e46bce8b4d2b",
+	"payeeId": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+	"pointsAmount": 3,
+	"status": "pending",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.504Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:10.504Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133123"
+	},
+	"serviceId": "6a5ca006a6f783f8fe6b0a00",
+	"initiatorId": "1399ce7a-1294-4dfb-bfe7-0387c9b89431",
+	"payerId": "e9b6a3de-1139-47c6-b834-fa08f43850cb",
+	"payeeId": "1399ce7a-1294-4dfb-bfe7-0387c9b89431",
+	"pointsAmount": 10,
+	"status": "pending",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.516Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:10.516Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133124"
+	},
+	"serviceId": "6a5ca006a6f783f8fe6b0a02",
+	"initiatorId": "faa4f168-5dfe-4683-b0dc-34cad4ab4928",
+	"payerId": "84ec11af-7898-463a-8cca-525ac60cbf59",
+	"payeeId": "faa4f168-5dfe-4683-b0dc-34cad4ab4928",
+	"pointsAmount": 2,
+	"status": "pending",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.529Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:10.529Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133125"
+	},
+	"serviceId": "6a5ca006a6f783f8fe6b0a08",
+	"initiatorId": "b8b1125d-d27b-47dc-98ae-7150ffcb0fe3",
+	"payerId": "0c05a6eb-4191-4b8f-8a4e-e9489251eaee",
+	"payeeId": "b8b1125d-d27b-47dc-98ae-7150ffcb0fe3",
+	"pointsAmount": 6,
+	"status": "pending",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.54Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:10.54Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133126"
+	},
+	"serviceId": "6a5ca006a6f783f8fe6b0a0e",
+	"initiatorId": "a7febe13-1bc7-427d-8a44-e3b3a2e62c8d",
+	"payerId": "1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+	"payeeId": "a7febe13-1bc7-427d-8a44-e3b3a2e62c8d",
+	"pointsAmount": 2,
+	"status": "pending",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.553Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:10.553Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133127"
+	},
+	"serviceId": "6a5ca006a6f783f8fe6b0a11",
+	"initiatorId": "58b3df0d-2a0b-4f08-96f3-e0924d250b89",
+	"payerId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+	"payeeId": "58b3df0d-2a0b-4f08-96f3-e0924d250b89",
+	"pointsAmount": 2,
+	"status": "pending",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.566Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:10.566Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133128"
+	},
+	"serviceId": "6a5ca004a6f783f8fe6b09ee",
+	"initiatorId": "542f9288-29cc-4675-8ed7-bb39c1f5929a",
+	"payerId": "542f9288-29cc-4675-8ed7-bb39c1f5929a",
+	"payeeId": "0c05a6eb-4191-4b8f-8a4e-e9489251eaee",
+	"pointsAmount": 6,
+	"status": "pending",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.58Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:10.58Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133129"
+	},
+	"serviceId": "6a5ca003a6f783f8fe6b09e6",
+	"initiatorId": "16850636-c1fa-4cf3-84c7-ad7664d6cad0",
+	"payerId": "16850636-c1fa-4cf3-84c7-ad7664d6cad0",
+	"payeeId": "e9b6a3de-1139-47c6-b834-fa08f43850cb",
+	"pointsAmount": 3,
+	"status": "declined",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.596Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.258Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113312a"
+	},
+	"serviceId": "6a5ca003a6f783f8fe6b09e9",
+	"initiatorId": "f7b74913-40ac-495c-981e-e46bce8b4d2b",
+	"payerId": "f7b74913-40ac-495c-981e-e46bce8b4d2b",
+	"payeeId": "93445062-fc71-4130-be5c-bd7ad9661bf2",
+	"pointsAmount": 4,
+	"status": "declined",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.61Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.271Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113312b"
+	},
+	"serviceId": "6a5ca007a6f783f8fe6b0a14",
+	"initiatorId": "1399ce7a-1294-4dfb-bfe7-0387c9b89431",
+	"payerId": "1399ce7a-1294-4dfb-bfe7-0387c9b89431",
+	"payeeId": "3c3a4d55-de41-4aab-92c5-ed692bba4c9b",
+	"pointsAmount": 3,
+	"status": "declined",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.622Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.284Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113312c"
+	},
+	"serviceId": "6a5ca006a6f783f8fe6b09fe",
+	"initiatorId": "8f1be472-8d4c-40ec-bb31-6464b435975a",
+	"payerId": "f7b74913-40ac-495c-981e-e46bce8b4d2b",
+	"payeeId": "8f1be472-8d4c-40ec-bb31-6464b435975a",
+	"pointsAmount": 3,
+	"status": "declined",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.631Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.298Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113312d"
+	},
+	"serviceId": "6a5ca006a6f783f8fe6b0a08",
+	"initiatorId": "a1476d02-7f97-4d44-8546-4debcf9ca26c",
+	"payerId": "0c05a6eb-4191-4b8f-8a4e-e9489251eaee",
+	"payeeId": "a1476d02-7f97-4d44-8546-4debcf9ca26c",
+	"pointsAmount": 6,
+	"status": "declined",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.639Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.312Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113312e"
+	},
+	"serviceId": "6a5ca006a6f783f8fe6b0a0f",
+	"initiatorId": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+	"payerId": "542f9288-29cc-4675-8ed7-bb39c1f5929a",
+	"payeeId": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+	"pointsAmount": 8,
+	"status": "declined",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.648Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.324Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113312f"
+	},
+	"serviceId": "6a5ca005a6f783f8fe6b09f6",
+	"initiatorId": "f7025b74-7036-4140-890d-85eecf174883",
+	"payerId": "f7025b74-7036-4140-890d-85eecf174883",
+	"payeeId": "51b9e03e-0681-453b-b96d-a0a71b6cf2d8",
+	"pointsAmount": 2,
+	"status": "cancelled",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.657Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.337Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133130"
+	},
+	"serviceId": "6a5ca005a6f783f8fe6b09f8",
+	"initiatorId": "4de869de-be0a-47b9-9f6a-772041cdc24f",
+	"payerId": "4de869de-be0a-47b9-9f6a-772041cdc24f",
+	"payeeId": "98b72c78-8549-4aac-874c-c19391150b07",
+	"pointsAmount": 2,
+	"status": "cancelled",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.671Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.349Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133131"
+	},
+	"serviceId": "6a5ca006a6f783f8fe6b09fd",
+	"initiatorId": "fac2acc3-190b-43cd-baed-122358be1259",
+	"payerId": "16850636-c1fa-4cf3-84c7-ad7664d6cad0",
+	"payeeId": "fac2acc3-190b-43cd-baed-122358be1259",
+	"pointsAmount": 2,
+	"status": "cancelled",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.68Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.361Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133132"
+	},
+	"serviceId": "6a5ca006a6f783f8fe6b0a02",
+	"initiatorId": "42a660bf-233e-45c9-81c3-947a509a44c1",
+	"payerId": "84ec11af-7898-463a-8cca-525ac60cbf59",
+	"payeeId": "42a660bf-233e-45c9-81c3-947a509a44c1",
+	"pointsAmount": 2,
+	"status": "cancelled",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.689Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.373Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133133"
+	},
+	"serviceId": "6a5ca006a6f783f8fe6b0a0e",
+	"initiatorId": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+	"payerId": "1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+	"payeeId": "f8f4a6d7-5239-40a9-b1cd-f5b98e347e18",
+	"pointsAmount": 2,
+	"status": "cancelled",
+	"contractId": null,
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.699Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.384Z"
+	},
+	"__v": 0
+}]
+

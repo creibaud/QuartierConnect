@@ -1,280 +1,733 @@
-[
-	{
-		"_id": {
-			"$oid": "6a46f561cc59f9b84636dfb0"
-		},
-		"title": "Contrat de service — Réparation de vélo par Alice",
-		"content": "Contrat de service pour « Réparation de vélo par Alice ».\nDescription : Alice répare votre vélo : freins, dérailleur, chambre à air.\nPayeur : Bob Dupont. Bénéficiaire : Alice Martin.\nMontant : 2 points.\nFait le 2 juillet 2026.",
-		"createdBy": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"signatories": [
-			"ea7894ed-97f8-45ef-b955-35cd773830e5",
-			"f3dad978-6792-4d0c-b2a5-fe3f3f08253f"
-		],
-		"status": "fully_signed",
-		"contentHash": "7b6c493a03ebd71338529a00c813a71093f04869eb9319a1f9624c6376206a6b",
-		"signedAt": {
-			"$date": "2026-07-02T23:33:53.838Z"
-		},
-		"signatures": [
-			{
-				"userId": "ea7894ed-97f8-45ef-b955-35cd773830e5",
-				"signedAt": {
-					"$date": "2026-07-02T23:33:53.77Z"
-				},
-				"hash": "dfab1434b1558ad453691e09bfc7b1aa9196d1d3d0ca0f50504ed59662b3cab5"
-			},
-			{
-				"userId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-				"signedAt": {
-					"$date": "2026-07-02T23:33:53.838Z"
-				},
-				"hash": "28772f1590951c1abf318c056ea1c6cb2ccb04b1e826ea29ca58b2c99cb6bfbc"
-			}
-		],
-		"serviceId": "6a46c6c0f0d7122d4dc9c973",
-		"bookingId": "6a46f561cc59f9b84636dfaf",
-		"pointsAmount": 2,
-		"pdfFileId": "6a46f561cc59f9b84636dfb5",
-		"createdAt": {
-			"$date": "2026-07-02T23:33:53.678Z"
-		},
-		"updatedAt": {
-			"$date": "2026-07-02T23:33:53.864Z"
-		},
-		"__v": 2
+[{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133134"
 	},
-	{
-		"_id": {
-			"$oid": "6a46f580cc59f9b84636dfb9"
-		},
-		"title": "Contrat de service — Coup de main bricolage par Bob",
-		"content": "Contrat de service pour « Coup de main bricolage par Bob ».\nDescription : Bob vous aide pour vos petits travaux : étagères, joints, ampoules.\nPayeur : Alice Martin. Bénéficiaire : Bob Dupont.\nMontant : 2 points.\nFait le 2 juillet 2026.",
-		"createdBy": "ea7894ed-97f8-45ef-b955-35cd773830e5",
-		"signatories": [
-			"f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-			"ea7894ed-97f8-45ef-b955-35cd773830e5"
-		],
-		"status": "fully_signed",
-		"contentHash": "ca2924f0704537cc79b106ed7bacc3b9db83087bec0bf4e647c40cdd772940ee",
-		"signedAt": {
-			"$date": "2026-07-02T23:35:30.225Z"
-		},
-		"signatures": [
-			{
-				"userId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-				"signedAt": {
-					"$date": "2026-07-02T23:35:20.158Z"
-				},
-				"hash": "ed6df0218fea3867fedbe59435b503defe66e07b4f3cb83d780c4ffb2b724885"
-			},
-			{
-				"userId": "ea7894ed-97f8-45ef-b955-35cd773830e5",
-				"signedAt": {
-					"$date": "2026-07-02T23:35:30.225Z"
-				},
-				"hash": "3a0e7317fc39ae7fc30d734b4dd1cfaf9e008b009b73b4b71c761780c71beb84"
-			}
-		],
-		"serviceId": "6a46f580cc59f9b84636dfb7",
-		"bookingId": "6a46f580cc59f9b84636dfb8",
-		"pointsAmount": 2,
-		"pdfFileId": "6a46f5c2cc59f9b84636dfbe",
-		"createdAt": {
-			"$date": "2026-07-02T23:34:24.381Z"
-		},
-		"updatedAt": {
-			"$date": "2026-07-02T23:35:30.246Z"
-		},
-		"__v": 2
+	"title": "Contrat de service — Initiation à la photo numérique",
+	"content": "Contrat de service pour « Initiation à la photo numérique ».\nDescription : Prise en main du boîtier, cadrage et lumière, puis une sortie photo dans le quartier.\nPayeur : Émilie Chevalier. Bénéficiaire : Alice Martin.\nMontant : 3 points.\nFait le 19 juillet 2026.",
+	"createdBy": "0b653a65-ed00-4bff-8363-87db61282945",
+	"signatories": [
+		"fac2acc3-190b-43cd-baed-122358be1259",
+		"0b653a65-ed00-4bff-8363-87db61282945"
+	],
+	"status": "draft",
+	"contentHash": "ac26e6f5af6825201698d14fedc4b57d8e6e6343f884d35b5175e4c3be6b8078",
+	"signedAt": null,
+	"signatures": [],
+	"serviceId": "6a5ca3e776d969f39113303b",
+	"bookingId": "6a5ca3ea76d969f39113310a",
+	"pointsAmount": 3,
+	"pdfFileId": "6a5ca81876d969f3911335d6",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.716Z"
 	},
-	{
-		"_id": {
-			"$oid": "6a470207e6c21e0ce3e5beb6"
-		},
-		"title": "Convention de prêt de matériel",
-		"content": "Document importé : convention-pret-materiel.pdf",
-		"createdBy": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"signatories": [
-			"f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-			"ea7894ed-97f8-45ef-b955-35cd773830e5"
-		],
-		"status": "fully_signed",
-		"contentHash": "445b7ddcfcec7261528a19a91b6668ee3ce88d09223b5dc12ab046317d4fb0b5",
-		"signedAt": {
-			"$date": "2026-07-03T00:29:36.047Z"
-		},
-		"signatures": [
-			{
-				"userId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-				"signedAt": {
-					"$date": "2026-07-03T00:27:55.827Z"
-				},
-				"hash": "fb73d6dfe8583344d1057f2d7c785e002048ec6ef969867aed83d480f881c5ab"
-			},
-			{
-				"userId": "ea7894ed-97f8-45ef-b955-35cd773830e5",
-				"signedAt": {
-					"$date": "2026-07-03T00:29:36.047Z"
-				},
-				"hash": "880714f71bdbc83e99af01937c94d5ed46d8343fc27f09ed110e1d9f7f9dfee2"
-			}
-		],
-		"serviceId": null,
-		"bookingId": null,
-		"pointsAmount": null,
-		"pdfFileId": "6a470270e6c21e0ce3e5bebb",
-		"source": "imported",
-		"zones": [
-			{
-				"page": 1,
-				"x": 0.060000019073486316,
-				"y": 0.8299999730231353,
-				"w": 0.3000000381469726,
-				"h": 0.09999997302313536,
-				"signerId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-				"kind": "signature"
-			},
-			{
-				"page": 1,
-				"x": 0.7999999999999999,
-				"y": 0.09000000674421615,
-				"w": 0.1,
-				"h": 0.06,
-				"signerId": "ea7894ed-97f8-45ef-b955-35cd773830e5",
-				"kind": "initials"
-			},
-			{
-				"page": 2,
-				"x": 0.63,
-				"y": 0.8299999730231353,
-				"w": 0.24,
-				"h": 0.08,
-				"signerId": "ea7894ed-97f8-45ef-b955-35cd773830e5",
-				"kind": "signature"
-			}
-		],
-		"createdAt": {
-			"$date": "2026-07-03T00:27:51.858Z"
-		},
-		"updatedAt": {
-			"$date": "2026-07-03T00:29:36.068Z"
-		},
-		"__v": 2
+	"updatedAt": {
+		"$date": "2026-07-19T10:34:00.254Z"
 	},
-	{
-		"_id": {
-			"$oid": "6a475670ef7bb82ab044d3e5"
-		},
-		"title": "Contrat de service — Cours de soutien scolaire",
-		"content": "Contrat de service pour « Cours de soutien scolaire ».\nDescription : Étudiant disponible pour aider collégiens et lycéens en maths.\nPayeur : Alice Martin. Bénéficiaire : Admin QuartierConnect.\nMontant : 1 point.\nFait le 3 juillet 2026.",
-		"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-		"signatories": [
-			"f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-			"41d91ab9-b9a9-45ed-a5b8-9c2ae4819316"
-		],
-		"status": "fully_signed",
-		"contentHash": "eb4d76a4fc0360039abcde4afd7d8e0018a34d90392366b3ff9e8e3f06952378",
-		"signedAt": {
-			"$date": "2026-07-07T07:18:11.369Z"
-		},
-		"signatures": [
-			{
-				"userId": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-				"signedAt": {
-					"$date": "2026-07-03T06:28:33.483Z"
-				},
-				"hash": "f9bae98967ed977f187acfcafa7b9c4826c2905b0519d195c53f9642ad6b7aba"
-			},
-			{
-				"userId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-				"signedAt": {
-					"$date": "2026-07-07T07:18:11.323Z"
-				},
-				"hash": "2672a40484722fee57cb3e8b6b875a29c14a37edc01b32cb9a78d8f18c0a9beb"
-			}
-		],
-		"serviceId": "6a44346ed6ad48111c1abcad",
-		"bookingId": "6a464eb2b9f349091fda07da",
-		"pointsAmount": 1,
-		"pdfFileId": "6a4ca8335c5c3b730611c427",
-		"source": "generated",
-		"createdAt": {
-			"$date": "2026-07-03T06:28:00.933Z"
-		},
-		"updatedAt": {
-			"$date": "2026-07-07T07:18:11.686Z"
-		},
-		"__v": 1
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f391133137"
 	},
-	{
-		"_id": {
-			"$oid": "6a46cc2831b9e8b1eac99713"
-		},
-		"title": "Contrat de service — Réparation de vélo par Alice",
-		"content": "Contrat de service pour « Réparation de vélo par Alice ».\nDescription : Alice répare votre vélo : freins, dérailleur, chambre à air.\nPayeur : Bob Dupont. Bénéficiaire : Alice Martin.\nMontant : 2 points.\nFait le 2 juillet 2026.",
-		"createdBy": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-		"signatories": [
-			"ea7894ed-97f8-45ef-b955-35cd773830e5",
-			"f3dad978-6792-4d0c-b2a5-fe3f3f08253f"
-		],
-		"status": "cancelled",
-		"contentHash": "7b6c493a03ebd71338529a00c813a71093f04869eb9319a1f9624c6376206a6b",
-		"signedAt": null,
-		"signatures": [],
-		"serviceId": "6a46c6c0f0d7122d4dc9c973",
-		"bookingId": "6a46cc2831b9e8b1eac99712",
-		"pointsAmount": 2,
-		"pdfFileId": "6a46cc2831b9e8b1eac99714",
-		"createdAt": {
-			"$date": "2026-07-02T20:38:00.295Z"
-		},
-		"updatedAt": {
-			"$date": "2026-07-02T23:33:53.601Z"
-		},
-		"__v": 0
+	"title": "Contrat de service — Préparation de repas maison pour la semaine",
+	"content": "Contrat de service pour « Préparation de repas maison pour la semaine ».\nDescription : Quatre plats cuisinés chez vous à partir de vos courses, régimes particuliers bienvenus.\nPayeur : Maxime Renaud. Bénéficiaire : Alice Martin.\nMontant : 4 points.\nFait le 19 juillet 2026.",
+	"createdBy": "0b653a65-ed00-4bff-8363-87db61282945",
+	"signatories": [
+		"faa4f168-5dfe-4683-b0dc-34cad4ab4928",
+		"0b653a65-ed00-4bff-8363-87db61282945"
+	],
+	"status": "fully_signed",
+	"contentHash": "f41080fd9f09a671e988fb744c5155bce9ba27a68739c2b88099d883f8069700",
+	"signedAt": {
+		"$date": "2026-07-19T10:17:01.068Z"
 	},
-	{
-		"_id": {
-			"$oid": "6a459509586efbb7cf0889fb"
-		},
-		"title": "Service contract — Cours de soutien scolaire",
-		"content": "Service contract for \"Cours de soutien scolaire\".\nDescription: Étudiant disponible pour aider collégiens et lycéens en maths..\nPayer: f3dad978-6792-4d0c-b2a5-fe3f3f08253f. Payee: 41d91ab9-b9a9-45ed-a5b8-9c2ae4819316.\nAmount: 1 points.\nDate: 2026-07-01T22:30:33.856Z.",
-		"createdBy": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-		"signatories": [
-			"f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-			"41d91ab9-b9a9-45ed-a5b8-9c2ae4819316"
-		],
-		"status": "fully_signed",
-		"contentHash": "762e948081a15754f975859f5a01890c3671222355de94999b7519e6e5a46b61",
-		"signedAt": {
-			"$date": "2026-07-01T22:30:34.161Z"
-		},
-		"signatures": [
-			{
-				"userId": "f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-				"signedAt": {
-					"$date": "2026-07-01T22:30:34.092Z"
-				},
-				"hash": "cdb42c3e95fc172dbc48d63f3627c5515b79e564558eb8ad7dd2093b8ae75d69"
+	"signatures": [
+		{
+			"userId": "faa4f168-5dfe-4683-b0dc-34cad4ab4928",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.415Z"
 			},
-			{
-				"userId": "41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-				"signedAt": {
-					"$date": "2026-07-01T22:30:34.161Z"
-				},
-				"hash": "d683f575e44d4f991630e5f5a4b18ef75b97ff97d1af8ed751f6824441790b75"
-			}
-		],
-		"serviceId": "6a44346ed6ad48111c1abcad",
-		"bookingId": "6a459509586efbb7cf0889fa",
-		"pointsAmount": 1,
-		"pdfFileId": "6a45950a586efbb7cf088a00",
-		"createdAt": {
-			"$date": "2026-07-01T22:30:33.859Z"
+			"hash": "a497eb9c783983caef770d513840494a8de89327356a1efe0fbd8c8d4382ee7e"
 		},
-		"updatedAt": {
-			"$date": "2026-07-01T22:30:34.191Z"
+		{
+			"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+			"signedAt": {
+				"$date": "2026-07-19T10:17:01.044Z"
+			},
+			"hash": "c0dff413aacfc16bc851106f75d4f19d1d0282614534e490754552290fb00d8b"
+		}
+	],
+	"serviceId": "6a5ca3e776d969f39113303c",
+	"bookingId": "6a5ca3ea76d969f39113310d",
+	"pointsAmount": 4,
+	"pdfFileId": "6a5ca41d76d969f39113318c",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.834Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:01.088Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ea76d969f39113313a"
+	},
+	"title": "Contrat de service — Cours de jardinage sur balcon",
+	"content": "Contrat de service pour « Cours de jardinage sur balcon ».\nDescription : Choix des plantes, rempotage et arrosage, adapté aux balcons exposés plein nord.\nPayeur : Sarah Lemoine. Bénéficiaire : Alice Martin.\nMontant : 3 points.\nFait le 19 juillet 2026.",
+	"createdBy": "0b653a65-ed00-4bff-8363-87db61282945",
+	"signatories": [
+		"42a660bf-233e-45c9-81c3-947a509a44c1",
+		"0b653a65-ed00-4bff-8363-87db61282945"
+	],
+	"status": "partial",
+	"contentHash": "86757794dff7edf9706e6d2486665deaa6fb1cfb97f31d6a2a9b59c15e6d135e",
+	"signedAt": null,
+	"signatures": [
+		{
+			"userId": "42a660bf-233e-45c9-81c3-947a509a44c1",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.473Z"
+			},
+			"hash": "e88d588360cb0b5c3e110a8a49649f4e7035bb6286c0ba58674c422b2d81f36a"
+		}
+	],
+	"serviceId": "6a5ca3e776d969f39113303a",
+	"bookingId": "6a5ca3ea76d969f39113310e",
+	"pointsAmount": 3,
+	"pdfFileId": "6a5ca3ff76d969f39113316c",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:10.868Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.49Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3eb76d969f39113313d"
+	},
+	"title": "Contrat de service — Aide au déménagement de petit volume",
+	"content": "Contrat de service pour « Aide au déménagement de petit volume ».\nDescription : Un camion de 12 m³ et deux bras pour les cartons et les meubles légers, sur une demi-journée.\nPayeur : Alice Martin. Bénéficiaire : Antoine Perrin.\nMontant : 6 points.\nFait le 19 juillet 2026.",
+	"createdBy": "0c05a6eb-4191-4b8f-8a4e-e9489251eaee",
+	"signatories": [
+		"0b653a65-ed00-4bff-8363-87db61282945",
+		"0c05a6eb-4191-4b8f-8a4e-e9489251eaee"
+	],
+	"status": "draft",
+	"contentHash": "cd744ba5408be6692aa6f77cb2d6012c75ee1a2c1b5761cec98ca4c6813a82a4",
+	"signedAt": null,
+	"signatures": [],
+	"serviceId": "6a5ca004a6f783f8fe6b09ee",
+	"bookingId": "6a5ca3ea76d969f391133111",
+	"pointsAmount": 6,
+	"pdfFileId": "6a5ca3eb76d969f39113313e",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:11.046Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:11.06Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3eb76d969f391133140"
+	},
+	"title": "Contrat de service — Cours de cuisine végétarienne",
+	"content": "Contrat de service pour « Cours de cuisine végétarienne ».\nDescription : Trois recettes de saison par séance, du marché à l'assiette, ingrédients partagés.\nPayeur : Alice Martin. Bénéficiaire : Inès Bouvier.\nMontant : 3 points.\nFait le 19 juillet 2026.",
+	"createdBy": "3c3a4d55-de41-4aab-92c5-ed692bba4c9b",
+	"signatories": [
+		"0b653a65-ed00-4bff-8363-87db61282945",
+		"3c3a4d55-de41-4aab-92c5-ed692bba4c9b"
+	],
+	"status": "cancelled",
+	"contentHash": "6f9d30ca8b362eba6810110d42640bdd7e7fd84bacd7770e7ae4701860ee8a56",
+	"signedAt": null,
+	"signatures": [],
+	"serviceId": "6a5ca007a6f783f8fe6b0a14",
+	"bookingId": "6a5ca3ea76d969f391133113",
+	"pointsAmount": 3,
+	"pdfFileId": "6a5ca3eb76d969f391133141",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:11.357Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.401Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3eb76d969f391133143"
+	},
+	"title": "Contrat de service — Peinture de petites surfaces",
+	"content": "Contrat de service pour « Peinture de petites surfaces ».\nDescription : Un couloir, une chambre ou des boiseries : préparation du support, sous-couche et deux couches.\nPayeur : Alice Martin. Bénéficiaire : Pauline Colin.\nMontant : 4 points.\nFait le 19 juillet 2026.",
+	"createdBy": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+	"signatories": [
+		"0b653a65-ed00-4bff-8363-87db61282945",
+		"f1f39ac2-ded1-4435-8d9c-1323c17b7764"
+	],
+	"status": "fully_signed",
+	"contentHash": "723c3dbc5446cb680d062f9abd2489c9cc68e296e907d4a47923e00522061066",
+	"signedAt": {
+		"$date": "2026-07-19T10:17:31.067Z"
+	},
+	"signatures": [
+		{
+			"userId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.502Z"
+			},
+			"hash": "c62bc7ad262c8365c4cc8dbdff3dae3f8936bbd2afe27bc29ab4f431d7362d64"
 		},
-		"__v": 2
-	}
-]
+		{
+			"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+			"signedAt": {
+				"$date": "2026-07-19T10:17:31.044Z"
+			},
+			"hash": "888262db48cbd4228c0b82ff7f3aca83d9afe57402b0b456510ff413220905d8"
+		}
+	],
+	"serviceId": "6a5ca005a6f783f8fe6b09f7",
+	"bookingId": "6a5ca3ea76d969f391133114",
+	"pointsAmount": 4,
+	"pdfFileId": "6a5ca43b76d969f391133196",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:11.526Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:31.086Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3eb76d969f391133146"
+	},
+	"title": "Contrat de service — Transport de courses lourdes jusqu'à l'étage",
+	"content": "Contrat de service pour « Transport de courses lourdes jusqu'à l'étage ».\nDescription : Packs d'eau, sacs de terreau, cartons : je monte tout ça avec vous, immeubles sans ascenseur compris.\nPayeur : Alice Martin. Bénéficiaire : Adrien Roussel.\nMontant : 2 points.\nFait le 19 juillet 2026.",
+	"createdBy": "98b72c78-8549-4aac-874c-c19391150b07",
+	"signatories": [
+		"0b653a65-ed00-4bff-8363-87db61282945",
+		"98b72c78-8549-4aac-874c-c19391150b07"
+	],
+	"status": "fully_signed",
+	"contentHash": "498b67478b9dcdf66e47e5975a331a63b43e58106ce1afbcb4e9f7c75e919f8e",
+	"signedAt": {
+		"$date": "2026-07-19T10:18:01.046Z"
+	},
+	"signatures": [
+		{
+			"userId": "98b72c78-8549-4aac-874c-c19391150b07",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.526Z"
+			},
+			"hash": "73b6820778c49fff8ca4612593ce367f2bf4317825a681e1e09094492157b3f0"
+		},
+		{
+			"userId": "0b653a65-ed00-4bff-8363-87db61282945",
+			"signedAt": {
+				"$date": "2026-07-19T10:18:01.019Z"
+			},
+			"hash": "baf1335522689f8814d999f961a3a03a0d077f195137c70c971d76f3eebe4a6a"
+		}
+	],
+	"serviceId": "6a5ca005a6f783f8fe6b09f8",
+	"bookingId": "6a5ca3ea76d969f391133115",
+	"pointsAmount": 2,
+	"pdfFileId": "6a5ca45976d969f39113319e",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:11.68Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:18:01.067Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3eb76d969f391133149"
+	},
+	"title": "Contrat de service — Dépannage informatique à domicile",
+	"content": "Contrat de service pour « Dépannage informatique à domicile ».\nDescription : Ordinateur lent, imprimante qui ne répond plus, boîte mail bloquée : je viens régler ça chez vous.\nPayeur : Léa Rousseau. Bénéficiaire : Thomas Girard.\nMontant : 2 points.\nFait le 19 juillet 2026.",
+	"createdBy": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+	"signatories": [
+		"9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+		"4b0f4b82-9992-4280-acd4-2eb871f90c15"
+	],
+	"status": "fully_signed",
+	"contentHash": "203b202450bb9238faccef259deac57c222e8fca03419ce50f303928d42e3df5",
+	"signedAt": {
+		"$date": "2026-07-19T10:16:31.602Z"
+	},
+	"signatures": [
+		{
+			"userId": "9d9d446c-f58d-4237-ba5a-163cbf3eddd6",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.552Z"
+			},
+			"hash": "c60f042b8209074850ec3a8baffb69528edc2a12901202898aff9aa9689a925a"
+		},
+		{
+			"userId": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.585Z"
+			},
+			"hash": "5014bcb7236e2a34c28eed472be102d7085e553867ab627ce046b98db21c7cd4"
+		}
+	],
+	"serviceId": "6a5ca003a6f783f8fe6b09ea",
+	"bookingId": "6a5ca3ea76d969f391133116",
+	"pointsAmount": 2,
+	"pdfFileId": "6a5ca3ff76d969f391133174",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:11.845Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.617Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3eb76d969f39113314c"
+	},
+	"title": "Contrat de service — Dépannage informatique à domicile",
+	"content": "Contrat de service pour « Dépannage informatique à domicile ».\nDescription : Ordinateur lent, imprimante qui ne répond plus, boîte mail bloquée : je viens régler ça chez vous.\nPayeur : Chloé Barbier. Bénéficiaire : Thomas Girard.\nMontant : 2 points.\nFait le 19 juillet 2026.",
+	"createdBy": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+	"signatories": [
+		"a1476d02-7f97-4d44-8546-4debcf9ca26c",
+		"4b0f4b82-9992-4280-acd4-2eb871f90c15"
+	],
+	"status": "fully_signed",
+	"contentHash": "40dde59ad409c696e4b7d14932b410955c34a7b013df87bb810c245364a537f3",
+	"signedAt": {
+		"$date": "2026-07-19T10:17:01.121Z"
+	},
+	"signatures": [
+		{
+			"userId": "a1476d02-7f97-4d44-8546-4debcf9ca26c",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.633Z"
+			},
+			"hash": "eb7ffac917a5249198e84a422b1caca5f80f8073f077bce26b9c80be9b82a2c2"
+		},
+		{
+			"userId": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+			"signedAt": {
+				"$date": "2026-07-19T10:17:01.105Z"
+			},
+			"hash": "035fb822e4e6ee71fa31c3ea664bf813984547def237485f43e33fcc64832bb7"
+		}
+	],
+	"serviceId": "6a5ca003a6f783f8fe6b09ea",
+	"bookingId": "6a5ca3ea76d969f391133117",
+	"pointsAmount": 2,
+	"pdfFileId": "6a5ca41d76d969f39113318e",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:11.876Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:01.136Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3eb76d969f39113314f"
+	},
+	"title": "Contrat de service — Dépannage informatique à domicile",
+	"content": "Contrat de service pour « Dépannage informatique à domicile ».\nDescription : Ordinateur lent, imprimante qui ne répond plus, boîte mail bloquée : je viens régler ça chez vous.\nPayeur : Guillaume Masson. Bénéficiaire : Thomas Girard.\nMontant : 2 points.\nFait le 19 juillet 2026.",
+	"createdBy": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+	"signatories": [
+		"b8b1125d-d27b-47dc-98ae-7150ffcb0fe3",
+		"4b0f4b82-9992-4280-acd4-2eb871f90c15"
+	],
+	"status": "fully_signed",
+	"contentHash": "188f4e26759fdb4ab26ae1af4089f512f64796c7c37e72b11dd8de99f738f5ee",
+	"signedAt": {
+		"$date": "2026-07-19T10:17:31.108Z"
+	},
+	"signatures": [
+		{
+			"userId": "b8b1125d-d27b-47dc-98ae-7150ffcb0fe3",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.66Z"
+			},
+			"hash": "757a00607b4598459d3b39355b0600be0b930f51915db2e2320738c8229c3e89"
+		},
+		{
+			"userId": "4b0f4b82-9992-4280-acd4-2eb871f90c15",
+			"signedAt": {
+				"$date": "2026-07-19T10:17:31.099Z"
+			},
+			"hash": "dff3364a1d64561837c5b98cc0f1ce40b71765f781db6f68f2e70993a5275be1"
+		}
+	],
+	"serviceId": "6a5ca003a6f783f8fe6b09ea",
+	"bookingId": "6a5ca3ea76d969f391133118",
+	"pointsAmount": 2,
+	"pdfFileId": "6a5ca43b76d969f391133198",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:11.907Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:31.119Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3eb76d969f391133152"
+	},
+	"title": "Contrat de service — Peinture de petites surfaces",
+	"content": "Contrat de service pour « Peinture de petites surfaces ».\nDescription : Un couloir, une chambre ou des boiseries : préparation du support, sous-couche et deux couches.\nPayeur : Amandine Poirier. Bénéficiaire : Pauline Colin.\nMontant : 4 points.\nFait le 19 juillet 2026.",
+	"createdBy": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+	"signatories": [
+		"a7febe13-1bc7-427d-8a44-e3b3a2e62c8d",
+		"f1f39ac2-ded1-4435-8d9c-1323c17b7764"
+	],
+	"status": "fully_signed",
+	"contentHash": "c031d26dec6c952fc2fe9f531bea92cbd8cf359b1fa6676f8e3cb1089e50c854",
+	"signedAt": {
+		"$date": "2026-07-19T10:17:01.165Z"
+	},
+	"signatures": [
+		{
+			"userId": "a7febe13-1bc7-427d-8a44-e3b3a2e62c8d",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.681Z"
+			},
+			"hash": "73a2f6958e44597290ad94af8f8041d0e69b2ae3269cc65021e2d61e25b33634"
+		},
+		{
+			"userId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+			"signedAt": {
+				"$date": "2026-07-19T10:17:01.152Z"
+			},
+			"hash": "f9441a290980708b510ad676dde1f9e92c4bb07e66fd3ed1ca304b64e3f55cf2"
+		}
+	],
+	"serviceId": "6a5ca005a6f783f8fe6b09f7",
+	"bookingId": "6a5ca3ea76d969f391133119",
+	"pointsAmount": 4,
+	"pdfFileId": "6a5ca41d76d969f391133190",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:11.938Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:01.179Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3eb76d969f391133155"
+	},
+	"title": "Contrat de service — Peinture de petites surfaces",
+	"content": "Contrat de service pour « Peinture de petites surfaces ».\nDescription : Un couloir, une chambre ou des boiseries : préparation du support, sous-couche et deux couches.\nPayeur : Kévin Charpentier. Bénéficiaire : Pauline Colin.\nMontant : 4 points.\nFait le 19 juillet 2026.",
+	"createdBy": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+	"signatories": [
+		"58b3df0d-2a0b-4f08-96f3-e0924d250b89",
+		"f1f39ac2-ded1-4435-8d9c-1323c17b7764"
+	],
+	"status": "fully_signed",
+	"contentHash": "a14c693b1200c4aa43b56e1e2793cbedcac32df0830b815604f0154722987d5d",
+	"signedAt": {
+		"$date": "2026-07-19T10:17:31.14Z"
+	},
+	"signatures": [
+		{
+			"userId": "58b3df0d-2a0b-4f08-96f3-e0924d250b89",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.702Z"
+			},
+			"hash": "436c755ee976b7ce354ca1cb617edbd320898e6644224e2c91ae442ca429c74f"
+		},
+		{
+			"userId": "f1f39ac2-ded1-4435-8d9c-1323c17b7764",
+			"signedAt": {
+				"$date": "2026-07-19T10:17:31.129Z"
+			},
+			"hash": "bae4697db53f111dff05a7dc98d493d8b62c6c5d023600da9f4438409a46ff2f"
+		}
+	],
+	"serviceId": "6a5ca005a6f783f8fe6b09f7",
+	"bookingId": "6a5ca3ea76d969f39113311a",
+	"pointsAmount": 4,
+	"pdfFileId": "6a5ca43b76d969f39113319a",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:11.968Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:31.155Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ec76d969f391133158"
+	},
+	"title": "Contrat de service — Transport de courses lourdes jusqu'à l'étage",
+	"content": "Contrat de service pour « Transport de courses lourdes jusqu'à l'étage ».\nDescription : Packs d'eau, sacs de terreau, cartons : je monte tout ça avec vous, immeubles sans ascenseur compris.\nPayeur : Nicolas Fontaine. Bénéficiaire : Adrien Roussel.\nMontant : 2 points.\nFait le 19 juillet 2026.",
+	"createdBy": "98b72c78-8549-4aac-874c-c19391150b07",
+	"signatories": [
+		"8f1be472-8d4c-40ec-bb31-6464b435975a",
+		"98b72c78-8549-4aac-874c-c19391150b07"
+	],
+	"status": "fully_signed",
+	"contentHash": "c6a2bc555b7f794ed71fece49c6c713fcad5aa81d9c673f30ce8422f6e16d670",
+	"signedAt": {
+		"$date": "2026-07-19T10:17:01.207Z"
+	},
+	"signatures": [
+		{
+			"userId": "8f1be472-8d4c-40ec-bb31-6464b435975a",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.721Z"
+			},
+			"hash": "3a778a3f1c542303db1304e407ca9c755194f4e8b5ab687e8108f0aabfa34102"
+		},
+		{
+			"userId": "98b72c78-8549-4aac-874c-c19391150b07",
+			"signedAt": {
+				"$date": "2026-07-19T10:17:01.193Z"
+			},
+			"hash": "1cb07f06f03a614ff600443234ab4b469d5b5d2d63de59c9d6b74482c25863d6"
+		}
+	],
+	"serviceId": "6a5ca005a6f783f8fe6b09f8",
+	"bookingId": "6a5ca3ea76d969f39113311b",
+	"pointsAmount": 2,
+	"pdfFileId": "6a5ca41d76d969f391133192",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:12.007Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:01.224Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ec76d969f39113315b"
+	},
+	"title": "Contrat de service — Transport de courses lourdes jusqu'à l'étage",
+	"content": "Contrat de service pour « Transport de courses lourdes jusqu'à l'étage ».\nDescription : Packs d'eau, sacs de terreau, cartons : je monte tout ça avec vous, immeubles sans ascenseur compris.\nPayeur : Émilie Chevalier. Bénéficiaire : Adrien Roussel.\nMontant : 2 points.\nFait le 19 juillet 2026.",
+	"createdBy": "98b72c78-8549-4aac-874c-c19391150b07",
+	"signatories": [
+		"fac2acc3-190b-43cd-baed-122358be1259",
+		"98b72c78-8549-4aac-874c-c19391150b07"
+	],
+	"status": "fully_signed",
+	"contentHash": "0f76670562c88033d4bb032c8927df9bb6ec144d24480ba2dd9a2555093896ab",
+	"signedAt": {
+		"$date": "2026-07-19T10:17:31.184Z"
+	},
+	"signatures": [
+		{
+			"userId": "fac2acc3-190b-43cd-baed-122358be1259",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.746Z"
+			},
+			"hash": "ddaaf01d73683eb2f6dec19b1bdbf25a26f7862a0fbb02f97bca3bf384cbde57"
+		},
+		{
+			"userId": "98b72c78-8549-4aac-874c-c19391150b07",
+			"signedAt": {
+				"$date": "2026-07-19T10:17:31.169Z"
+			},
+			"hash": "797d58b0875f8ad02eccaebde7b1f27107288e97e3177675ceeae24726eb55db"
+		}
+	],
+	"serviceId": "6a5ca005a6f783f8fe6b09f8",
+	"bookingId": "6a5ca3ea76d969f39113311c",
+	"pointsAmount": 2,
+	"pdfFileId": "6a5ca43b76d969f39113319c",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:12.038Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:31.199Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ec76d969f39113315e"
+	},
+	"title": "Contrat de service — Garde d'enfants après l'école",
+	"content": "Contrat de service pour « Garde d'enfants après l'école ».\nDescription : Je récupère les enfants à la sortie de l'école et je les garde jusqu'au retour des parents, goûter compris.\nPayeur : Manon Leroy. Bénéficiaire : Sophie Lefèvre.\nMontant : 4 points.\nFait le 19 juillet 2026.",
+	"createdBy": "93445062-fc71-4130-be5c-bd7ad9661bf2",
+	"signatories": [
+		"f7025b74-7036-4140-890d-85eecf174883",
+		"93445062-fc71-4130-be5c-bd7ad9661bf2"
+	],
+	"status": "fully_signed",
+	"contentHash": "b43e2382e36268a7a79c6d6426f51c6f84340e1ef289d95ba699749ef3d0a1e3",
+	"signedAt": {
+		"$date": "2026-07-19T10:16:31.804Z"
+	},
+	"signatures": [
+		{
+			"userId": "f7025b74-7036-4140-890d-85eecf174883",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.768Z"
+			},
+			"hash": "4a0bef21dd9542aa1460313981a70fa554c041fe5e3760e07a01924a9cec00cb"
+		},
+		{
+			"userId": "93445062-fc71-4130-be5c-bd7ad9661bf2",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.794Z"
+			},
+			"hash": "21a472e2c27970650d906102fa33eefe3f5a33e0126ad4332aed6b4e99cd044c"
+		}
+	],
+	"serviceId": "6a5ca003a6f783f8fe6b09e9",
+	"bookingId": "6a5ca3ea76d969f39113311d",
+	"pointsAmount": 4,
+	"pdfFileId": "6a5ca3ff76d969f391133184",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:12.189Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.816Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ec76d969f391133161"
+	},
+	"title": "Contrat de service — Conversation en anglais autour d'un café",
+	"content": "Contrat de service pour « Conversation en anglais autour d'un café ».\nDescription : Une heure d'échange pour entretenir son anglais oral, tous niveaux, sans jugement.\nPayeur : Camille Bernard. Bénéficiaire : Romain Guérin.\nMontant : 2 points.\nFait le 19 juillet 2026.",
+	"createdBy": "51b9e03e-0681-453b-b96d-a0a71b6cf2d8",
+	"signatories": [
+		"4de869de-be0a-47b9-9f6a-772041cdc24f",
+		"51b9e03e-0681-453b-b96d-a0a71b6cf2d8"
+	],
+	"status": "fully_signed",
+	"contentHash": "df3f0bec115b884f67c544b1e574c718c0fc3f1649a8c5c9c70306888e6c42d7",
+	"signedAt": {
+		"$date": "2026-07-19T10:16:31.876Z"
+	},
+	"signatures": [
+		{
+			"userId": "4de869de-be0a-47b9-9f6a-772041cdc24f",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.828Z"
+			},
+			"hash": "b07bc905a6a28da50654f71b21b4a2039eda7fcf77ccf91ef631c2cb40a502f7"
+		},
+		{
+			"userId": "51b9e03e-0681-453b-b96d-a0a71b6cf2d8",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.863Z"
+			},
+			"hash": "cef47576a0289edf9a2269880bc8c1972772d2de74cbf46c433b485e1d303c21"
+		}
+	],
+	"serviceId": "6a5ca005a6f783f8fe6b09f6",
+	"bookingId": "6a5ca3ea76d969f39113311e",
+	"pointsAmount": 2,
+	"pdfFileId": "6a5ca3ff76d969f391133188",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:12.222Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.892Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ff76d969f391133164"
+	},
+	"title": "Contrat de service — Montage de meubles en kit",
+	"content": "Contrat de service pour « Montage de meubles en kit ».\nDescription : Armoires, bibliothèques, lits : je monte vos meubles en kit proprement, visserie et outillage fournis.\nPayeur : Vincent Dumas. Bénéficiaire : Bob Dupont.\nMontant : 3 points.\nFait le 19 juillet 2026.",
+	"createdBy": "e9b6a3de-1139-47c6-b834-fa08f43850cb",
+	"signatories": [
+		"1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+		"e9b6a3de-1139-47c6-b834-fa08f43850cb"
+	],
+	"status": "partial",
+	"contentHash": "6c070ae013e5b11882ed4c895898220dcb0e785616e6c8d686d4c38675949457",
+	"signedAt": null,
+	"signatures": [
+		{
+			"userId": "1287ce2e-8951-4d5f-ac5f-9c8bcbc4b1e0",
+			"signedAt": {
+				"$date": "2026-07-19T10:16:31.907Z"
+			},
+			"hash": "35eedf543bb50d66a3b79571cacbb2ef11eed6e364382e8f43979c7805256cde"
+		}
+	],
+	"serviceId": "6a5ca003a6f783f8fe6b09e6",
+	"bookingId": "6a5ca3ea76d969f39113311f",
+	"pointsAmount": 3,
+	"pdfFileId": "6a5ca3ff76d969f39113318a",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:31.185Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:16:31.925Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca3ff76d969f391133167"
+	},
+	"title": "Contrat de service — Recherche baby-sitter pour une soirée",
+	"content": "Contrat de service pour « Recherche baby-sitter pour une soirée ».\nDescription : Samedi 20h-minuit, un enfant de 6 ans déjà couché, il faut juste rester à la maison.\nPayeur : Claire Fabre. Bénéficiaire : Sarah Lemoine.\nMontant : 8 points.\nFait le 19 juillet 2026.",
+	"createdBy": "542f9288-29cc-4675-8ed7-bb39c1f5929a",
+	"signatories": [
+		"542f9288-29cc-4675-8ed7-bb39c1f5929a",
+		"42a660bf-233e-45c9-81c3-947a509a44c1"
+	],
+	"status": "partial",
+	"contentHash": "fccdac0816015f168cbdf473713a9612c25ff89763816111b90016f6b10451b9",
+	"signedAt": null,
+	"signatures": [
+		{
+			"userId": "42a660bf-233e-45c9-81c3-947a509a44c1",
+			"signedAt": {
+				"$date": "2026-07-19T10:17:01.239Z"
+			},
+			"hash": "f0822437b10bc308a01a0d3b399940339826730c0e04635f05ab1edb9c00814b"
+		}
+	],
+	"serviceId": "6a5ca006a6f783f8fe6b0a0f",
+	"bookingId": "6a5ca3ea76d969f391133120",
+	"pointsAmount": 8,
+	"pdfFileId": "6a5ca41d76d969f391133194",
+	"source": "generated",
+	"createdAt": {
+		"$date": "2026-07-19T10:16:31.224Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:17:01.254Z"
+	},
+	"__v": 0
+}]
+

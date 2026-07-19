@@ -2,8 +2,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { DemoAccount, ROSTER } from "./roster";
 
-/** seed-demo.ts exits on import when DEMO_TOTP_SECRET is unset, so read the
- *  polygon names from the source instead. */
+/** seed-demo.ts runs its whole seed on import, so read the polygon names from
+ *  the source instead. */
 function seededNeighborhoods(): string[] {
   const source = fs.readFileSync(
     path.join(__dirname, "..", "seed-demo.ts"),

@@ -376,10 +376,9 @@ db-migrate: ## Apply the Drizzle migrations to PostgreSQL
 
 seed: db-migrate seed-demo seed-neo4j ## Full seed: migrations + demo accounts + Neo4j graph
 
-seed-demo: ## Create the 3 demo accounts (alice/bob/admin) in PostgreSQL + MongoDB
-	@echo "$(RUN) Demo seed (alice / bob / admin)..."
-	@cd api && DEMO_TOTP_SECRET=$$(grep ^DEMO_TOTP_SECRET ../.env | cut -d= -f2-) \
-	           npx tsx ../scripts/seed-demo.ts
+seed-demo: ## Create the 72 demo accounts in PostgreSQL + MongoDB
+	@echo "$(RUN) Demo seed (72 accounts)..."
+	@cd api && npx tsx ../scripts/seed-demo.ts
 	@echo "$(OK) Accounts created — current TOTP code: make totp"
 
 seed-neo4j: ## Populate Neo4j with nodes from MongoDB (neighborhoods, services, events)

@@ -5,10 +5,10 @@ Two text-format datasets, importable into the application's three databases
 
 | Dataset | Contents |
 |---------|----------|
-| `demo-dataset/` | Full demo state: accounts with TOTP, 20 neighborhoods (Paris arrondissements), mutual-aid services, events, votes, signed contracts (PDF included), messaging, incidents, points, Neo4j social graph. |
+| `demo-dataset/` | Full demo state: 72 accounts with TOTP, 15 Paris neighborhoods, mutual-aid services, events, community votes, signed contracts (PDF included), messaging, incidents, points, Neo4j social graph. |
 | `empty-dataset/` | No data: resets the three databases to start from a blank application. |
 
-Text files only, all readable (SQL, JSON, Cypher).
+About 780 KB, text files only, all readable (SQL, JSON, Cypher).
 
 ## Prerequisites
 
@@ -80,33 +80,70 @@ oathtool -b --totp 4PX635D55YS6JJV3NYIXKZPREIO6YIIV
 
 ### `postgres.sql`
 
-A `pg_dump` in the default format: schema definitions followed by the data as
-`COPY … FROM stdin` blocks. It covers the `drizzle` migration table and the
-`public` tables — users, incidents, points balances, points transactions and
-revoked tokens.
+A `pg_dump` in the default format: 6 `CREATE TABLE` statements followed by the
+data as `COPY … FROM stdin` blocks, 639 lines in all.
+
+| Table | Rows |
+|-------|------|
+| `public.users` | 72 |
+| `public.incidents` | 58 |
+| `public.points_transactions` | 84 |
+| `public.points_balances` | 66 |
+| `public.revoked_tokens` | 0 |
+| `drizzle.__drizzle_migrations` | 10 |
 
 Because the purge drops the schema before importing, the dump is what
 recreates the tables. It stays in step with the Drizzle migrations in
 `api/drizzle/`, which the API applies at every start.
 
+The 72 accounts break down into 60 residents, 4 moderators, 2 administrators,
+4 banned and 2 deleted, so every role a screen can filter on returns results.
+15 of them carry an address that no neighborhood polygon covers, which is what
+the admin "uncovered addresses" screen lists.
+
 ### `mongo/`
 
 One JSON file per collection (`mongoexport --jsonArray --pretty`, Extended
-JSON format): the application collections (users, conversations, messages,
-services, events, contracts, bookings, responses, votes, documents,
-neighborhoods, SSO tokens) plus the GridFS pairs `pdfs.*`, `avatars.*` and
-`messaging_files.*` (`.files` + `.chunks`).
+JSON format), 19 files:
 
-Binary files (contract PDFs, avatars, attachments) are included in the GridFS
+| Collection | Documents | | Collection | Documents |
+|------------|-----------|---|------------|-----------|
+| `services` | 55 | | `messages` | 54 |
+| `serviceresponses` | 60 | | `conversations` | 11 |
+| `servicebookings` | 44 | | `pdfs.files` / `pdfs.chunks` | 45 / 45 |
+| `contracts` | 18 | | `messaging_files.files` / `.chunks` | 4 / 4 |
+| `documents` | 18 | | `avatars.files` / `avatars.chunks` | 0 / 0 |
+| `events` | 34 | | `neighborhoods` | 15 |
+| `communityvotes` | 18 | | `users` | 72 |
+| `votes` | 40 | | `ssotokens` | 0 |
+
+Binary files (contract PDFs, message attachments) are included in the GridFS
 chunks, base64-encoded: the dataset stays a text file while restoring the
 documents byte for byte. Empty collections hold `[]` and are skipped on
 import.
 
 ### `neo4j.cypher`
 
-The social graph — `User`, `Neighborhood`, `Service` and `Event` nodes, and
-`LIVES_IN`, `LOCATED_IN`, `HELD_IN`, `INTERESTED_IN`, `ATTENDING` and
-`HELPED` relationships — expressed as idempotent `MERGE` statements: replaying
-the file against an already-populated database creates no duplicate.
-Properties (dates, points, identifiers cross-referenced with PostgreSQL and
-MongoDB) are preserved.
+The social graph as 176 node `MERGE` statements and 557 relationship ones,
+739 lines in all.
+
+| Nodes | | Relationships | |
+|-------|---|---------------|---|
+| `User` | 72 | `INTERESTED_IN` | 255 |
+| `Service` | 55 | `ATTENDING` | 143 |
+| `Event` | 34 | `LIVES_IN` | 55 |
+| `Neighborhood` | 15 | `LOCATED_IN` | 55 |
+| | | `HELD_IN` | 34 |
+| | | `HELPED` | 15 |
+
+Everything is expressed as idempotent `MERGE` statements: replaying the file
+against an already-populated database creates no duplicate. Properties (dates,
+points, identifiers cross-referenced with PostgreSQL and MongoDB) are
+preserved.
+
+## Regenerating the dataset
+
+`scripts/export-dataset.sh` exports the running dev stack into
+`demo-dataset/`. Seed the stack first (`make seed`), otherwise it exports an
+empty dataset over a good one — the script checks for this and refuses. It
+also fails if a personal account leaks into the output.

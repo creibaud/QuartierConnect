@@ -1,68 +1,245 @@
-[
-	{
-		"_id": {
-			"$oid": "6a43d564e4b13110b26ecb94"
-		},
-		"participants": [
-			"f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-			"40170148-cd96-4279-b62a-03d63dfb9d2a"
-		],
-		"neighborhoodId": null,
-		"isGroup": false,
-		"groupName": null,
-		"lastMessageAt": {
-			"$date": "2026-07-01T12:19:08.747Z"
-		},
-		"createdAt": {
-			"$date": "2026-06-30T14:40:36.318Z"
-		},
-		"updatedAt": {
-			"$date": "2026-07-01T12:19:08.749Z"
-		},
-		"__v": 0
+[{
+	"_id": {
+		"$oid": "6a5ca52c76d969f391133336"
 	},
-	{
-		"_id": {
-			"$oid": "6a475665ef7bb82ab044d3e4"
-		},
-		"participants": [
-			"41d91ab9-b9a9-45ed-a5b8-9c2ae4819316",
-			"f3dad978-6792-4d0c-b2a5-fe3f3f08253f"
-		],
-		"neighborhoodId": null,
-		"isGroup": false,
-		"groupName": null,
-		"lastMessageAt": {
-			"$date": "2026-07-07T07:20:36.266Z"
-		},
-		"createdAt": {
-			"$date": "2026-07-03T06:27:49.617Z"
-		},
-		"updatedAt": {
-			"$date": "2026-07-07T07:20:36.267Z"
-		},
-		"__v": 0
+	"participants": [
+		"0b653a65-ed00-4bff-8363-87db61282945",
+		"4de869de-be0a-47b9-9f6a-772041cdc24f"
+	],
+	"neighborhoodId": null,
+	"isGroup": false,
+	"groupName": null,
+	"lastMessageAt": {
+		"$date": "2026-07-19T10:16:33.131Z"
 	},
-	{
-		"_id": {
-			"$oid": "6a4629251e5092ea4fbe57ce"
-		},
-		"participants": [
-			"f3dad978-6792-4d0c-b2a5-fe3f3f08253f",
-			"ea7894ed-97f8-45ef-b955-35cd773830e5"
-		],
-		"neighborhoodId": null,
-		"isGroup": false,
-		"groupName": null,
-		"lastMessageAt": {
-			"$date": "2026-07-03T16:54:25.631Z"
-		},
-		"createdAt": {
-			"$date": "2026-07-02T09:02:29.919Z"
-		},
-		"updatedAt": {
-			"$date": "2026-07-03T16:54:25.633Z"
-		},
-		"__v": 0
-	}
-]
+	"createdAt": {
+		"$date": "2026-07-19T10:21:32.728Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:21:33.266Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca52c76d969f391133337"
+	},
+	"participants": [
+		"0b653a65-ed00-4bff-8363-87db61282945",
+		"84ec11af-7898-463a-8cca-525ac60cbf59"
+	],
+	"neighborhoodId": null,
+	"isGroup": false,
+	"groupName": null,
+	"lastMessageAt": {
+		"$date": "2026-07-19T05:16:33.595Z"
+	},
+	"createdAt": {
+		"$date": "2026-07-19T10:21:32.739Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:21:32.739Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca52c76d969f391133338"
+	},
+	"participants": [
+		"0b653a65-ed00-4bff-8363-87db61282945",
+		"e9b6a3de-1139-47c6-b834-fa08f43850cb",
+		"a1476d02-7f97-4d44-8546-4debcf9ca26c",
+		"faa4f168-5dfe-4683-b0dc-34cad4ab4928"
+	],
+	"neighborhoodId": "6a5c9fdda6f783f8fe6b09d6",
+	"isGroup": true,
+	"groupName": "Vide-grenier de la rue Lepic",
+	"lastMessageAt": {
+		"$date": "2026-07-19T00:16:33.91Z"
+	},
+	"createdAt": {
+		"$date": "2026-07-19T10:21:32.747Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:21:32.747Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca52c76d969f391133339"
+	},
+	"participants": [
+		"0b653a65-ed00-4bff-8363-87db61282945",
+		"93445062-fc71-4130-be5c-bd7ad9661bf2"
+	],
+	"neighborhoodId": null,
+	"isGroup": false,
+	"groupName": null,
+	"lastMessageAt": {
+		"$date": "2026-07-18T19:16:34.238Z"
+	},
+	"createdAt": {
+		"$date": "2026-07-19T10:21:32.756Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:21:32.756Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca52c76d969f39113333a"
+	},
+	"participants": [
+		"0b653a65-ed00-4bff-8363-87db61282945",
+		"4b0f4b82-9992-4280-acd4-2eb871f90c15"
+	],
+	"neighborhoodId": null,
+	"isGroup": false,
+	"groupName": null,
+	"lastMessageAt": {
+		"$date": "2026-07-18T14:16:34.552Z"
+	},
+	"createdAt": {
+		"$date": "2026-07-19T10:21:32.764Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:21:32.764Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca52c76d969f39113333b"
+	},
+	"participants": [
+		"0b653a65-ed00-4bff-8363-87db61282945",
+		"9d9d446c-f58d-4237-ba5a-163cbf3eddd6"
+	],
+	"neighborhoodId": null,
+	"isGroup": false,
+	"groupName": null,
+	"lastMessageAt": {
+		"$date": "2026-07-18T09:16:34.851Z"
+	},
+	"createdAt": {
+		"$date": "2026-07-19T10:21:32.773Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:21:32.773Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca52c76d969f39113333c"
+	},
+	"participants": [
+		"0b653a65-ed00-4bff-8363-87db61282945",
+		"8f1be472-8d4c-40ec-bb31-6464b435975a"
+	],
+	"neighborhoodId": null,
+	"isGroup": false,
+	"groupName": null,
+	"lastMessageAt": {
+		"$date": "2026-07-18T04:16:35.164Z"
+	},
+	"createdAt": {
+		"$date": "2026-07-19T10:21:32.782Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:21:32.782Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca52c76d969f39113333d"
+	},
+	"participants": [
+		"0b653a65-ed00-4bff-8363-87db61282945",
+		"fac2acc3-190b-43cd-baed-122358be1259"
+	],
+	"neighborhoodId": null,
+	"isGroup": false,
+	"groupName": null,
+	"lastMessageAt": {
+		"$date": "2026-07-17T23:16:35.472Z"
+	},
+	"createdAt": {
+		"$date": "2026-07-19T10:21:32.791Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:21:32.791Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca52c76d969f39113333e"
+	},
+	"participants": [
+		"0b653a65-ed00-4bff-8363-87db61282945",
+		"0c05a6eb-4191-4b8f-8a4e-e9489251eaee"
+	],
+	"neighborhoodId": null,
+	"isGroup": false,
+	"groupName": null,
+	"lastMessageAt": {
+		"$date": "2026-07-17T18:16:35.781Z"
+	},
+	"createdAt": {
+		"$date": "2026-07-19T10:21:32.799Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:21:32.799Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca52c76d969f39113333f"
+	},
+	"participants": [
+		"0b653a65-ed00-4bff-8363-87db61282945",
+		"f7025b74-7036-4140-890d-85eecf174883"
+	],
+	"neighborhoodId": null,
+	"isGroup": false,
+	"groupName": null,
+	"lastMessageAt": {
+		"$date": "2026-07-17T13:16:36.112Z"
+	},
+	"createdAt": {
+		"$date": "2026-07-19T10:21:32.807Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:21:32.807Z"
+	},
+	"__v": 0
+},
+{
+	"_id": {
+		"$oid": "6a5ca52c76d969f391133340"
+	},
+	"participants": [
+		"0b653a65-ed00-4bff-8363-87db61282945",
+		"f8f4a6d7-5239-40a9-b1cd-f5b98e347e18"
+	],
+	"neighborhoodId": null,
+	"isGroup": false,
+	"groupName": null,
+	"lastMessageAt": {
+		"$date": "2026-07-17T08:16:36.432Z"
+	},
+	"createdAt": {
+		"$date": "2026-07-19T10:21:32.815Z"
+	},
+	"updatedAt": {
+		"$date": "2026-07-19T10:21:32.815Z"
+	},
+	"__v": 0
+}]
+
