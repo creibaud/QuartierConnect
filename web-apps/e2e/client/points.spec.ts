@@ -63,7 +63,7 @@ test.describe("Client — Points", () => {
         test.skip(!apiAvailable, "API not available — start the backend first");
         await page.getByRole("combobox").click();
         await page
-            .getByPlaceholder(/rechercher par email/i)
+            .getByPlaceholder(/rechercher par nom ou email/i)
             .fill(recipientEmail);
         await expect(
             page.getByRole("option", { name: recipientEmail }),
@@ -77,7 +77,7 @@ test.describe("Client — Points", () => {
 
         await page.getByRole("combobox").click();
         await page
-            .getByPlaceholder(/rechercher par email/i)
+            .getByPlaceholder(/rechercher par nom ou email/i)
             .fill(recipientEmail);
         await page.getByRole("option", { name: recipientEmail }).click();
 
