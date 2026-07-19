@@ -112,7 +112,7 @@ JSON format), 19 files:
 | `serviceresponses` | 60 | | `conversations` | 11 |
 | `servicebookings` | 44 | | `pdfs.files` / `pdfs.chunks` | 45 / 45 |
 | `contracts` | 18 | | `messaging_files.files` / `.chunks` | 4 / 4 |
-| `documents` | 18 | | `avatars.files` / `avatars.chunks` | 0 / 0 |
+| `documents` | 18 | | `avatars.files` / `avatars.chunks` | 8 / 8 |
 | `events` | 34 | | `neighborhoods` | 15 |
 | `communityvotes` | 18 | | `users` | 72 |
 | `votes` | 40 | | `ssotokens` | 0 |

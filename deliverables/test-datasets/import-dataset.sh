@@ -181,15 +181,9 @@ purge_postgres
 purge_mongo
 purge_neo4j
 
-if [ "$DATASET" = "demo-dataset" ]; then
-  import_postgres
-  import_mongo
-  import_neo4j
-else
-  echo "→ Empty dataset: databases purged, nothing to import."
-  echo "  The PostgreSQL schema was dropped: restart the API so its migrations"
-  echo "  recreate it before any further import."
-fi
+import_postgres
+import_mongo
+import_neo4j
 
 report_counts
 echo ""

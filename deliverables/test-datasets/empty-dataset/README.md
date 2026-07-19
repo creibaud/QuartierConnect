@@ -1,16 +1,16 @@
 # Empty dataset
 
-This test dataset wipes the three databases, leaving no data at all. It
-deliberately contains no import file: the application recreates everything it
-needs by itself.
+A blank QuartierConnect: the three databases hold the structure the application
+needs and no data at all. Import it to grade the app from a genuinely empty
+state, or to start a fresh instance.
 
-## Why no file is needed
+It ships the same three files as `demo-dataset`, so both import the same way:
 
-| Database | Schema creation |
-|----------|-----------------|
-| PostgreSQL | Migrations are applied automatically when the API starts (`api/drizzle/` folder). The import script drops the schema (`DROP SCHEMA public CASCADE`): the API must be restarted to recreate it. |
-| MongoDB | Collections (and the `pdfs`, `avatars`, `messaging_files` GridFS buckets) are created on the fly by the API on first write. Indexes are recreated when the API starts. |
-| Neo4j | The database defines no application constraint or index (checked with `SHOW CONSTRAINTS`), so there is nothing to replay. Nodes and relationships are created by the API as the app is used. |
+| File | Content |
+|------|---------|
+| `postgres.sql` | Schema only — tables, indexes, constraints, sequences — plus the `drizzle.__drizzle_migrations` rows. Those rows matter: without them the API would replay all ten migrations over tables that already exist, and fail to start. |
+| `mongo/*.json` | One empty array per collection. The import skips them, and MongoDB creates each collection on first write. |
+| `neo4j.cypher` | No statement. The graph is built by the API as the app is used; the database declares no application constraint or index. |
 
 ## Usage
 
@@ -20,7 +20,24 @@ From the repository root, with the Docker stack running:
 ./deliverables/test-datasets/import-dataset.sh empty-dataset
 ```
 
-The script purges the three databases (`DROP SCHEMA`, `deleteMany`,
-`DETACH DELETE`) and stops there. Restart the API afterwards so it replays its
-migrations: you get a blank application — create the first account from the
-sign-up screen.
+Then restart the API so it recreates its MongoDB indexes:
+
+```bash
+docker compose -f docker/docker-compose.yml --env-file .env restart api
+```
+
+You get a working application with no content: create the first account from
+the sign-up screen. The first account registered is a resident; promote it from
+`admin@demo.fr` or in PostgreSQL if you need a moderator or an administrator.
+
+## Regenerating this dataset
+
+The schema follows the migrations, so regenerate it after adding one:
+
+```bash
+docker exec docker-postgres-1 pg_dump -U qc -d quartierconnect \
+  --no-owner --no-privileges --schema-only > empty-dataset/postgres.sql
+docker exec docker-postgres-1 pg_dump -U qc -d quartierconnect \
+  --no-owner --no-privileges --data-only \
+  --table='drizzle.__drizzle_migrations' >> empty-dataset/postgres.sql
+```

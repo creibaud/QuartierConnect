@@ -3,7 +3,13 @@
 Neighborhood community platform — ESGI 3AL2 · Final submission
 
 > **Final submission**: 19 July 2026 · **Instructor**: Frédéric SANANES
-> **v1.0.2** · **1,447 automated tests** · 9 Docker containers · 3 databases · 4 surfaces
+> **v1.0.8** · **1,447 automated tests** · 9 Docker containers · 3 databases · 4 surfaces
+
+**Live: <https://quartierconnect.duckdns.org>** — resident client at `/`,
+back-office at `/admin`, user guide at `/aide`. Sign in with `alice@demo.fr`,
+password `Demo1234!`, and the TOTP code from `docs/fiche-soutenance.pdf`.
+The developer documentation (`/dev`) and the API reference (`/docs`, `/scalar`)
+sit behind HTTP basic auth: a 401 there is expected, not a failure.
 
 QuartierConnect connects residents of a neighborhood: report incidents, offer and
 find services, organize events, vote, exchange points, and chat in real time.
@@ -264,12 +270,16 @@ protected by Caddy basic auth: credentials are configured through the
 
 The full technical documentation (architecture, databases, API, security, DSL,
 plugins, tests, deployment) lives in the **`/dev`** site, and the user guides in
-**`/aide`**. The requirements specification remains as Markdown:
+**`/aide`**, both in French and English. The submission documents are PDFs:
 
-| Document                                               | Contents                                                  |
-| ------------------------------------------------------ | --------------------------------------------------------- |
-| [docs/CDC.md](docs/CDC.md)                             | Full requirements specification                           |
-| [docs/RAPPORT-TECHNIQUE.md](docs/RAPPORT-TECHNIQUE.md) | Consolidated technical report (mirrors the `/dev` site)   |
+| Document                                                   | Contents                                          |
+| ---------------------------------------------------------- | ------------------------------------------------- |
+| [docs/synthese.pdf](docs/synthese.pdf)                     | Approach, split of the work, critical review      |
+| [docs/rapport-technique.pdf](docs/rapport-technique.pdf)   | Technical report (mirrors the `/dev` site)        |
+| [docs/demo.pdf](docs/demo.pdf)                             | Demonstration script                              |
+| [docs/fiche-soutenance.pdf](docs/fiche-soutenance.pdf)     | Live URL, demo accounts, TOTP QR codes            |
+| [docs/presentation.pdf](docs/presentation.pdf)             | Defence slides                                    |
+| [docs/Sujet du projet.pdf](docs/Sujet%20du%20projet.pdf)   | The assignment                                    |
 
 ---
 

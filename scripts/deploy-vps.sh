@@ -14,7 +14,7 @@ COMPOSE="docker compose -f docker/docker-compose.yml -f docker/docker-compose.pr
 REF="${1:-main}"
 
 env_get() { grep -E "^$1=" .env 2>/dev/null | head -1 | cut -d= -f2- || true; }
-DOMAIN="$(env_get PROD_DOMAIN)"; DOMAIN="${DOMAIN:-quartierconnect.fr}"
+DOMAIN="$(env_get PROD_DOMAIN)"; DOMAIN="${DOMAIN:-quartierconnect.duckdns.org}"
 case "$DOMAIN" in https://*) ;; *) DOMAIN="https://${DOMAIN}";; esac
 HOOK="$(env_get DISCORD_WEBHOOK)"
 
