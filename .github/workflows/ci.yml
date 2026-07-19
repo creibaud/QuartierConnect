@@ -21,7 +21,6 @@ env:
   PYTHON_VERSION: "3.12"
 
 jobs:
-  # API — NestJS 11 / TypeScript / Jest
   api:
     name: API (NestJS)
     runs-on: ubuntu-latest
@@ -134,7 +133,6 @@ jobs:
           title: "API Coverage"
         continue-on-error: true
 
-  # WEB — Monorepo React via Turbo
   web:
     name: Web (React monorepo)
     runs-on: ubuntu-latest
@@ -202,7 +200,6 @@ jobs:
           path: web-apps/apps/admin/dist/
           retention-days: 3
 
-  # DESKTOP — JavaFX 21 / Maven
   desktop:
     name: Desktop (JavaFX)
     runs-on: ubuntu-latest
@@ -235,7 +232,6 @@ jobs:
           path: desktop-app/target/quartierconnect-desktop.jar
           retention-days: 7
 
-  # DSL — Python 3.12 / PLY / pytest
   dsl:
     name: DSL (Python PLY)
     runs-on: ubuntu-latest

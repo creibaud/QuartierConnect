@@ -1,6 +1,6 @@
 /**
  * Seed Neo4j graph with existing MongoDB/PostgreSQL data.
- * Run: npx ts-node scripts/seed-neo4j.ts
+ * Run: make seed-neo4j
  *
  * Requires: NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD, MONGO_URI,
  * PG_CONTAINER/POSTGRES_USER/POSTGRES_DB (Postgres read via docker exec)
@@ -86,7 +86,6 @@ async function main() {
   const session = driver.session();
 
   try {
-    // Seed Neighborhoods
     const neighborhoods = await mongoose.connection
       .collection("neighborhoods")
       .find({})
@@ -102,7 +101,6 @@ async function main() {
     }
     console.log(`Seeded ${neighborhoods.length} neighborhoods`);
 
-    // Seed Services
     const services = await mongoose.connection
       .collection("services")
       .find({})
@@ -135,7 +133,6 @@ async function main() {
     }
     console.log(`Seeded ${services.length} services`);
 
-    // Seed Events
     const events = await mongoose.connection
       .collection("events")
       .find({})
@@ -172,7 +169,6 @@ async function main() {
     }
     console.log(`Seeded ${events.length} events`);
 
-    // Seed Users + LIVES_IN
     const residents = fetchResidents();
 
     for (const resident of residents) {
@@ -193,7 +189,6 @@ async function main() {
     }
     console.log(`Seeded ${residents.length} users with LIVES_IN`);
 
-    // Seed INTERESTED_IN
     const interestedEvents = events.slice(0, INTERESTED_EVENTS_PER_RESIDENT);
     let interestCount = 0;
 

@@ -4,7 +4,6 @@ import { act, renderHook } from "@testing-library/react";
 import * as i18nModule from "../../i18n/index";
 import { useLocale } from "../useLocale";
 
-// Mock i18next and react-i18next before imports
 vi.mock("react-i18next", () => ({
     useTranslation: vi.fn(() => ({
         t: (key: string) => key,

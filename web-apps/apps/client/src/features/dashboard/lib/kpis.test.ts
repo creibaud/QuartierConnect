@@ -11,7 +11,7 @@ const NOW = 1_000_000;
 
 describe("selectUpcomingEvents", () => {
     const events = [
-        { date: NOW - 10 }, // past
+        { date: NOW - 10 },
         { date: NOW + 30 },
         { date: NOW + 10 },
     ];

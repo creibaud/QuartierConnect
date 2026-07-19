@@ -112,7 +112,6 @@ export class MessagingGateway
         }
     }
 
-    // Wait for authentication to finish, then return the authenticated userId.
     private async requireUserId(client: Socket): Promise<string> {
         const ready = (client as AuthSocket).authReady;
         if (ready) await ready;

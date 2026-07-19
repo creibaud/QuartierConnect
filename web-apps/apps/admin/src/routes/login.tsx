@@ -85,7 +85,6 @@ function AdminLoginPage() {
                 }
                 setTokens(data.accessToken);
                 toast.success(t("adminPages.auth.loginSuccess"));
-                // Return to the recorded page, or the dashboard.
                 if (redirectTo) {
                     router.history.push(redirectTo);
                 } else {

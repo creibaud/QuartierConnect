@@ -77,8 +77,6 @@ public class IncidentsView {
 
     public VBox getRoot() { return root; }
 
-    // ── Refresh ──────────────────────────────────────────────────────────────
-
     public void refresh() {
         new Thread(() -> {
             try {
@@ -103,8 +101,6 @@ public class IncidentsView {
             }
         }, "incidents-refresh").start();
     }
-
-    // ── Layout ───────────────────────────────────────────────────────────────
 
     private VBox buildLayout() {
         Label pageTitle = new Label(I18n.get("incidents.title"));
@@ -269,8 +265,6 @@ public class IncidentsView {
         conflictBanner.setVisible(true);
         conflictBanner.setManaged(true);
     }
-
-    // ── Table ────────────────────────────────────────────────────────────────
 
     private void buildTable() {
         TableColumn<IncidentRepository.Incident, String> idxCol = new TableColumn<>("#");
@@ -460,8 +454,6 @@ public class IncidentsView {
         return box;
     }
 
-    // ── Filters ──────────────────────────────────────────────────────────────
-
     private AppButton filterBtn(String label, String filter) {
         AppButton btn = new AppButton(label, AppButton.Variant.GHOST);
         btn.getStyleClass().add("filter-btn");
@@ -521,8 +513,6 @@ public class IncidentsView {
         if (dirty     > 0) sb.append(" ").append(I18n.get("incidents.footer.pendingSync", dirty));
         footerInfo.setText(sb.toString());
     }
-
-    // ── Business logic ───────────────────────────────────────────────────────
 
     private void changeStatus(IncidentRepository.Incident incident, String newStatus) {
         new Thread(() -> {

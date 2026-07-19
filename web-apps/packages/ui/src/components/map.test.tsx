@@ -123,8 +123,6 @@ import {
     type LatLng,
 } from "./map";
 
-// ─── Export smoke test ────────────────────────────────────────────────────
-
 describe("map module", () => {
     it("exports all public symbols", () => {
         expect(Map).toBeDefined();
@@ -139,8 +137,6 @@ describe("map module", () => {
         expect(useIsDark).toBeDefined();
     });
 });
-
-// ─── DrawControl ──────────────────────────────────────────────────────────
 
 const SQUARE: GeoJSON.Polygon = {
     type: "Polygon",
@@ -189,8 +185,6 @@ describe("<DrawControl>", () => {
     });
 });
 
-// ─── MarkerCluster ────────────────────────────────────────────────────────
-
 describe("<MarkerCluster>", () => {
     it("renders provided children without throwing", () => {
         expect(() =>
@@ -202,8 +196,6 @@ describe("<MarkerCluster>", () => {
         ).not.toThrow();
     });
 });
-
-// ─── useFitBounds ─────────────────────────────────────────────────────────
 
 describe("useFitBounds", () => {
     it("returns a ref initialised to null for empty positions", () => {
@@ -222,8 +214,6 @@ describe("useFitBounds", () => {
         ).not.toThrow();
     });
 });
-
-// ─── useIsDark ────────────────────────────────────────────────────────────
 
 describe("useIsDark", () => {
     it("returns a boolean", () => {

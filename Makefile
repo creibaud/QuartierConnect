@@ -14,7 +14,6 @@
         hooks \
         status clean clean-modules info
 
-# ─── Colors & styles ───────────────────────────────────────────────────────────
 BOLD   := $(shell printf '\033[1m')
 DIM    := $(shell printf '\033[2m')
 RESET  := $(shell printf '\033[0m')
@@ -29,7 +28,6 @@ OK   := $(GREEN)✓$(RESET)
 FAIL := $(RED)✗$(RESET)
 RUN  := $(CYAN)▶$(RESET)
 
-# ─── Help ──────────────────────────────────────────────────────────────────────
 help: ## Show this help
 	@echo ""
 	@echo "$(BOLD)  QuartierConnect — Available commands$(RESET)"
@@ -63,7 +61,6 @@ help: ## Show this help
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "    %-24s %s\n", $$1, $$2}'
 	@echo ""
 
-# ─── Project info ──────────────────────────────────────────────────────────────
 info: ## Show project info
 	@echo ""
 	@echo "$(BOLD)  QuartierConnect$(RESET)"
@@ -80,7 +77,6 @@ info: ## Show project info
 	@echo "    admin@demo.fr / Demo1234!  (admin)"
 	@echo ""
 
-# ─── Status ────────────────────────────────────────────────────────────────────
 status: ## Check Docker service status
 	@echo ""
 	@echo "$(BOLD)  Docker services$(RESET)"
@@ -92,7 +88,6 @@ status: ## Check Docker service status
 		|| echo "  $(FAIL) API: some tests fail"
 	@echo ""
 
-# ─── Setup & deliverables ──────────────────────────────────────────────────────
 setup: ## One-command full setup (prereqs + .env + Docker + demo)
 	@SETUP_FORCE="$(SETUP_FORCE)" ./scripts/setup.sh
 
@@ -122,7 +117,6 @@ dist: ## Deliverable archive in dist/ (source zip + desktop JAR + test datasets)
 	@echo "    quartierconnect-desktop.jar             Desktop executable (if built)"
 	@echo "    test-datasets/                          Datasets to import (if present)"
 
-# ─── Development ───────────────────────────────────────────────────────────────
 dev: ## Start Docker databases (mongo/postgres/neo4j) + API + client + admin (hot reload)
 	@echo "$(RUN) $(BOLD)Starting dev mode...$(RESET)"
 	@echo "$(RUN) Docker databases (mongo, postgres, neo4j)..."
@@ -145,7 +139,6 @@ dev-desktop: ## Run the JavaFX app in dev mode (javafx:run)
 	@echo "$(RUN) JavaFX Desktop"
 	@cd desktop-app && ./mvnw clean javafx:run
 
-# ─── Build ─────────────────────────────────────────────────────────────────────
 build: build-api build-web build-desktop build-dsl ## Full build (API + Web + JAR + DSL)
 	@echo ""
 	@echo "$(OK) $(BOLD)Full build done$(RESET)"
@@ -176,7 +169,6 @@ build-dsl: ## Check the DSL Python syntax (ast.parse)
 	@cd dsl && uv run python -c "import ast, pathlib; [ast.parse(f.read_text()) for f in pathlib.Path('.').glob('*.py')]"
 	@echo "$(OK) DSL syntax OK"
 
-# ─── Tests ─────────────────────────────────────────────────────────────────────
 test: ## All unit tests (API + Web + Desktop + DSL)
 	@echo ""
 	@echo "$(BOLD)  Unit tests — all components$(RESET)"
@@ -234,7 +226,6 @@ test-web: ## Web Vitest tests (shared hooks + UI components)
 test-watch: ## API tests in interactive watch mode
 	@cd api && pnpm run test:watch
 
-# ─── Format ────────────────────────────────────────────────────────────────────
 format: format-api format-web format-desktop format-dsl ## Full format (4 components)
 	@echo ""
 	@echo "$(OK) $(BOLD)Full format OK$(RESET)"
@@ -260,7 +251,6 @@ format-dsl: ## Format the Python DSL (Ruff)
 	@echo "$(OK) Format DSL OK"
 
 
-# ─── Lint ──────────────────────────────────────────────────────────────────────
 lint: lint-api lint-web lint-desktop lint-dsl ## Full lint (4 components)
 	@echo ""
 	@echo "$(OK) $(BOLD)Full lint OK — zero errors$(RESET)"
@@ -290,7 +280,6 @@ typecheck: ## Typecheck the web monorepo (tsc --noEmit)
 	@cd web-apps && pnpm run typecheck
 	@echo "$(OK) Typecheck OK"
 
-# ─── Full validation ───────────────────────────────────────────────────────────
 validate: ## Full CI validation (lint + typecheck + tests + coverage + build)
 	@echo ""
 	@echo "$(BOLD)╔══════════════════════════════════════════════╗$(RESET)"
@@ -333,7 +322,6 @@ validate-fast: ## Quick validation (lint + typecheck + unit tests only, no build
 	@make test
 	@echo "$(OK) $(BOLD)Quick validation OK$(RESET)"
 
-# ─── Docker ────────────────────────────────────────────────────────────────────
 COMPOSE := docker compose -f docker/docker-compose.yml --env-file .env
 
 docker-up: ## Start the 9 Docker services (Caddy + API + Client + Admin + Docs user + Docs dev + MongoDB + PostgreSQL + Neo4j)
@@ -368,7 +356,6 @@ docker-reset: ## Full reset: stop + drop volumes + rebuild (⚠️ data loss)
 	@$(COMPOSE) up -d --build
 	@echo "$(OK) Full reset done"
 
-# ─── Seed & demo data ──────────────────────────────────────────────────────────
 db-migrate: ## Apply the Drizzle migrations to PostgreSQL
 	@echo "$(RUN) Drizzle migrations (PostgreSQL)..."
 	@cd api && DATABASE_URL=$$(grep ^POSTGRES_URL ../.env | cut -d= -f2-) \
@@ -394,13 +381,11 @@ seed-neo4j: ## Populate Neo4j with nodes from MongoDB (neighborhoods, services, 
 totp: ## Print the current TOTP code for each demo login (EMAIL=... for one)
 	@cd api && NODE_PATH=./node_modules npx tsx ../scripts/totp.ts
 
-# ─── Git hooks ───────────────────────────────────────────────────────────────
 hooks: ## Enable the shared git hooks (pre-commit) — run once per clone
 	@git config core.hooksPath .githooks
 	@chmod +x .githooks/* 2>/dev/null || true
 	@echo "$(OK) Hooks enabled (core.hooksPath = .githooks)"
 
-# ─── Installation ──────────────────────────────────────────────────────────────
 install: install-api install-web install-dsl ## Install every dependency (pnpm + uv)
 	@echo "$(OK) All dependencies installed"
 
@@ -416,7 +401,6 @@ install-dsl: ## Install the Python DSL dependencies (uv)
 	@echo "$(RUN) uv sync (dsl)..."
 	@cd dsl && uv sync
 
-# ─── Cleanup ───────────────────────────────────────────────────────────────────
 clean: ## Remove build artifacts (dist/, target/, __pycache__, coverage)
 	@echo "$(RUN) Cleaning build artifacts..."
 	@rm -rf api/dist api/coverage

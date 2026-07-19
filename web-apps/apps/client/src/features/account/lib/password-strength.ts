@@ -47,7 +47,6 @@ const STRENGTH_LEVELS = [
     },
 ];
 
-/** Real strength estimation via zxcvbn (entropy, dictionaries, patterns). */
 export function getPasswordStrength(password: string): PasswordStrength {
     const result = zxcvbnInstance.check(password);
     return {

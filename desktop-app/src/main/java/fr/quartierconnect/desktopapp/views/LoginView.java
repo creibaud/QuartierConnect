@@ -55,8 +55,6 @@ public class LoginView {
         return root;
     }
 
-    // ── Layout ───────────────────────────────────────────────────────────────
-
     private StackPane buildLayout() {
         ImageView logoImg = new ImageView();
         try {
@@ -127,8 +125,6 @@ public class LoginView {
                     .then((Effect) whiten)
                     .otherwise((Effect) null));
     }
-
-    // ── Business logic ───────────────────────────────────────────────────────
 
     private void checkStartupSession() {
         new Thread(() -> {

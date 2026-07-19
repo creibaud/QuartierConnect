@@ -538,7 +538,6 @@ describe("ServicesController", () => {
     it("respond is idempotent and forbids own service", async () => {
         const id1 = "aaaaaaaaaaaaaaaaaaaaaaaa";
         const id2 = "bbbbbbbbbbbbbbbbbbbbbbbb";
-        // service owned by someone else → upsert called
         model.findById.mockResolvedValue({ _id: id1, createdBy: "owner" });
         await controller.respond(id1, { user: { sub: "me" } } as any);
         expect(responseModel.updateOne).toHaveBeenCalledWith(
@@ -551,7 +550,6 @@ describe("ServicesController", () => {
             },
             { upsert: true },
         );
-        // own service → 403
         model.findById.mockResolvedValue({ _id: id2, createdBy: "me" });
         await expect(
             controller.respond(id2, { user: { sub: "me" } } as any),

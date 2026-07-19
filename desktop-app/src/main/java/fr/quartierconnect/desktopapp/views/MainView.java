@@ -117,8 +117,6 @@ public class MainView {
         return root;
     }
 
-    // ── Navigation ──────────────────────────────────────────────────────────
-
     private void buildNavigation() {
         dashBtn      = sidebar.addNavItem(FontAwesomeSolid.HOME,           I18n.get("nav.dashboard"));
         incidentsBtn = sidebar.addNavItem(FontAwesomeSolid.CLIPBOARD_LIST, I18n.get("nav.incidents"));
@@ -183,8 +181,6 @@ public class MainView {
         }
     }
 
-    // ── Logout ──────────────────────────────────────────────────────────────
-
     private void logout() {
         topBar.shutdown();
         syncService.shutdown();
@@ -198,8 +194,6 @@ public class MainView {
             stage.setHeight(560);
         });
     }
-
-    // ── Helpers ─────────────────────────────────────────────────────────────
 
     private static String extractInitials(String email) {
         if (email == null || email.isBlank()) return "?";

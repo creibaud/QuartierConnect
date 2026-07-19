@@ -21,7 +21,6 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 export const Route = createFileRoute("/login")({
-    // Keep redirect optional in the search type.
     validateSearch: (
         search: Record<string, unknown>,
     ): { redirect?: string } => ({
@@ -75,7 +74,6 @@ function LoginPage() {
                 });
                 setTokens(data.accessToken);
                 toast.success(t("auth.loginSuccess"));
-                // Return to the recorded page, or the dashboard.
                 if (redirectTo) {
                     router.history.push(redirectTo);
                 } else {

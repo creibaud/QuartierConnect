@@ -12,7 +12,6 @@ import {
     useSocketMessages,
 } from "../useMessaging";
 
-// --- socket.io-client mock ---------------------------------------------------
 // vi.hoisted ensures the factory runs before module imports (required by Vitest).
 const { mockSocket, mockIo, mockEmitWithAck } = vi.hoisted(() => {
     const mockEmitWithAck = vi.fn();
@@ -30,7 +29,6 @@ const { mockSocket, mockIo, mockEmitWithAck } = vi.hoisted(() => {
 
 vi.mock("socket.io-client", () => ({ io: mockIo }));
 
-// --- api / auth mocks --------------------------------------------------------
 vi.mock("../../api", () => ({
     apiGet: vi.fn(),
     apiPost: vi.fn(),
@@ -39,8 +37,6 @@ vi.mock("../../api", () => ({
 vi.mock("../../auth", () => ({
     getAccessToken: vi.fn(() => "mock-access-token"),
 }));
-
-// ---------------------------------------------------------------------------
 
 function createWrapper() {
     const queryClient = new QueryClient({
@@ -68,8 +64,6 @@ const mockMessage = {
     type: "text",
     createdAt: "2026-01-01T00:00:00Z",
 };
-
-// ---------------------------------------------------------------------------
 
 describe("useConversations", () => {
     beforeEach(() => vi.clearAllMocks());
@@ -204,7 +198,6 @@ describe("useSocketMessages", () => {
             wrapper: createWrapper(),
         });
 
-        // Simulate the connect event by calling the registered handler
         const connectHandler = mockSocket.on.mock.calls.find(
             ([event]) => event === "connect",
         )?.[1];

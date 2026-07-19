@@ -96,7 +96,6 @@ export function ServicesPage() {
     const services = data?.pages.flat() ?? [];
     const servicesWithCoords = services.filter((s) => s.location);
 
-    // Focus the map on the user's own neighborhood.
     const focusedNeighborhood = myLocation?.neighborhood ?? null;
 
     function canManage(service: Service): boolean {

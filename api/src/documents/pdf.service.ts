@@ -131,7 +131,6 @@ export class PdfService {
 
         let page = doc.addPage([W, H]);
 
-        // France-blue header carrying the service name and the contract title.
         page.drawRectangle({
             x: 0,
             y: H - HEADER_H,
@@ -157,7 +156,6 @@ export class PdfService {
 
         let y = H - HEADER_H - 42;
 
-        // Metadata: gray label + ink value; the amount is emphasized.
         const meta: [string, string, boolean][] = [
             ["Payeur", data.payerName, false],
             ["Bénéficiaire", data.payeeName, false],

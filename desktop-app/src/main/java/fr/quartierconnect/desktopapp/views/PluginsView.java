@@ -265,8 +265,6 @@ public class PluginsView {
         return new VBox(row);
     }
 
-    // ── Rescan ──────────────────────────────────────────────────────────────
-
     private void rescanPluginsDirectory() {
         PluginRegistry registry = PluginRegistry.getInstance();
         AppContext context = findAppContext();

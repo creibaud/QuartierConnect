@@ -28,10 +28,6 @@ public class AuthService {
 
     public record LoginResult(String accessToken, String refreshToken) {}
 
-    // ------------------------------------------------------------------
-    // Online login
-    // ------------------------------------------------------------------
-
     public LoginResult login(String email, String password, String totpCode) throws Exception {
         String body = MAPPER.writeValueAsString(new java.util.HashMap<>() {{
             put("email", email);
@@ -58,10 +54,6 @@ public class AuthService {
         applyTokens(node.get("accessToken").asText(), node.get("refreshToken").asText());
         return new LoginResult(accessToken, refreshToken);
     }
-
-    // ------------------------------------------------------------------
-    // Offline / session resume
-    // ------------------------------------------------------------------
 
     /**
      * Resumes a session from local storage without touching the network.
@@ -112,10 +104,6 @@ public class AuthService {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Accessors
-    // ------------------------------------------------------------------
-
     public String getAccessToken() {
         return accessToken;
     }
@@ -156,10 +144,6 @@ public class AuthService {
         TokenVault.getInstance().clearTokens();
         SQLiteDatabase.clearSession();
     }
-
-    // ------------------------------------------------------------------
-    // Internal helpers
-    // ------------------------------------------------------------------
 
     private void applyTokens(String newAccessToken, String newRefreshToken) {
         accessToken = newAccessToken;

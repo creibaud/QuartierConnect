@@ -46,19 +46,11 @@ class AuthServiceOfflineTest {
         auth.clearSession(); // clears memory + TokenVault + SQLite
     }
 
-    // ------------------------------------------------------------------
-    // tryResumeFromDatabase — no session
-    // ------------------------------------------------------------------
-
     @Test
     void tryResume_returnsFalse_whenNoSessionInDatabase() {
         assertFalse(auth.tryResumeFromDatabase());
         assertFalse(auth.isAuthenticated());
     }
-
-    // ------------------------------------------------------------------
-    // tryResumeFromDatabase — valid access token cached
-    // ------------------------------------------------------------------
 
     @Test
     void tryResume_returnsTrue_whenValidAccessTokenCached() {
@@ -70,10 +62,6 @@ class AuthServiceOfflineTest {
         assertTrue(auth.isAuthenticated());
         assertEquals("alice@demo.fr", auth.getCurrentUserEmail());
     }
-
-    // ------------------------------------------------------------------
-    // tryResumeFromDatabase — access token expired but refresh token present
-    // ------------------------------------------------------------------
 
     @Test
     void tryResume_returnsTrue_whenAccessTokenExpiredButRefreshTokenPresent() {
@@ -101,10 +89,6 @@ class AuthServiceOfflineTest {
         assertFalse(auth.isAuthenticated());
     }
 
-    // ------------------------------------------------------------------
-    // clearSession — also clears TokenVault and SQLite
-    // ------------------------------------------------------------------
-
     @Test
     void clearSession_removesSessionFromDatabase() {
         String jwt = validJwt("alice@demo.fr");
@@ -118,10 +102,6 @@ class AuthServiceOfflineTest {
         assertNull(TokenVault.getInstance().loadTokens());
     }
 
-    // ------------------------------------------------------------------
-    // isAuthenticated — offline (only refresh token in memory)
-    // ------------------------------------------------------------------
-
     @Test
     void isAuthenticated_returnsTrue_whenOnlyRefreshTokenAvailable() throws Exception {
         java.lang.reflect.Field refreshField = AuthService.class.getDeclaredField("refreshToken");
@@ -131,19 +111,11 @@ class AuthServiceOfflineTest {
         assertTrue(auth.isAuthenticated());
     }
 
-    // ------------------------------------------------------------------
-    // refreshAccessToken — no network, no token set
-    // ------------------------------------------------------------------
-
     @Test
     void refreshAccessToken_returnsFalse_withNoRefreshToken() {
         auth.clearSession();
         assertFalse(auth.refreshAccessToken());
     }
-
-    // ------------------------------------------------------------------
-    // isTokenExpired — edge cases
-    // ------------------------------------------------------------------
 
     @Test
     void isTokenExpired_returnsTrue_forExpiredToken() {
@@ -161,10 +133,6 @@ class AuthServiceOfflineTest {
         assertTrue(auth.isTokenExpired(""));
         assertTrue(auth.isTokenExpired(null));
     }
-
-    // ------------------------------------------------------------------
-    // getCurrentUserEmail — fallback chain
-    // ------------------------------------------------------------------
 
     @Test
     void getCurrentUserEmail_fallsBackToCachedEmail_whenJwtUnavailable() {

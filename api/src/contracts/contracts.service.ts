@@ -350,7 +350,6 @@ export class ContractsService {
                 // Imported contracts are never rebuilt from the template.
                 throw new NotFoundException("PDF unavailable");
             }
-            // lazy (re)generation when the PDF is missing
             try {
                 const data = await this.buildPdfData(contract);
                 const buf = await this.pdfService.generateBaseContractPdf(data);

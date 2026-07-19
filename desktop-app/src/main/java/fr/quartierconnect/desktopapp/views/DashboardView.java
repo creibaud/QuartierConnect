@@ -108,8 +108,6 @@ public class DashboardView {
         lastSyncLabel.setText(TimeFormatter.formatElapsed(syncService.getLastSyncEpoch()));
     }
 
-    // ── Layout ───────────────────────────────────────────────────────────────
-
     private VBox buildLayout() {
         VBox scrollContent = new VBox(0,
             buildHeader(),
@@ -324,8 +322,6 @@ public class DashboardView {
         VBox.setMargin(section, new Insets(0, 0, 8, 0));
         return section;
     }
-
-    // ── Data loading ─────────────────────────────────────────────────────────
 
     private void loadAsync() {
         new Thread(() -> {

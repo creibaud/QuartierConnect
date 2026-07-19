@@ -84,8 +84,6 @@ public class AppTopBar extends HBox {
         poller.shutdownNow();
     }
 
-    // ── Connectivity polling ────────────────────────────────────────────────
-
     private void startPolling() {
         poller.scheduleAtFixedRate(() -> {
             boolean online = ApiService.isReachable();

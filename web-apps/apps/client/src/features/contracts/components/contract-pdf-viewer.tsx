@@ -12,7 +12,6 @@ export function ContractPdfViewer({ contractId }: { contractId: string }) {
     useEffect(() => {
         let objectUrl: string | null = null;
         let cancelled = false;
-        // Reset to loading state when the contract changes.
         // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset-on-change
         setUrl(null);
         setError(false);

@@ -136,8 +136,6 @@ class ApiIntegrationTest {
         assertDoesNotThrow(() -> AuthService.getInstance().refreshAccessToken());
     }
 
-    // helpers
-
     private static boolean isApiReachable() {
         try {
             HttpRequest req = HttpRequest.newBuilder()

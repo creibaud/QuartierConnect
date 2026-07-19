@@ -53,7 +53,6 @@ public class AppSidebar extends VBox {
         setMinWidth(EXPANDED);
         setMaxWidth(EXPANDED);
 
-        // ── Logo image ──────────────────────────────────────────────────────
         ImageView logoImg = new ImageView();
         try {
             Image img = new Image(
@@ -79,7 +78,6 @@ public class AppSidebar extends VBox {
         logoArea.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(logoArea, Priority.ALWAYS);
 
-        // ── Toggle button (always visible) ──────────────────────────────────
         toggleIcon = new FontIcon(FontAwesomeSolid.ANGLE_LEFT);
         toggleIcon.setIconSize(12);
 
@@ -88,12 +86,10 @@ public class AppSidebar extends VBox {
         toggleBtn.getStyleClass().add("sidebar-toggle-btn");
         toggleBtn.setOnAction(e -> toggleCollapse());
 
-        // ── Header row ──────────────────────────────────────────────────────
         header = new HBox(logoArea, toggleBtn);
         header.setAlignment(Pos.CENTER_LEFT);
         header.getStyleClass().add("sidebar-header");
 
-        // ── Nav list ────────────────────────────────────────────────────────
         navList.getStyleClass().add("sidebar-nav-list");
         VBox.setVgrow(navList, Priority.ALWAYS);
 
@@ -109,8 +105,6 @@ public class AppSidebar extends VBox {
                     .then((Effect) whiten)
                     .otherwise((Effect) null));
     }
-
-    // ── Public API ──────────────────────────────────────────────────────────
 
     public NavItem addNavItem(Ikon icon, String label) {
         NavItem item = new NavItem(icon, label, false);
@@ -144,8 +138,6 @@ public class AppSidebar extends VBox {
         allItems.forEach(n -> n.setActive(false));
         if (item != null) item.setActive(true);
     }
-
-    // ── Collapse / expand ───────────────────────────────────────────────────
 
     private void toggleCollapse() {
         isCollapsed = !isCollapsed;
@@ -184,8 +176,6 @@ public class AppSidebar extends VBox {
 
         tl.play();
     }
-
-    // ── NavItem ─────────────────────────────────────────────────────────────
 
     public static class NavItem extends HBox {
 
