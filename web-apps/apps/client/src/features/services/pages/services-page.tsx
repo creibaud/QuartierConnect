@@ -155,7 +155,7 @@ export function ServicesPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {/* isolate: keep Leaflet's z-indexes below the nav and sidebar */}
+                            {/* isolate: keep the map's z-indexes below the nav and sidebar */}
                             <div className="relative isolate">
                                 <Map
                                     center={centroidOf(

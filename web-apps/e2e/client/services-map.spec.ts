@@ -3,6 +3,7 @@ import {
     apiLogin,
     apiRegister,
     assignAddress,
+    assignNeighborhoodWithGeometry,
     injectTokens,
     uniqueEmail,
 } from "../helpers/auth";
@@ -13,10 +14,12 @@ test.describe("Client — Services map", () => {
     let accessToken: string;
     let refreshToken: string;
     let apiAvailable = false;
+    let neighborhood: string | null = null;
+    let email = "";
 
     test.beforeAll(async () => {
         try {
-            const email = uniqueEmail();
+            email = uniqueEmail();
             const secret = await apiRegister(email);
             assignAddress(email);
             const tokens = await apiLogin(email, secret, -30);
@@ -28,10 +31,14 @@ test.describe("Client — Services map", () => {
         }
     });
 
-    test("renders Leaflet map when a neighborhood with geometry exists", async ({
-        page,
-    }) => {
+    test("draws the neighborhood on a MapLibre canvas", async ({ page }) => {
         test.skip(!apiAvailable, "API not available");
+        neighborhood = await assignNeighborhoodWithGeometry(email);
+        expect(
+            neighborhood,
+            "no neighborhood with a polygon — seed the stack first",
+        ).not.toBeNull();
+
         await injectTokens(
             page,
             "http://localhost:3000",
@@ -40,22 +47,37 @@ test.describe("Client — Services map", () => {
         );
         await page.goto("/services");
         await expect(page).toHaveURL(/\/services/);
-
-        // The map renders only for a neighborhood with a polygon; check the OSM
-        // attribution only when a map actually appears.
         await expect(
             page.getByRole("heading", { name: /services/i }),
         ).toBeVisible();
 
-        const map = page.locator(".leaflet-container").first();
-        await map
-            .waitFor({ state: "visible", timeout: 5000 })
-            .catch(() => undefined);
+        const map = page.locator(".maplibregl-map").first();
+        await expect(map).toBeVisible({ timeout: 15000 });
+        await expect(map.locator("canvas.maplibregl-canvas")).toBeVisible();
+        await expect(page.locator(".maplibregl-ctrl-attrib")).toContainText(
+            /OpenStreetMap/i,
+        );
+    });
 
-        if (await map.isVisible().catch(() => false)) {
-            await expect(
-                page.locator(".leaflet-control-attribution"),
-            ).toContainText("OpenStreetMap");
-        }
+    test("hides the map when the neighborhood has no geometry", async ({
+        page,
+    }) => {
+        test.skip(!apiAvailable, "API not available");
+        const plain = uniqueEmail();
+        const secret = await apiRegister(plain);
+        assignAddress(plain);
+        const tokens = await apiLogin(plain, secret, -30);
+
+        await injectTokens(
+            page,
+            "http://localhost:3000",
+            tokens.accessToken,
+            tokens.refreshToken,
+        );
+        await page.goto("/services");
+        await expect(
+            page.getByRole("heading", { name: /services/i }),
+        ).toBeVisible();
+        await expect(page.locator(".maplibregl-map")).toHaveCount(0);
     });
 });

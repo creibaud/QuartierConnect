@@ -20,6 +20,30 @@ export function assignAddress(email: string): void {
     }
 }
 
+/** Put a user in a real neighborhood that has a polygon.
+ *  `assignAddress` points at 'e2e-neighborhood', which no document matches, so
+ *  anything gated on the neighborhood's geometry stays hidden. Returns the
+ *  neighborhood name, or null when the API has none with a polygon.
+ */
+export async function assignNeighborhoodWithGeometry(
+    email: string,
+): Promise<string | null> {
+    const res = await fetch(`${API}/neighborhoods`);
+    if (!res.ok) return null;
+    const body = (await res.json()) as unknown;
+    const list = Array.isArray(body)
+        ? body
+        : ((body as { items?: unknown[] }).items ?? []);
+    const match = (list as { _id?: string; name?: string; geometry?: unknown }[])
+        .find((n) => n.geometry && n._id);
+    if (!match?._id) return null;
+    execSync(
+        `docker exec ${PG_CONTAINER} psql -U "${PG_USER}" -d "${PG_DB}" -c "UPDATE users SET address='1 rue de la Demo, 75018 Paris', address_lat=48.8867, address_lng=2.3431, neighborhood_id='${match._id}' WHERE email='${email}'"`,
+        { stdio: "pipe" },
+    );
+    return match.name ?? null;
+}
+
 /** Set an address no neighborhood covers, so the gate routes to /onboarding/pending. */
 export function assignUncoveredAddress(email: string): void {
     try {

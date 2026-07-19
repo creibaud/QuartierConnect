@@ -18,16 +18,18 @@ code_files=$(echo "$files" | grep -E '\.(ts|tsx|js|jsx|java|py)$' || true)
 
 if [ -n "$code_files" ]; then
   added_code=$(git diff --cached -U0 -- $code_files | grep -E '^\+[^+]' || true)
-  if echo "$added_code" | grep -qE 'console\.log|System\.out\.println|System\.err\.println|debugger'; then
+  if grep -qE 'console\.log|System\.out\.println|System\.err\.println|debugger' <<<"$added_code"; then
     note "console.log / System.out.println / debugger interdits (CDC §13.1)"
   fi
-  if echo "$added_code" | grep -qE '(TODO|FIXME)'; then
+  if grep -qE '(TODO|FIXME)' <<<"$added_code"; then
     note "TODO / FIXME interdits dans le code (CDC §13.1)"
   fi
 fi
 
+# Cible la signature d'outil ("🤖 Generated with [X]", "Co-authored-by: …"), pas
+# la tournure anglaise « generated with » qui est courante en prose technique.
 added_all=$(git diff --cached -U0 -- $files | grep -E '^\+[^+]' || true)
-if echo "$added_all" | grep -qiE 'co-authored-by|generated with|🤖'; then
+if grep -qiE 'co-authored-by:|generated with \[|🤖' <<<"$added_all"; then
   note "trailer ou signature non autorisé détecté dans le diff stagé"
 fi
 
