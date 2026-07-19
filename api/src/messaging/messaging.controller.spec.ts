@@ -29,6 +29,7 @@ const mockMessage = {
 const mockService = {
     findConversations: jest.fn(),
     createConversation: jest.fn(),
+    findOrCreateDirectConversation: jest.fn(),
     getMessages: jest.fn(),
     sendMessage: jest.fn(),
     sendFileMessage: jest.fn(),
@@ -37,6 +38,7 @@ const mockService = {
 
 const mockGateway = {
     emitToConversation: jest.fn(),
+    joinParticipantsToConversation: jest.fn(),
 };
 
 const mockConnection = {
@@ -85,6 +87,33 @@ describe("MessagingController", () => {
             req as any,
         );
         expect(result).toEqual(mockConversation);
+    });
+
+    it("createConversation puts every participant in the new room", async () => {
+        mockService.createConversation.mockResolvedValue(mockConversation);
+
+        await controller.createConversation(
+            { participants: ["user-2"] } as any,
+            req as any,
+        );
+
+        expect(mockGateway.joinParticipantsToConversation).toHaveBeenCalledWith(
+            "conv-1",
+            ["user-1", "user-2"],
+        );
+    });
+
+    it("findOrCreateWith puts both participants in the room", async () => {
+        mockService.findOrCreateDirectConversation.mockResolvedValue({
+            id: "conv-1",
+        });
+
+        await controller.findOrCreateWith("user-2", req as any);
+
+        expect(mockGateway.joinParticipantsToConversation).toHaveBeenCalledWith(
+            "conv-1",
+            ["user-1", "user-2"],
+        );
     });
 
     it("getMessages returns paginated messages", async () => {

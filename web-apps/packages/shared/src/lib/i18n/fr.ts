@@ -108,6 +108,14 @@ export default {
             deletePolygon: "Supprimer le tracé",
         },
     },
+    userPicker: {
+        placeholder: "Sélectionnez une personne",
+        searchPlaceholder: "Rechercher par nom ou email…",
+        hint: "Saisissez au moins 2 caractères pour rechercher.",
+        searching: "Recherche…",
+        noResults: "Aucune personne trouvée",
+        error: "Recherche indisponible, réessayez",
+    },
     roles: {
         resident: "Résident",
         moderator: "Modérateur",
@@ -525,10 +533,6 @@ export default {
             transferTitle: "Transférer des points",
             recipientLabel: "Destinataire *",
             recipientPlaceholder: "Sélectionnez un destinataire",
-            recipientHint: "Saisissez au moins 2 caractères pour rechercher.",
-            recipientSearchPlaceholder: "Rechercher par email…",
-            recipientSearching: "Recherche…",
-            recipientNoResults: "Aucun résident trouvé",
             amountLabel: "Montant *",
             noteLabel: "Note",
             notePlaceholder: "Ex : Merci pour le coup de main !",
@@ -814,13 +818,11 @@ export default {
             conversationReady: "Conversation prête",
             unknownError: "Erreur inconnue",
             createConversationError: "Impossible de créer la conversation",
-            userEmailNotFound: "Aucun voisin ne correspond à cet email",
-            selfConversation:
-                "Vous ne pouvez pas démarrer une conversation avec vous-même",
             participantsRequired: "Renseignez au moins un participant",
             newConversationDescription:
-                "Démarre une discussion avec un voisin via son email.",
-            neighborEmail: "Email du voisin",
+                "Recherchez une personne par son nom ou son email, puis démarrez la discussion.",
+            neighborLabel: "Voisin *",
+            neighborPlaceholder: "Sélectionnez un voisin",
             noneSelectedTitle: "Aucune conversation sélectionnée",
             noneSelectedDescription:
                 "Choisissez une conversation dans la liste ou démarrez-en une nouvelle.",

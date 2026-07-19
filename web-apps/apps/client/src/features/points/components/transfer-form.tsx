@@ -13,8 +13,8 @@ import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { Textarea } from "@workspace/ui/components/textarea";
 import { toast } from "sonner";
+import { UserPicker } from "@/components/user-picker";
 import { MAX_TRANSFER_AMOUNT, TRANSFER_ERROR_KEYS } from "../lib/transfer";
-import { RecipientPicker } from "./recipient-picker";
 
 export function TransferForm() {
     const { t } = useTranslation();
@@ -49,9 +49,7 @@ export function TransferForm() {
                 onError: (error: Error) => {
                     const code = (error as { code?: string }).code;
                     const key = code ? TRANSFER_ERROR_KEYS[code] : undefined;
-                    toast.error(
-                        key ? t(key) : t("pages.points.transferError"),
-                    );
+                    toast.error(key ? t(key) : t("pages.points.transferError"));
                 },
             },
         );
@@ -70,9 +68,11 @@ export function TransferForm() {
                         <Label htmlFor="points-recipient">
                             {t("pages.points.recipientLabel")}
                         </Label>
-                        <RecipientPicker
-                            recipient={recipient}
+                        <UserPicker
+                            id="points-recipient"
+                            selected={recipient}
                             onSelect={setRecipient}
+                            placeholder={t("pages.points.recipientPlaceholder")}
                         />
                     </div>
                     <div className="space-y-2">

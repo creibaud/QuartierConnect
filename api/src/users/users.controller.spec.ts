@@ -1,5 +1,6 @@
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
+import { PgDialect } from "drizzle-orm/pg-core";
 import type { Response } from "express";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import { UsersController } from "./users.controller";
@@ -13,6 +14,8 @@ const mockUser = {
 
 // Minimal Response stub: findAll only touches setHeader for the count headers.
 const mockRes = () => ({ setHeader: jest.fn() }) as unknown as Response;
+
+const dialect = new PgDialect();
 
 describe("UsersController", () => {
     let controller: UsersController;
@@ -55,6 +58,10 @@ describe("UsersController", () => {
 
         controller = module.get<UsersController>(UsersController);
     });
+
+    // The db is a stub, so the filter itself is only observable by rendering
+    // the SQL handed to where().
+    const searchWhere = () => dialect.sqlToQuery(mockDb.where.mock.calls[0][0]);
 
     it("GET /users returns paginated list", async () => {
         const result = await controller.findAll(mockRes());
@@ -144,20 +151,54 @@ describe("UsersController", () => {
         );
     });
 
-    it("GET /users/search returns email matches capped at 10", async () => {
-        const result = await controller.searchByEmail("bob", authReq());
+    it("GET /users/search returns matches capped at 10", async () => {
+        const result = await controller.searchUsers("bob", authReq());
         expect(result).toEqual([mockUser]);
         expect(mockDb.limit).toHaveBeenCalledWith(10);
     });
 
+    it("GET /users/search projects the fields the people picker renders", async () => {
+        await controller.searchUsers("bob", authReq());
+        expect(mockDb.select.mock.calls[0][0]).toEqual(
+            expect.objectContaining({
+                id: expect.anything(),
+                email: expect.anything(),
+                role: expect.anything(),
+                firstName: expect.anything(),
+                lastName: expect.anything(),
+                avatarUrl: expect.anything(),
+            }),
+        );
+    });
+
+    it("GET /users/search matches the first and last name, not just the email", () => {
+        controller.searchUsers("bob", authReq());
+        const { sql } = searchWhere();
+        expect(sql).toContain('"users"."email" ilike');
+        expect(sql).toContain('"users"."first_name"');
+        expect(sql).toContain('"users"."last_name"');
+    });
+
+    it("GET /users/search hides banned and deleted accounts", () => {
+        controller.searchUsers("bob", authReq());
+        const { sql, params } = searchWhere();
+        expect(sql).toContain('"users"."role" not in');
+        expect(params).toEqual(expect.arrayContaining(["banned", "deleted"]));
+    });
+
+    it("GET /users/search escapes LIKE wildcards so they match literally", () => {
+        controller.searchUsers("100%_a", authReq());
+        expect(searchWhere().params).toContain("%100\\%\\_a%");
+    });
+
     it("GET /users/search returns empty list when query is too short", async () => {
-        const result = await controller.searchByEmail("a", authReq());
+        const result = await controller.searchUsers("a", authReq());
         expect(result).toEqual([]);
         expect(mockDb.where).not.toHaveBeenCalled();
     });
 
     it("GET /users/search trims whitespace before measuring length", async () => {
-        const result = await controller.searchByEmail("  b  ", authReq());
+        const result = await controller.searchUsers("  b  ", authReq());
         expect(result).toEqual([]);
         expect(mockDb.where).not.toHaveBeenCalled();
     });

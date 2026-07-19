@@ -247,6 +247,47 @@ export class MessagingGateway
         this.server.to(`conversation:${conversationId}`).emit(event, data);
     }
 
+    /**
+     * Conversation rooms are joined once, at handshake time, so a conversation
+     * created afterwards is missing from every participant already connected.
+     * Their live sockets are added here; without it the first message is
+     * broadcast to a room nobody is in and only a reload reveals it.
+     */
+    joinParticipantsToConversation(
+        conversationId: string,
+        participantIds: string[],
+    ): void {
+        if (!this.server || participantIds.length === 0) return;
+        const uniqueIds = [...new Set(participantIds)].filter(Boolean);
+        if (uniqueIds.length === 0) return;
+        void this.server
+            .in(uniqueIds.map((userId) => `user:${userId}`))
+            .socketsJoin(`conversation:${conversationId}`);
+        this.registerConversationPeers(uniqueIds);
+    }
+
+    /**
+     * Peers are collected at handshake too, so without this both sides stay
+     * blind to each other's presence on a conversation created afterwards:
+     * the badge never lights up, and a later disconnect is never announced,
+     * leaving the other side with a dot that is stuck on.
+     */
+    private registerConversationPeers(participantIds: string[]): void {
+        for (const userId of participantIds) {
+            const peers = this.conversationPeersByUser.get(userId);
+            // No entry means offline; handleConnection will collect the peers.
+            if (!peers) continue;
+            for (const peerId of participantIds) {
+                if (peerId === userId || peers.has(peerId)) continue;
+                peers.add(peerId);
+                if (!this.socketsByUser.has(peerId)) continue;
+                this.server
+                    .to(`user:${userId}`)
+                    .emit("presence:update", { userId: peerId, online: true });
+            }
+        }
+    }
+
     sendNotification(
         userIds: string[],
         type: NotificationType,

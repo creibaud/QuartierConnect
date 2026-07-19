@@ -2,7 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "../api";
 import type { User } from "../types";
 
-export type UserSearchResult = Pick<User, "id" | "email" | "role">;
+// Names and avatars are nullable in the schema: an account exists from sign-up,
+// before the user has filled in a profile, so the picker must render without them.
+export type UserSearchResult = Pick<User, "id" | "email" | "role"> & {
+    firstName: string | null;
+    lastName: string | null;
+    avatarUrl: string | null;
+};
 
 export function useUserSearch(query: string) {
     const term = query.trim();

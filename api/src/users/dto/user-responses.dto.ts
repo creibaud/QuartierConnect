@@ -38,9 +38,22 @@ export class UserSearchResultDto {
 
     @ApiProperty({
         example: "resident",
-        enum: ["resident", "moderator", "admin", "banned"],
+        enum: ["resident", "moderator", "admin"],
     })
     role: string;
+
+    @ApiPropertyOptional({ example: "Alice", nullable: true })
+    firstName: string | null;
+
+    @ApiPropertyOptional({ example: "Martin", nullable: true })
+    lastName: string | null;
+
+    @ApiPropertyOptional({
+        example: "/users/avatar/664f1a2b3c4d5e6f7a8b9c0d",
+        nullable: true,
+        description: "Path to the public avatar endpoint",
+    })
+    avatarUrl: string | null;
 }
 
 export class NeighborDto {

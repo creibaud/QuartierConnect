@@ -29,6 +29,7 @@ import {
     ilike,
     ne,
     notInArray,
+    or,
     sql,
     type SQL,
 } from "drizzle-orm";
@@ -58,7 +59,9 @@ interface AuthRequest {
 const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_RESULTS = 10;
 const MAX_NEIGHBOR_RESULTS = 20;
-const EXCLUDED_NEIGHBOR_ROLES = ["banned", "deleted"];
+// Banned and deleted accounts can neither receive points nor be written to,
+// so offering them in any people picker would be a dead end.
+const UNREACHABLE_ROLES = ["banned", "deleted"];
 const FILTERABLE_ROLES = ["resident", "moderator", "admin", "banned"] as const;
 const FALLBACK_NEIGHBOR_NAME = "Voisin";
 
@@ -92,13 +95,13 @@ export class UsersController {
     @Get("search")
     @Roles("resident", "moderator", "admin")
     @ApiOperation({
-        summary: "Search users by email",
+        summary: "Search users by name or email",
         description:
-            "Returns up to 10 users whose email contains the query string, excluding the authenticated user. Available to any signed-in resident so they can pick a points-transfer recipient without knowing their UUID. Returns an empty list when the query is shorter than 2 characters.",
+            "Returns up to 10 users whose email, first name or last name contains the query string (case-insensitive), excluding the authenticated user and banned or deleted accounts. Available to any signed-in resident so they can pick a points-transfer recipient or a conversation partner without knowing their UUID. Returns an empty list when the query is shorter than 2 characters.",
     })
-    @ApiQuery({ name: "q", required: true, example: "bob" })
+    @ApiQuery({ name: "q", required: true, example: "camille" })
     @ApiResponse({ status: 200, type: [UserSearchResultDto] })
-    searchByEmail(@Query("q") query = "", @Request() req: AuthRequest) {
+    searchUsers(@Query("q") query = "", @Request() req: AuthRequest) {
         const term = query.trim();
         if (term.length < MIN_SEARCH_LENGTH) return [];
 
@@ -108,12 +111,19 @@ export class UsersController {
                 id: schema.users.id,
                 email: schema.users.email,
                 role: schema.users.role,
+                firstName: schema.users.firstName,
+                lastName: schema.users.lastName,
+                avatarUrl: schema.users.avatarUrl,
             })
             .from(schema.users)
             .where(
                 and(
-                    ilike(schema.users.email, pattern),
+                    or(
+                        ilike(schema.users.email, pattern),
+                        ilike(fullNameColumn(), pattern),
+                    ),
                     ne(schema.users.id, req.user.sub),
+                    notInArray(schema.users.role, UNREACHABLE_ROLES),
                 ),
             )
             .limit(MAX_SEARCH_RESULTS);
@@ -138,7 +148,7 @@ export class UsersController {
         const conditions = [
             eq(schema.users.neighborhoodId, neighborhoodId),
             ne(schema.users.id, sub),
-            notInArray(schema.users.role, EXCLUDED_NEIGHBOR_ROLES),
+            notInArray(schema.users.role, UNREACHABLE_ROLES),
         ];
         const term = search.trim();
         if (term.length > 0) {

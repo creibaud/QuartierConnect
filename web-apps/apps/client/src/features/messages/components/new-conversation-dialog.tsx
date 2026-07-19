@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCreateConversation } from "@workspace/shared/lib/hooks/useMessaging";
+import type { UserSearchResult } from "@workspace/shared/lib/hooks/useUserSearch";
 import { Button } from "@workspace/ui/components/button";
 import {
     Dialog,
@@ -10,9 +11,17 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@workspace/ui/components/dialog";
-import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { toast } from "sonner";
+import { UserPicker } from "@/components/user-picker";
+
+// Stable backend codes mapped to localized messages. USER_EMAIL_NOT_FOUND and
+// SELF_CONVERSATION are unreachable from here: the picker sends an id the
+// server itself returned, and the search already excludes the caller.
+const ERROR_KEYS: Record<string, string> = {
+    NO_OTHER_PARTICIPANTS: "pages.messages.participantsRequired",
+    PARTICIPANTS_REQUIRED: "pages.messages.participantsRequired",
+};
 
 export function NewConversationDialog({
     open,
@@ -24,33 +33,26 @@ export function NewConversationDialog({
     onCreated: (id: string) => void;
 }) {
     const { t } = useTranslation();
-    const [email, setEmail] = useState("");
+    const [neighbor, setNeighbor] = useState<UserSearchResult | null>(null);
     const create = useCreateConversation();
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        const trimmed = email.trim().toLowerCase();
-        if (!trimmed) return;
+        if (!neighbor) return;
         try {
+            // The picker already resolved the id, so skip the email lookup.
             const conv = await create.mutateAsync({
-                participantEmails: [trimmed],
+                participants: [neighbor.id],
             });
             toast.success(t("pages.messages.conversationReady"));
-            setEmail("");
+            setNeighbor(null);
             onOpenChange(false);
             onCreated(conv._id);
         } catch (err) {
-            // Map stable backend codes to localized messages.
-            const codeKeys: Record<string, string> = {
-                USER_EMAIL_NOT_FOUND: "pages.messages.userEmailNotFound",
-                SELF_CONVERSATION: "pages.messages.selfConversation",
-                NO_OTHER_PARTICIPANTS: "pages.messages.participantsRequired",
-                PARTICIPANTS_REQUIRED: "pages.messages.participantsRequired",
-            };
             const code = (err as { code?: string }).code;
             toast.error(
                 t(
-                    (code && codeKeys[code]) ??
+                    (code && ERROR_KEYS[code]) ??
                         "pages.messages.createConversationError",
                 ),
             );
@@ -68,18 +70,16 @@ export function NewConversationDialog({
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="conv-email">
-                            {t("pages.messages.neighborEmail")}
+                        <Label htmlFor="conv-neighbor">
+                            {t("pages.messages.neighborLabel")}
                         </Label>
-                        <Input
-                            id="conv-email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="bob@demo.fr"
-                            autoComplete="off"
-                            autoFocus
-                            required
+                        <UserPicker
+                            id="conv-neighbor"
+                            selected={neighbor}
+                            onSelect={setNeighbor}
+                            placeholder={t(
+                                "pages.messages.neighborPlaceholder",
+                            )}
                         />
                     </div>
                     <DialogFooter>
@@ -92,7 +92,7 @@ export function NewConversationDialog({
                         </Button>
                         <Button
                             type="submit"
-                            disabled={create.isPending || !email.trim()}
+                            disabled={create.isPending || !neighbor}
                         >
                             {create.isPending
                                 ? t("common.creating")

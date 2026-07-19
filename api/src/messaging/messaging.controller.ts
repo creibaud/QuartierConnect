@@ -84,11 +84,19 @@ export class MessagingController {
             "Creates a one-to-one or group conversation. For a one-to-one conversation, `participants` = [otherUserId].",
     })
     @ApiResponse({ status: 201, type: ConversationDto })
-    createConversation(
+    async createConversation(
         @Body() dto: CreateConversationDto,
         @Request() req: AuthRequest,
     ) {
-        return this.messagingService.createConversation(dto, req.user.sub);
+        const conversation = await this.messagingService.createConversation(
+            dto,
+            req.user.sub,
+        );
+        this.gateway.joinParticipantsToConversation(
+            String(conversation._id),
+            conversation.participants,
+        );
+        return conversation;
     }
 
     @Post("conversations/with/:userId")
@@ -102,14 +110,20 @@ export class MessagingController {
         description: "Postgres UUID of the other user",
     })
     @ApiResponse({ status: 201, schema: { example: { id: "64b..." } } })
-    findOrCreateWith(
+    async findOrCreateWith(
         @Param("userId") userId: string,
         @Request() req: AuthRequest,
     ) {
-        return this.messagingService.findOrCreateDirectConversation(
+        const conversation =
+            await this.messagingService.findOrCreateDirectConversation(
+                req.user.sub,
+                userId,
+            );
+        this.gateway.joinParticipantsToConversation(conversation.id, [
             req.user.sub,
             userId,
-        );
+        ]);
+        return conversation;
     }
 
     @Get("conversations/:id/messages")

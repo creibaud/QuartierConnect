@@ -52,6 +52,8 @@ describe("MessagingGateway", () => {
     let gateway: MessagingGateway;
     let serverEmit: jest.Mock;
     let serverTo: jest.Mock;
+    let serverIn: jest.Mock;
+    let socketsJoin: jest.Mock;
 
     async function connectUser(
         userId: string,
@@ -90,7 +92,9 @@ describe("MessagingGateway", () => {
         gateway = module.get<MessagingGateway>(MessagingGateway);
         serverEmit = jest.fn();
         serverTo = jest.fn().mockReturnValue({ emit: serverEmit });
-        (gateway as any).server = { to: serverTo };
+        socketsJoin = jest.fn();
+        serverIn = jest.fn().mockReturnValue({ socketsJoin });
+        (gateway as any).server = { to: serverTo, in: serverIn };
     });
 
     describe("handleConnection", () => {
@@ -541,6 +545,114 @@ describe("MessagingGateway", () => {
             expect(serverTo).toHaveBeenCalledWith("conversation:conv-1");
             expect(serverEmit).toHaveBeenCalledWith("new_message", {
                 text: "hi",
+            });
+        });
+    });
+
+    describe("joinParticipantsToConversation", () => {
+        it("adds every participant's live sockets to the new room", () => {
+            gateway.joinParticipantsToConversation("conv-9", [
+                "user-1",
+                "user-2",
+            ]);
+
+            expect(serverIn).toHaveBeenCalledWith([
+                "user:user-1",
+                "user:user-2",
+            ]);
+            expect(socketsJoin).toHaveBeenCalledWith("conversation:conv-9");
+        });
+
+        it("targets each participant once", () => {
+            gateway.joinParticipantsToConversation("conv-9", [
+                "user-1",
+                "user-1",
+            ]);
+
+            expect(serverIn).toHaveBeenCalledWith(["user:user-1"]);
+        });
+
+        it("does nothing without participants", () => {
+            gateway.joinParticipantsToConversation("conv-9", []);
+
+            expect(serverIn).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("a conversation created after connection", () => {
+        it("delivers the first message to a participant who was already online", async () => {
+            const socket = await connectUser("user-2", []);
+            expect(socket.join).not.toHaveBeenCalledWith(
+                "conversation:conv-new",
+            );
+
+            // What the REST creation endpoint does once the conversation exists.
+            gateway.joinParticipantsToConversation("conv-new", [
+                "user-1",
+                "user-2",
+            ]);
+
+            expect(serverIn).toHaveBeenCalledWith([
+                "user:user-1",
+                "user:user-2",
+            ]);
+            expect(socketsJoin).toHaveBeenCalledWith("conversation:conv-new");
+        });
+
+        it("lights up the presence badge for a peer who is already online", async () => {
+            await connectUser("user-1", [], "socket-1");
+            await connectUser("user-2", [], "socket-2");
+            serverTo.mockClear();
+            serverEmit.mockClear();
+
+            gateway.joinParticipantsToConversation("conv-new", [
+                "user-1",
+                "user-2",
+            ]);
+
+            expect(serverTo).toHaveBeenCalledWith("user:user-1");
+            expect(serverEmit).toHaveBeenCalledWith("presence:update", {
+                userId: "user-2",
+                online: true,
+            });
+            expect(serverTo).toHaveBeenCalledWith("user:user-2");
+            expect(serverEmit).toHaveBeenCalledWith("presence:update", {
+                userId: "user-1",
+                online: true,
+            });
+        });
+
+        it("stays quiet about a peer who is offline", async () => {
+            await connectUser("user-1", [], "socket-1");
+            serverEmit.mockClear();
+
+            gateway.joinParticipantsToConversation("conv-new", [
+                "user-1",
+                "user-2",
+            ]);
+
+            expect(serverEmit).not.toHaveBeenCalledWith(
+                "presence:update",
+                expect.anything(),
+            );
+        });
+
+        it("announces the disconnect of someone met after connection", async () => {
+            const socket = await connectUser("user-1", [], "socket-1");
+            await connectUser("user-2", [], "socket-2");
+            gateway.joinParticipantsToConversation("conv-new", [
+                "user-1",
+                "user-2",
+            ]);
+            serverTo.mockClear();
+            serverEmit.mockClear();
+
+            gateway.handleDisconnect(socket as any);
+
+            expect(serverTo).toHaveBeenCalledWith(["user:user-2"]);
+            expect(serverEmit).toHaveBeenCalledWith("presence:update", {
+                userId: "user-1",
+                online: false,
             });
         });
     });
