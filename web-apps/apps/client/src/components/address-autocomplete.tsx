@@ -86,7 +86,7 @@ export function AddressAutocomplete({
                 className="w-(--radix-popover-trigger-width) p-0"
             >
                 {/* Cap to available height; force block so long labels truncate. */}
-                <ScrollArea viewportClassName="max-h-[min(14rem,var(--radix-popover-content-available-height))] [&>div]:block!">
+                <ScrollArea viewportClassName="max-h-[min(14rem,var(--radix-popover-content-available-height))]">
                     <ul className="p-1">
                         {suggestions.map((s) => (
                             <li key={`${s.lat},${s.lng},${s.label}`}>

@@ -186,8 +186,19 @@ export class CommunityVotesService {
 
         for (const cast of vote.casts) {
             if (vote.voteType === CommunityVoteType.WEIGHTED && cast.weights) {
-                for (const [optionId, weight] of Object.entries(cast.weights)) {
-                    totals[optionId] = (totals[optionId] ?? 0) + weight;
+                // weights is declared `Map` in the schema, so on a hydrated
+                // document Object.entries() yields Mongoose internals instead
+                // of the weights. Only declared options are counted, so no
+                // internal key can reach the response either way.
+                const weights =
+                    cast.weights instanceof Map
+                        ? [...cast.weights.entries()]
+                        : Object.entries(cast.weights);
+                for (const [optionId, weight] of weights) {
+                    if (!(optionId in totals)) continue;
+                    const value = Number(weight);
+                    if (!Number.isFinite(value)) continue;
+                    totals[optionId] += value;
                 }
             } else {
                 for (const choice of cast.choices) {

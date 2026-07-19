@@ -346,6 +346,58 @@ describe("CommunityVotesService", () => {
         expect(vote.casts.map((c) => c.userId)).toEqual(["user1"]);
     });
 
+    it("sums weighted votes stored as a Mongoose Map", async () => {
+        mockVote.voteType = CommunityVoteType.WEIGHTED;
+        mockVote.casts = [
+            {
+                userId: "u1",
+                choices: ["yes"],
+                weights: new Map([
+                    ["yes", 3],
+                    ["no", 1],
+                ]),
+                castAt: new Date(),
+            },
+            {
+                userId: "u2",
+                choices: ["no"],
+                weights: new Map([["no", 2]]),
+                castAt: new Date(),
+            },
+        ];
+
+        const results = await service.getResults("vote1");
+        const totals = results.totals as Record<string, number>;
+
+        expect(totals["yes"]).toBe(3);
+        expect(totals["no"]).toBe(3);
+        // Mongoose Maps carry internal keys that must never reach the payload.
+        expect(Object.keys(totals).sort()).toEqual(["no", "yes"]);
+        mockVote.voteType = CommunityVoteType.BINARY;
+    });
+
+    it("ignores weight keys that are not vote options", async () => {
+        mockVote.voteType = CommunityVoteType.WEIGHTED;
+        mockVote.casts = [
+            {
+                userId: "u1",
+                choices: ["yes"],
+                weights: new Map<string, number>([
+                    ["yes", 2],
+                    ["ghost", 99],
+                ]),
+                castAt: new Date(),
+            },
+        ];
+
+        const results = await service.getResults("vote1");
+        const totals = results.totals as Record<string, number>;
+
+        expect(totals["yes"]).toBe(2);
+        expect(totals["ghost"]).toBeUndefined();
+        mockVote.voteType = CommunityVoteType.BINARY;
+    });
+
     it("calculates binary vote results", async () => {
         mockVote.casts = [
             { userId: "u1", choices: ["yes"], castAt: new Date() },

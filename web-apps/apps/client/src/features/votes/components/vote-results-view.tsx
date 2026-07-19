@@ -18,7 +18,12 @@ export function VoteResultsView({
     isClosed: boolean;
 }) {
     const { t } = useTranslation();
-    const max = Math.max(...Object.values(totals), 1);
+    // A single non-numeric total would turn max, and then every percentage,
+    // into NaN.
+    const max = Math.max(
+        ...Object.values(totals).filter((n) => Number.isFinite(n)),
+        1,
+    );
 
     return (
         <div className="flex flex-col gap-3">

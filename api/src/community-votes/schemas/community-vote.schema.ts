@@ -18,7 +18,9 @@ export interface VoteOption {
 export interface CastRecord {
     userId: string;
     choices: string[];
-    weights?: Record<string, number>;
+    // Stored as a Map, so a hydrated document hands back a Map and a lean read
+    // a plain object. Both shapes reach the aggregation.
+    weights?: Map<string, number> | Record<string, number>;
     castAt: Date;
 }
 
