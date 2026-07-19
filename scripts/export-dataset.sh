@@ -82,6 +82,12 @@ report() {
     echo "✗ A personal account leaked into the dataset. Fix before shipping." >&2
     exit 1
   fi
+  # Only seed-neo4j writes User.name; without it the neighbour recommendations
+  # render a raw UUID, or nothing at all.
+  if ! grep -q '`name`' "$TARGET/neo4j.cypher"; then
+    echo "✗ No named node in the graph: run make seed-neo4j, then export again." >&2
+    exit 1
+  fi
   echo "✓ Dataset exported to $TARGET"
 }
 

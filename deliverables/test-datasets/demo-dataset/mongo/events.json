@@ -1,26 +1,26 @@
 [{
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c933c"
+		"$oid": "6a5ce59d564b887ea821d8da"
 	},
 	"title": "Vide-grenier de la rue Lepic",
 	"description": "Une centaine d'exposants de 9h à 18h, inscription auprès de l'association de quartier.",
 	"category": "community",
 	"date": {
-		"$date": "2026-07-25T12:57:34.767Z"
+		"$date": "2026-07-25T14:56:29.52Z"
 	},
-	"createdBy": "9f148a9f-e8b2-4d46-a0f2-40f231f78587",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"9f148a9f-e8b2-4d46-a0f2-40f231f78587",
-		"1df836dd-03fe-4959-91ab-fec29eb08043",
-		"20c07cb0-abf1-44bc-9c10-4111e876b7d0",
-		"230a605b-3731-42c3-8048-ded936016833",
-		"ba9e298c-cbad-4ef3-9c11-a89ef5624a29",
-		"64527329-422d-4e8e-81a7-a698095ca063",
-		"9b7f94b0-59b2-4955-92c3-aeb94364dad6",
-		"34a9eeac-d838-4199-9e63-ec1152d08548",
-		"49ace41a-b57d-4488-af9f-a7b9eef68d82",
-		"118f6a6e-5a9b-4a2e-bcd7-6b98fb97b99f"
+		"612c6b63-da2a-4693-9375-01a85b2c2077",
+		"6001eff0-6bb2-4358-9ae0-60eff974ea0e",
+		"d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+		"d4d42f0b-f270-4951-a38d-6297a66373d6",
+		"987c1e1a-1794-41bf-945d-26727f56f5a0",
+		"0177012d-9b8c-4275-bcb9-dc80ef677926",
+		"2be71142-1779-49ed-b55f-698dd68545eb",
+		"5a277d88-783c-423f-a507-2e2fb6af80dd",
+		"0da094f5-007f-45a8-bf5e-e6fae0b67f28",
+		"e22bd119-e927-4b22-970f-bbdd16dd84ca"
 	],
 	"location": {
 		"type": "Point",
@@ -30,35 +30,35 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.774Z"
+		"$date": "2026-07-19T14:56:29.529Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.359Z"
+		"$date": "2026-07-19T14:57:37.536Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c933d"
+		"$oid": "6a5ce59d564b887ea821d8db"
 	},
 	"title": "Concert de jazz au square Louise-Michel",
 	"description": "Quartet acoustique en plein air à la tombée du jour, entrée libre, chapeau à la fin.",
 	"category": "culture",
 	"date": {
-		"$date": "2026-07-28T12:57:34.778Z"
+		"$date": "2026-07-28T14:56:29.533Z"
 	},
-	"createdBy": "1df836dd-03fe-4959-91ab-fec29eb08043",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "6001eff0-6bb2-4358-9ae0-60eff974ea0e",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"1df836dd-03fe-4959-91ab-fec29eb08043",
-		"20c07cb0-abf1-44bc-9c10-4111e876b7d0",
-		"230a605b-3731-42c3-8048-ded936016833",
-		"9b7f94b0-59b2-4955-92c3-aeb94364dad6",
-		"34a9eeac-d838-4199-9e63-ec1152d08548",
-		"45c99ad5-0257-4c2f-a9d3-b38057196195",
-		"dffe220b-c32d-46b2-81e4-822208be8cf7",
-		"0232dec4-7bb3-4817-9141-79402eeea507",
-		"ba9e298c-cbad-4ef3-9c11-a89ef5624a29"
+		"6001eff0-6bb2-4358-9ae0-60eff974ea0e",
+		"d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+		"d4d42f0b-f270-4951-a38d-6297a66373d6",
+		"2be71142-1779-49ed-b55f-698dd68545eb",
+		"5a277d88-783c-423f-a507-2e2fb6af80dd",
+		"13507342-fa7a-418f-939b-df328f02b048",
+		"0f5a66f8-fc42-47be-a119-34517927df33",
+		"cd168ac1-6eda-4167-9061-9c7082f72772",
+		"987c1e1a-1794-41bf-945d-26727f56f5a0"
 	],
 	"location": {
 		"type": "Point",
@@ -68,34 +68,34 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.786Z"
+		"$date": "2026-07-19T14:56:29.54Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.318Z"
+		"$date": "2026-07-19T14:57:37.48Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c933e"
+		"$oid": "6a5ce59d564b887ea821d8dc"
 	},
 	"title": "Tournoi de pétanque des Abbesses",
 	"description": "Doublettes formées sur place, inscriptions à partir de 14h, buvette tenue par les bénévoles.",
 	"category": "sport",
 	"date": {
-		"$date": "2026-07-31T12:57:34.789Z"
+		"$date": "2026-07-31T14:56:29.544Z"
 	},
-	"createdBy": "20c07cb0-abf1-44bc-9c10-4111e876b7d0",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"20c07cb0-abf1-44bc-9c10-4111e876b7d0",
-		"230a605b-3731-42c3-8048-ded936016833",
-		"9b7f94b0-59b2-4955-92c3-aeb94364dad6",
-		"34a9eeac-d838-4199-9e63-ec1152d08548",
-		"49ace41a-b57d-4488-af9f-a7b9eef68d82",
-		"118f6a6e-5a9b-4a2e-bcd7-6b98fb97b99f",
-		"c1babc8b-d69c-46c8-8ee7-ad38081ef019",
-		"01da4dbf-3ae9-417c-816d-986a8a72c597"
+		"d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+		"d4d42f0b-f270-4951-a38d-6297a66373d6",
+		"2be71142-1779-49ed-b55f-698dd68545eb",
+		"5a277d88-783c-423f-a507-2e2fb6af80dd",
+		"0da094f5-007f-45a8-bf5e-e6fae0b67f28",
+		"e22bd119-e927-4b22-970f-bbdd16dd84ca",
+		"df31de38-4d4f-479f-9db8-e63e4d18708d",
+		"248667a3-5bb9-4b0d-bcd6-457fd3d8bf2e"
 	],
 	"location": {
 		"type": "Point",
@@ -105,33 +105,33 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.797Z"
+		"$date": "2026-07-19T14:56:29.55Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.284Z"
+		"$date": "2026-07-19T14:57:37.448Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c933f"
+		"$oid": "6a5ce59d564b887ea821d8dd"
 	},
 	"title": "Atelier compost au jardin partagé",
 	"description": "Comprendre l'équilibre carbone-azote et repartir avec un seau de compost mûr.",
 	"category": "education",
 	"date": {
-		"$date": "2026-08-02T12:57:34.801Z"
+		"$date": "2026-08-02T14:56:29.553Z"
 	},
-	"createdBy": "230a605b-3731-42c3-8048-ded936016833",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "d4d42f0b-f270-4951-a38d-6297a66373d6",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"230a605b-3731-42c3-8048-ded936016833",
-		"9b7f94b0-59b2-4955-92c3-aeb94364dad6",
-		"34a9eeac-d838-4199-9e63-ec1152d08548",
-		"49ace41a-b57d-4488-af9f-a7b9eef68d82",
-		"118f6a6e-5a9b-4a2e-bcd7-6b98fb97b99f",
-		"33d63063-8c8e-484f-8f22-8112a5d65048",
-		"c3a1977f-e375-4577-91a4-61c8bf2866d2"
+		"d4d42f0b-f270-4951-a38d-6297a66373d6",
+		"2be71142-1779-49ed-b55f-698dd68545eb",
+		"5a277d88-783c-423f-a507-2e2fb6af80dd",
+		"0da094f5-007f-45a8-bf5e-e6fae0b67f28",
+		"e22bd119-e927-4b22-970f-bbdd16dd84ca",
+		"bea4ccd4-3a57-483c-91a7-ae11e329b6c9",
+		"6eac4cb7-4f80-41ea-bf50-0a451c921c5e"
 	],
 	"location": {
 		"type": "Point",
@@ -141,34 +141,34 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.809Z"
+		"$date": "2026-07-19T14:56:29.56Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:57:35.613Z"
+		"$date": "2026-07-19T14:56:30.403Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c9340"
+		"$oid": "6a5ce59d564b887ea821d8de"
 	},
 	"title": "Cinéma en plein air sur la Butte",
 	"description": "Projection d'un classique du cinéma français, apportez plaid et coussins.",
 	"category": "culture",
 	"date": {
-		"$date": "2026-08-06T12:57:34.812Z"
+		"$date": "2026-08-06T14:56:29.562Z"
 	},
-	"createdBy": "9b7f94b0-59b2-4955-92c3-aeb94364dad6",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "2be71142-1779-49ed-b55f-698dd68545eb",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"9b7f94b0-59b2-4955-92c3-aeb94364dad6",
-		"34a9eeac-d838-4199-9e63-ec1152d08548",
-		"49ace41a-b57d-4488-af9f-a7b9eef68d82",
-		"118f6a6e-5a9b-4a2e-bcd7-6b98fb97b99f",
-		"33d63063-8c8e-484f-8f22-8112a5d65048",
-		"c3a1977f-e375-4577-91a4-61c8bf2866d2",
-		"94a51625-b29b-4eac-aba8-d14e6faced1b",
-		"0a34e935-b202-43c7-823d-190fea2fb663"
+		"2be71142-1779-49ed-b55f-698dd68545eb",
+		"5a277d88-783c-423f-a507-2e2fb6af80dd",
+		"0da094f5-007f-45a8-bf5e-e6fae0b67f28",
+		"e22bd119-e927-4b22-970f-bbdd16dd84ca",
+		"bea4ccd4-3a57-483c-91a7-ae11e329b6c9",
+		"6eac4cb7-4f80-41ea-bf50-0a451c921c5e",
+		"3e8bd595-58e6-49a4-98da-d2ac19fd77dc",
+		"3121a232-c2bc-4409-84e5-26070344683f"
 	],
 	"location": {
 		"type": "Point",
@@ -178,35 +178,35 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.821Z"
+		"$date": "2026-07-19T14:56:29.572Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:57:35.692Z"
+		"$date": "2026-07-19T14:56:30.482Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c9341"
+		"$oid": "6a5ce59d564b887ea821d8df"
 	},
 	"title": "Nettoyage citoyen de la rue Caulaincourt",
 	"description": "Gants, pinces et sacs fournis, rendez-vous devant la mairie du 18e à 10h.",
 	"category": "community",
 	"date": {
-		"$date": "2026-08-08T12:57:34.825Z"
+		"$date": "2026-08-08T14:56:29.576Z"
 	},
-	"createdBy": "34a9eeac-d838-4199-9e63-ec1152d08548",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "5a277d88-783c-423f-a507-2e2fb6af80dd",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"34a9eeac-d838-4199-9e63-ec1152d08548",
-		"49ace41a-b57d-4488-af9f-a7b9eef68d82",
-		"118f6a6e-5a9b-4a2e-bcd7-6b98fb97b99f",
-		"33d63063-8c8e-484f-8f22-8112a5d65048",
-		"c3a1977f-e375-4577-91a4-61c8bf2866d2",
-		"94a51625-b29b-4eac-aba8-d14e6faced1b",
-		"0a34e935-b202-43c7-823d-190fea2fb663",
-		"ce910b86-e82f-4ae3-8fde-12fc0895edd1",
-		"9b131e55-bb65-4d53-8731-e518eae2fd69"
+		"5a277d88-783c-423f-a507-2e2fb6af80dd",
+		"0da094f5-007f-45a8-bf5e-e6fae0b67f28",
+		"e22bd119-e927-4b22-970f-bbdd16dd84ca",
+		"bea4ccd4-3a57-483c-91a7-ae11e329b6c9",
+		"6eac4cb7-4f80-41ea-bf50-0a451c921c5e",
+		"3e8bd595-58e6-49a4-98da-d2ac19fd77dc",
+		"3121a232-c2bc-4409-84e5-26070344683f",
+		"e022df10-5e19-4837-8b5d-eca7ac29506f",
+		"55ff23d0-bd6d-43bd-b6de-e9e45ae9ee95"
 	],
 	"location": {
 		"type": "Point",
@@ -216,41 +216,41 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.833Z"
+		"$date": "2026-07-19T14:56:29.582Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:57:35.772Z"
+		"$date": "2026-07-19T14:56:30.578Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c9342"
+		"$oid": "6a5ce59d564b887ea821d8e0"
 	},
 	"title": "Initiation au yoga au square Jehan-Rictus",
 	"description": "Séance douce d'une heure pour tous niveaux, prévoyez un tapis ou une serviette.",
 	"category": "sport",
 	"date": {
-		"$date": "2026-08-10T12:57:34.837Z"
+		"$date": "2026-08-10T14:56:29.585Z"
 	},
-	"createdBy": "49ace41a-b57d-4488-af9f-a7b9eef68d82",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "0da094f5-007f-45a8-bf5e-e6fae0b67f28",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"49ace41a-b57d-4488-af9f-a7b9eef68d82",
-		"118f6a6e-5a9b-4a2e-bcd7-6b98fb97b99f",
-		"33d63063-8c8e-484f-8f22-8112a5d65048",
-		"c3a1977f-e375-4577-91a4-61c8bf2866d2",
-		"94a51625-b29b-4eac-aba8-d14e6faced1b",
-		"0a34e935-b202-43c7-823d-190fea2fb663",
-		"ce910b86-e82f-4ae3-8fde-12fc0895edd1",
-		"9b131e55-bb65-4d53-8731-e518eae2fd69",
-		"67d77217-1c6a-48f6-99a3-001e1fdc125e",
-		"7ffec061-e10e-454f-894a-9ce32f10f62b",
-		"65bf0373-fb51-451f-a9d4-d2112a29c72f",
-		"7000ab00-3f99-499d-97c7-839e2025b123",
-		"c1babc8b-d69c-46c8-8ee7-ad38081ef019",
-		"01da4dbf-3ae9-417c-816d-986a8a72c597",
-		"d9744141-619d-436b-ba2a-4a4692716857"
+		"0da094f5-007f-45a8-bf5e-e6fae0b67f28",
+		"e22bd119-e927-4b22-970f-bbdd16dd84ca",
+		"bea4ccd4-3a57-483c-91a7-ae11e329b6c9",
+		"6eac4cb7-4f80-41ea-bf50-0a451c921c5e",
+		"3e8bd595-58e6-49a4-98da-d2ac19fd77dc",
+		"3121a232-c2bc-4409-84e5-26070344683f",
+		"e022df10-5e19-4837-8b5d-eca7ac29506f",
+		"55ff23d0-bd6d-43bd-b6de-e9e45ae9ee95",
+		"8166de43-60db-4588-b48f-699893a60069",
+		"53446db9-6f46-467b-aeca-19159817b241",
+		"a387e686-0f23-4b32-9e66-da59dfce9ea7",
+		"74878d54-7d43-4c71-a6b0-ca38ebd8862c",
+		"df31de38-4d4f-479f-9db8-e63e4d18708d",
+		"248667a3-5bb9-4b0d-bcd6-457fd3d8bf2e",
+		"877f5496-b8dd-47d1-b661-bb0a2deba875"
 	],
 	"location": {
 		"type": "Point",
@@ -260,40 +260,40 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.845Z"
+		"$date": "2026-07-19T14:56:29.591Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.266Z"
+		"$date": "2026-07-19T14:57:37.437Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c9343"
+		"$oid": "6a5ce59d564b887ea821d8e1"
 	},
 	"title": "Café des voisins salle Ordener",
 	"description": "Un temps d'échange informel autour d'un café pour faire connaissance entre habitants.",
 	"category": "community",
 	"date": {
-		"$date": "2026-08-13T12:57:34.849Z"
+		"$date": "2026-08-13T14:56:29.595Z"
 	},
-	"createdBy": "118f6a6e-5a9b-4a2e-bcd7-6b98fb97b99f",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "e22bd119-e927-4b22-970f-bbdd16dd84ca",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"118f6a6e-5a9b-4a2e-bcd7-6b98fb97b99f",
-		"33d63063-8c8e-484f-8f22-8112a5d65048",
-		"c3a1977f-e375-4577-91a4-61c8bf2866d2",
-		"94a51625-b29b-4eac-aba8-d14e6faced1b",
-		"0a34e935-b202-43c7-823d-190fea2fb663",
-		"230a605b-3731-42c3-8048-ded936016833",
-		"9b7f94b0-59b2-4955-92c3-aeb94364dad6",
-		"34a9eeac-d838-4199-9e63-ec1152d08548",
-		"49ace41a-b57d-4488-af9f-a7b9eef68d82",
-		"ce910b86-e82f-4ae3-8fde-12fc0895edd1",
-		"9b131e55-bb65-4d53-8731-e518eae2fd69",
-		"67d77217-1c6a-48f6-99a3-001e1fdc125e",
-		"7ffec061-e10e-454f-894a-9ce32f10f62b",
-		"65bf0373-fb51-451f-a9d4-d2112a29c72f"
+		"e22bd119-e927-4b22-970f-bbdd16dd84ca",
+		"bea4ccd4-3a57-483c-91a7-ae11e329b6c9",
+		"6eac4cb7-4f80-41ea-bf50-0a451c921c5e",
+		"3e8bd595-58e6-49a4-98da-d2ac19fd77dc",
+		"3121a232-c2bc-4409-84e5-26070344683f",
+		"d4d42f0b-f270-4951-a38d-6297a66373d6",
+		"2be71142-1779-49ed-b55f-698dd68545eb",
+		"5a277d88-783c-423f-a507-2e2fb6af80dd",
+		"0da094f5-007f-45a8-bf5e-e6fae0b67f28",
+		"e022df10-5e19-4837-8b5d-eca7ac29506f",
+		"55ff23d0-bd6d-43bd-b6de-e9e45ae9ee95",
+		"8166de43-60db-4588-b48f-699893a60069",
+		"53446db9-6f46-467b-aeca-19159817b241",
+		"a387e686-0f23-4b32-9e66-da59dfce9ea7"
 	],
 	"location": {
 		"type": "Point",
@@ -303,39 +303,39 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.858Z"
+		"$date": "2026-07-19T14:56:29.604Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.204Z"
+		"$date": "2026-07-19T14:57:37.373Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c9344"
+		"$oid": "6a5ce59d564b887ea821d8e2"
 	},
 	"title": "Visite guidée des vignes de Montmartre",
 	"description": "Une heure et demie d'histoire du vignoble et de la Butte, places limitées à vingt personnes.",
 	"category": "culture",
 	"date": {
-		"$date": "2026-08-16T12:57:34.862Z"
+		"$date": "2026-08-16T14:56:29.607Z"
 	},
-	"createdBy": "33d63063-8c8e-484f-8f22-8112a5d65048",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "bea4ccd4-3a57-483c-91a7-ae11e329b6c9",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"33d63063-8c8e-484f-8f22-8112a5d65048",
-		"c3a1977f-e375-4577-91a4-61c8bf2866d2",
-		"94a51625-b29b-4eac-aba8-d14e6faced1b",
-		"0a34e935-b202-43c7-823d-190fea2fb663",
-		"ce910b86-e82f-4ae3-8fde-12fc0895edd1",
-		"9b131e55-bb65-4d53-8731-e518eae2fd69",
-		"64527329-422d-4e8e-81a7-a698095ca063",
-		"1df836dd-03fe-4959-91ab-fec29eb08043",
-		"20c07cb0-abf1-44bc-9c10-4111e876b7d0",
-		"230a605b-3731-42c3-8048-ded936016833",
-		"9b7f94b0-59b2-4955-92c3-aeb94364dad6",
-		"34a9eeac-d838-4199-9e63-ec1152d08548",
-		"49ace41a-b57d-4488-af9f-a7b9eef68d82"
+		"bea4ccd4-3a57-483c-91a7-ae11e329b6c9",
+		"6eac4cb7-4f80-41ea-bf50-0a451c921c5e",
+		"3e8bd595-58e6-49a4-98da-d2ac19fd77dc",
+		"3121a232-c2bc-4409-84e5-26070344683f",
+		"e022df10-5e19-4837-8b5d-eca7ac29506f",
+		"55ff23d0-bd6d-43bd-b6de-e9e45ae9ee95",
+		"0177012d-9b8c-4275-bcb9-dc80ef677926",
+		"6001eff0-6bb2-4358-9ae0-60eff974ea0e",
+		"d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+		"d4d42f0b-f270-4951-a38d-6297a66373d6",
+		"2be71142-1779-49ed-b55f-698dd68545eb",
+		"5a277d88-783c-423f-a507-2e2fb6af80dd",
+		"0da094f5-007f-45a8-bf5e-e6fae0b67f28"
 	],
 	"location": {
 		"type": "Point",
@@ -345,38 +345,38 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.87Z"
+		"$date": "2026-07-19T14:56:29.613Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.153Z"
+		"$date": "2026-07-19T14:57:37.319Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c9345"
+		"$oid": "6a5ce59d564b887ea821d8e3"
 	},
 	"title": "Bourse aux vêtements d'enfants",
 	"description": "Dépôt le matin, vente l'après-midi, invendus reversés à une association du quartier.",
 	"category": "community",
 	"date": {
-		"$date": "2026-08-19T12:57:34.874Z"
+		"$date": "2026-08-19T14:56:29.615Z"
 	},
-	"createdBy": "c3a1977f-e375-4577-91a4-61c8bf2866d2",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "6eac4cb7-4f80-41ea-bf50-0a451c921c5e",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"c3a1977f-e375-4577-91a4-61c8bf2866d2",
-		"94a51625-b29b-4eac-aba8-d14e6faced1b",
-		"0a34e935-b202-43c7-823d-190fea2fb663",
-		"ce910b86-e82f-4ae3-8fde-12fc0895edd1",
-		"9b131e55-bb65-4d53-8731-e518eae2fd69",
-		"67d77217-1c6a-48f6-99a3-001e1fdc125e",
-		"7ffec061-e10e-454f-894a-9ce32f10f62b",
-		"dffe220b-c32d-46b2-81e4-822208be8cf7",
-		"0232dec4-7bb3-4817-9141-79402eeea507",
-		"ba9e298c-cbad-4ef3-9c11-a89ef5624a29",
-		"64527329-422d-4e8e-81a7-a698095ca063",
-		"1df836dd-03fe-4959-91ab-fec29eb08043"
+		"6eac4cb7-4f80-41ea-bf50-0a451c921c5e",
+		"3e8bd595-58e6-49a4-98da-d2ac19fd77dc",
+		"3121a232-c2bc-4409-84e5-26070344683f",
+		"e022df10-5e19-4837-8b5d-eca7ac29506f",
+		"55ff23d0-bd6d-43bd-b6de-e9e45ae9ee95",
+		"8166de43-60db-4588-b48f-699893a60069",
+		"53446db9-6f46-467b-aeca-19159817b241",
+		"0f5a66f8-fc42-47be-a119-34517927df33",
+		"cd168ac1-6eda-4167-9061-9c7082f72772",
+		"987c1e1a-1794-41bf-945d-26727f56f5a0",
+		"0177012d-9b8c-4275-bcb9-dc80ef677926",
+		"6001eff0-6bb2-4358-9ae0-60eff974ea0e"
 	],
 	"location": {
 		"type": "Point",
@@ -386,37 +386,37 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.882Z"
+		"$date": "2026-07-19T14:56:29.622Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.116Z"
+		"$date": "2026-07-19T14:57:37.273Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c9346"
+		"$oid": "6a5ce59d564b887ea821d8e4"
 	},
 	"title": "Atelier réparation de vélos",
 	"description": "Diagnostic, changement de patins et réglage de dérailleur avec des bénévoles expérimentés.",
 	"category": "education",
 	"date": {
-		"$date": "2026-08-22T12:57:34.885Z"
+		"$date": "2026-08-22T14:56:29.625Z"
 	},
-	"createdBy": "94a51625-b29b-4eac-aba8-d14e6faced1b",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "3e8bd595-58e6-49a4-98da-d2ac19fd77dc",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"94a51625-b29b-4eac-aba8-d14e6faced1b",
-		"0a34e935-b202-43c7-823d-190fea2fb663",
-		"ce910b86-e82f-4ae3-8fde-12fc0895edd1",
-		"9b131e55-bb65-4d53-8731-e518eae2fd69",
-		"67d77217-1c6a-48f6-99a3-001e1fdc125e",
-		"7ffec061-e10e-454f-894a-9ce32f10f62b",
-		"65bf0373-fb51-451f-a9d4-d2112a29c72f",
-		"7000ab00-3f99-499d-97c7-839e2025b123",
-		"01da4dbf-3ae9-417c-816d-986a8a72c597",
-		"d9744141-619d-436b-ba2a-4a4692716857",
-		"45c99ad5-0257-4c2f-a9d3-b38057196195"
+		"3e8bd595-58e6-49a4-98da-d2ac19fd77dc",
+		"3121a232-c2bc-4409-84e5-26070344683f",
+		"e022df10-5e19-4837-8b5d-eca7ac29506f",
+		"55ff23d0-bd6d-43bd-b6de-e9e45ae9ee95",
+		"8166de43-60db-4588-b48f-699893a60069",
+		"53446db9-6f46-467b-aeca-19159817b241",
+		"a387e686-0f23-4b32-9e66-da59dfce9ea7",
+		"74878d54-7d43-4c71-a6b0-ca38ebd8862c",
+		"248667a3-5bb9-4b0d-bcd6-457fd3d8bf2e",
+		"877f5496-b8dd-47d1-b661-bb0a2deba875",
+		"13507342-fa7a-418f-939b-df328f02b048"
 	],
 	"location": {
 		"type": "Point",
@@ -426,36 +426,36 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.893Z"
+		"$date": "2026-07-19T14:56:29.632Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.09Z"
+		"$date": "2026-07-19T14:57:37.241Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c9347"
+		"$oid": "6a5ce59d564b887ea821d8e5"
 	},
 	"title": "Concours de tartes de quartier",
 	"description": "Une tarte par foyer, jury composé de trois commerçants de la rue des Martyrs.",
 	"category": "other",
 	"date": {
-		"$date": "2026-08-25T12:57:34.896Z"
+		"$date": "2026-08-25T14:56:29.636Z"
 	},
-	"createdBy": "0a34e935-b202-43c7-823d-190fea2fb663",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "3121a232-c2bc-4409-84e5-26070344683f",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"0a34e935-b202-43c7-823d-190fea2fb663",
-		"ce910b86-e82f-4ae3-8fde-12fc0895edd1",
-		"9b131e55-bb65-4d53-8731-e518eae2fd69",
-		"67d77217-1c6a-48f6-99a3-001e1fdc125e",
-		"7ffec061-e10e-454f-894a-9ce32f10f62b",
-		"65bf0373-fb51-451f-a9d4-d2112a29c72f",
-		"7000ab00-3f99-499d-97c7-839e2025b123",
-		"c1babc8b-d69c-46c8-8ee7-ad38081ef019",
-		"01da4dbf-3ae9-417c-816d-986a8a72c597",
-		"d9744141-619d-436b-ba2a-4a4692716857"
+		"3121a232-c2bc-4409-84e5-26070344683f",
+		"e022df10-5e19-4837-8b5d-eca7ac29506f",
+		"55ff23d0-bd6d-43bd-b6de-e9e45ae9ee95",
+		"8166de43-60db-4588-b48f-699893a60069",
+		"53446db9-6f46-467b-aeca-19159817b241",
+		"a387e686-0f23-4b32-9e66-da59dfce9ea7",
+		"74878d54-7d43-4c71-a6b0-ca38ebd8862c",
+		"df31de38-4d4f-479f-9db8-e63e4d18708d",
+		"248667a3-5bb9-4b0d-bcd6-457fd3d8bf2e",
+		"877f5496-b8dd-47d1-b661-bb0a2deba875"
 	],
 	"location": {
 		"type": "Point",
@@ -465,35 +465,35 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.905Z"
+		"$date": "2026-07-19T14:56:29.643Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.072Z"
+		"$date": "2026-07-19T14:57:37.217Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c9348"
+		"$oid": "6a5ce59d564b887ea821d8e6"
 	},
 	"title": "Course solidaire des escaliers",
 	"description": "Parcours de 5 km entre les escaliers de la Butte, bénéfices reversés au centre social.",
 	"category": "sport",
 	"date": {
-		"$date": "2026-08-28T12:57:34.908Z"
+		"$date": "2026-08-28T14:56:29.646Z"
 	},
-	"createdBy": "ce910b86-e82f-4ae3-8fde-12fc0895edd1",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "e022df10-5e19-4837-8b5d-eca7ac29506f",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"ce910b86-e82f-4ae3-8fde-12fc0895edd1",
-		"9b131e55-bb65-4d53-8731-e518eae2fd69",
-		"67d77217-1c6a-48f6-99a3-001e1fdc125e",
-		"7ffec061-e10e-454f-894a-9ce32f10f62b",
-		"65bf0373-fb51-451f-a9d4-d2112a29c72f",
-		"7000ab00-3f99-499d-97c7-839e2025b123",
-		"c1babc8b-d69c-46c8-8ee7-ad38081ef019",
-		"01da4dbf-3ae9-417c-816d-986a8a72c597",
-		"d9744141-619d-436b-ba2a-4a4692716857"
+		"e022df10-5e19-4837-8b5d-eca7ac29506f",
+		"55ff23d0-bd6d-43bd-b6de-e9e45ae9ee95",
+		"8166de43-60db-4588-b48f-699893a60069",
+		"53446db9-6f46-467b-aeca-19159817b241",
+		"a387e686-0f23-4b32-9e66-da59dfce9ea7",
+		"74878d54-7d43-4c71-a6b0-ca38ebd8862c",
+		"df31de38-4d4f-479f-9db8-e63e4d18708d",
+		"248667a3-5bb9-4b0d-bcd6-457fd3d8bf2e",
+		"877f5496-b8dd-47d1-b661-bb0a2deba875"
 	],
 	"location": {
 		"type": "Point",
@@ -503,34 +503,34 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.915Z"
+		"$date": "2026-07-19T14:56:29.651Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.063Z"
+		"$date": "2026-07-19T14:57:37.209Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c9349"
+		"$oid": "6a5ce59d564b887ea821d8e7"
 	},
 	"title": "Lecture publique à la bibliothèque de la Goutte-d'Or",
 	"description": "Lectures d'auteurs du quartier suivies d'une rencontre avec le public.",
 	"category": "culture",
 	"date": {
-		"$date": "2026-08-31T12:57:34.919Z"
+		"$date": "2026-08-31T14:56:29.654Z"
 	},
-	"createdBy": "9b131e55-bb65-4d53-8731-e518eae2fd69",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "55ff23d0-bd6d-43bd-b6de-e9e45ae9ee95",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"9b131e55-bb65-4d53-8731-e518eae2fd69",
-		"67d77217-1c6a-48f6-99a3-001e1fdc125e",
-		"7ffec061-e10e-454f-894a-9ce32f10f62b",
-		"65bf0373-fb51-451f-a9d4-d2112a29c72f",
-		"7000ab00-3f99-499d-97c7-839e2025b123",
-		"94a51625-b29b-4eac-aba8-d14e6faced1b",
-		"0a34e935-b202-43c7-823d-190fea2fb663",
-		"ce910b86-e82f-4ae3-8fde-12fc0895edd1"
+		"55ff23d0-bd6d-43bd-b6de-e9e45ae9ee95",
+		"8166de43-60db-4588-b48f-699893a60069",
+		"53446db9-6f46-467b-aeca-19159817b241",
+		"a387e686-0f23-4b32-9e66-da59dfce9ea7",
+		"74878d54-7d43-4c71-a6b0-ca38ebd8862c",
+		"3e8bd595-58e6-49a4-98da-d2ac19fd77dc",
+		"3121a232-c2bc-4409-84e5-26070344683f",
+		"e022df10-5e19-4837-8b5d-eca7ac29506f"
 	],
 	"location": {
 		"type": "Point",
@@ -540,33 +540,33 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.927Z"
+		"$date": "2026-07-19T14:56:29.658Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.022Z"
+		"$date": "2026-07-19T14:57:37.171Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c934a"
+		"$oid": "6a5ce59d564b887ea821d8e8"
 	},
 	"title": "Atelier premiers secours",
 	"description": "Gestes qui sauvent et utilisation du défibrillateur, animé par la protection civile.",
 	"category": "education",
 	"date": {
-		"$date": "2026-09-03T12:57:34.93Z"
+		"$date": "2026-09-03T14:56:29.661Z"
 	},
-	"createdBy": "67d77217-1c6a-48f6-99a3-001e1fdc125e",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "8166de43-60db-4588-b48f-699893a60069",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"67d77217-1c6a-48f6-99a3-001e1fdc125e",
-		"7ffec061-e10e-454f-894a-9ce32f10f62b",
-		"65bf0373-fb51-451f-a9d4-d2112a29c72f",
-		"7000ab00-3f99-499d-97c7-839e2025b123",
-		"c1babc8b-d69c-46c8-8ee7-ad38081ef019",
-		"01da4dbf-3ae9-417c-816d-986a8a72c597",
-		"9f148a9f-e8b2-4d46-a0f2-40f231f78587"
+		"8166de43-60db-4588-b48f-699893a60069",
+		"53446db9-6f46-467b-aeca-19159817b241",
+		"a387e686-0f23-4b32-9e66-da59dfce9ea7",
+		"74878d54-7d43-4c71-a6b0-ca38ebd8862c",
+		"df31de38-4d4f-479f-9db8-e63e4d18708d",
+		"248667a3-5bb9-4b0d-bcd6-457fd3d8bf2e",
+		"612c6b63-da2a-4693-9375-01a85b2c2077"
 	],
 	"location": {
 		"type": "Point",
@@ -576,34 +576,34 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.94Z"
+		"$date": "2026-07-19T14:56:29.666Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:06.997Z"
+		"$date": "2026-07-19T14:57:37.147Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c934b"
+		"$oid": "6a5ce59d564b887ea821d8e9"
 	},
 	"title": "Marché de producteurs place des Abbesses",
 	"description": "Une douzaine de producteurs d'Île-de-France, de 8h à 14h sur toute la place.",
 	"category": "community",
 	"date": {
-		"$date": "2026-09-07T12:57:34.944Z"
+		"$date": "2026-09-07T14:56:29.668Z"
 	},
-	"createdBy": "7ffec061-e10e-454f-894a-9ce32f10f62b",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "53446db9-6f46-467b-aeca-19159817b241",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"7ffec061-e10e-454f-894a-9ce32f10f62b",
-		"65bf0373-fb51-451f-a9d4-d2112a29c72f",
-		"7000ab00-3f99-499d-97c7-839e2025b123",
-		"c1babc8b-d69c-46c8-8ee7-ad38081ef019",
-		"01da4dbf-3ae9-417c-816d-986a8a72c597",
-		"d9744141-619d-436b-ba2a-4a4692716857",
-		"45c99ad5-0257-4c2f-a9d3-b38057196195",
-		"9f148a9f-e8b2-4d46-a0f2-40f231f78587"
+		"53446db9-6f46-467b-aeca-19159817b241",
+		"a387e686-0f23-4b32-9e66-da59dfce9ea7",
+		"74878d54-7d43-4c71-a6b0-ca38ebd8862c",
+		"df31de38-4d4f-479f-9db8-e63e4d18708d",
+		"248667a3-5bb9-4b0d-bcd6-457fd3d8bf2e",
+		"877f5496-b8dd-47d1-b661-bb0a2deba875",
+		"13507342-fa7a-418f-939b-df328f02b048",
+		"612c6b63-da2a-4693-9375-01a85b2c2077"
 	],
 	"location": {
 		"type": "Point",
@@ -613,35 +613,35 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.953Z"
+		"$date": "2026-07-19T14:56:29.674Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:06.989Z"
+		"$date": "2026-07-19T14:57:37.139Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c934c"
+		"$oid": "6a5ce59d564b887ea821d8ea"
 	},
 	"title": "Chorale de quartier à Saint-Pierre",
 	"description": "Répétition ouverte puis concert de fin de saison, aucune expérience requise.",
 	"category": "culture",
 	"date": {
-		"$date": "2026-09-11T12:57:34.955Z"
+		"$date": "2026-09-11T14:56:29.677Z"
 	},
-	"createdBy": "65bf0373-fb51-451f-a9d4-d2112a29c72f",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "a387e686-0f23-4b32-9e66-da59dfce9ea7",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"65bf0373-fb51-451f-a9d4-d2112a29c72f",
-		"7000ab00-3f99-499d-97c7-839e2025b123",
-		"c1babc8b-d69c-46c8-8ee7-ad38081ef019",
-		"01da4dbf-3ae9-417c-816d-986a8a72c597",
-		"d9744141-619d-436b-ba2a-4a4692716857",
-		"45c99ad5-0257-4c2f-a9d3-b38057196195",
-		"dffe220b-c32d-46b2-81e4-822208be8cf7",
-		"0232dec4-7bb3-4817-9141-79402eeea507",
-		"9f148a9f-e8b2-4d46-a0f2-40f231f78587"
+		"a387e686-0f23-4b32-9e66-da59dfce9ea7",
+		"74878d54-7d43-4c71-a6b0-ca38ebd8862c",
+		"df31de38-4d4f-479f-9db8-e63e4d18708d",
+		"248667a3-5bb9-4b0d-bcd6-457fd3d8bf2e",
+		"877f5496-b8dd-47d1-b661-bb0a2deba875",
+		"13507342-fa7a-418f-939b-df328f02b048",
+		"0f5a66f8-fc42-47be-a119-34517927df33",
+		"cd168ac1-6eda-4167-9061-9c7082f72772",
+		"612c6b63-da2a-4693-9375-01a85b2c2077"
 	],
 	"location": {
 		"type": "Point",
@@ -651,38 +651,38 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.96Z"
+		"$date": "2026-07-19T14:56:29.683Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:06.981Z"
+		"$date": "2026-07-19T14:57:37.131Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c934d"
+		"$oid": "6a5ce59d564b887ea821d8eb"
 	},
 	"title": "Fête des voisins",
 	"description": "Tables dressées dans la cour, chacun apporte un plat à partager.",
 	"category": "community",
 	"date": {
-		"$date": "2026-07-07T12:57:34.962Z"
+		"$date": "2026-07-07T14:56:29.685Z"
 	},
-	"createdBy": "7000ab00-3f99-499d-97c7-839e2025b123",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "74878d54-7d43-4c71-a6b0-ca38ebd8862c",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"64527329-422d-4e8e-81a7-a698095ca063",
-		"1df836dd-03fe-4959-91ab-fec29eb08043",
-		"20c07cb0-abf1-44bc-9c10-4111e876b7d0",
-		"230a605b-3731-42c3-8048-ded936016833",
-		"9b7f94b0-59b2-4955-92c3-aeb94364dad6",
-		"34a9eeac-d838-4199-9e63-ec1152d08548",
-		"49ace41a-b57d-4488-af9f-a7b9eef68d82",
-		"118f6a6e-5a9b-4a2e-bcd7-6b98fb97b99f",
-		"33d63063-8c8e-484f-8f22-8112a5d65048",
-		"c3a1977f-e375-4577-91a4-61c8bf2866d2",
-		"94a51625-b29b-4eac-aba8-d14e6faced1b",
-		"0a34e935-b202-43c7-823d-190fea2fb663"
+		"0177012d-9b8c-4275-bcb9-dc80ef677926",
+		"6001eff0-6bb2-4358-9ae0-60eff974ea0e",
+		"d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+		"d4d42f0b-f270-4951-a38d-6297a66373d6",
+		"2be71142-1779-49ed-b55f-698dd68545eb",
+		"5a277d88-783c-423f-a507-2e2fb6af80dd",
+		"0da094f5-007f-45a8-bf5e-e6fae0b67f28",
+		"e22bd119-e927-4b22-970f-bbdd16dd84ca",
+		"bea4ccd4-3a57-483c-91a7-ae11e329b6c9",
+		"6eac4cb7-4f80-41ea-bf50-0a451c921c5e",
+		"3e8bd595-58e6-49a4-98da-d2ac19fd77dc",
+		"3121a232-c2bc-4409-84e5-26070344683f"
 	],
 	"location": {
 		"type": "Point",
@@ -692,37 +692,37 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.968Z"
+		"$date": "2026-07-19T14:56:29.691Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.903Z"
+		"$date": "2026-07-19T14:57:38.168Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c934e"
+		"$oid": "6a5ce59d564b887ea821d8ec"
 	},
 	"title": "Brocante de la rue Marcadet",
 	"description": "Une soixantaine de stands sur toute la longueur de la rue, buvette tenue par le comité de quartier.",
 	"category": "community",
 	"date": {
-		"$date": "2026-06-24T12:57:34.971Z"
+		"$date": "2026-06-24T14:56:29.694Z"
 	},
-	"createdBy": "c1babc8b-d69c-46c8-8ee7-ad38081ef019",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "df31de38-4d4f-479f-9db8-e63e4d18708d",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"dffe220b-c32d-46b2-81e4-822208be8cf7",
-		"0232dec4-7bb3-4817-9141-79402eeea507",
-		"ba9e298c-cbad-4ef3-9c11-a89ef5624a29",
-		"64527329-422d-4e8e-81a7-a698095ca063",
-		"1df836dd-03fe-4959-91ab-fec29eb08043",
-		"20c07cb0-abf1-44bc-9c10-4111e876b7d0",
-		"230a605b-3731-42c3-8048-ded936016833",
-		"9b7f94b0-59b2-4955-92c3-aeb94364dad6",
-		"34a9eeac-d838-4199-9e63-ec1152d08548",
-		"49ace41a-b57d-4488-af9f-a7b9eef68d82",
-		"118f6a6e-5a9b-4a2e-bcd7-6b98fb97b99f"
+		"0f5a66f8-fc42-47be-a119-34517927df33",
+		"cd168ac1-6eda-4167-9061-9c7082f72772",
+		"987c1e1a-1794-41bf-945d-26727f56f5a0",
+		"0177012d-9b8c-4275-bcb9-dc80ef677926",
+		"6001eff0-6bb2-4358-9ae0-60eff974ea0e",
+		"d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+		"d4d42f0b-f270-4951-a38d-6297a66373d6",
+		"2be71142-1779-49ed-b55f-698dd68545eb",
+		"5a277d88-783c-423f-a507-2e2fb6af80dd",
+		"0da094f5-007f-45a8-bf5e-e6fae0b67f28",
+		"e22bd119-e927-4b22-970f-bbdd16dd84ca"
 	],
 	"location": {
 		"type": "Point",
@@ -732,36 +732,36 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.976Z"
+		"$date": "2026-07-19T14:56:29.7Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.808Z"
+		"$date": "2026-07-19T14:57:38.06Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c934f"
+		"$oid": "6a5ce59d564b887ea821d8ed"
 	},
 	"title": "Concert à l'église Saint-Jean",
 	"description": "Ensemble vocal et orgue, programme autour des chants traditionnels européens.",
 	"category": "culture",
 	"date": {
-		"$date": "2026-06-09T12:57:34.978Z"
+		"$date": "2026-06-09T14:56:29.703Z"
 	},
-	"createdBy": "01da4dbf-3ae9-417c-816d-986a8a72c597",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "248667a3-5bb9-4b0d-bcd6-457fd3d8bf2e",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"01da4dbf-3ae9-417c-816d-986a8a72c597",
-		"d9744141-619d-436b-ba2a-4a4692716857",
-		"45c99ad5-0257-4c2f-a9d3-b38057196195",
-		"dffe220b-c32d-46b2-81e4-822208be8cf7",
-		"0232dec4-7bb3-4817-9141-79402eeea507",
-		"ba9e298c-cbad-4ef3-9c11-a89ef5624a29",
-		"64527329-422d-4e8e-81a7-a698095ca063",
-		"1df836dd-03fe-4959-91ab-fec29eb08043",
-		"20c07cb0-abf1-44bc-9c10-4111e876b7d0",
-		"230a605b-3731-42c3-8048-ded936016833"
+		"248667a3-5bb9-4b0d-bcd6-457fd3d8bf2e",
+		"877f5496-b8dd-47d1-b661-bb0a2deba875",
+		"13507342-fa7a-418f-939b-df328f02b048",
+		"0f5a66f8-fc42-47be-a119-34517927df33",
+		"cd168ac1-6eda-4167-9061-9c7082f72772",
+		"987c1e1a-1794-41bf-945d-26727f56f5a0",
+		"0177012d-9b8c-4275-bcb9-dc80ef677926",
+		"6001eff0-6bb2-4358-9ae0-60eff974ea0e",
+		"d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+		"d4d42f0b-f270-4951-a38d-6297a66373d6"
 	],
 	"location": {
 		"type": "Point",
@@ -771,35 +771,35 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.983Z"
+		"$date": "2026-07-19T14:56:29.71Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.714Z"
+		"$date": "2026-07-19T14:57:37.953Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c9350"
+		"$oid": "6a5ce59d564b887ea821d8ee"
 	},
 	"title": "Tournoi de babyfoot du café Damrémont",
 	"description": "Seize équipes engagées, tournoi à élimination directe sur toute la soirée.",
 	"category": "sport",
 	"date": {
-		"$date": "2026-05-25T12:57:34.986Z"
+		"$date": "2026-05-25T14:56:29.714Z"
 	},
-	"createdBy": "d9744141-619d-436b-ba2a-4a4692716857",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "877f5496-b8dd-47d1-b661-bb0a2deba875",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"65bf0373-fb51-451f-a9d4-d2112a29c72f",
-		"7000ab00-3f99-499d-97c7-839e2025b123",
-		"c1babc8b-d69c-46c8-8ee7-ad38081ef019",
-		"01da4dbf-3ae9-417c-816d-986a8a72c597",
-		"d9744141-619d-436b-ba2a-4a4692716857",
-		"45c99ad5-0257-4c2f-a9d3-b38057196195",
-		"dffe220b-c32d-46b2-81e4-822208be8cf7",
-		"0232dec4-7bb3-4817-9141-79402eeea507",
-		"ba9e298c-cbad-4ef3-9c11-a89ef5624a29"
+		"a387e686-0f23-4b32-9e66-da59dfce9ea7",
+		"74878d54-7d43-4c71-a6b0-ca38ebd8862c",
+		"df31de38-4d4f-479f-9db8-e63e4d18708d",
+		"248667a3-5bb9-4b0d-bcd6-457fd3d8bf2e",
+		"877f5496-b8dd-47d1-b661-bb0a2deba875",
+		"13507342-fa7a-418f-939b-df328f02b048",
+		"0f5a66f8-fc42-47be-a119-34517927df33",
+		"cd168ac1-6eda-4167-9061-9c7082f72772",
+		"987c1e1a-1794-41bf-945d-26727f56f5a0"
 	],
 	"location": {
 		"type": "Point",
@@ -809,34 +809,34 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.99Z"
+		"$date": "2026-07-19T14:56:29.723Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.64Z"
+		"$date": "2026-07-19T14:57:37.855Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9be2cf0e1ce2a3c9351"
+		"$oid": "6a5ce59d564b887ea821d8ef"
 	},
 	"title": "Atelier zéro déchet",
 	"description": "Fabrication de produits ménagers et d'éponges lavables à partir de chutes de tissu.",
 	"category": "education",
 	"date": {
-		"$date": "2026-05-10T12:57:34.993Z"
+		"$date": "2026-05-10T14:56:29.727Z"
 	},
-	"createdBy": "45c99ad5-0257-4c2f-a9d3-b38057196195",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "13507342-fa7a-418f-939b-df328f02b048",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"9b131e55-bb65-4d53-8731-e518eae2fd69",
-		"67d77217-1c6a-48f6-99a3-001e1fdc125e",
-		"7ffec061-e10e-454f-894a-9ce32f10f62b",
-		"65bf0373-fb51-451f-a9d4-d2112a29c72f",
-		"7000ab00-3f99-499d-97c7-839e2025b123",
-		"c1babc8b-d69c-46c8-8ee7-ad38081ef019",
-		"01da4dbf-3ae9-417c-816d-986a8a72c597",
-		"d9744141-619d-436b-ba2a-4a4692716857"
+		"55ff23d0-bd6d-43bd-b6de-e9e45ae9ee95",
+		"8166de43-60db-4588-b48f-699893a60069",
+		"53446db9-6f46-467b-aeca-19159817b241",
+		"a387e686-0f23-4b32-9e66-da59dfce9ea7",
+		"74878d54-7d43-4c71-a6b0-ca38ebd8862c",
+		"df31de38-4d4f-479f-9db8-e63e4d18708d",
+		"248667a3-5bb9-4b0d-bcd6-457fd3d8bf2e",
+		"877f5496-b8dd-47d1-b661-bb0a2deba875"
 	],
 	"location": {
 		"type": "Point",
@@ -846,33 +846,33 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:34.998Z"
+		"$date": "2026-07-19T14:56:29.736Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.586Z"
+		"$date": "2026-07-19T14:57:37.797Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9bf2cf0e1ce2a3c9352"
+		"$oid": "6a5ce59d564b887ea821d8f0"
 	},
 	"title": "Projection documentaire sur la Butte",
 	"description": "Film sur l'histoire ouvrière de Montmartre, suivi d'un débat avec la réalisatrice.",
 	"category": "culture",
 	"date": {
-		"$date": "2026-04-25T12:57:35Z"
+		"$date": "2026-04-25T14:56:29.741Z"
 	},
-	"createdBy": "dffe220b-c32d-46b2-81e4-822208be8cf7",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "0f5a66f8-fc42-47be-a119-34517927df33",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"94a51625-b29b-4eac-aba8-d14e6faced1b",
-		"0a34e935-b202-43c7-823d-190fea2fb663",
-		"ce910b86-e82f-4ae3-8fde-12fc0895edd1",
-		"9b131e55-bb65-4d53-8731-e518eae2fd69",
-		"67d77217-1c6a-48f6-99a3-001e1fdc125e",
-		"7ffec061-e10e-454f-894a-9ce32f10f62b",
-		"65bf0373-fb51-451f-a9d4-d2112a29c72f"
+		"3e8bd595-58e6-49a4-98da-d2ac19fd77dc",
+		"3121a232-c2bc-4409-84e5-26070344683f",
+		"e022df10-5e19-4837-8b5d-eca7ac29506f",
+		"55ff23d0-bd6d-43bd-b6de-e9e45ae9ee95",
+		"8166de43-60db-4588-b48f-699893a60069",
+		"53446db9-6f46-467b-aeca-19159817b241",
+		"a387e686-0f23-4b32-9e66-da59dfce9ea7"
 	],
 	"location": {
 		"type": "Point",
@@ -882,32 +882,32 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:35.005Z"
+		"$date": "2026-07-19T14:56:29.751Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.529Z"
+		"$date": "2026-07-19T14:57:37.722Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9bf2cf0e1ce2a3c9353"
+		"$oid": "6a5ce59d564b887ea821d8f1"
 	},
 	"title": "Collecte solidaire de jouets",
 	"description": "Jouets en bon état collectés au profit des familles suivies par le centre social.",
 	"category": "community",
 	"date": {
-		"$date": "2026-04-10T12:57:35.007Z"
+		"$date": "2026-04-10T14:56:29.755Z"
 	},
-	"createdBy": "0232dec4-7bb3-4817-9141-79402eeea507",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "cd168ac1-6eda-4167-9061-9c7082f72772",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"118f6a6e-5a9b-4a2e-bcd7-6b98fb97b99f",
-		"33d63063-8c8e-484f-8f22-8112a5d65048",
-		"c3a1977f-e375-4577-91a4-61c8bf2866d2",
-		"94a51625-b29b-4eac-aba8-d14e6faced1b",
-		"0a34e935-b202-43c7-823d-190fea2fb663",
-		"ce910b86-e82f-4ae3-8fde-12fc0895edd1"
+		"e22bd119-e927-4b22-970f-bbdd16dd84ca",
+		"bea4ccd4-3a57-483c-91a7-ae11e329b6c9",
+		"6eac4cb7-4f80-41ea-bf50-0a451c921c5e",
+		"3e8bd595-58e6-49a4-98da-d2ac19fd77dc",
+		"3121a232-c2bc-4409-84e5-26070344683f",
+		"e022df10-5e19-4837-8b5d-eca7ac29506f"
 	],
 	"location": {
 		"type": "Point",
@@ -917,31 +917,31 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:35.013Z"
+		"$date": "2026-07-19T14:56:29.764Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.469Z"
+		"$date": "2026-07-19T14:57:37.675Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9bf2cf0e1ce2a3c9354"
+		"$oid": "6a5ce59d564b887ea821d8f2"
 	},
 	"title": "Randonnée urbaine du 18e",
 	"description": "Douze kilomètres à travers le quartier, du square Léon aux réservoirs de Montmartre.",
 	"category": "sport",
 	"date": {
-		"$date": "2026-03-21T12:57:35.015Z"
+		"$date": "2026-03-21T14:56:29.768Z"
 	},
-	"createdBy": "ba9e298c-cbad-4ef3-9c11-a89ef5624a29",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "987c1e1a-1794-41bf-945d-26727f56f5a0",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"9b7f94b0-59b2-4955-92c3-aeb94364dad6",
-		"34a9eeac-d838-4199-9e63-ec1152d08548",
-		"49ace41a-b57d-4488-af9f-a7b9eef68d82",
-		"118f6a6e-5a9b-4a2e-bcd7-6b98fb97b99f",
-		"33d63063-8c8e-484f-8f22-8112a5d65048"
+		"2be71142-1779-49ed-b55f-698dd68545eb",
+		"5a277d88-783c-423f-a507-2e2fb6af80dd",
+		"0da094f5-007f-45a8-bf5e-e6fae0b67f28",
+		"e22bd119-e927-4b22-970f-bbdd16dd84ca",
+		"bea4ccd4-3a57-483c-91a7-ae11e329b6c9"
 	],
 	"location": {
 		"type": "Point",
@@ -951,30 +951,30 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:35.021Z"
+		"$date": "2026-07-19T14:56:29.777Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.42Z"
+		"$date": "2026-07-19T14:57:37.619Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9bf2cf0e1ce2a3c9355"
+		"$oid": "6a5ce59d564b887ea821d8f3"
 	},
 	"title": "Repas de quartier",
 	"description": "Auberge espagnole sous la halle, une cinquantaine de participants chaque année.",
 	"category": "other",
 	"date": {
-		"$date": "2026-03-01T12:57:35.024Z"
+		"$date": "2026-03-01T14:56:29.782Z"
 	},
-	"createdBy": "64527329-422d-4e8e-81a7-a698095ca063",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f6",
+	"createdBy": "0177012d-9b8c-4275-bcb9-dc80ef677926",
+	"neighborhoodId": "6a5ce58c564b887ea821d894",
 	"interestedUserIds": [
-		"1df836dd-03fe-4959-91ab-fec29eb08043",
-		"20c07cb0-abf1-44bc-9c10-4111e876b7d0",
-		"230a605b-3731-42c3-8048-ded936016833",
-		"9b7f94b0-59b2-4955-92c3-aeb94364dad6"
+		"6001eff0-6bb2-4358-9ae0-60eff974ea0e",
+		"d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+		"d4d42f0b-f270-4951-a38d-6297a66373d6",
+		"2be71142-1779-49ed-b55f-698dd68545eb"
 	],
 	"location": {
 		"type": "Point",
@@ -984,193 +984,193 @@
 		]
 	},
 	"createdAt": {
-		"$date": "2026-07-19T12:57:35.032Z"
+		"$date": "2026-07-19T14:56:29.79Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:59:07.385Z"
+		"$date": "2026-07-19T14:57:37.569Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9bf2cf0e1ce2a3c9356"
+		"$oid": "6a5ce59d564b887ea821d8f4"
 	},
 	"title": "Balade patrimoine dans le Marais",
 	"description": "Cours d'hôtels particuliers et passages méconnus, deux heures de marche tranquille.",
 	"category": "culture",
 	"date": {
-		"$date": "2026-07-30T12:57:35.036Z"
+		"$date": "2026-07-30T14:56:29.794Z"
 	},
-	"createdBy": "4a746bc5-1837-421c-8de2-18d706e66844",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f7",
+	"createdBy": "38e7c65f-2229-4566-a54f-79a9f1f5fd91",
+	"neighborhoodId": "6a5ce58c564b887ea821d895",
 	"interestedUserIds": [
-		"4a746bc5-1837-421c-8de2-18d706e66844",
-		"59049c8c-571e-4995-be88-72cb5212269f"
+		"38e7c65f-2229-4566-a54f-79a9f1f5fd91",
+		"960764c5-9d0c-4d80-8752-b3510aa2e1fa"
 	],
 	"createdAt": {
-		"$date": "2026-07-19T12:57:35.043Z"
+		"$date": "2026-07-19T14:56:29.801Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:57:36.429Z"
+		"$date": "2026-07-19T14:56:31.162Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9bf2cf0e1ce2a3c9357"
+		"$oid": "6a5ce59d564b887ea821d8f5"
 	},
 	"title": "Fresque participative à Belleville",
 	"description": "Deux jours de peinture collective sur le mur pignon de la rue Ramponeau.",
 	"category": "culture",
 	"date": {
-		"$date": "2026-08-04T12:57:35.047Z"
+		"$date": "2026-08-04T14:56:29.804Z"
 	},
-	"createdBy": "3a8f6cc3-fa5b-497c-8eea-7feb992cc142",
-	"neighborhoodId": "6a5cc9ad2cf0e1ce2a3c92f8",
+	"createdBy": "6a924633-9af9-4503-ba58-9c30a37d6514",
+	"neighborhoodId": "6a5ce58c564b887ea821d896",
 	"interestedUserIds": [
-		"70c8c7e5-d696-4358-a9a6-0b026f6e8e68",
-		"3a8f6cc3-fa5b-497c-8eea-7feb992cc142"
+		"1ff8df9d-6050-48ee-b841-86febf3b31c5",
+		"6a924633-9af9-4503-ba58-9c30a37d6514"
 	],
 	"createdAt": {
-		"$date": "2026-07-19T12:57:35.053Z"
+		"$date": "2026-07-19T14:56:29.81Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:57:36.449Z"
+		"$date": "2026-07-19T14:56:31.182Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9bf2cf0e1ce2a3c9358"
+		"$oid": "6a5ce59d564b887ea821d8f6"
 	},
 	"title": "Café-philo rue Mouffetard",
 	"description": "Discussion mensuelle animée par un professeur de philosophie du lycée voisin.",
 	"category": "education",
 	"date": {
-		"$date": "2026-08-09T12:57:35.057Z"
+		"$date": "2026-08-09T14:56:29.814Z"
 	},
-	"createdBy": "f0aee1c4-202e-4c44-9b23-e5d9cb8e8a3c",
-	"neighborhoodId": "6a5cc9ae2cf0e1ce2a3c92f9",
+	"createdBy": "4edbee6e-29e0-473b-ba04-823f39d214d1",
+	"neighborhoodId": "6a5ce58c564b887ea821d897",
 	"interestedUserIds": [
-		"f0aee1c4-202e-4c44-9b23-e5d9cb8e8a3c",
-		"96a7e89f-325f-43ea-8bde-96293e3b9a97"
+		"4edbee6e-29e0-473b-ba04-823f39d214d1",
+		"008516fb-eefe-48c4-a959-d31f8b4dcac0"
 	],
 	"createdAt": {
-		"$date": "2026-07-19T12:57:35.065Z"
+		"$date": "2026-07-19T14:56:29.823Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:57:36.471Z"
+		"$date": "2026-07-19T14:56:31.204Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9bf2cf0e1ce2a3c9359"
+		"$oid": "6a5ce59d564b887ea821d8f7"
 	},
 	"title": "Troc de plantes au square des Batignolles",
 	"description": "Boutures, graines et conseils échangés entre jardiniers amateurs du quartier.",
 	"category": "community",
 	"date": {
-		"$date": "2026-08-15T12:57:35.068Z"
+		"$date": "2026-08-15T14:56:29.826Z"
 	},
-	"createdBy": "cfb5a153-3e64-4df2-b67c-4309ed8c5c16",
-	"neighborhoodId": "6a5cc9ae2cf0e1ce2a3c92fa",
+	"createdBy": "4ba03cef-0ce8-4e19-95f8-5c33f65fe786",
+	"neighborhoodId": "6a5ce58c564b887ea821d898",
 	"interestedUserIds": [
-		"a7f0486b-e942-4f86-8b0c-543092daac49",
-		"cfb5a153-3e64-4df2-b67c-4309ed8c5c16"
+		"8b038917-4073-4ad3-82b7-609d444f789e",
+		"4ba03cef-0ce8-4e19-95f8-5c33f65fe786"
 	],
 	"createdAt": {
-		"$date": "2026-07-19T12:57:35.076Z"
+		"$date": "2026-07-19T14:56:29.833Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:57:36.489Z"
+		"$date": "2026-07-19T14:56:31.228Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9bf2cf0e1ce2a3c935a"
+		"$oid": "6a5ce59d564b887ea821d8f8"
 	},
 	"title": "Course à pied autour du canal",
 	"description": "Boucle de 8 km à allure libre, départ groupé devant la mairie du 11e.",
 	"category": "sport",
 	"date": {
-		"$date": "2026-08-21T12:57:35.079Z"
+		"$date": "2026-08-21T14:56:29.837Z"
 	},
-	"createdBy": "46da8efd-9b76-4b67-a4bf-aad5d6c6d6b9",
-	"neighborhoodId": "6a5cc9ae2cf0e1ce2a3c92fb",
+	"createdBy": "eeb62541-25c3-4c23-beab-a6814c50e7e8",
+	"neighborhoodId": "6a5ce58c564b887ea821d899",
 	"interestedUserIds": [
-		"46da8efd-9b76-4b67-a4bf-aad5d6c6d6b9",
-		"77177fba-d667-44d1-9904-60f149a24df8"
+		"eeb62541-25c3-4c23-beab-a6814c50e7e8",
+		"e253a027-70cd-4800-8b21-09ffa47e39fc"
 	],
 	"createdAt": {
-		"$date": "2026-07-19T12:57:35.087Z"
+		"$date": "2026-07-19T14:56:29.846Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:57:36.514Z"
+		"$date": "2026-07-19T14:56:31.242Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9bf2cf0e1ce2a3c935b"
+		"$oid": "6a5ce59d564b887ea821d8f9"
 	},
 	"title": "Marché des artisans de la Gaîté",
 	"description": "Artisans locaux et producteurs sur trois week-ends consécutifs.",
 	"category": "community",
 	"date": {
-		"$date": "2026-06-04T12:57:35.09Z"
+		"$date": "2026-06-04T14:56:29.85Z"
 	},
-	"createdBy": "a17bea96-f8e9-4eb1-8a95-2584aa7fb20e",
-	"neighborhoodId": "6a5cc9ae2cf0e1ce2a3c9300",
+	"createdBy": "613fa246-6c72-4236-b1fb-47210da4660e",
+	"neighborhoodId": "6a5ce58c564b887ea821d89e",
 	"interestedUserIds": [],
 	"createdAt": {
-		"$date": "2026-07-19T12:57:35.097Z"
+		"$date": "2026-07-19T14:56:29.861Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:57:35.097Z"
+		"$date": "2026-07-19T14:56:29.861Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9bf2cf0e1ce2a3c935c"
+		"$oid": "6a5ce59e564b887ea821d8fa"
 	},
 	"title": "Visite nocturne du Père-Lachaise",
 	"description": "Parcours à la lampe torche sur les sépultures d'artistes, groupes de quinze personnes.",
 	"category": "culture",
 	"date": {
-		"$date": "2026-05-20T12:57:35.1Z"
+		"$date": "2026-05-20T14:56:29.867Z"
 	},
-	"createdBy": "cf5c2828-a883-40c2-8878-b898c91e76d8",
-	"neighborhoodId": "6a5cc9ae2cf0e1ce2a3c9303",
+	"createdBy": "238b6169-7df6-4077-ac5c-9b9aa52891de",
+	"neighborhoodId": "6a5ce58c564b887ea821d8a1",
 	"interestedUserIds": [],
 	"createdAt": {
-		"$date": "2026-07-19T12:57:35.239Z"
+		"$date": "2026-07-19T14:56:30.022Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:57:35.239Z"
+		"$date": "2026-07-19T14:56:30.022Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5cc9bf2cf0e1ce2a3c935d"
+		"$oid": "6a5ce59e564b887ea821d8fb"
 	},
 	"title": "Pique-nique au bord du canal",
 	"description": "Rendez-vous sur les berges en fin de journée, chacun apporte de quoi partager.",
 	"category": "other",
 	"date": {
-		"$date": "2026-04-20T12:57:35.241Z"
+		"$date": "2026-04-20T14:56:30.025Z"
 	},
-	"createdBy": "e730cb0c-7749-4541-84a6-4ee1e2710df4",
-	"neighborhoodId": "6a5cc9ae2cf0e1ce2a3c92fd",
+	"createdBy": "ddf009a6-a3bf-4d3b-9620-873475cdb6c7",
+	"neighborhoodId": "6a5ce58c564b887ea821d89b",
 	"interestedUserIds": [],
 	"createdAt": {
-		"$date": "2026-07-19T12:57:35.388Z"
+		"$date": "2026-07-19T14:56:30.164Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T12:57:35.388Z"
+		"$date": "2026-07-19T14:56:30.164Z"
 	},
 	"__v": 0
 }]
