@@ -86,7 +86,7 @@ export function isConversationUnread({
     return !isActive && conversation.unreadCount > 0;
 }
 
-export const BURST_WINDOW_MS = 5 * 60_000;
+const BURST_WINDOW_MS = 5 * 60_000;
 
 export type MessageRowModel = {
     message: Message;

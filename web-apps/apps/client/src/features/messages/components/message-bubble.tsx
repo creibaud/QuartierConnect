@@ -18,14 +18,12 @@ export function MessageBubble({
     showTime,
     startsBurst,
     senderName,
-    isPending = false,
 }: {
     message: Message;
     isOutgoing: boolean;
     showTime: boolean;
     startsBurst: boolean;
     senderName?: string;
-    isPending?: boolean;
 }) {
     const { t, i18n } = useTranslation();
     const created = new Date(message.createdAt);
@@ -53,7 +51,6 @@ export function MessageBubble({
                 <Bubble
                     variant={isOutgoing ? "outgoing" : "incoming"}
                     align={align}
-                    className={cn(isPending && "opacity-60")}
                 >
                     <BubbleContent className={cn(isMedia && "p-1.5")}>
                         {isImage ? (

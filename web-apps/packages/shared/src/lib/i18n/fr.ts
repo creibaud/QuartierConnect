@@ -503,7 +503,6 @@ export default {
                 "Les services proposés près de chez toi apparaîtront ici.",
             noTransactionsHint:
                 "Participe à la vie du quartier pour gagner tes premiers points.",
-            quickActions: "Actions rapides",
             moderation: {
                 title: "Espace modération",
                 openIncidents: "Incidents ouverts",

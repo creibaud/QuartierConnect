@@ -1,27 +1,6 @@
-import {
-    useInfiniteQuery,
-    useMutation,
-    useQuery,
-    useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPatch } from "../api";
 import type { User } from "../types";
-
-export function useInfiniteUsers(limit = 20, search = "", role = "") {
-    return useInfiniteQuery({
-        // Filters live in the key so changing one restarts pagination.
-        queryKey: ["admin", "users", search, role],
-        queryFn: ({ pageParam }: { pageParam: number }) =>
-            apiGet<User[]>(
-                `/users?page=${pageParam}&limit=${limit}` +
-                    `&search=${encodeURIComponent(search)}` +
-                    `&role=${encodeURIComponent(role)}`,
-            ),
-        getNextPageParam: (lastPage: User[], allPages: User[][]) =>
-            lastPage.length === limit ? allPages.length + 1 : undefined,
-        initialPageParam: 1,
-    });
-}
 
 export function useUsers(page = 1, limit = 20) {
     return useQuery<User[]>({

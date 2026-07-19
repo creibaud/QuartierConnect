@@ -82,7 +82,6 @@ export function ThemeProvider({
     defaultTheme = "system",
     storageKey = "theme",
     disableTransitionOnChange = true,
-    ...props
 }: ThemeProviderProps) {
     const [theme, setThemeState] = React.useState<Theme>(() => {
         const storedTheme = localStorage.getItem(storageKey);
@@ -213,7 +212,7 @@ export function ThemeProvider({
     );
 
     return (
-        <ThemeProviderContext.Provider {...props} value={value}>
+        <ThemeProviderContext.Provider value={value}>
             {children}
         </ThemeProviderContext.Provider>
     );

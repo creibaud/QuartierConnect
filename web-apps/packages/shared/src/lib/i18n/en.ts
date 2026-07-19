@@ -497,7 +497,6 @@ export default {
             noServicesHint: "Services offered near you will appear here.",
             noTransactionsHint:
                 "Take part in neighborhood life to earn your first points.",
-            quickActions: "Quick actions",
             moderation: {
                 title: "Moderation area",
                 openIncidents: "Open incidents",
