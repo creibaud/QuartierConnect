@@ -1,977 +1,977 @@
 [{
 	"_id": {
-		"$oid": "6a5ce5dc564b887ea821e35e"
+		"$oid": "6a5cf9c7bd665b4769d4de09"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "a35d2398-27f4-4e96-a389-f1c8ba97f945",
 	"type": "image",
 	"content": null,
-	"fileId": "6a5ce5dc564b887ea821e35c",
+	"fileId": "6a5cf9c7bd665b4769d4de07",
 	"fileName": "carre-potager.png",
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T13:52:32.039Z"
+		"$date": "2026-07-18T15:17:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T13:52:32.039Z"
+		"$date": "2026-07-18T15:17:31.965Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc564b887ea821e361"
+		"$oid": "6a5cf9c7bd665b4769d4de0c"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "a35d2398-27f4-4e96-a389-f1c8ba97f945",
 	"type": "file",
 	"content": null,
-	"fileId": "6a5ce5dc564b887ea821e35f",
+	"fileId": "6a5cf9c7bd665b4769d4de0a",
 	"fileName": "compte-rendu-reunion-jardin.pdf",
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-19T07:52:32.039Z"
+		"$date": "2026-07-19T09:17:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T07:52:32.039Z"
+		"$date": "2026-07-19T09:17:31.965Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc564b887ea821e364"
+		"$oid": "6a5cf9c8bd665b4769d4de0f"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "a35d2398-27f4-4e96-a389-f1c8ba97f945",
 	"type": "audio",
 	"content": null,
-	"fileId": "6a5ce5dc564b887ea821e362",
+	"fileId": "6a5cf9c8bd665b4769d4de0d",
 	"fileName": "message-vocal.mp3",
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-19T14:12:32.039Z"
+		"$date": "2026-07-19T15:37:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:12:32.039Z"
+		"$date": "2026-07-19T15:37:31.965Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc564b887ea821e367"
+		"$oid": "6a5cf9c8bd665b4769d4de12"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "a35d2398-27f4-4e96-a389-f1c8ba97f945",
 	"type": "image",
 	"content": null,
-	"fileId": "6a5ce5dc564b887ea821e365",
+	"fileId": "6a5cf9c8bd665b4769d4de10",
 	"fileName": "affiche-troc-plantes.png",
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-19T14:52:32.039Z"
+		"$date": "2026-07-19T16:17:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:52:32.039Z"
+		"$date": "2026-07-19T16:17:31.965Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481e92"
+		"$oid": "6a5cf9c8c77db11b3c9a1f4f"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "a35d2398-27f4-4e96-a389-f1c8ba97f945",
 	"type": "text",
 	"content": "Bonjour Alice, je vois que tu proposes un coup de main pour le jardin partagé, c'est toujours d'actualité ?",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-17T14:52:32.039Z"
+		"$date": "2026-07-17T16:17:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-17T14:52:32.039Z"
+		"$date": "2026-07-17T16:17:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481e93"
+		"$oid": "6a5cf9c8c77db11b3c9a1f50"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Bonjour Camille ! Oui bien sûr, je suis disponible la plupart des samedis matin.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-17T14:57:32.039Z"
+		"$date": "2026-07-17T16:22:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-17T14:57:32.039Z"
+		"$date": "2026-07-17T16:22:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481e94"
+		"$oid": "6a5cf9c8c77db11b3c9a1f51"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "a35d2398-27f4-4e96-a389-f1c8ba97f945",
 	"type": "text",
 	"content": "Parfait. Il y a un carré de 4 m² à retourner avant les semis.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-17T15:02:32.039Z"
+		"$date": "2026-07-17T16:27:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-17T15:02:32.039Z"
+		"$date": "2026-07-17T16:27:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481e95"
+		"$oid": "6a5cf9c8c77db11b3c9a1f52"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Ça se fait en deux heures à deux. Tu as les outils ou j'apporte les miens ?",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-17T15:10:32.039Z"
+		"$date": "2026-07-17T16:35:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-17T15:10:32.039Z"
+		"$date": "2026-07-17T16:35:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481e96"
+		"$oid": "6a5cf9c8c77db11b3c9a1f53"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "a35d2398-27f4-4e96-a389-f1c8ba97f945",
 	"type": "text",
 	"content": "J'ai une bêche et un râteau, il manque surtout des gants.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-17T15:17:32.039Z"
+		"$date": "2026-07-17T16:42:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-17T15:17:32.039Z"
+		"$date": "2026-07-17T16:42:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481e97"
+		"$oid": "6a5cf9c8c77db11b3c9a1f54"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "J'en ai une paire en rab, je les prends.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-17T15:22:32.039Z"
+		"$date": "2026-07-17T16:47:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-17T15:22:32.039Z"
+		"$date": "2026-07-17T16:47:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481e98"
+		"$oid": "6a5cf9c8c77db11b3c9a1f55"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "a35d2398-27f4-4e96-a389-f1c8ba97f945",
 	"type": "text",
 	"content": "Voilà l'état actuel, la terre est un peu tassée.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T13:57:32.039Z"
+		"$date": "2026-07-18T15:22:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T13:57:32.039Z"
+		"$date": "2026-07-18T15:22:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481e99"
+		"$oid": "6a5cf9c8c77db11b3c9a1f56"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Vu la photo, on ajoutera du compost. La régie de quartier en distribue gratuitement rue Ordener.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T14:02:32.039Z"
+		"$date": "2026-07-18T15:27:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T14:02:32.039Z"
+		"$date": "2026-07-18T15:27:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481e9a"
+		"$oid": "6a5cf9c8c77db11b3c9a1f57"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "a35d2398-27f4-4e96-a389-f1c8ba97f945",
 	"type": "text",
 	"content": "Je ne savais pas du tout, bon à savoir.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T14:12:32.039Z"
+		"$date": "2026-07-18T15:37:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T14:12:32.039Z"
+		"$date": "2026-07-18T15:37:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481e9b"
+		"$oid": "6a5cf9c8c77db11b3c9a1f58"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Je passe en prendre deux sacs vendredi.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T14:22:32.039Z"
+		"$date": "2026-07-18T15:47:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T14:22:32.039Z"
+		"$date": "2026-07-18T15:47:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481e9c"
+		"$oid": "6a5cf9c8c77db11b3c9a1f59"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "a35d2398-27f4-4e96-a389-f1c8ba97f945",
 	"type": "text",
 	"content": "Super. Samedi 10h, ça te va ?",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T14:27:32.039Z"
+		"$date": "2026-07-18T15:52:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T14:27:32.039Z"
+		"$date": "2026-07-18T15:52:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481e9d"
+		"$oid": "6a5cf9c8c77db11b3c9a1f5a"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "10h c'est noté.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T14:32:32.039Z"
+		"$date": "2026-07-18T15:57:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T14:32:32.039Z"
+		"$date": "2026-07-18T15:57:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481e9e"
+		"$oid": "6a5cf9c8c77db11b3c9a1f5b"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "a35d2398-27f4-4e96-a389-f1c8ba97f945",
 	"type": "text",
 	"content": "Je te mets le compte rendu de la dernière réunion, le plan des parcelles est à la fin.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-19T07:57:32.039Z"
+		"$date": "2026-07-19T09:22:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T07:57:32.039Z"
+		"$date": "2026-07-19T09:22:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481e9f"
+		"$oid": "6a5cf9c8c77db11b3c9a1f5c"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Merci, je regarde ça ce soir.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-19T08:07:32.039Z"
+		"$date": "2026-07-19T09:32:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T08:07:32.039Z"
+		"$date": "2026-07-19T09:32:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481ea0"
+		"$oid": "6a5cf9c8c77db11b3c9a1f5d"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Le code du portail est le 4 B 27 41, note-le quelque part.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": true,
 	"createdAt": {
-		"$date": "2026-07-19T13:22:32.039Z"
+		"$date": "2026-07-19T14:47:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T13:22:32.039Z"
+		"$date": "2026-07-19T14:47:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481ea1"
+		"$oid": "6a5cf9c8c77db11b3c9a1f5e"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Je préfère te donner le code du portail de vive voix samedi, c'est plus prudent.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-19T13:27:32.039Z"
+		"$date": "2026-07-19T14:52:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T13:27:32.039Z"
+		"$date": "2026-07-19T14:52:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481ea2"
+		"$oid": "6a5cf9c8c77db11b3c9a1f5f"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "a35d2398-27f4-4e96-a389-f1c8ba97f945",
 	"type": "text",
 	"content": "Petit vocal, j'avais les mains dans la terre.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-19T14:17:32.039Z"
+		"$date": "2026-07-19T15:42:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:17:32.039Z"
+		"$date": "2026-07-19T15:42:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dc76a2f62af4481ea3"
+		"$oid": "6a5cf9c8c77db11b3c9a1f60"
 	},
-	"conversationId": "6a5ce5db564b887ea821e351",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfc",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Écouté, c'est noté pour le tour d'arrosage de juillet.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-19T14:32:32.039Z"
+		"$date": "2026-07-19T15:57:31.965Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:32:32.039Z"
+		"$date": "2026-07-19T15:57:31.965Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dcd6c15be99ce3a38a"
+		"$oid": "6a5cf9c8e92a085ce2ce819f"
 	},
-	"conversationId": "6a5ce5db564b887ea821e352",
-	"senderId": "d4d42f0b-f270-4951-a38d-6297a66373d6",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfd",
+	"senderId": "388c8909-e9dc-44c8-a91f-efcd3b73503a",
 	"type": "text",
 	"content": "Bonsoir Alice, tu aurais une perceuse à me prêter ce week-end ?",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-19T09:44:32.441Z"
+		"$date": "2026-07-19T11:09:32.359Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T09:44:32.441Z"
+		"$date": "2026-07-19T11:09:32.359Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dcd6c15be99ce3a38b"
+		"$oid": "6a5cf9c8e92a085ce2ce81a0"
 	},
-	"conversationId": "6a5ce5db564b887ea821e352",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfd",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Oui, une visseuse-perceuse sans fil. Tu peux passer samedi après-midi.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-19T09:48:32.441Z"
+		"$date": "2026-07-19T11:13:32.359Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T09:48:32.441Z"
+		"$date": "2026-07-19T11:13:32.359Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dcd6c15be99ce3a38c"
+		"$oid": "6a5cf9c8e92a085ce2ce81a1"
 	},
-	"conversationId": "6a5ce5db564b887ea821e352",
-	"senderId": "d4d42f0b-f270-4951-a38d-6297a66373d6",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfd",
+	"senderId": "388c8909-e9dc-44c8-a91f-efcd3b73503a",
 	"type": "text",
 	"content": "Nickel, je passe vers 15h.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-19T09:52:32.441Z"
+		"$date": "2026-07-19T11:17:32.359Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T09:52:32.441Z"
+		"$date": "2026-07-19T11:17:32.359Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5ddc2570b057545df69"
+		"$oid": "6a5cf9c9f89cac7d5a82067a"
 	},
-	"conversationId": "6a5ce5db564b887ea821e353",
-	"senderId": "6001eff0-6bb2-4358-9ae0-60eff974ea0e",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfe",
+	"senderId": "a6c75ac0-0c57-4a44-890c-8fee1912b601",
 	"type": "text",
 	"content": "On se cale sur le 14 septembre pour le vide-grenier ?",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-19T04:40:32.74Z"
+		"$date": "2026-07-19T06:05:32.698Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T04:40:32.74Z"
+		"$date": "2026-07-19T06:05:32.698Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5ddc2570b057545df6a"
+		"$oid": "6a5cf9c9f89cac7d5a82067b"
 	},
-	"conversationId": "6a5ce5db564b887ea821e353",
-	"senderId": "e022df10-5e19-4837-8b5d-eca7ac29506f",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfe",
+	"senderId": "9bd75be7-b5ef-4c46-bec4-2a7ffb9bd2d8",
 	"type": "text",
 	"content": "Le 14 me va, j'ai déjà deux tables à prêter.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-19T04:44:32.74Z"
+		"$date": "2026-07-19T06:09:32.698Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T04:44:32.74Z"
+		"$date": "2026-07-19T06:09:32.698Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5ddc2570b057545df6b"
+		"$oid": "6a5cf9c9f89cac7d5a82067c"
 	},
-	"conversationId": "6a5ce5db564b887ea821e353",
-	"senderId": "55ff23d0-bd6d-43bd-b6de-e9e45ae9ee95",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfe",
+	"senderId": "98d76b0b-a146-44f8-a189-e182cd0ff9a5",
 	"type": "text",
 	"content": "Pareil pour moi, je peux gérer l'inscription des exposants.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-19T04:48:32.74Z"
+		"$date": "2026-07-19T06:13:32.698Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T04:48:32.74Z"
+		"$date": "2026-07-19T06:13:32.698Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5ddc2570b057545df6c"
+		"$oid": "6a5cf9c9f89cac7d5a82067d"
 	},
-	"conversationId": "6a5ce5db564b887ea821e353",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4ddfe",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Parfait, je réserve l'emplacement auprès de la mairie du 18e cette semaine.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-19T04:52:32.74Z"
+		"$date": "2026-07-19T06:17:32.698Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T04:52:32.74Z"
+		"$date": "2026-07-19T06:17:32.698Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5ddddbfb95ca2549c0d"
+		"$oid": "6a5cf9c97a876c687d3733df"
 	},
-	"conversationId": "6a5ce5db564b887ea821e354",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4ddff",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Bonjour Sophie, merci beaucoup pour le dépannage de mardi soir.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T23:44:33.073Z"
+		"$date": "2026-07-19T01:09:33.024Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T23:44:33.073Z"
+		"$date": "2026-07-19T01:09:33.024Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5ddddbfb95ca2549c0e"
+		"$oid": "6a5cf9c97a876c687d3733e0"
 	},
-	"conversationId": "6a5ce5db564b887ea821e354",
-	"senderId": "2be71142-1779-49ed-b55f-698dd68545eb",
+	"conversationId": "6a5cf9c7bd665b4769d4ddff",
+	"senderId": "83c4577b-667e-468e-bb6f-a879147e8c93",
 	"type": "text",
 	"content": "Avec plaisir, c'était trois fois rien.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T23:48:33.073Z"
+		"$date": "2026-07-19T01:13:33.024Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T23:48:33.073Z"
+		"$date": "2026-07-19T01:13:33.024Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5ddddbfb95ca2549c0f"
+		"$oid": "6a5cf9c97a876c687d3733e1"
 	},
-	"conversationId": "6a5ce5db564b887ea821e354",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4ddff",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Je te dois un café, dis-moi quand tu passes.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T23:52:33.073Z"
+		"$date": "2026-07-19T01:17:33.024Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T23:52:33.073Z"
+		"$date": "2026-07-19T01:17:33.024Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dd7403c566bffe9af8"
+		"$oid": "6a5cf9c96d68d2528a0704a6"
 	},
-	"conversationId": "6a5ce5db564b887ea821e355",
-	"senderId": "5a277d88-783c-423f-a507-2e2fb6af80dd",
+	"conversationId": "6a5cf9c7bd665b4769d4de00",
+	"senderId": "f5e1f506-00f9-4740-a148-a4430e8f42c5",
 	"type": "text",
 	"content": "La réunion de copropriété est décalée au 12, tu es toujours partante ?",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T18:40:33.403Z"
+		"$date": "2026-07-18T20:05:33.345Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T18:40:33.403Z"
+		"$date": "2026-07-18T20:05:33.345Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dd7403c566bffe9af9"
+		"$oid": "6a5cf9c96d68d2528a0704a7"
 	},
-	"conversationId": "6a5ce5db564b887ea821e355",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4de00",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Oui, je note le 12. L'ordre du jour a changé ?",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T18:44:33.403Z"
+		"$date": "2026-07-18T20:09:33.345Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T18:44:33.403Z"
+		"$date": "2026-07-18T20:09:33.345Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dd7403c566bffe9afa"
+		"$oid": "6a5cf9c96d68d2528a0704a8"
 	},
-	"conversationId": "6a5ce5db564b887ea821e355",
-	"senderId": "5a277d88-783c-423f-a507-2e2fb6af80dd",
+	"conversationId": "6a5cf9c7bd665b4769d4de00",
+	"senderId": "f5e1f506-00f9-4740-a148-a4430e8f42c5",
 	"type": "text",
 	"content": "Seulement le point sur le local à vélos.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T18:48:33.403Z"
+		"$date": "2026-07-18T20:13:33.345Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T18:48:33.403Z"
+		"$date": "2026-07-18T20:13:33.345Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dd7403c566bffe9afb"
+		"$oid": "6a5cf9c96d68d2528a0704a9"
 	},
-	"conversationId": "6a5ce5db564b887ea821e355",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4de00",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Très bien, à mardi alors.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T18:52:33.403Z"
+		"$date": "2026-07-18T20:17:33.345Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T18:52:33.403Z"
+		"$date": "2026-07-18T20:17:33.345Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dd8e9137ad91276bc4"
+		"$oid": "6a5cf9c996ee1ce9ff6edaff"
 	},
-	"conversationId": "6a5ce5db564b887ea821e356",
-	"senderId": "0da094f5-007f-45a8-bf5e-e6fae0b67f28",
+	"conversationId": "6a5cf9c7bd665b4769d4de01",
+	"senderId": "492d4bf3-490b-4c29-a271-58293ceff4b1",
 	"type": "text",
 	"content": "Tu connais quelqu'un qui donne des cours de soutien en maths dans le quartier ?",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T13:44:33.701Z"
+		"$date": "2026-07-18T15:09:33.683Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T13:44:33.701Z"
+		"$date": "2026-07-18T15:09:33.683Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dd8e9137ad91276bc5"
+		"$oid": "6a5cf9c996ee1ce9ff6edb00"
 	},
-	"conversationId": "6a5ce5db564b887ea821e356",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4de01",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Nicolas propose de l'aide aux devoirs sur l'appli, regarde dans les services.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T13:48:33.701Z"
+		"$date": "2026-07-18T15:13:33.683Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T13:48:33.701Z"
+		"$date": "2026-07-18T15:13:33.683Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dd8e9137ad91276bc6"
+		"$oid": "6a5cf9c996ee1ce9ff6edb01"
 	},
-	"conversationId": "6a5ce5db564b887ea821e356",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4de01",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Il habite juste rue Caulaincourt.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T13:52:33.701Z"
+		"$date": "2026-07-18T15:17:33.683Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T13:52:33.701Z"
+		"$date": "2026-07-18T15:17:33.683Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dec5d62300a63000bb"
+		"$oid": "6a5cf9cac790a3b9afc51f07"
 	},
-	"conversationId": "6a5ce5db564b887ea821e357",
-	"senderId": "e22bd119-e927-4b22-970f-bbdd16dd84ca",
+	"conversationId": "6a5cf9c7bd665b4769d4de02",
+	"senderId": "e3e6a2c0-fcb3-453c-ac72-2049c8fd8469",
 	"type": "text",
 	"content": "Merci d'avoir signalé le lampadaire cassé, la mairie est passée hier.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T08:44:34.008Z"
+		"$date": "2026-07-18T10:09:33.999Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T08:44:34.008Z"
+		"$date": "2026-07-18T10:09:33.999Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dec5d62300a63000bc"
+		"$oid": "6a5cf9cac790a3b9afc51f08"
 	},
-	"conversationId": "6a5ce5db564b887ea821e357",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4de02",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Bonne nouvelle, la rue était vraiment sombre le soir.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T08:48:34.008Z"
+		"$date": "2026-07-18T10:13:33.999Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T08:48:34.008Z"
+		"$date": "2026-07-18T10:13:33.999Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5dec5d62300a63000bd"
+		"$oid": "6a5cf9cac790a3b9afc51f09"
 	},
-	"conversationId": "6a5ce5db564b887ea821e357",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4de02",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Je clôture le signalement du coup.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T08:52:34.008Z"
+		"$date": "2026-07-18T10:17:33.999Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T08:52:34.008Z"
+		"$date": "2026-07-18T10:17:33.999Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5debfda3682d773d607"
+		"$oid": "6a5cf9caec4f5202e0465e19"
 	},
-	"conversationId": "6a5ce5db564b887ea821e358",
-	"senderId": "bea4ccd4-3a57-483c-91a7-ae11e329b6c9",
+	"conversationId": "6a5cf9c7bd665b4769d4de03",
+	"senderId": "7b7f3282-657b-4b46-b276-7d61a8ab93a0",
 	"type": "text",
 	"content": "Tu gardes toujours des chats pendant les vacances ?",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T03:44:34.312Z"
+		"$date": "2026-07-18T05:09:34.341Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T03:44:34.312Z"
+		"$date": "2026-07-18T05:09:34.341Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5debfda3682d773d608"
+		"$oid": "6a5cf9caec4f5202e0465e1a"
 	},
-	"conversationId": "6a5ce5db564b887ea821e358",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4de03",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Oui, du 10 au 20 août je suis à Paris.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T03:48:34.312Z"
+		"$date": "2026-07-18T05:13:34.341Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T03:48:34.312Z"
+		"$date": "2026-07-18T05:13:34.341Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5debfda3682d773d609"
+		"$oid": "6a5cf9caec4f5202e0465e1b"
 	},
-	"conversationId": "6a5ce5db564b887ea821e358",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4de03",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Envoie-moi les dates dès que c'est calé.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-18T03:52:34.312Z"
+		"$date": "2026-07-18T05:17:34.341Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-18T03:52:34.312Z"
+		"$date": "2026-07-18T05:17:34.341Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5deec999aef829fe488"
+		"$oid": "6a5cf9ca214250df236f9163"
 	},
-	"conversationId": "6a5ce5db564b887ea821e359",
-	"senderId": "6eac4cb7-4f80-41ea-bf50-0a451c921c5e",
+	"conversationId": "6a5cf9c7bd665b4769d4de04",
+	"senderId": "8b416e20-2d9e-4651-a404-ad4dee77e628",
 	"type": "text",
 	"content": "Le composteur de la place Constantin-Pecqueur déborde.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-17T22:44:34.634Z"
+		"$date": "2026-07-18T00:09:34.667Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-17T22:44:34.634Z"
+		"$date": "2026-07-18T00:09:34.667Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5deec999aef829fe489"
+		"$oid": "6a5cf9ca214250df236f9164"
 	},
-	"conversationId": "6a5ce5db564b887ea821e359",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4de04",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Je l'ai signalé ce matin, la régie passe vendredi.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-17T22:48:34.634Z"
+		"$date": "2026-07-18T00:13:34.667Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-17T22:48:34.634Z"
+		"$date": "2026-07-18T00:13:34.667Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5deec999aef829fe48a"
+		"$oid": "6a5cf9ca214250df236f9165"
 	},
-	"conversationId": "6a5ce5db564b887ea821e359",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4de04",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "En attendant mieux vaut ne rien y déposer.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-17T22:52:34.634Z"
+		"$date": "2026-07-18T00:17:34.667Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-17T22:52:34.634Z"
+		"$date": "2026-07-18T00:17:34.667Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5df4360fe8b4c6de92f"
+		"$oid": "6a5cf9cb33824595810a7893"
 	},
-	"conversationId": "6a5ce5db564b887ea821e35a",
-	"senderId": "3e8bd595-58e6-49a4-98da-d2ac19fd77dc",
+	"conversationId": "6a5cf9c7bd665b4769d4de05",
+	"senderId": "f8c1b29d-7618-4398-a45a-b005d66538c4",
 	"type": "text",
 	"content": "Bonjour, je viens d'emménager rue des Abbesses, des conseils ?",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-17T17:44:34.946Z"
+		"$date": "2026-07-17T19:09:34.985Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-17T17:44:34.946Z"
+		"$date": "2026-07-17T19:09:34.985Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5df4360fe8b4c6de930"
+		"$oid": "6a5cf9cb33824595810a7894"
 	},
-	"conversationId": "6a5ce5db564b887ea821e35a",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4de05",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Bienvenue ! Le marché du mardi place des Abbesses vaut vraiment le détour.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-17T17:48:34.946Z"
+		"$date": "2026-07-17T19:13:34.985Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-17T17:48:34.946Z"
+		"$date": "2026-07-17T19:13:34.985Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5df4360fe8b4c6de931"
+		"$oid": "6a5cf9cb33824595810a7895"
 	},
-	"conversationId": "6a5ce5db564b887ea821e35a",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4de05",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Et il y a un groupe entraide sur l'appli, je t'y ajoute.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-17T17:52:34.946Z"
+		"$date": "2026-07-17T19:17:34.985Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-17T17:52:34.946Z"
+		"$date": "2026-07-17T19:17:34.985Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5df2bc7bcf93c01128e"
+		"$oid": "6a5cf9cb10d036f36d595b42"
 	},
-	"conversationId": "6a5ce5db564b887ea821e35b",
-	"senderId": "3121a232-c2bc-4409-84e5-26070344683f",
+	"conversationId": "6a5cf9c7bd665b4769d4de06",
+	"senderId": "83efbf4f-0768-4acd-b920-04c0099062b2",
 	"type": "text",
 	"content": "J'ai récupéré les clés du local, je te les dépose quand ?",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-17T12:44:35.252Z"
+		"$date": "2026-07-17T14:09:35.29Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-17T12:44:35.252Z"
+		"$date": "2026-07-17T14:09:35.29Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5df2bc7bcf93c01128f"
+		"$oid": "6a5cf9cb10d036f36d595b43"
 	},
-	"conversationId": "6a5ce5db564b887ea821e35b",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4de06",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Demain matin si tu peux, je suis chez moi jusqu'à 11h.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-17T12:48:35.252Z"
+		"$date": "2026-07-17T14:13:35.29Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-17T12:48:35.252Z"
+		"$date": "2026-07-17T14:13:35.29Z"
 	}
 },
 {
 	"_id": {
-		"$oid": "6a5ce5df2bc7bcf93c011290"
+		"$oid": "6a5cf9cb10d036f36d595b44"
 	},
-	"conversationId": "6a5ce5db564b887ea821e35b",
-	"senderId": "612c6b63-da2a-4693-9375-01a85b2c2077",
+	"conversationId": "6a5cf9c7bd665b4769d4de06",
+	"senderId": "7105c223-a4bf-4c32-8588-9014011de2a7",
 	"type": "text",
 	"content": "Sinon laisse-les à la loge.",
 	"fileId": null,
 	"fileName": null,
 	"deleted": false,
 	"createdAt": {
-		"$date": "2026-07-17T12:52:35.252Z"
+		"$date": "2026-07-17T14:17:35.29Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-17T12:52:35.252Z"
+		"$date": "2026-07-17T14:17:35.29Z"
 	}
 }]
 

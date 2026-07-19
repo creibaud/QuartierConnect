@@ -239,3 +239,68 @@ export function voiceNote(): Attachment {
     bytes: Buffer.concat(Array.from({ length: MP3_FRAME_COUNT }, () => frame)),
   };
 }
+
+const AVATAR_SIZE = 192;
+
+/** Two hues a third of the wheel apart read as distinct at thumbnail size. */
+function hueFromSeed(seed: string): number {
+  let hash = 0;
+  for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) % 360;
+  return hash;
+}
+
+function hueToRgb(
+  hue: number,
+  saturation: number,
+  lightness: number,
+): [number, number, number] {
+  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const second = chroma * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const match = lightness - chroma / 2;
+  const [r, g, b] =
+    hue < 60
+      ? [chroma, second, 0]
+      : hue < 120
+        ? [second, chroma, 0]
+        : hue < 180
+          ? [0, chroma, second]
+          : hue < 240
+            ? [0, second, chroma]
+            : hue < 300
+              ? [second, 0, chroma]
+              : [chroma, 0, second];
+  return [
+    Math.round((r + match) * 255),
+    Math.round((g + match) * 255),
+    Math.round((b + match) * 255),
+  ];
+}
+
+/**
+ * A profile picture per account, derived from the email so a reseed produces the
+ * same face. Nobody uploads one during a demo, and a wall of identical initials
+ * makes the neighbour lists look unfinished.
+ */
+export function avatarFor(seed: string): Attachment {
+  const hue = hueFromSeed(seed);
+  const background = hueToRgb(hue, 0.55, 0.86);
+  const foreground = hueToRgb((hue + 120) % 360, 0.5, 0.42);
+  const centre = AVATAR_SIZE / 2;
+  const headRadius = AVATAR_SIZE * 0.17;
+  const headCentreY = AVATAR_SIZE * 0.38;
+  const shoulderTop = AVATAR_SIZE * 0.64;
+  const shoulderRadius = AVATAR_SIZE * 0.3;
+
+  return {
+    fileName: `avatar-${seed.split("@")[0]}.png`,
+    mimeType: "image/png",
+    bytes: encodePng(AVATAR_SIZE, AVATAR_SIZE, (x, y) => {
+      const head =
+        (x - centre) ** 2 + (y - headCentreY) ** 2 <= headRadius ** 2;
+      const shoulders =
+        y >= shoulderTop &&
+        (x - centre) ** 2 + (y - shoulderTop) ** 2 <= shoulderRadius ** 2;
+      return head || shoulders ? foreground : background;
+    }),
+  };
+}

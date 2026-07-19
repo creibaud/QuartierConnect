@@ -1,2 +1,121 @@
-[]
+[{
+	"_id": {
+		"$oid": "6a5cf95cbd665b4769d4d33e"
+	},
+	"length": 959,
+	"chunkSize": 261120,
+	"uploadDate": {
+		"$date": "2026-07-19T16:20:44.079Z"
+	},
+	"filename": "avatar-7105c223-a4bf-4c32-8588-9014011de2a7",
+	"metadata": {
+		"uploadedBy": "7105c223-a4bf-4c32-8588-9014011de2a7",
+		"contentType": "image/png"
+	}
+},
+{
+	"_id": {
+		"$oid": "6a5cf95cbd665b4769d4d340"
+	},
+	"length": 958,
+	"chunkSize": 261120,
+	"uploadDate": {
+		"$date": "2026-07-19T16:20:44.345Z"
+	},
+	"filename": "avatar-a6c75ac0-0c57-4a44-890c-8fee1912b601",
+	"metadata": {
+		"uploadedBy": "a6c75ac0-0c57-4a44-890c-8fee1912b601",
+		"contentType": "image/png"
+	}
+},
+{
+	"_id": {
+		"$oid": "6a5cf95cbd665b4769d4d342"
+	},
+	"length": 958,
+	"chunkSize": 261120,
+	"uploadDate": {
+		"$date": "2026-07-19T16:20:44.59Z"
+	},
+	"filename": "avatar-a35d2398-27f4-4e96-a389-f1c8ba97f945",
+	"metadata": {
+		"uploadedBy": "a35d2398-27f4-4e96-a389-f1c8ba97f945",
+		"contentType": "image/png"
+	}
+},
+{
+	"_id": {
+		"$oid": "6a5cf95cbd665b4769d4d344"
+	},
+	"length": 959,
+	"chunkSize": 261120,
+	"uploadDate": {
+		"$date": "2026-07-19T16:20:44.807Z"
+	},
+	"filename": "avatar-388c8909-e9dc-44c8-a91f-efcd3b73503a",
+	"metadata": {
+		"uploadedBy": "388c8909-e9dc-44c8-a91f-efcd3b73503a",
+		"contentType": "image/png"
+	}
+},
+{
+	"_id": {
+		"$oid": "6a5cf95dbd665b4769d4d346"
+	},
+	"length": 959,
+	"chunkSize": 261120,
+	"uploadDate": {
+		"$date": "2026-07-19T16:20:45.037Z"
+	},
+	"filename": "avatar-ae5e859e-128c-4e29-9894-fc2ef17b5e42",
+	"metadata": {
+		"uploadedBy": "ae5e859e-128c-4e29-9894-fc2ef17b5e42",
+		"contentType": "image/png"
+	}
+},
+{
+	"_id": {
+		"$oid": "6a5cf95dbd665b4769d4d348"
+	},
+	"length": 959,
+	"chunkSize": 261120,
+	"uploadDate": {
+		"$date": "2026-07-19T16:20:45.261Z"
+	},
+	"filename": "avatar-c51f41a7-3810-4d0b-bedc-a8ed7b23ac02",
+	"metadata": {
+		"uploadedBy": "c51f41a7-3810-4d0b-bedc-a8ed7b23ac02",
+		"contentType": "image/png"
+	}
+},
+{
+	"_id": {
+		"$oid": "6a5cf95dbd665b4769d4d34a"
+	},
+	"length": 959,
+	"chunkSize": 261120,
+	"uploadDate": {
+		"$date": "2026-07-19T16:20:45.508Z"
+	},
+	"filename": "avatar-2af73d2b-763e-4f47-bf3e-1f5851cd7855",
+	"metadata": {
+		"uploadedBy": "2af73d2b-763e-4f47-bf3e-1f5851cd7855",
+		"contentType": "image/png"
+	}
+},
+{
+	"_id": {
+		"$oid": "6a5cf96dbd665b4769d4d34c"
+	},
+	"length": 959,
+	"chunkSize": 261120,
+	"uploadDate": {
+		"$date": "2026-07-19T16:21:01.166Z"
+	},
+	"filename": "avatar-1e2fbcfd-ec78-4da0-88fa-78c40e7293a3",
+	"metadata": {
+		"uploadedBy": "1e2fbcfd-ec78-4da0-88fa-78c40e7293a3",
+		"contentType": "image/png"
+	}
+}]
 

@@ -1,5 +1,7 @@
 import { DemoAccount, ROSTER } from "./roster";
-import { pgQuery, post } from "./client";
+import { BASE_URL, pgQuery, post } from "./client";
+import { avatarFor } from "./media";
+import { tokenFor } from "./session";
 
 /** Registration hands out a random TOTP secret; the roster secret replaces it in
  *  SQL so demo codes stay reproducible. Roles and sanctions have no writable API
@@ -135,5 +137,51 @@ export function grantWelcomeCredits(): void {
   }
   console.log(
     `  ✓ welcome credit (+${WELCOME_CREDIT_POINTS} pts) on ${credited} account(s)`,
+  );
+}
+
+/**
+ * Profile pictures for the eight accounts the demo actually shows. Only the
+ * owner can set their own, so each upload runs under that account's token.
+ * Skips silently when one is already stored: the seed is meant to be replayed.
+ */
+export async function uploadAvatars(): Promise<void> {
+  let uploaded = 0;
+  let existing = 0;
+
+  for (const account of ROSTER.filter((entry) => entry.hasAvatar)) {
+    const stored = pgQuery(
+      `SELECT coalesce(avatar_url, '') FROM users WHERE email = :'email'`,
+      { email: account.email },
+    ).trim();
+    if (stored) {
+      existing++;
+      continue;
+    }
+
+    const picture = avatarFor(account.email);
+    const form = new FormData();
+    form.append(
+      "file",
+      new Blob([new Uint8Array(picture.bytes)], { type: picture.mimeType }),
+      picture.fileName,
+    );
+
+    const token = await tokenFor(account.email);
+    const res = await fetch(`${BASE_URL}/users/me/avatar`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+    if (!res.ok) {
+      throw new Error(
+        `Avatar upload failed for ${account.email} (${res.status}): ${await res.text()}`,
+      );
+    }
+    uploaded++;
+  }
+
+  console.log(
+    `  ✓ ${uploaded + existing} avatar(s) in place (${uploaded} uploaded)`,
   );
 }

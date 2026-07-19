@@ -2,6 +2,7 @@ import {
   assignAddresses,
   grantWelcomeCredits,
   seedAccounts,
+  uploadAvatars,
 } from "./seed/accounts";
 import { BASE_URL, fetchList, login, request } from "./seed/client";
 import { seedContent, type DemoNeighborhood } from "./seed/content";
@@ -125,6 +126,9 @@ async function main(): Promise<void> {
 
   console.log("\nGranting welcome credits…");
   grantWelcomeCredits();
+
+  console.log("\nUploading avatars…");
+  await uploadAvatars();
 
   console.log("\nSeeding demo content…");
   const nbh = await getDemoNeighborhood(adminToken);

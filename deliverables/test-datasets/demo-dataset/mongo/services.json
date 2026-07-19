@@ -1,13 +1,13 @@
 [{
 	"_id": {
-		"$oid": "6a5ce596564b887ea821d8a3"
+		"$oid": "6a5cf96dbd665b4769d4d34e"
 	},
 	"title": "Tonte et taille de haies le samedi matin",
 	"description": "Je passe le samedi matin pour tondre, tailler les haies et ramasser les déchets verts. J'apporte mon matériel.",
 	"category": "gardening",
 	"type": "exchange",
-	"createdBy": "612c6b63-da2a-4693-9375-01a85b2c2077",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "7105c223-a4bf-4c32-8588-9014011de2a7",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -19,23 +19,23 @@
 	"direction": "offer",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:22.671Z"
+		"$date": "2026-07-19T16:21:01.202Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:22.671Z"
+		"$date": "2026-07-19T16:21:01.202Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce596564b887ea821d8a4"
+		"$oid": "6a5cf96dbd665b4769d4d34f"
 	},
 	"title": "Montage de meubles en kit",
 	"description": "Armoires, bibliothèques, lits : je monte vos meubles en kit proprement, visserie et outillage fournis.",
 	"category": "handyman",
 	"type": "paid",
-	"createdBy": "6001eff0-6bb2-4358-9ae0-60eff974ea0e",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "a6c75ac0-0c57-4a44-890c-8fee1912b601",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -48,23 +48,23 @@
 	"duration": 90,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:22.82Z"
+		"$date": "2026-07-19T16:21:01.215Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:22.82Z"
+		"$date": "2026-07-19T16:21:01.215Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce596564b887ea821d8a5"
+		"$oid": "6a5cf96dbd665b4769d4d350"
 	},
 	"title": "Covoiturage vers le marché d'Aligre",
 	"description": "Je descends au marché d'Aligre le samedi matin, deux places libres à l'aller comme au retour.",
 	"category": "transport",
 	"type": "free",
-	"createdBy": "d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "a35d2398-27f4-4e96-a389-f1c8ba97f945",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -76,23 +76,23 @@
 	"direction": "offer",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:22.974Z"
+		"$date": "2026-07-19T16:21:01.225Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:22.974Z"
+		"$date": "2026-07-19T16:21:01.225Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce597564b887ea821d8a6"
+		"$oid": "6a5cf96dbd665b4769d4d351"
 	},
 	"title": "Courses pour les voisins qui ne sortent plus",
 	"description": "Je fais mes courses le mardi et le vendredi, je peux prendre la liste d'un voisin au passage.",
 	"category": "shopping",
 	"type": "free",
-	"createdBy": "d4d42f0b-f270-4951-a38d-6297a66373d6",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "388c8909-e9dc-44c8-a91f-efcd3b73503a",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -104,23 +104,23 @@
 	"direction": "offer",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:23.114Z"
+		"$date": "2026-07-19T16:21:01.234Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:23.114Z"
+		"$date": "2026-07-19T16:21:01.234Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce597564b887ea821d8a7"
+		"$oid": "6a5cf96dbd665b4769d4d352"
 	},
 	"title": "Garde d'enfants après l'école",
 	"description": "Je récupère les enfants à la sortie de l'école et je les garde jusqu'au retour des parents, goûter compris.",
 	"category": "childcare",
 	"type": "paid",
-	"createdBy": "2be71142-1779-49ed-b55f-698dd68545eb",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "83c4577b-667e-468e-bb6f-a879147e8c93",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -133,23 +133,23 @@
 	"duration": 120,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:23.258Z"
+		"$date": "2026-07-19T16:21:01.405Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:23.258Z"
+		"$date": "2026-07-19T16:21:01.405Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce597564b887ea821d8a8"
+		"$oid": "6a5cf96dbd665b4769d4d353"
 	},
 	"title": "Dépannage informatique à domicile",
 	"description": "Ordinateur lent, imprimante qui ne répond plus, boîte mail bloquée : je viens régler ça chez vous.",
 	"category": "it-support",
 	"type": "paid",
-	"createdBy": "5a277d88-783c-423f-a507-2e2fb6af80dd",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "f5e1f506-00f9-4740-a148-a4430e8f42c5",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -162,23 +162,23 @@
 	"duration": 60,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:23.411Z"
+		"$date": "2026-07-19T16:21:01.556Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:23.411Z"
+		"$date": "2026-07-19T16:21:01.556Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce597564b887ea821d8a9"
+		"$oid": "6a5cf96dbd665b4769d4d354"
 	},
 	"title": "Cours de guitare pour débutants",
 	"description": "Premiers accords, rythmiques simples et lecture de tablatures. Guitare de prêt disponible.",
 	"category": "other",
 	"type": "paid",
-	"createdBy": "0da094f5-007f-45a8-bf5e-e6fae0b67f28",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "492d4bf3-490b-4c29-a271-58293ceff4b1",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -191,23 +191,23 @@
 	"duration": 60,
 	"status": "closed",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:23.55Z"
+		"$date": "2026-07-19T16:21:01.714Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:23.55Z"
+		"$date": "2026-07-19T16:21:01.714Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce597564b887ea821d8aa"
+		"$oid": "6a5cf96dbd665b4769d4d355"
 	},
 	"title": "Arrosage des plantes pendant les vacances",
 	"description": "Je passe deux fois par semaine arroser vos plantes et relever le courrier pendant votre absence.",
 	"category": "gardening",
 	"type": "free",
-	"createdBy": "e22bd119-e927-4b22-970f-bbdd16dd84ca",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "e3e6a2c0-fcb3-453c-ac72-2049c8fd8469",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -219,23 +219,23 @@
 	"direction": "offer",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:23.71Z"
+		"$date": "2026-07-19T16:21:01.863Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:23.71Z"
+		"$date": "2026-07-19T16:21:01.863Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce597564b887ea821d8ab"
+		"$oid": "6a5cf96ebd665b4769d4d356"
 	},
 	"title": "Réparation de vélos entre voisins",
 	"description": "Crevaison, dérailleur déréglé, freins qui frottent : atelier improvisé dans la cour le dimanche.",
 	"category": "handyman",
 	"type": "exchange",
-	"createdBy": "bea4ccd4-3a57-483c-91a7-ae11e329b6c9",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "7b7f3282-657b-4b46-b276-7d61a8ab93a0",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -247,23 +247,23 @@
 	"direction": "offer",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:23.869Z"
+		"$date": "2026-07-19T16:21:02.001Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:23.869Z"
+		"$date": "2026-07-19T16:21:02.001Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce598564b887ea821d8ac"
+		"$oid": "6a5cf96ebd665b4769d4d357"
 	},
 	"title": "Aide au déménagement de petit volume",
 	"description": "Un camion de 12 m³ et deux bras pour les cartons et les meubles légers, sur une demi-journée.",
 	"category": "handyman",
 	"type": "paid",
-	"createdBy": "6eac4cb7-4f80-41ea-bf50-0a451c921c5e",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "8b416e20-2d9e-4651-a404-ad4dee77e628",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -276,23 +276,23 @@
 	"duration": 180,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:24.027Z"
+		"$date": "2026-07-19T16:21:02.158Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:24.027Z"
+		"$date": "2026-07-19T16:21:02.158Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce598564b887ea821d8ad"
+		"$oid": "6a5cf96ebd665b4769d4d358"
 	},
 	"title": "Soutien scolaire en mathématiques",
 	"description": "Niveau collège et seconde. Reprise des bases, méthode et préparation aux contrôles.",
 	"category": "other",
 	"type": "exchange",
-	"createdBy": "3e8bd595-58e6-49a4-98da-d2ac19fd77dc",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "f8c1b29d-7618-4398-a45a-b005d66538c4",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -304,23 +304,23 @@
 	"direction": "offer",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:24.176Z"
+		"$date": "2026-07-19T16:21:02.321Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:24.176Z"
+		"$date": "2026-07-19T16:21:02.321Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce598564b887ea821d8ae"
+		"$oid": "6a5cf96ebd665b4769d4d359"
 	},
 	"title": "Promenade de chiens en semaine",
 	"description": "Sortie d'une heure en fin de matinée, jusqu'au square. Je m'occupe de deux chiens maximum.",
 	"category": "other",
 	"type": "free",
-	"createdBy": "3121a232-c2bc-4409-84e5-26070344683f",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "83efbf4f-0768-4acd-b920-04c0099062b2",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -332,23 +332,23 @@
 	"direction": "offer",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:24.31Z"
+		"$date": "2026-07-19T16:21:02.478Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:24.31Z"
+		"$date": "2026-07-19T16:21:02.478Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce598564b887ea821d8af"
+		"$oid": "6a5cf96ebd665b4769d4d35a"
 	},
 	"title": "Pose d'étagères et de fixations murales",
 	"description": "Perçage dans le plâtre comme dans la pierre meulière, chevilles adaptées et niveau à bulle.",
 	"category": "handyman",
 	"type": "paid",
-	"createdBy": "e022df10-5e19-4837-8b5d-eca7ac29506f",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "9bd75be7-b5ef-4c46-bec4-2a7ffb9bd2d8",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -361,23 +361,23 @@
 	"duration": 90,
 	"status": "closed",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:24.452Z"
+		"$date": "2026-07-19T16:21:02.637Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:24.452Z"
+		"$date": "2026-07-19T16:21:02.637Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce598564b887ea821d8b0"
+		"$oid": "6a5cf96ebd665b4769d4d35b"
 	},
 	"title": "Transport d'encombrants en déchèterie",
 	"description": "J'ai un utilitaire le week-end, je peux emmener votre vieux canapé ou votre électroménager.",
 	"category": "transport",
 	"type": "exchange",
-	"createdBy": "55ff23d0-bd6d-43bd-b6de-e9e45ae9ee95",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "98d76b0b-a146-44f8-a189-e182cd0ff9a5",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -389,23 +389,23 @@
 	"direction": "offer",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:24.595Z"
+		"$date": "2026-07-19T16:21:02.784Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:24.595Z"
+		"$date": "2026-07-19T16:21:02.784Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce598564b887ea821d8b1"
+		"$oid": "6a5cf96ebd665b4769d4d35c"
 	},
 	"title": "Initiation à la couture et retouches",
 	"description": "Ourlets, boutons, reprises. Machine à disposition et petits patrons pour commencer.",
 	"category": "other",
 	"type": "exchange",
-	"createdBy": "8166de43-60db-4588-b48f-699893a60069",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "d1d6807d-d977-48e4-9c6b-77e95432a8d8",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -417,23 +417,23 @@
 	"direction": "offer",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:24.744Z"
+		"$date": "2026-07-19T16:21:02.925Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:24.744Z"
+		"$date": "2026-07-19T16:21:02.925Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce598564b887ea821d8b2"
+		"$oid": "6a5cf96fbd665b4769d4d35d"
 	},
 	"title": "Aide aux démarches administratives en ligne",
 	"description": "Déclaration d'impôts, CAF, prise de rendez-vous en préfecture : je vous accompagne pas à pas.",
 	"category": "it-support",
 	"type": "free",
-	"createdBy": "53446db9-6f46-467b-aeca-19159817b241",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "8c71e147-6268-4866-ad27-1d543d7c1bef",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -445,23 +445,23 @@
 	"direction": "offer",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:24.891Z"
+		"$date": "2026-07-19T16:21:03.079Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:24.891Z"
+		"$date": "2026-07-19T16:21:03.079Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce599564b887ea821d8b3"
+		"$oid": "6a5cf96fbd665b4769d4d35e"
 	},
 	"title": "Prêt d'outils de jardinage",
 	"description": "Sécateur, bêche, taille-haie thermique et brouette disponibles contre un simple message.",
 	"category": "gardening",
 	"type": "free",
-	"createdBy": "a387e686-0f23-4b32-9e66-da59dfce9ea7",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "2f5c3427-fff8-4210-a68a-7d6b8a197be0",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -473,23 +473,23 @@
 	"direction": "offer",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:25.047Z"
+		"$date": "2026-07-19T16:21:03.223Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:25.047Z"
+		"$date": "2026-07-19T16:21:03.223Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce599564b887ea821d8b4"
+		"$oid": "6a5cf96fbd665b4769d4d35f"
 	},
 	"title": "Conversation en anglais autour d'un café",
 	"description": "Une heure d'échange pour entretenir son anglais oral, tous niveaux, sans jugement.",
 	"category": "other",
 	"type": "paid",
-	"createdBy": "74878d54-7d43-4c71-a6b0-ca38ebd8862c",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "84eb8a87-2ad8-47c9-927a-6eea110c33a3",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -502,23 +502,23 @@
 	"duration": 60,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:25.198Z"
+		"$date": "2026-07-19T16:21:03.375Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:25.198Z"
+		"$date": "2026-07-19T16:21:03.375Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce599564b887ea821d8b5"
+		"$oid": "6a5cf96fbd665b4769d4d360"
 	},
 	"title": "Peinture de petites surfaces",
 	"description": "Un couloir, une chambre ou des boiseries : préparation du support, sous-couche et deux couches.",
 	"category": "handyman",
 	"type": "paid",
-	"createdBy": "df31de38-4d4f-479f-9db8-e63e4d18708d",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "84952860-7e56-4de1-ad1c-21ae9db7713c",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -531,23 +531,23 @@
 	"duration": 120,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:25.348Z"
+		"$date": "2026-07-19T16:21:03.505Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:25.348Z"
+		"$date": "2026-07-19T16:21:03.505Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce599564b887ea821d8b6"
+		"$oid": "6a5cf96fbd665b4769d4d361"
 	},
 	"title": "Transport de courses lourdes jusqu'à l'étage",
 	"description": "Packs d'eau, sacs de terreau, cartons : je monte tout ça avec vous, immeubles sans ascenseur compris.",
 	"category": "transport",
 	"type": "paid",
-	"createdBy": "248667a3-5bb9-4b0d-bcd6-457fd3d8bf2e",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "f9ce9fd7-98bd-4752-8c1d-b16a9e607390",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -560,23 +560,23 @@
 	"duration": 45,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:25.491Z"
+		"$date": "2026-07-19T16:21:03.647Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:25.491Z"
+		"$date": "2026-07-19T16:21:03.647Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce599564b887ea821d8b7"
+		"$oid": "6a5cf96fbd665b4769d4d362"
 	},
 	"title": "Baby-sitting le week-end",
 	"description": "Étudiante en licence, expérience avec les 3-10 ans, disponible samedi et dimanche soir.",
 	"category": "childcare",
 	"type": "paid",
-	"createdBy": "877f5496-b8dd-47d1-b661-bb0a2deba875",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "375018f5-9ff8-4631-9e7f-46cecffec45d",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -589,23 +589,23 @@
 	"duration": 240,
 	"status": "closed",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:25.63Z"
+		"$date": "2026-07-19T16:21:03.786Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:25.63Z"
+		"$date": "2026-07-19T16:21:03.786Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce599564b887ea821d8b8"
+		"$oid": "6a5cf96fbd665b4769d4d363"
 	},
 	"title": "Sauvegarde et nettoyage d'ordinateur",
 	"description": "Sauvegarde de vos photos sur disque externe, désinstallation des logiciels inutiles, mises à jour.",
 	"category": "it-support",
 	"type": "exchange",
-	"createdBy": "13507342-fa7a-418f-939b-df328f02b048",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "682656d4-a8f2-4d70-bfa7-4bc5ef15e182",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -617,23 +617,23 @@
 	"direction": "offer",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:25.781Z"
+		"$date": "2026-07-19T16:21:03.937Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:25.781Z"
+		"$date": "2026-07-19T16:21:03.937Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce599564b887ea821d8b9"
+		"$oid": "6a5cf970bd665b4769d4d364"
 	},
 	"title": "Livraison de pain aux voisins isolés",
 	"description": "Je passe à la boulangerie tous les matins, je peux déposer une baguette en montant.",
 	"category": "shopping",
 	"type": "free",
-	"createdBy": "0f5a66f8-fc42-47be-a119-34517927df33",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "3e37ed32-e92c-46c6-b6c9-751726a19406",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -645,23 +645,23 @@
 	"direction": "offer",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:25.917Z"
+		"$date": "2026-07-19T16:21:04.098Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:25.917Z"
+		"$date": "2026-07-19T16:21:04.098Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8ba"
+		"$oid": "6a5cf970bd665b4769d4d365"
 	},
 	"title": "Cherche un coup de main pour tailler un figuier",
 	"description": "Le figuier de la cour dépasse sur le balcon du voisin, il faut le rabattre avant l'automne.",
 	"category": "gardening",
 	"type": "exchange",
-	"createdBy": "cd168ac1-6eda-4167-9061-9c7082f72772",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "dcd2b387-ead0-4ef2-b905-51d9e5d2720f",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -673,23 +673,23 @@
 	"direction": "request",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.079Z"
+		"$date": "2026-07-19T16:21:04.243Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.079Z"
+		"$date": "2026-07-19T16:21:04.243Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8bb"
+		"$oid": "6a5cf970bd665b4769d4d366"
 	},
 	"title": "Recherche quelqu'un pour poser une tringle à rideaux",
 	"description": "Murs anciens et plafond haut, je n'ai ni escabeau ni perceuse adaptée.",
 	"category": "handyman",
 	"type": "paid",
-	"createdBy": "987c1e1a-1794-41bf-945d-26727f56f5a0",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "161ac166-164d-4e8e-a842-a1850e237a0e",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -702,23 +702,23 @@
 	"duration": 60,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.226Z"
+		"$date": "2026-07-19T16:21:04.396Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.226Z"
+		"$date": "2026-07-19T16:21:04.396Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8bc"
+		"$oid": "6a5cf970bd665b4769d4d367"
 	},
 	"title": "Besoin d'un trajet vers Roissy tôt le matin",
 	"description": "Vol à 7h le 14, départ souhaité vers 4h30. Je participe volontiers aux frais de péage.",
 	"category": "transport",
 	"type": "paid",
-	"createdBy": "0177012d-9b8c-4275-bcb9-dc80ef677926",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "915cc86c-6668-4bad-9c2b-c595d5ab95a2",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -731,23 +731,23 @@
 	"duration": 90,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.372Z"
+		"$date": "2026-07-19T16:21:04.537Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.372Z"
+		"$date": "2026-07-19T16:21:04.537Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8bd"
+		"$oid": "6a5cf970bd665b4769d4d368"
 	},
 	"title": "Cherche accompagnement pour les courses hebdomadaires",
 	"description": "Ma mère de 84 ans a besoin de quelqu'un pour l'accompagner au supermarché le jeudi.",
 	"category": "shopping",
 	"type": "free",
-	"createdBy": "612c6b63-da2a-4693-9375-01a85b2c2077",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "7105c223-a4bf-4c32-8588-9014011de2a7",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -759,23 +759,23 @@
 	"direction": "request",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.384Z"
+		"$date": "2026-07-19T16:21:04.548Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.384Z"
+		"$date": "2026-07-19T16:21:04.548Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8be"
+		"$oid": "6a5cf970bd665b4769d4d369"
 	},
 	"title": "Recherche garde d'enfant le mercredi",
 	"description": "Deux enfants de 5 et 8 ans, de 9h à 14h, jeux et sortie au square si le temps le permet.",
 	"category": "childcare",
 	"type": "paid",
-	"createdBy": "6001eff0-6bb2-4358-9ae0-60eff974ea0e",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "a6c75ac0-0c57-4a44-890c-8fee1912b601",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -788,23 +788,23 @@
 	"duration": 300,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.395Z"
+		"$date": "2026-07-19T16:21:04.56Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.395Z"
+		"$date": "2026-07-19T16:21:04.56Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8bf"
+		"$oid": "6a5cf970bd665b4769d4d36a"
 	},
 	"title": "Besoin d'aide pour configurer une box internet",
 	"description": "Nouvelle box livrée depuis une semaine, je n'arrive pas à brancher le décodeur télé.",
 	"category": "it-support",
 	"type": "free",
-	"createdBy": "d1b09528-2b3e-4c5d-bf48-2f8a0636eab1",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "a35d2398-27f4-4e96-a389-f1c8ba97f945",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -816,23 +816,23 @@
 	"direction": "request",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.407Z"
+		"$date": "2026-07-19T16:21:04.573Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.407Z"
+		"$date": "2026-07-19T16:21:04.573Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8c0"
+		"$oid": "6a5cf970bd665b4769d4d36b"
 	},
 	"title": "Cherche professeur de piano pour ma fille",
 	"description": "Débutante de 9 ans, piano droit à la maison, une séance par semaine après l'école.",
 	"category": "other",
 	"type": "paid",
-	"createdBy": "d4d42f0b-f270-4951-a38d-6297a66373d6",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "388c8909-e9dc-44c8-a91f-efcd3b73503a",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -845,23 +845,23 @@
 	"duration": 60,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.418Z"
+		"$date": "2026-07-19T16:21:04.588Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.418Z"
+		"$date": "2026-07-19T16:21:04.588Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8c1"
+		"$oid": "6a5cf970bd665b4769d4d36c"
 	},
 	"title": "Recherche aide pour désherber une cour pavée",
 	"description": "Les herbes reprennent entre les pavés, il faudrait une matinée à deux pour en venir à bout.",
 	"category": "gardening",
 	"type": "free",
-	"createdBy": "2be71142-1779-49ed-b55f-698dd68545eb",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "83c4577b-667e-468e-bb6f-a879147e8c93",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -873,23 +873,23 @@
 	"direction": "request",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.431Z"
+		"$date": "2026-07-19T16:21:04.606Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.431Z"
+		"$date": "2026-07-19T16:21:04.606Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8c2"
+		"$oid": "6a5cf970bd665b4769d4d36d"
 	},
 	"title": "Cherche un coup de main pour monter un lit",
 	"description": "Lit deux places livré en pièces détachées, impossible à assembler seule.",
 	"category": "handyman",
 	"type": "exchange",
-	"createdBy": "5a277d88-783c-423f-a507-2e2fb6af80dd",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "f5e1f506-00f9-4740-a148-a4430e8f42c5",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -901,23 +901,23 @@
 	"direction": "request",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.444Z"
+		"$date": "2026-07-19T16:21:04.624Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.444Z"
+		"$date": "2026-07-19T16:21:04.624Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8c3"
+		"$oid": "6a5cf970bd665b4769d4d36e"
 	},
 	"title": "Besoin d'un covoiturage le dimanche matin",
 	"description": "Je vais au marché de Barbès chaque dimanche, une place au retour m'arrangerait bien.",
 	"category": "transport",
 	"type": "free",
-	"createdBy": "0da094f5-007f-45a8-bf5e-e6fae0b67f28",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "492d4bf3-490b-4c29-a271-58293ceff4b1",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -929,23 +929,23 @@
 	"direction": "request",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.453Z"
+		"$date": "2026-07-19T16:21:04.638Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.453Z"
+		"$date": "2026-07-19T16:21:04.638Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8c4"
+		"$oid": "6a5cf970bd665b4769d4d36f"
 	},
 	"title": "Recherche quelqu'un pour nourrir mon chat",
 	"description": "Absente une semaine en août, il faut passer une fois par jour remplir les gamelles.",
 	"category": "other",
 	"type": "exchange",
-	"createdBy": "e22bd119-e927-4b22-970f-bbdd16dd84ca",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "e3e6a2c0-fcb3-453c-ac72-2049c8fd8469",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -957,23 +957,23 @@
 	"direction": "request",
 	"status": "closed",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.46Z"
+		"$date": "2026-07-19T16:21:04.651Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.46Z"
+		"$date": "2026-07-19T16:21:04.651Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8c5"
+		"$oid": "6a5cf970bd665b4769d4d370"
 	},
 	"title": "Cherche aide pour trier des archives familiales",
 	"description": "Des cartons de papiers et de photos à trier et à ranger, du temps et de la patience surtout.",
 	"category": "other",
 	"type": "free",
-	"createdBy": "bea4ccd4-3a57-483c-91a7-ae11e329b6c9",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "7b7f3282-657b-4b46-b276-7d61a8ab93a0",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -985,23 +985,23 @@
 	"direction": "request",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.468Z"
+		"$date": "2026-07-19T16:21:04.66Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.468Z"
+		"$date": "2026-07-19T16:21:04.66Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8c6"
+		"$oid": "6a5cf970bd665b4769d4d371"
 	},
 	"title": "Besoin d'une personne pour repeindre un couloir",
 	"description": "Environ 12 m² de murs, peinture déjà achetée, il manque juste la main-d'œuvre.",
 	"category": "handyman",
 	"type": "paid",
-	"createdBy": "6eac4cb7-4f80-41ea-bf50-0a451c921c5e",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "8b416e20-2d9e-4651-a404-ad4dee77e628",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -1014,23 +1014,23 @@
 	"duration": 180,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.475Z"
+		"$date": "2026-07-19T16:21:04.665Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.475Z"
+		"$date": "2026-07-19T16:21:04.665Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8c7"
+		"$oid": "6a5cf970bd665b4769d4d372"
 	},
 	"title": "Recherche le prêt d'une perceuse à percussion",
 	"description": "Deux trous à faire dans un mur porteur, je rends l'outil dans la journée.",
 	"category": "handyman",
 	"type": "exchange",
-	"createdBy": "3e8bd595-58e6-49a4-98da-d2ac19fd77dc",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "f8c1b29d-7618-4398-a45a-b005d66538c4",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -1042,23 +1042,23 @@
 	"direction": "request",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.483Z"
+		"$date": "2026-07-19T16:21:04.673Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.483Z"
+		"$date": "2026-07-19T16:21:04.673Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8c8"
+		"$oid": "6a5cf970bd665b4769d4d373"
 	},
 	"title": "Cherche aide pour rédiger un CV",
 	"description": "Je reprends une activité après plusieurs années, j'ai besoin d'un regard extérieur sur mon CV.",
 	"category": "it-support",
 	"type": "free",
-	"createdBy": "3121a232-c2bc-4409-84e5-26070344683f",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "83efbf4f-0768-4acd-b920-04c0099062b2",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -1070,23 +1070,23 @@
 	"direction": "request",
 	"status": "closed",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.492Z"
+		"$date": "2026-07-19T16:21:04.681Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.492Z"
+		"$date": "2026-07-19T16:21:04.681Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8c9"
+		"$oid": "6a5cf970bd665b4769d4d374"
 	},
 	"title": "Besoin de quelqu'un pour arroser mes plantes en juillet",
 	"description": "Une quinzaine de pots sur le balcon, deux passages par semaine suffisent.",
 	"category": "gardening",
 	"type": "free",
-	"createdBy": "e022df10-5e19-4837-8b5d-eca7ac29506f",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "9bd75be7-b5ef-4c46-bec4-2a7ffb9bd2d8",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -1098,23 +1098,23 @@
 	"direction": "request",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.5Z"
+		"$date": "2026-07-19T16:21:04.689Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.5Z"
+		"$date": "2026-07-19T16:21:04.689Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8ca"
+		"$oid": "6a5cf970bd665b4769d4d375"
 	},
 	"title": "Recherche accompagnement à un rendez-vous médical",
 	"description": "Consultation à Lariboisière le 8, j'aimerais ne pas y aller seule après l'opération.",
 	"category": "other",
 	"type": "free",
-	"createdBy": "55ff23d0-bd6d-43bd-b6de-e9e45ae9ee95",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "98d76b0b-a146-44f8-a189-e182cd0ff9a5",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -1126,23 +1126,23 @@
 	"direction": "request",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.507Z"
+		"$date": "2026-07-19T16:21:04.698Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.507Z"
+		"$date": "2026-07-19T16:21:04.698Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8cb"
+		"$oid": "6a5cf970bd665b4769d4d376"
 	},
 	"title": "Cherche un covoiturage vers Montreuil",
 	"description": "Trajet régulier le lundi et le jeudi en fin de journée, je peux conduire une fois sur deux.",
 	"category": "transport",
 	"type": "exchange",
-	"createdBy": "8166de43-60db-4588-b48f-699893a60069",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "d1d6807d-d977-48e4-9c6b-77e95432a8d8",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -1154,23 +1154,23 @@
 	"direction": "request",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.515Z"
+		"$date": "2026-07-19T16:21:04.707Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.515Z"
+		"$date": "2026-07-19T16:21:04.707Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8cc"
+		"$oid": "6a5cf970bd665b4769d4d377"
 	},
 	"title": "Besoin d'aide pour installer une imprimante",
 	"description": "Imprimante wifi achetée hier, elle refuse de se connecter au réseau de la maison.",
 	"category": "it-support",
 	"type": "paid",
-	"createdBy": "53446db9-6f46-467b-aeca-19159817b241",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "8c71e147-6268-4866-ad27-1d543d7c1bef",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -1183,23 +1183,23 @@
 	"duration": 45,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.522Z"
+		"$date": "2026-07-19T16:21:04.717Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.522Z"
+		"$date": "2026-07-19T16:21:04.717Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8cd"
+		"$oid": "6a5cf970bd665b4769d4d378"
 	},
 	"title": "Recherche baby-sitter pour une soirée",
 	"description": "Samedi 20h-minuit, un enfant de 6 ans déjà couché, il faut juste rester à la maison.",
 	"category": "childcare",
 	"type": "paid",
-	"createdBy": "a387e686-0f23-4b32-9e66-da59dfce9ea7",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "2f5c3427-fff8-4210-a68a-7d6b8a197be0",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -1212,23 +1212,23 @@
 	"duration": 240,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.529Z"
+		"$date": "2026-07-19T16:21:04.728Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.529Z"
+		"$date": "2026-07-19T16:21:04.728Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8ce"
+		"$oid": "6a5cf970bd665b4769d4d379"
 	},
 	"title": "Cherche quelqu'un pour monter des courses au 5e sans ascenseur",
 	"description": "Livraison hebdomadaire déposée au rez-de-chaussée, je n'arrive plus à tout monter.",
 	"category": "shopping",
 	"type": "exchange",
-	"createdBy": "74878d54-7d43-4c71-a6b0-ca38ebd8862c",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "84eb8a87-2ad8-47c9-927a-6eea110c33a3",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -1240,23 +1240,23 @@
 	"direction": "request",
 	"status": "closed",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.537Z"
+		"$date": "2026-07-19T16:21:04.738Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.537Z"
+		"$date": "2026-07-19T16:21:04.738Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8cf"
+		"$oid": "6a5cf970bd665b4769d4d37a"
 	},
 	"title": "Besoin d'un dépannage pour un robinet qui fuit",
 	"description": "Goutte-à-goutte permanent sous l'évier, le joint est probablement à changer.",
 	"category": "handyman",
 	"type": "paid",
-	"createdBy": "df31de38-4d4f-479f-9db8-e63e4d18708d",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "84952860-7e56-4de1-ad1c-21ae9db7713c",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -1269,23 +1269,23 @@
 	"duration": 60,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.545Z"
+		"$date": "2026-07-19T16:21:04.748Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.545Z"
+		"$date": "2026-07-19T16:21:04.748Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8d0"
+		"$oid": "6a5cf970bd665b4769d4d37b"
 	},
 	"title": "Recherche du soutien en français pour un lycéen",
 	"description": "Préparation de l'oral du bac de français, travail sur le commentaire et la lecture linéaire.",
 	"category": "other",
 	"type": "exchange",
-	"createdBy": "248667a3-5bb9-4b0d-bcd6-457fd3d8bf2e",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "f9ce9fd7-98bd-4752-8c1d-b16a9e607390",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -1297,151 +1297,151 @@
 	"direction": "request",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.552Z"
+		"$date": "2026-07-19T16:21:04.759Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.552Z"
+		"$date": "2026-07-19T16:21:04.759Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8d1"
+		"$oid": "6a5cf970bd665b4769d4d37c"
 	},
 	"title": "Réparation de petit électroménager",
 	"description": "Grille-pain, bouilloire, aspirateur : je diagnostique et je répare quand c'est possible.",
 	"category": "handyman",
 	"type": "exchange",
-	"createdBy": "38e7c65f-2229-4566-a54f-79a9f1f5fd91",
-	"neighborhoodId": "6a5ce58c564b887ea821d895",
+	"createdBy": "ae5e859e-128c-4e29-9894-fc2ef17b5e42",
+	"neighborhoodId": "6a5cf951bd665b4769d4d330",
 	"pointsMultiplier": 1,
 	"direction": "offer",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.689Z"
+		"$date": "2026-07-19T16:21:04.768Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.689Z"
+		"$date": "2026-07-19T16:21:04.768Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8d2"
+		"$oid": "6a5cf970bd665b4769d4d37d"
 	},
 	"title": "Cours de cuisine végétarienne",
 	"description": "Trois recettes de saison par séance, du marché à l'assiette, ingrédients partagés.",
 	"category": "other",
 	"type": "paid",
-	"createdBy": "6a924633-9af9-4503-ba58-9c30a37d6514",
-	"neighborhoodId": "6a5ce58c564b887ea821d896",
+	"createdBy": "c51f41a7-3810-4d0b-bedc-a8ed7b23ac02",
+	"neighborhoodId": "6a5cf951bd665b4769d4d331",
 	"pointsMultiplier": 1,
 	"direction": "offer",
 	"duration": 90,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.826Z"
+		"$date": "2026-07-19T16:21:04.779Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.826Z"
+		"$date": "2026-07-19T16:21:04.779Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59a564b887ea821d8d3"
+		"$oid": "6a5cf970bd665b4769d4d37e"
 	},
 	"title": "Cherche une relecture de mémoire",
 	"description": "Mémoire de master de 80 pages, relecture orthographique et cohérence des notes de bas de page.",
 	"category": "other",
 	"type": "paid",
-	"createdBy": "4edbee6e-29e0-473b-ba04-823f39d214d1",
-	"neighborhoodId": "6a5ce58c564b887ea821d897",
+	"createdBy": "c36636c3-b65f-4a2f-9ccd-aaa9e5d74b50",
+	"neighborhoodId": "6a5cf951bd665b4769d4d332",
 	"pointsMultiplier": 1,
 	"direction": "request",
 	"duration": 120,
 	"status": "closed",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:26.98Z"
+		"$date": "2026-07-19T16:21:04.92Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:26.98Z"
+		"$date": "2026-07-19T16:21:04.92Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59b564b887ea821d8d4"
+		"$oid": "6a5cf971bd665b4769d4d37f"
 	},
 	"title": "Prêt d'une remorque à vélo",
 	"description": "Remorque pour transporter des courses ou un enfant, disponible en dehors du week-end.",
 	"category": "transport",
 	"type": "free",
-	"createdBy": "4ba03cef-0ce8-4e19-95f8-5c33f65fe786",
-	"neighborhoodId": "6a5ce58c564b887ea821d898",
+	"createdBy": "31de33e2-92aa-4fc2-ae5a-8967526fbdd8",
+	"neighborhoodId": "6a5cf951bd665b4769d4d333",
 	"pointsMultiplier": 1,
 	"direction": "offer",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:27.123Z"
+		"$date": "2026-07-19T16:21:05.057Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:27.123Z"
+		"$date": "2026-07-19T16:21:05.057Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59b564b887ea821d8d5"
+		"$oid": "6a5cf971bd665b4769d4d380"
 	},
 	"title": "Recherche des bras pour le jardin partagé",
 	"description": "Préparation des parcelles avant les semis de printemps, un samedi matin par mois.",
 	"category": "gardening",
 	"type": "free",
-	"createdBy": "eeb62541-25c3-4c23-beab-a6814c50e7e8",
-	"neighborhoodId": "6a5ce58c564b887ea821d899",
+	"createdBy": "22ff32e7-f40c-49c9-b43c-328326460de4",
+	"neighborhoodId": "6a5cf951bd665b4769d4d334",
 	"pointsMultiplier": 1,
 	"direction": "request",
 	"status": "closed",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:27.282Z"
+		"$date": "2026-07-19T16:21:05.198Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:27.282Z"
+		"$date": "2026-07-19T16:21:05.198Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59b564b887ea821d8d6"
+		"$oid": "6a5cf971bd665b4769d4d381"
 	},
 	"title": "Assistance smartphone pour les seniors",
 	"description": "Réglage de la taille du texte, contacts, photos et applications utiles, sans jargon.",
 	"category": "it-support",
 	"type": "free",
-	"createdBy": "613fa246-6c72-4236-b1fb-47210da4660e",
-	"neighborhoodId": "6a5ce58c564b887ea821d89e",
+	"createdBy": "abefbf68-8f1a-4a92-ab47-3b59d1a467f0",
+	"neighborhoodId": "6a5cf951bd665b4769d4d339",
 	"pointsMultiplier": 1,
 	"direction": "offer",
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:27.429Z"
+		"$date": "2026-07-19T16:21:05.349Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:27.429Z"
+		"$date": "2026-07-19T16:21:05.349Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59b564b887ea821d8d7"
+		"$oid": "6a5cf971bd665b4769d4d382"
 	},
 	"title": "Cours de jardinage sur balcon",
 	"description": "Choix des plantes, rempotage et arrosage, adapté aux balcons exposés plein nord.",
 	"category": "gardening",
 	"type": "paid",
-	"createdBy": "612c6b63-da2a-4693-9375-01a85b2c2077",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "7105c223-a4bf-4c32-8588-9014011de2a7",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -1454,23 +1454,23 @@
 	"duration": 90,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:27.439Z"
+		"$date": "2026-07-19T16:21:05.36Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:27.439Z"
+		"$date": "2026-07-19T16:21:05.36Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59b564b887ea821d8d8"
+		"$oid": "6a5cf971bd665b4769d4d383"
 	},
 	"title": "Initiation à la photo numérique",
 	"description": "Prise en main du boîtier, cadrage et lumière, puis une sortie photo dans le quartier.",
 	"category": "other",
 	"type": "paid",
-	"createdBy": "612c6b63-da2a-4693-9375-01a85b2c2077",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "7105c223-a4bf-4c32-8588-9014011de2a7",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -1483,23 +1483,23 @@
 	"duration": 90,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:27.452Z"
+		"$date": "2026-07-19T16:21:05.372Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:27.452Z"
+		"$date": "2026-07-19T16:21:05.372Z"
 	},
 	"__v": 0
 },
 {
 	"_id": {
-		"$oid": "6a5ce59b564b887ea821d8d9"
+		"$oid": "6a5cf971bd665b4769d4d384"
 	},
 	"title": "Préparation de repas maison pour la semaine",
 	"description": "Quatre plats cuisinés chez vous à partir de vos courses, régimes particuliers bienvenus.",
 	"category": "other",
 	"type": "paid",
-	"createdBy": "612c6b63-da2a-4693-9375-01a85b2c2077",
-	"neighborhoodId": "6a5ce58c564b887ea821d894",
+	"createdBy": "7105c223-a4bf-4c32-8588-9014011de2a7",
+	"neighborhoodId": "6a5cf951bd665b4769d4d32f",
 	"pointsMultiplier": 1,
 	"location": {
 		"type": "Point",
@@ -1512,10 +1512,10 @@
 	"duration": 120,
 	"status": "active",
 	"createdAt": {
-		"$date": "2026-07-19T14:56:27.464Z"
+		"$date": "2026-07-19T16:21:05.382Z"
 	},
 	"updatedAt": {
-		"$date": "2026-07-19T14:56:27.464Z"
+		"$date": "2026-07-19T16:21:05.382Z"
 	},
 	"__v": 0
 }]

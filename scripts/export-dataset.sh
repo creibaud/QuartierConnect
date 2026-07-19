@@ -82,6 +82,12 @@ report() {
     echo "✗ A personal account leaked into the dataset. Fix before shipping." >&2
     exit 1
   fi
+  # Browser and Playwright runs leave e2e_* accounts behind; they must never
+  # reach the jury's copy.
+  if grep -q 'e2e_' "$TARGET/postgres.sql"; then
+    echo "✗ Test accounts in the dataset: empty the databases, reseed, export again." >&2
+    exit 1
+  fi
   # Only seed-neo4j writes User.name; without it the neighbour recommendations
   # render a raw UUID, or nothing at all.
   if ! grep -q '`name`' "$TARGET/neo4j.cypher"; then
