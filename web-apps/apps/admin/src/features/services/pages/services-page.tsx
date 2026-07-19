@@ -3,7 +3,10 @@ import { useTranslation } from "react-i18next";
 import { Add01Icon, CustomerServiceIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useAdminServices } from "@workspace/shared/lib/hooks/admin-lists.hooks";
+import {
+    useAdminServices,
+    useAdminServicesForMap,
+} from "@workspace/shared/lib/hooks/admin-lists.hooks";
 import { useNeighborhoods } from "@workspace/shared/lib/hooks/neighborhoods.hooks";
 import { useDeleteService } from "@workspace/shared/lib/hooks/services.hooks";
 import { useDebouncedValue } from "@workspace/shared/lib/hooks/useDebouncedValue";
@@ -34,7 +37,6 @@ import { ServicesMap } from "../components/services-map";
 import { ServicesTable } from "../components/services-table";
 
 const PAGE_SIZE = 10;
-const MAP_LIMIT = 100;
 
 export function AdminServicesPage() {
     const { t } = useTranslation();
@@ -56,10 +58,7 @@ export function AdminServicesPage() {
         sort,
         order,
     });
-    // The map needs the full filtered set, not just the current page.
-    const { rows: mapServices } = useAdminServices({
-        page: 1,
-        limit: MAP_LIMIT,
+    const { rows: mapServices } = useAdminServicesForMap({
         search: debouncedSearch,
         category: categoryFilter,
     });

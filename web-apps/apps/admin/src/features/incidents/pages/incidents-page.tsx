@@ -7,7 +7,10 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useAdminIncidents } from "@workspace/shared/lib/hooks/admin-lists.hooks";
+import {
+    useAdminIncidents,
+    useAdminIncidentsForMap,
+} from "@workspace/shared/lib/hooks/admin-lists.hooks";
 import {
     useDeleteIncident,
     useUpdateIncidentStatus,
@@ -37,7 +40,6 @@ import { IncidentsMap } from "../components/incidents-map";
 import { IncidentsTable } from "../components/incidents-table";
 
 const PAGE_SIZE = 20;
-const MAP_LIMIT = 100;
 
 export function AdminIncidentsPage() {
     const { t } = useTranslation();
@@ -56,10 +58,7 @@ export function AdminIncidentsPage() {
         sort,
         order,
     });
-    // The map needs the full filtered set, not just the current page.
-    const { rows: mapIncidents } = useAdminIncidents({
-        page: 1,
-        limit: MAP_LIMIT,
+    const { rows: mapIncidents } = useAdminIncidentsForMap({
         status: statusFilter,
         category: categoryFilter,
     });

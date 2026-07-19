@@ -36,9 +36,47 @@ function useAdminList<T>(key: string, path: string, params: object) {
     };
 }
 
+// The server clamps limit to 100, so a map that wants every matching pin has to
+// walk the pages itself. The cap stops a runaway loop; 5000 points is already
+// past what a map can usefully show.
+const MAP_PAGE_SIZE = 100;
+const MAP_PAGE_CAP = 50;
+
+async function fetchAllPages<T>(path: string, params: object): Promise<T[]> {
+    const query = (page: number) =>
+        apiGetPage<T>(
+            `${path}?${buildQuery({ ...params, page, limit: MAP_PAGE_SIZE })}`,
+        );
+    const first = await query(1);
+    const rows = [...first.data];
+    const lastPage = Math.min(first.totalPages, MAP_PAGE_CAP);
+    for (let page = 2; page <= lastPage; page++) {
+        rows.push(...(await query(page)).data);
+    }
+    return rows;
+}
+
+function useAdminMap<T>(key: string, path: string, params: object) {
+    const query = useQuery<T[]>({
+        queryKey: [key, params],
+        queryFn: () => fetchAllPages<T>(path, params),
+        placeholderData: keepPreviousData,
+    });
+    return {
+        rows: query.data ?? [],
+        isLoading: query.isLoading,
+        error: query.error,
+    };
+}
+
 export const useAdminIncidents = (
     params: AdminListParams & { status?: string; category?: string },
 ) => useAdminList<Incident>("admin-incidents", "/incidents", params);
+
+export const useAdminIncidentsForMap = (params: {
+    status?: string;
+    category?: string;
+}) => useAdminMap<Incident>("admin-incidents-map", "/incidents", params);
 
 export const useAdminServices = (
     params: AdminListParams & {
@@ -47,6 +85,11 @@ export const useAdminServices = (
         direction?: string;
     },
 ) => useAdminList<Service>("admin-services", "/services", params);
+
+export const useAdminServicesForMap = (params: {
+    search?: string;
+    category?: string;
+}) => useAdminMap<Service>("admin-services-map", "/services", params);
 
 export const useAdminEvents = (
     params: AdminListParams & { category?: string; date?: string },
