@@ -6,12 +6,12 @@ import { Toaster } from "sonner";
 const SITE_NAME = "QuartierConnect";
 
 function RootLayout() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
 
     useHead({
         titleTemplate: (title) =>
             title ? `${title} · ${SITE_NAME}` : SITE_NAME,
-        htmlAttrs: { lang: "fr" },
+        htmlAttrs: { lang: i18n.language },
         meta: [
             {
                 name: "description",

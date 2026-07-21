@@ -43,21 +43,27 @@ export function AddressAutocomplete({
         }
         const q = value.trim();
         if (q.length < 3) return;
+        let stale = false;
         const handle = setTimeout(() => {
             const params = new URLSearchParams({ q, lang: i18n.language });
             void apiGet<AddressSuggestion[]>(
                 `/geocoding/search?${params.toString()}`,
             )
                 .then((res) => {
+                    if (stale) return;
                     setSuggestions(res);
                     setOpen(true);
                 })
                 .catch(() => {
+                    if (stale) return;
                     setSuggestions([]);
                     setOpen(false);
                 });
         }, 350);
-        return () => clearTimeout(handle);
+        return () => {
+            stale = true;
+            clearTimeout(handle);
+        };
     }, [value, i18n.language]);
 
     return (

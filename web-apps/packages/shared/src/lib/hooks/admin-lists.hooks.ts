@@ -41,6 +41,9 @@ function useAdminList<T>(key: string, path: string, params: object) {
 // past what a map can usefully show.
 const MAP_PAGE_SIZE = 100;
 const MAP_PAGE_CAP = 50;
+// Fetch the rest of the pages in parallel but bounded, so a wide map doesn't
+// open dozens of requests at once.
+const MAP_FETCH_CONCURRENCY = 6;
 
 async function fetchAllPages<T>(path: string, params: object): Promise<T[]> {
     const query = (page: number) =>
@@ -48,12 +51,17 @@ async function fetchAllPages<T>(path: string, params: object): Promise<T[]> {
             `${path}?${buildQuery({ ...params, page, limit: MAP_PAGE_SIZE })}`,
         );
     const first = await query(1);
-    const rows = [...first.data];
     const lastPage = Math.min(first.totalPages, MAP_PAGE_CAP);
-    for (let page = 2; page <= lastPage; page++) {
-        rows.push(...(await query(page)).data);
+    const restPages = [];
+    for (let page = 2; page <= lastPage; page++) restPages.push(page);
+
+    const pages: T[][] = [first.data];
+    for (let i = 0; i < restPages.length; i += MAP_FETCH_CONCURRENCY) {
+        const batch = restPages.slice(i, i + MAP_FETCH_CONCURRENCY);
+        const results = await Promise.all(batch.map((page) => query(page)));
+        for (const result of results) pages.push(result.data);
     }
-    return rows;
+    return pages.flat();
 }
 
 function useAdminMap<T>(key: string, path: string, params: object) {

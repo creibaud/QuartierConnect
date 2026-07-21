@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSwipeable } from "react-swipeable";
 import { Cancel01Icon, FavouriteIcon } from "@hugeicons/core-free-icons";
@@ -33,19 +33,31 @@ export function EventsSwipeView({ events }: { events: Event[] }) {
         "left" | "right" | null
     >(null);
     const interest = useEventInterest();
+    const advanceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const current = events[index];
+    const isAnimating = swipeDirection !== null;
+    const isBusy = isAnimating || interest.isPending;
+
+    useEffect(() => {
+        return () => {
+            if (advanceTimeout.current) clearTimeout(advanceTimeout.current);
+        };
+    }, []);
 
     function advance(direction: "left" | "right") {
         setSwipeDirection(direction);
-        setTimeout(() => {
+        advanceTimeout.current = setTimeout(() => {
+            advanceTimeout.current = null;
             setSwipeDirection(null);
             setIndex((i) => i + 1);
         }, 300);
     }
 
+    // The ref read is synchronous, so a rapid second tap is dropped before its
+    // state update lands and both card interest and the index skip are avoided.
     function markInterested() {
-        if (!current) return;
+        if (!current || advanceTimeout.current || interest.isPending) return;
         interest.mutate(
             { eventId: current._id, source: "swipe" },
             {
@@ -57,7 +69,7 @@ export function EventsSwipeView({ events }: { events: Event[] }) {
     }
 
     function skip() {
-        if (!current) return;
+        if (!current || advanceTimeout.current) return;
         advance("left");
     }
 
@@ -161,6 +173,7 @@ export function EventsSwipeView({ events }: { events: Event[] }) {
                     aria-label={t("pages.events.skip")}
                     className="border-destructive text-destructive hover:bg-destructive/10 size-14 rounded-full border-2"
                     onClick={skip}
+                    disabled={isBusy}
                 >
                     <HugeiconsIcon icon={Cancel01Icon} />
                 </Button>
@@ -169,6 +182,7 @@ export function EventsSwipeView({ events }: { events: Event[] }) {
                     aria-label={t("pages.events.imInterested")}
                     className="size-14 rounded-full"
                     onClick={markInterested}
+                    disabled={isBusy}
                 >
                     <HugeiconsIcon icon={FavouriteIcon} />
                 </Button>
