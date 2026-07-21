@@ -54,6 +54,7 @@ public class SyncService {
     private ScheduledFuture<?> task;
     private Consumer<Boolean> onStatusChange;
     private IntConsumer onIncidentsChanged;
+    private IntConsumer onChangesReverted;
     private volatile PluginEventBus eventBus;
 
     public void setEventBus(PluginEventBus eventBus) {
@@ -67,6 +68,11 @@ public class SyncService {
     /** Listener called on the status dispatcher thread after a sync that changed local data, with the pulled incident count. */
     public void setOnIncidentsChanged(IntConsumer listener) {
         this.onIncidentsChanged = listener;
+    }
+
+    /** Listener called on the status dispatcher thread when the server refused pushed changes, with the refused row count. */
+    public void setOnChangesReverted(IntConsumer listener) {
+        this.onChangesReverted = listener;
     }
 
     public void start() {
@@ -144,7 +150,8 @@ public class SyncService {
 
     /**
      * Pushes dirty incidents and returns the remote ids the server actually upserted,
-     * so the next pull can skip them. Server-skipped incidents stay dirty for retry.
+     * so the next pull can skip them. Server-skipped rows lose their dirty flag —
+     * the edit was refused, and the next pull restores the server version.
      */
     private Set<String> pushDirtyIncidents(String token) throws Exception {
         List<IncidentRepository.Incident> dirty = incidentRepo.listDirty();
@@ -180,10 +187,16 @@ public class SyncService {
         Set<String> skippedIds = parseSkippedIds(response);
 
         Set<String> pushed = new HashSet<>();
+        int refusedCount = 0;
         for (int i = 0; i < dirty.size(); i++) {
             IncidentRepository.Incident inc = dirty.get(i);
             String syncId = syncIds.get(i);
-            if (skippedIds.contains(syncId)) continue;
+            if (skippedIds.contains(syncId)) {
+                incidentRepo.markSynced(inc.localId());
+                LOG.info("Server refused incident " + syncId + "; local change dropped, next pull restores it");
+                refusedCount++;
+                continue;
+            }
             if (inc.remoteId() == null || inc.remoteId().isBlank()) {
                 incidentRepo.assignRemoteId(inc.localId(), syncId);
             }
@@ -191,6 +204,7 @@ public class SyncService {
             updateBaseAfterPush(inc);
             pushed.add(syncId);
         }
+        if (refusedCount > 0) notifyChangesReverted(refusedCount);
         return pushed;
     }
 
@@ -300,6 +314,12 @@ public class SyncService {
     private void notifyIncidentsChanged(int receivedCount) {
         if (onIncidentsChanged != null) {
             statusDispatcher.accept(() -> onIncidentsChanged.accept(receivedCount));
+        }
+    }
+
+    private void notifyChangesReverted(int refusedCount) {
+        if (onChangesReverted != null) {
+            statusDispatcher.accept(() -> onChangesReverted.accept(refusedCount));
         }
     }
 

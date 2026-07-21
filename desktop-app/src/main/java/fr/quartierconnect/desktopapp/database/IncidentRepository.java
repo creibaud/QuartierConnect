@@ -355,6 +355,18 @@ public class IncidentRepository {
         }
     }
 
+    /** Restores a server-refused status change; the row no longer awaits a push. */
+    public void revertStatusLocally(int localId, String status, String updatedAt) throws SQLException {
+        String sql = "UPDATE incidents SET status = ?, updated_at = ?, is_dirty = 0 WHERE id = ?";
+        try (Connection conn = SQLiteDatabase.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, status);
+            stmt.setString(2, updatedAt);
+            stmt.setInt(3, localId);
+            stmt.executeUpdate();
+        }
+    }
+
     /** Tombstones synced incidents so pulls cannot recreate them; hard-deletes purely local ones. */
     public void deleteByLocalId(int localId) throws SQLException {
         String checkSql = "SELECT remote_id FROM incidents WHERE id = ?";

@@ -91,6 +91,7 @@ public class MainView {
             if (online) eventBus.publish(PluginEventBus.Event.ONLINE_STATUS_CHANGED, true);
         });
         syncService.setOnIncidentsChanged(this::handleIncidentsSynced);
+        syncService.setOnChangesReverted(this::handleChangesReverted);
         syncService.start();
         tryBackgroundReconnect();
 
@@ -172,6 +173,14 @@ public class MainView {
                     ? I18n.get("sync.incidentsReceivedOne")
                     : I18n.get("sync.incidentsReceivedMany", receivedCount));
         }
+    }
+
+    private void handleChangesReverted(int refusedCount) {
+        if (visibleIncidents != null) visibleIncidents.refresh();
+        if (visibleDashboard != null) visibleDashboard.refresh();
+        toast.showInfo(refusedCount == 1
+                ? I18n.get("sync.changesRevertedOne")
+                : I18n.get("sync.changesRevertedMany", refusedCount));
     }
 
     private void handleRoute(String route) {

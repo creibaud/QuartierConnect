@@ -25,7 +25,7 @@ public class ContractsService {
         String token = AuthService.getInstance().getAccessToken();
         if (token == null) return List.of();
 
-        String currentEmail = AuthService.getInstance().getCurrentUserEmail();
+        String currentUserId = AuthService.getInstance().getCurrentUserId();
 
         try {
             String response = ApiService.get("/contracts", token);
@@ -56,7 +56,7 @@ public class ContractsService {
 
                 int signatureCount = signedUserIds.size();
                 int signatoryCount = signatoryIds.size();
-                boolean canSign = !status.equals("fully_signed") && !signatoryIds.isEmpty();
+                boolean canSign = canSign(currentUserId, status, signatoryIds, signedUserIds);
 
                 result.add(new ContractSummary(id, title, status, signatureCount, signatoryCount, canSign));
             }
@@ -64,5 +64,12 @@ public class ContractsService {
         } catch (Exception e) {
             return List.of();
         }
+    }
+
+    static boolean canSign(String userId, String status,
+                           Set<String> signatoryIds, Set<String> signedUserIds) {
+        if (userId == null) return false;
+        if (status.equals("fully_signed") || status.equals("cancelled")) return false;
+        return signatoryIds.contains(userId) && !signedUserIds.contains(userId);
     }
 }

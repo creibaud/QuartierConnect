@@ -404,35 +404,41 @@ public class IncidentsView {
         menu.getItems().add(menuItem(I18n.get("incidents.menu.edit"), FontAwesomeSolid.EDIT, false,
             () -> detailForm.open(item)));
 
-        // Status transitions
-        if (!item.isConflict()) {
-            menu.getItems().add(new SeparatorMenuItem());
-
-            switch (item.status()) {
-                case "open" -> {
-                    menu.getItems().add(menuItem(I18n.get("incidents.menu.setInProgress"), FontAwesomeSolid.ARROW_RIGHT, false,
-                        () -> changeStatus(item, "in_progress")));
-                    menu.getItems().add(menuItem(I18n.get("incidents.menu.markResolved"), FontAwesomeSolid.CHECK, false,
-                        () -> changeStatus(item, "resolved")));
-                }
-                case "in_progress" -> {
-                    menu.getItems().add(menuItem(I18n.get("incidents.menu.markResolved"), FontAwesomeSolid.CHECK, false,
-                        () -> changeStatus(item, "resolved")));
-                    menu.getItems().add(menuItem(I18n.get("incidents.menu.reopen"), FontAwesomeSolid.UNDO, false,
-                        () -> changeStatus(item, "open")));
-                }
-                default -> {
-                    menu.getItems().add(menuItem(I18n.get("incidents.menu.reopen"), FontAwesomeSolid.UNDO, false,
-                        () -> changeStatus(item, "open")));
+        // Status transitions and deletion are moderator/admin-only server-side
+        if (canModerate()) {
+            if (!item.isConflict()) {
+                List<MenuItem> transitions = statusTransitionItems(item);
+                if (!transitions.isEmpty()) {
+                    menu.getItems().add(new SeparatorMenuItem());
+                    menu.getItems().addAll(transitions);
                 }
             }
+            menu.getItems().add(new SeparatorMenuItem());
+            menu.getItems().add(menuItem(I18n.get("incidents.menu.delete"), FontAwesomeSolid.TRASH_ALT, true,
+                () -> deleteIncident(item)));
         }
 
-        menu.getItems().add(new SeparatorMenuItem());
-        menu.getItems().add(menuItem(I18n.get("incidents.menu.delete"), FontAwesomeSolid.TRASH_ALT, true,
-            () -> deleteIncident(item)));
-
         return menu;
+    }
+
+    // open → in_progress → resolved, resolved is terminal
+    private List<MenuItem> statusTransitionItems(IncidentRepository.Incident item) {
+        return switch (item.status()) {
+            case "open" -> List.of(
+                menuItem(I18n.get("incidents.menu.setInProgress"), FontAwesomeSolid.ARROW_RIGHT, false,
+                    () -> changeStatus(item, "in_progress")),
+                menuItem(I18n.get("incidents.menu.markResolved"), FontAwesomeSolid.CHECK, false,
+                    () -> changeStatus(item, "resolved")));
+            case "in_progress" -> List.of(
+                menuItem(I18n.get("incidents.menu.markResolved"), FontAwesomeSolid.CHECK, false,
+                    () -> changeStatus(item, "resolved")));
+            default -> List.of();
+        };
+    }
+
+    private static boolean canModerate() {
+        String role = AuthService.getInstance().getCurrentUserRole();
+        return "moderator".equals(role) || "admin".equals(role);
     }
 
     private MenuItem menuItem(String label, FontAwesomeSolid iconCode, boolean danger, Runnable action) {
@@ -535,18 +541,44 @@ public class IncidentsView {
         try {
             ApiService.patch("/incidents/" + incident.remoteId() + "/status",
                 "{\"status\": \"" + newStatus + "\"}", AuthService.getInstance().getAccessToken());
-            Platform.runLater(() -> toast.showSuccess(I18n.get("incidents.statusUpdated")));
-        } catch (Exception ex) {
-            Platform.runLater(() -> showStatusPushFailure(ex));
+            markStatusPushed(incident);
+            Platform.runLater(() -> { refresh(); toast.showSuccess(I18n.get("incidents.statusUpdated")); });
+        } catch (RuntimeException refusal) {
+            revertStatus(incident);
+            Platform.runLater(() -> { refresh(); showStatusRefused(refusal); });
+        } catch (Exception offline) {
+            // no connectivity: the change stays dirty and syncs later
+            Platform.runLater(() -> toast.showInfo(I18n.get("incidents.statusSavedLocally")));
         }
     }
 
-    private void showStatusPushFailure(Exception failure) {
-        if (isStateMachineRejection(failure)) {
-            toast.showError(I18n.get("incidents.statusRejected"));
-        } else {
-            toast.showInfo(I18n.get("incidents.statusSavedLocally"));
+    /** The server accepted the transition; drop the dirty flag unless older edits still await a push. */
+    private void markStatusPushed(IncidentRepository.Incident incident) {
+        if (incident.isDirty()) return;
+        try {
+            repo.markSynced(incident.localId());
+        } catch (Exception e) {
+            LOG.log(Level.FINE, "Could not clear dirty flag after status push", e);
         }
+    }
+
+    /** The server refused the transition; restore the previous status. */
+    private void revertStatus(IncidentRepository.Incident incident) {
+        try {
+            if (incident.isDirty()) {
+                repo.updateStatusLocally(incident.localId(), incident.status());
+            } else {
+                repo.revertStatusLocally(incident.localId(), incident.status(), incident.updatedAt());
+            }
+        } catch (Exception e) {
+            LOG.log(Level.WARNING, "Could not revert refused status change", e);
+        }
+    }
+
+    private void showStatusRefused(Exception failure) {
+        toast.showError(isStateMachineRejection(failure)
+                ? I18n.get("incidents.statusRejected")
+                : I18n.get("incidents.statusRefused"));
     }
 
     private static boolean isStateMachineRejection(Exception failure) {
@@ -556,13 +588,17 @@ public class IncidentsView {
 
     private void deleteIncident(IncidentRepository.Incident incident) {
         new Thread(() -> {
-            // Best-effort server delete (403 for non-moderators — the tombstone still covers the local side)
-            if (incident.remoteId() != null) {
+            // The local row only goes away once the server confirmed the delete
+            if (incident.remoteId() != null && !incident.remoteId().isBlank()) {
                 try {
                     ApiService.delete("/incidents/" + incident.remoteId(),
                         AuthService.getInstance().getAccessToken());
-                } catch (Exception e) {
-                    LOG.log(Level.FINE, "Best-effort server delete failed; local tombstone will sync later", e);
+                } catch (RuntimeException refusal) {
+                    Platform.runLater(() -> toast.showError(I18n.get("incidents.deleteRefused")));
+                    return;
+                } catch (Exception offline) {
+                    Platform.runLater(() -> toast.showError(I18n.get("incidents.deleteNeedsConnection")));
+                    return;
                 }
             }
             try {
