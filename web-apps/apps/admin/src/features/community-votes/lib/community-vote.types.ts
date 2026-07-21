@@ -16,6 +16,8 @@ export interface CommunityVote {
     status: "open" | "closed";
     endsAt: string;
     casts: unknown[];
+    /** True ballot count; `casts` is stripped to the requester's own on anonymous votes. */
+    participantCount?: number;
 }
 
 export interface VoteResultOption {

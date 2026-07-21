@@ -70,6 +70,13 @@ export class CommunityVoteDto {
     casts: CastRecordDto[];
 
     @ApiProperty({
+        example: 12,
+        description:
+            "True number of ballots, even on anonymous votes where `casts` only carries the requester's own",
+    })
+    participantCount: number;
+
+    @ApiProperty({
         example: "open",
         enum: ["open", "closed"],
     })

@@ -33,6 +33,7 @@ const mockVote: {
     isAnonymous: boolean;
     createdBy: string;
     save: jest.Mock;
+    toObject: jest.Mock;
 } = {
     _id: "vote1",
     title: "Test vote",
@@ -48,6 +49,7 @@ const mockVote: {
     quorum: 0,
     isAnonymous: false,
     save: jest.fn().mockResolvedValue(undefined),
+    toObject: jest.fn(),
 };
 
 const anonymousVoteWith = (casts: CastRecord[]) => {
@@ -95,6 +97,11 @@ describe("CommunityVotesService", () => {
         jest.clearAllMocks();
         mockVote.casts = [];
         mockVote.status = "open";
+        // Spread copies of mockVote share this jest.fn: resolve via `this` so
+        // each copy serializes its own casts.
+        mockVote.toObject.mockImplementation(function (this: typeof mockVote) {
+            return { ...this, casts: [...this.casts] };
+        });
         mockModel.find.mockReturnValue(queryResolving([mockVote]));
         mockModel.findById.mockReturnValue({
             exec: jest.fn().mockResolvedValue(mockVote),
@@ -299,6 +306,32 @@ describe("CommunityVotesService", () => {
 
         expect(result.casts).toHaveLength(1);
         expect(result.casts[0].userId).toBe("user1");
+    });
+
+    it("reports the true participant count on anonymous votes while hiding ballots", async () => {
+        const anonymousVote = anonymousVoteWith([
+            castBy("user1"),
+            castBy("other-user"),
+        ]);
+        mockModel.find.mockReturnValue(queryResolving([anonymousVote]));
+
+        const { rows } = await service.findAllFor("user1");
+
+        expect((rows[0] as { participantCount: number }).participantCount).toBe(
+            2,
+        );
+        expect(rows[0].casts).toHaveLength(1);
+    });
+
+    it("reports the participant count on non-anonymous votes too", async () => {
+        mockVote.casts = [castBy("user1")];
+
+        const { rows } = await service.findAllFor("someone-else");
+
+        expect((rows[0] as { participantCount: number }).participantCount).toBe(
+            1,
+        );
+        expect(rows[0].casts).toHaveLength(1);
     });
 
     it("hides other voters' ballots on anonymous votes in findAllFor", async () => {

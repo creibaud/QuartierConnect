@@ -36,12 +36,15 @@ export class CommunityVotesService {
         });
     }
 
-    // Anonymous votes expose only the requester's own cast; totals stay in getResults.
+    // Anonymous votes expose only the requester's own cast; the participant
+    // count stays truthful so list views agree with getResults.
     private sanitize(vote: CommunityVoteDocument, requesterId: string) {
-        if (!vote.isAnonymous) return vote;
         const plain = vote.toObject<CommunityVote & { _id: unknown }>();
-        plain.casts = plain.casts.filter((c) => c.userId === requesterId);
-        return plain;
+        const participantCount = plain.casts.length;
+        if (plain.isAnonymous) {
+            plain.casts = plain.casts.filter((c) => c.userId === requesterId);
+        }
+        return { ...plain, participantCount };
     }
 
     async findAllFor(
@@ -53,7 +56,7 @@ export class CommunityVotesService {
         sort?: string,
         order?: string,
     ): Promise<{
-        rows: (CommunityVoteDocument | CommunityVote)[];
+        rows: (CommunityVote & { participantCount: number })[];
         total: number;
     }> {
         const skip = (page - 1) * limit;

@@ -49,7 +49,7 @@ export function CommunityVoteCard({
                             {t("adminPages.communityVotes.participants")}
                         </dt>
                         <dd className="font-medium tabular-nums">
-                            {vote.casts.length}
+                            {vote.participantCount ?? vote.casts.length}
                         </dd>
                     </div>
                     <div className="space-y-0.5">
