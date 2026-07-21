@@ -55,6 +55,18 @@ describe("ContractsController", () => {
         expect(result).toEqual(mockContract);
     });
 
+    it("findOne forwards the caller role for admin oversight", async () => {
+        mockService.findOne.mockResolvedValue(mockContract);
+        await controller.findOne("contract-1", {
+            user: { sub: "admin-9", role: "admin" },
+        } as any);
+        expect(mockService.findOne).toHaveBeenCalledWith(
+            "contract-1",
+            "admin-9",
+            "admin",
+        );
+    });
+
     it("findOne throws 404 for missing contract", async () => {
         mockService.findOne.mockRejectedValue(new NotFoundException());
         await expect(

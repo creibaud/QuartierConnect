@@ -20,14 +20,23 @@ import {
 import { ContractAuditTimeline } from "../components/contract-audit-timeline";
 import { ContractPdfViewer } from "../components/contract-pdf-viewer";
 import { SignContractDialog } from "../components/sign-contract-dialog";
+import { contractMeta } from "../lib/contract-meta";
 
 export function ContractDetailPage({ id }: { id: string }) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { data: contract, isLoading, isError, refetch } = useContract(id);
     const [signOpen, setSignOpen] = useState(false);
     const currentUser = getCurrentUser();
 
+    // Admins can open any contract but only its parties may see the document.
+    const isParty =
+        !!contract &&
+        !!currentUser &&
+        (contract.createdBy === currentUser.sub ||
+            contract.signatories.includes(currentUser.sub));
+
     const canSign =
+        isParty &&
         !!contract &&
         !!currentUser &&
         contract.signatories.includes(currentUser.sub) &&
@@ -70,21 +79,49 @@ export function ContractDetailPage({ id }: { id: string }) {
                                 </div>
                             }
                         />
-                        <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
-                            <ContractPdfViewer contractId={contract._id} />
+                        {isParty ? (
+                            <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
+                                <ContractPdfViewer contractId={contract._id} />
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>
+                                            {t(
+                                                "pages.contractDetail.auditTitle",
+                                            )}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <ContractAuditTimeline
+                                            contractId={contract._id}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        ) : (
                             <Card>
                                 <CardHeader>
                                     <CardTitle>
-                                        {t("pages.contractDetail.auditTitle")}
+                                        {t(
+                                            "pages.contractDetail.privateTitle",
+                                        )}
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                    <ContractAuditTimeline
-                                        contractId={contract._id}
-                                    />
+                                <CardContent className="space-y-2">
+                                    <p className="text-muted-foreground text-sm">
+                                        {contractMeta(
+                                            contract,
+                                            t,
+                                            i18n.language,
+                                        )}
+                                    </p>
+                                    <p className="text-muted-foreground text-sm">
+                                        {t(
+                                            "pages.contractDetail.privateNotice",
+                                        )}
+                                    </p>
                                 </CardContent>
                             </Card>
-                        </div>
+                        )}
                         {signOpen && (
                             <SignContractDialog
                                 contract={contract}

@@ -134,13 +134,14 @@ export interface SignatureZone {
 export interface Contract {
     _id: string;
     title: string;
-    content: string;
+    /** Absent on admin oversight payloads: the API strips the private body. */
+    content?: string;
     createdBy: string;
     signatories: string[];
     status: "draft" | "partial" | "fully_signed" | "cancelled";
-    contentHash: string | null;
+    contentHash?: string | null;
     signedAt: string | null;
-    signatures: Array<{ userId: string; signedAt: string; hash: string }>;
+    signatures: Array<{ userId: string; signedAt: string; hash?: string }>;
     serviceId?: string | null;
     bookingId?: string | null;
     pointsAmount?: number | null;

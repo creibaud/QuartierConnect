@@ -52,16 +52,20 @@ export class ContractsController {
     }
 
     @Get(":id")
-    @ApiOperation({ summary: "Contract details" })
+    @ApiOperation({
+        summary: "Contract details",
+        description:
+            "Full contract for the creator or a signatory. Admins who are not party to the contract receive metadata only (no content or signature hashes), matching the list view.",
+    })
     @ApiParam({ name: "id", description: "MongoDB ObjectId of the contract" })
     @ApiResponse({ status: 200, type: ContractDto })
     @ApiResponse({
         status: 403,
-        description: "Access denied (creator or signatory only)",
+        description: "Access denied (creator, signatory or admin only)",
     })
     @ApiResponse({ status: 404, description: "Contract not found" })
     findOne(@Param("id") id: string, @Request() req: AuthRequest) {
-        return this.contractsService.findOne(id, req.user.sub);
+        return this.contractsService.findOne(id, req.user.sub, req.user.role);
     }
 
     @Get(":id/pdf")

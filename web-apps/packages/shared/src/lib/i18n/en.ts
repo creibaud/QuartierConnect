@@ -792,6 +792,9 @@ export default {
             auditTitle: "Traceability",
             auditEmpty: "No audit entry.",
             pdfError: "Unable to load the PDF.",
+            privateTitle: "Private document",
+            privateNotice:
+                "The contract's content and audit trail are only visible to its creator and signatories. As an administrator you only see its general information.",
         },
         messages: {
             title: "Messages",

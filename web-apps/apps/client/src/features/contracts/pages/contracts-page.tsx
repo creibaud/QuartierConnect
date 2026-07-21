@@ -144,9 +144,11 @@ export function ContractsPage() {
                                             i18n.language,
                                         )}
                                     </ItemDescription>
-                                    <p className="text-muted-foreground line-clamp-2 text-sm">
-                                        {contract.content}
-                                    </p>
+                                    {contract.content && (
+                                        <p className="text-muted-foreground line-clamp-2 text-sm">
+                                            {contract.content}
+                                        </p>
+                                    )}
                                 </ItemContent>
                                 {canSignContract(contract, user?.sub) && (
                                     <ItemActions>

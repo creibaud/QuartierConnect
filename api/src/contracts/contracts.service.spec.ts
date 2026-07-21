@@ -148,9 +148,68 @@ describe("ContractsService", () => {
             const result = await service.findAll("user-1");
             expect(result).toHaveLength(1);
         });
+
+        it("returns every contract without private fields to an admin", async () => {
+            mockContractModel.find.mockReturnValue({
+                sort: jest.fn().mockReturnValue({
+                    exec: jest.fn().mockResolvedValue([mockContractDoc]),
+                }),
+            });
+
+            const result = await service.findAll("admin-9", "admin");
+
+            expect(result).toHaveLength(1);
+            expect(mockContractModel.find).toHaveBeenCalledWith(
+                {},
+                { content: 0, "signatures.hash": 0, contentHash: 0 },
+            );
+        });
     });
 
     describe("findOne", () => {
+        it("returns a metadata-only contract to an admin who is not a party", async () => {
+            mockContractModel.findById
+                .mockReturnValueOnce({
+                    exec: jest.fn().mockResolvedValue(mockContractDoc),
+                })
+                .mockReturnValueOnce({
+                    exec: jest.fn().mockResolvedValue({
+                        ...mockContractDoc,
+                        content: undefined,
+                    }),
+                });
+
+            const result = await service.findOne("ct-1", "admin-9", "admin");
+
+            expect(result._id).toBe("ct-1");
+            expect(mockContractModel.findById).toHaveBeenLastCalledWith(
+                "ct-1",
+                { content: 0, "signatures.hash": 0, contentHash: 0 },
+            );
+        });
+
+        it("still denies a non-party caller without the admin role", async () => {
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockContractDoc),
+            });
+
+            await expect(
+                service.findOne("ct-1", "user-99", "resident"),
+            ).rejects.toThrow(ForbiddenException);
+        });
+
+        it("returns the full contract when the admin is themself a party", async () => {
+            mockContractModel.findById.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockContractDoc),
+            });
+
+            const result = await service.findOne("ct-1", "user-1", "admin");
+
+            expect(result.content).toBe("Content here");
+            expect(mockContractModel.findById).toHaveBeenCalledTimes(1);
+            expect(mockContractModel.findById).toHaveBeenCalledWith("ct-1");
+        });
+
         it("returns contract when user is creator", async () => {
             mockContractModel.findById.mockReturnValue({
                 exec: jest.fn().mockResolvedValue(mockContractDoc),

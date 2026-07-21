@@ -53,6 +53,13 @@ const HEALABLE_CONTRACT_STATUSES = [
     ContractStatus.PARTIAL,
 ];
 
+// What admins may see of contracts they are not party to: metadata only.
+const ADMIN_OVERSIGHT_PROJECTION = {
+    content: 0,
+    "signatures.hash": 0,
+    contentHash: 0,
+};
+
 @Injectable()
 export class ContractsService {
     private readonly logger = new Logger(ContractsService.name);
@@ -73,7 +80,7 @@ export class ContractsService {
         // Admins see every contract but never its private body or signature hashes.
         if (role === "admin") {
             return this.contractModel
-                .find({}, { content: 0, "signatures.hash": 0, contentHash: 0 })
+                .find({}, ADMIN_OVERSIGHT_PROJECTION)
                 .sort({ createdAt: -1 })
                 .exec();
         }
@@ -85,14 +92,16 @@ export class ContractsService {
             .exec();
     }
 
-    async findOne(id: string, userId: string) {
+    async findOne(id: string, userId: string, role?: string) {
         const contract = await this.contractModel.findById(id).exec();
         if (!contract) throw new NotFoundException("Contract not found");
 
-        const hasAccess =
+        const isParty =
             contract.createdBy === userId ||
             contract.signatories.includes(userId);
-        if (!hasAccess) throw new ForbiddenException("Access denied");
+        if (!isParty && role !== "admin") {
+            throw new ForbiddenException("Access denied");
+        }
 
         if (
             contract.bookingId &&
@@ -123,7 +132,13 @@ export class ContractsService {
                 // best-effort: retried on the next read
             }
         }
-        return contract;
+        if (isParty) return contract;
+        // Admin oversight mirrors the list view: metadata only.
+        const oversight = await this.contractModel
+            .findById(id, ADMIN_OVERSIGHT_PROJECTION)
+            .exec();
+        if (!oversight) throw new NotFoundException("Contract not found");
+        return oversight;
     }
 
     async create(dto: CreateContractDto, userId: string) {

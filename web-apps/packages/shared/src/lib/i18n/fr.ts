@@ -800,6 +800,9 @@ export default {
             auditTitle: "Traçabilité",
             auditEmpty: "Aucune entrée d'audit.",
             pdfError: "Impossible de charger le PDF.",
+            privateTitle: "Document privé",
+            privateNotice:
+                "Le contenu du contrat et sa traçabilité ne sont visibles que par son créateur et ses signataires. En tant qu'administrateur, vous ne voyez que ses informations générales.",
         },
         messages: {
             title: "Messages",
