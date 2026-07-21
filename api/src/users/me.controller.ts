@@ -11,7 +11,7 @@ import {
     UnauthorizedException,
     UseGuards,
 } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
+import { InjectConnection, InjectModel } from "@nestjs/mongoose";
 import {
     ApiBearerAuth,
     ApiBody,
@@ -22,7 +22,8 @@ import {
 import * as argon2 from "argon2";
 import { eq } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { Model } from "mongoose";
+import { GridFSBucket, ObjectId } from "mongodb";
+import { Connection, Model } from "mongoose";
 import { Driver } from "neo4j-driver";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { User, UserDocument } from "../auth/schemas/user.schema";
@@ -59,18 +60,25 @@ function isUniqueViolation(error: unknown): boolean {
 @Controller("users/me")
 export class MeController {
     private readonly logger = new Logger(MeController.name);
+    private readonly avatarBucket: GridFSBucket;
 
     constructor(
         @Inject(DRIZZLE_TOKEN)
         private readonly db: PostgresJsDatabase<typeof schema>,
         @InjectModel(User.name)
         private readonly userModel: Model<UserDocument>,
+        @InjectConnection()
+        connection: Connection,
         @Inject(NEO4J_DRIVER)
         private readonly neo4jDriver: Driver,
         private readonly totpService: TotpService,
         private readonly tokenService: TokenService,
         private readonly gdprExportService: GdprExportService,
-    ) {}
+    ) {
+        this.avatarBucket = new GridFSBucket(connection.db as never, {
+            bucketName: "avatars",
+        });
+    }
 
     @Get("export")
     @ApiOperation({
@@ -277,12 +285,22 @@ export class MeController {
             .select({
                 email: schema.users.email,
                 totpSecret: schema.users.totpSecret,
+                avatarUrl: schema.users.avatarUrl,
             })
             .from(schema.users)
             .where(eq(schema.users.id, userId));
         this.assertValidTotp(pgUser?.totpSecret ?? null, body.totpCode);
 
         const anonymizedEmail = `deleted_${userId}@anonymized.invalid`;
+
+        // Erase the Mongo and Neo4j copies before the irreversible Postgres
+        // flip. A transient Mongo outage then leaves a fully recoverable
+        // account rather than one whose real email and secrets linger in Mongo.
+        // Matching by email is deterministic, so a re-run after a crash finds
+        // the already-anonymized document a no-op and still completes cleanly.
+        await this.eraseMongoUser(pgUser.email, anonymizedEmail);
+        await this.deleteAvatarFile(pgUser.avatarUrl);
+        await this.eraseNeo4jUser(userId, anonymizedEmail);
 
         await this.db
             .update(schema.users)
@@ -293,36 +311,10 @@ export class MeController {
                 role: "deleted",
                 refreshTokenHash: null,
                 phone: null,
+                avatarUrl: null,
                 updatedAt: new Date(),
             })
             .where(eq(schema.users.id, userId));
-
-        await this.userModel
-            .findOneAndUpdate(
-                { email: pgUser.email },
-                {
-                    $set: {
-                        email: anonymizedEmail,
-                        passwordHash: "",
-                        totpSecret: "",
-                        refreshTokenHash: null,
-                    },
-                },
-            )
-            .exec();
-
-        const session = this.neo4jDriver.session();
-        try {
-            await session.run(
-                `MATCH (u:User {id: $userId})
-         SET u.email = $anonymizedEmail, u.name = 'Deleted user'`,
-                { userId, anonymizedEmail },
-            );
-        } catch {
-            // Neo4j unavailable — account deletion continues without social graph update
-        } finally {
-            await session.close();
-        }
 
         return { success: true };
     }
@@ -422,6 +414,60 @@ export class MeController {
         } catch (error) {
             this.logger.warn(
                 `Neo4j email propagation failed after retries: ${error}`,
+            );
+        }
+    }
+
+    private async eraseMongoUser(
+        oldEmail: string,
+        anonymizedEmail: string,
+    ): Promise<void> {
+        await this.withRetry(() =>
+            this.userModel
+                .findOneAndUpdate(
+                    { email: oldEmail },
+                    {
+                        $set: {
+                            email: anonymizedEmail,
+                            passwordHash: "",
+                            totpSecret: "",
+                            refreshTokenHash: null,
+                        },
+                    },
+                )
+                .exec(),
+        );
+    }
+
+    private async deleteAvatarFile(avatarUrl: string | null): Promise<void> {
+        const match = avatarUrl?.match(/\/users\/avatar\/([a-f0-9]{24})/i);
+        if (match && ObjectId.isValid(match[1])) {
+            await this.avatarBucket
+                .delete(new ObjectId(match[1]))
+                .catch(() => undefined);
+        }
+    }
+
+    private async eraseNeo4jUser(
+        userId: string,
+        anonymizedEmail: string,
+    ): Promise<void> {
+        try {
+            await this.withRetry(async () => {
+                const session = this.neo4jDriver.session();
+                try {
+                    await session.run(
+                        `MATCH (u:User {id: $userId})
+             SET u.email = $anonymizedEmail, u.name = 'Deleted user'`,
+                        { userId, anonymizedEmail },
+                    );
+                } finally {
+                    await session.close();
+                }
+            });
+        } catch (error) {
+            this.logger.warn(
+                `Neo4j account erasure failed after retries: ${error}`,
             );
         }
     }

@@ -193,6 +193,27 @@ describe("AuthService", () => {
             ).rejects.toThrow(ConflictException);
             expect(userModel.findOneAndUpdate).not.toHaveBeenCalled();
         });
+
+        it("rolls back the inserted user when the consent write fails", async () => {
+            mockDb.values.mockReturnValue({
+                returning: jest.fn().mockResolvedValue([{ id: mockUser.id }]),
+            });
+            const deleteWhere = jest.fn().mockResolvedValue(undefined);
+            mockDb.delete = jest.fn().mockReturnValue({ where: deleteWhere });
+            userModel.findOneAndUpdate.mockReturnValue({
+                exec: jest.fn().mockRejectedValue(new Error("mongo down")),
+            });
+
+            await expect(
+                service.register({
+                    email: "alice@demo.fr",
+                    password: "Demo1234!",
+                    consent: true,
+                }),
+            ).rejects.toThrow("mongo down");
+            expect(mockDb.delete).toHaveBeenCalled();
+            expect(deleteWhere).toHaveBeenCalled();
+        });
     });
 
     describe("login", () => {

@@ -39,6 +39,7 @@ import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import {
+    escapeLike,
     parsePagination,
     resolveSort,
     setPageHeaders,
@@ -64,10 +65,6 @@ const MAX_NEIGHBOR_RESULTS = 20;
 const UNREACHABLE_ROLES = ["banned", "deleted"];
 const FILTERABLE_ROLES = ["resident", "moderator", "admin", "banned"] as const;
 const FALLBACK_NEIGHBOR_NAME = "Voisin";
-
-function escapeLikePattern(value: string): string {
-    return value.replace(/[\\%_]/g, (char) => `\\${char}`);
-}
 
 function fullNameColumn() {
     return sql`concat_ws(' ', ${schema.users.firstName}, ${schema.users.lastName})`;
@@ -105,7 +102,7 @@ export class UsersController {
         const term = query.trim();
         if (term.length < MIN_SEARCH_LENGTH) return [];
 
-        const pattern = `%${escapeLikePattern(term)}%`;
+        const pattern = `%${escapeLike(term)}%`;
         return this.db
             .select({
                 id: schema.users.id,
@@ -152,7 +149,7 @@ export class UsersController {
         ];
         const term = search.trim();
         if (term.length > 0) {
-            const pattern = `%${escapeLikePattern(term)}%`;
+            const pattern = `%${escapeLike(term)}%`;
             conditions.push(ilike(fullNameColumn(), pattern));
         }
 
@@ -229,9 +226,7 @@ export class UsersController {
         const conditions: SQL[] = [];
         const term = search.trim();
         if (term.length > 0) {
-            conditions.push(
-                ilike(schema.users.email, `%${escapeLikePattern(term)}%`),
-            );
+            conditions.push(ilike(schema.users.email, `%${escapeLike(term)}%`));
         }
         if ((FILTERABLE_ROLES as readonly string[]).includes(role)) {
             conditions.push(eq(schema.users.role, role));

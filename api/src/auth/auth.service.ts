@@ -75,7 +75,22 @@ export class AuthService {
             throw error;
         }
 
-        await this.recordConsent(email, passwordHash, secret);
+        try {
+            await this.recordConsent(email, passwordHash, secret);
+        } catch (error) {
+            // Consent is legally required; don't leave a usable account without
+            // it. Undo the insert so registration can be retried cleanly.
+            if (insertedId) {
+                try {
+                    await this.db
+                        .delete(schema.users)
+                        .where(eq(schema.users.id, insertedId));
+                } catch {
+                    // Rollback is best-effort; surface the original failure.
+                }
+            }
+            throw error;
+        }
 
         if (insertedId) {
             void this.socialService.syncUser(insertedId);

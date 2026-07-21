@@ -53,6 +53,7 @@ export class GdprExportService {
     ) {}
 
     async exportUserData(userId: string) {
+        // Consent lookup needs the email, so resolve the profile first.
         const [profile] = await this.db
             .select({
                 id: schema.users.id,
@@ -67,40 +68,61 @@ export class GdprExportService {
             .from(schema.users)
             .where(eq(schema.users.id, userId));
 
-        const incidents = await this.db
-            .select()
-            .from(schema.incidents)
-            .where(eq(schema.incidents.createdBy, userId));
-
-        const [pointsBalance] = await this.db
-            .select()
-            .from(schema.pointsBalances)
-            .where(eq(schema.pointsBalances.userId, userId));
-
-        // Both sent and received movements belong in the export.
-        const transactions = await this.db
-            .select()
-            .from(schema.pointsTransactions)
-            .where(
-                or(
-                    eq(schema.pointsTransactions.senderId, userId),
-                    eq(schema.pointsTransactions.recipientId, userId),
+        // The remaining stores are independent, so gather them concurrently.
+        const [
+            consentTimestamp,
+            incidents,
+            pointsBalances,
+            transactions,
+            socialData,
+            messagesSent,
+            contracts,
+            bookings,
+            votes,
+            communityBallots,
+            services,
+        ] = await Promise.all([
+            this.fetchConsentTimestamp(profile?.email),
+            this.db
+                .select()
+                .from(schema.incidents)
+                .where(eq(schema.incidents.createdBy, userId)),
+            this.db
+                .select()
+                .from(schema.pointsBalances)
+                .where(eq(schema.pointsBalances.userId, userId)),
+            // Both sent and received movements belong in the export.
+            this.db
+                .select()
+                .from(schema.pointsTransactions)
+                .where(
+                    or(
+                        eq(schema.pointsTransactions.senderId, userId),
+                        eq(schema.pointsTransactions.recipientId, userId),
+                    ),
                 ),
-            );
+            this.fetchSocialData(userId),
+            this.fetchMessagesSent(userId),
+            this.fetchContracts(userId),
+            this.fetchBookings(userId),
+            this.fetchVotes(userId),
+            this.fetchCommunityBallots(userId),
+            this.fetchServicesCreated(userId),
+        ]);
 
         return {
             profile: profile ?? null,
-            consentTimestamp: await this.fetchConsentTimestamp(profile?.email),
+            consentTimestamp,
             incidents,
-            pointsBalance: pointsBalance ?? null,
+            pointsBalance: pointsBalances[0] ?? null,
             transactions,
-            socialData: await this.fetchSocialData(userId),
-            messagesSent: await this.fetchMessagesSent(userId),
-            contracts: await this.fetchContracts(userId),
-            bookings: await this.fetchBookings(userId),
-            votes: await this.fetchVotes(userId),
-            communityBallots: await this.fetchCommunityBallots(userId),
-            services: await this.fetchServicesCreated(userId),
+            socialData,
+            messagesSent,
+            contracts,
+            bookings,
+            votes,
+            communityBallots,
+            services,
         };
     }
 

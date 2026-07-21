@@ -1,5 +1,5 @@
 import { ConflictException, UnauthorizedException } from "@nestjs/common";
-import { getModelToken } from "@nestjs/mongoose";
+import { getConnectionToken, getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
 import * as argon2 from "argon2";
 import { User } from "../auth/schemas/user.schema";
@@ -53,6 +53,8 @@ const mockUserModel = {
         .mockReturnValue({ exec: jest.fn().mockResolvedValue(null) }),
 };
 
+const mockConnection = { db: { collection: jest.fn() } };
+
 describe("MeController", () => {
     let controller: MeController;
     let db: any;
@@ -80,6 +82,7 @@ describe("MeController", () => {
             providers: [
                 { provide: DRIZZLE_TOKEN, useValue: db },
                 { provide: getModelToken(User.name), useValue: mockUserModel },
+                { provide: getConnectionToken(), useValue: mockConnection },
                 { provide: NEO4J_DRIVER, useValue: mockNeo4jDriver },
                 { provide: TotpService, useValue: mockTotpService },
                 { provide: TokenService, useValue: mockTokenService },
@@ -124,6 +127,87 @@ describe("MeController", () => {
         expect(db.set).toHaveBeenCalledWith(
             expect.objectContaining({ role: "deleted", phone: null }),
         );
+    });
+
+    it("deleteAccount erases Mongo PII and the avatar before flipping Postgres", async () => {
+        const avatarId = "0123456789abcdef01234567";
+        db.set = jest.fn().mockReturnThis();
+        db.where = jest
+            .fn()
+            .mockResolvedValueOnce([
+                {
+                    email: "alice@demo.fr",
+                    totpSecret: "SECRET",
+                    avatarUrl: `/users/avatar/${avatarId}`,
+                },
+            ])
+            .mockResolvedValue([]);
+        const avatarBucket = { delete: jest.fn().mockResolvedValue(undefined) };
+        (controller as any).avatarBucket = avatarBucket;
+
+        const result = await controller.deleteAccount(req as any, {
+            totpCode: "123456",
+        });
+
+        expect(result.success).toBe(true);
+        expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
+            { email: "alice@demo.fr" },
+            expect.objectContaining({
+                $set: expect.objectContaining({
+                    email: "deleted_user-1@anonymized.invalid",
+                    passwordHash: "",
+                    totpSecret: "",
+                }),
+            }),
+        );
+        expect(avatarBucket.delete).toHaveBeenCalled();
+        expect(db.set).toHaveBeenCalledWith(
+            expect.objectContaining({ role: "deleted", avatarUrl: null }),
+        );
+    });
+
+    it("deleteAccount does not flip Postgres when the Mongo erasure keeps failing", async () => {
+        db.where = jest
+            .fn()
+            .mockResolvedValueOnce([
+                {
+                    email: "alice@demo.fr",
+                    totpSecret: "SECRET",
+                    avatarUrl: null,
+                },
+            ])
+            .mockResolvedValue([]);
+        mockUserModel.findOneAndUpdate.mockReturnValue({
+            exec: jest.fn().mockRejectedValue(new Error("mongo down")),
+        });
+
+        await expect(
+            controller.deleteAccount(req as any, { totpCode: "123456" }),
+        ).rejects.toThrow("mongo down");
+        expect(db.update).not.toHaveBeenCalled();
+    });
+
+    it("deleteAccount skips avatar deletion when there is no avatar", async () => {
+        db.set = jest.fn().mockReturnThis();
+        db.where = jest
+            .fn()
+            .mockResolvedValueOnce([
+                {
+                    email: "alice@demo.fr",
+                    totpSecret: "SECRET",
+                    avatarUrl: null,
+                },
+            ])
+            .mockResolvedValue([]);
+        const avatarBucket = { delete: jest.fn().mockResolvedValue(undefined) };
+        (controller as any).avatarBucket = avatarBucket;
+
+        const result = await controller.deleteAccount(req as any, {
+            totpCode: "123456",
+        });
+
+        expect(result.success).toBe(true);
+        expect(avatarBucket.delete).not.toHaveBeenCalled();
     });
 
     it("getProfile returns the current user's profile with phone", async () => {
