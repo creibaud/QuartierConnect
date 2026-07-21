@@ -38,7 +38,12 @@ function makeEmitter() {
 }
 
 function requester(over: Record<string, unknown> = {}) {
-    return { sub: "initiator", role: "resident", neighborhoodId: null, ...over };
+    return {
+        sub: "initiator",
+        role: "resident",
+        neighborhoodId: null,
+        ...over,
+    };
 }
 
 function pendingBooking(over: Record<string, unknown> = {}) {
@@ -85,9 +90,9 @@ describe("BookingsService.request", () => {
             {} as any,
             emitter as any,
         );
-        await expect(svc.request(SERVICE_ID, requester({ sub: "owner" }))).rejects.toBeInstanceOf(
-            ForbiddenException,
-        );
+        await expect(
+            svc.request(SERVICE_ID, requester({ sub: "owner" })),
+        ).rejects.toBeInstanceOf(ForbiddenException);
         expect(emitter.emit).not.toHaveBeenCalled();
     });
 

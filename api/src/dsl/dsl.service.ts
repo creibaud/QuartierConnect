@@ -7,7 +7,7 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, count, eq, isNull } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { Model } from "mongoose";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
@@ -244,11 +244,11 @@ export class DslService {
         const where = and(...conditions);
 
         if (type === "count") {
-            const rows = await this.db
-                .select({ id: schema.incidents.id })
+            const [row] = await this.db
+                .select({ value: count() })
                 .from(schema.incidents)
                 .where(where);
-            return { count: rows.length };
+            return { count: row?.value ?? 0 };
         }
 
         const rows = await this.db
@@ -275,11 +275,11 @@ export class DslService {
         const where = conditions.length ? and(...conditions) : undefined;
 
         if (type === "count") {
-            const rows = await this.db
-                .select({ id: schema.users.id })
+            const [row] = await this.db
+                .select({ value: count() })
                 .from(schema.users)
                 .where(where);
-            return { count: rows.length };
+            return { count: row?.value ?? 0 };
         }
 
         const rows = await this.db

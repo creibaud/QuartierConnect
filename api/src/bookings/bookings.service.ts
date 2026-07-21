@@ -128,7 +128,10 @@ export class BookingsService {
         const service = await this.serviceModel.findById(booking.serviceId);
         if (!service) throw new NotFoundException("Service not found");
         if (service.createdBy !== userId) {
-            throw new ForbiddenException("Only the service owner can accept");
+            throw new ForbiddenException({
+                code: "NOT_SERVICE_OWNER",
+                message: "Only the service owner can accept",
+            });
         }
 
         // Atomic claim of the PENDING→ACCEPTED transition.
@@ -137,7 +140,11 @@ export class BookingsService {
             { $set: { status: BookingStatus.ACCEPTED } },
             { new: true },
         );
-        if (!claimed) throw new BadRequestException("Booking is not pending");
+        if (!claimed)
+            throw new BadRequestException({
+                code: "BOOKING_NOT_PENDING",
+                message: "Booking is not pending",
+            });
 
         const partyNames = await this.contractsService.resolveNames([
             claimed.payerId,
@@ -181,7 +188,10 @@ export class BookingsService {
         }
         if (!linked) {
             await this.compensateAccept(bookingId, contractId);
-            throw new BadRequestException("Booking is not pending");
+            throw new BadRequestException({
+                code: "BOOKING_NOT_PENDING",
+                message: "Booking is not pending",
+            });
         }
         this.eventEmitter.emit(BOOKING_ACCEPTED_EVENT, {
             bookingId: String(linked._id),
@@ -226,7 +236,10 @@ export class BookingsService {
         const service = await this.serviceModel.findById(booking.serviceId);
         if (!service) throw new NotFoundException("Service not found");
         if (service.createdBy !== userId) {
-            throw new ForbiddenException("Only the service owner can decline");
+            throw new ForbiddenException({
+                code: "NOT_SERVICE_OWNER",
+                message: "Only the service owner can decline",
+            });
         }
         // Atomic claim: don't clobber a concurrently-accepted booking.
         const claimed = await this.bookingModel.findOneAndUpdate(
@@ -234,7 +247,11 @@ export class BookingsService {
             { $set: { status: BookingStatus.DECLINED } },
             { new: true },
         );
-        if (!claimed) throw new BadRequestException("Booking is not pending");
+        if (!claimed)
+            throw new BadRequestException({
+                code: "BOOKING_NOT_PENDING",
+                message: "Booking is not pending",
+            });
         this.eventEmitter.emit(BOOKING_DECLINED_EVENT, {
             bookingId: String(claimed._id),
             ownerId: userId,
@@ -254,7 +271,10 @@ export class BookingsService {
         const isParty =
             userId === booking.initiatorId || userId === service.createdBy;
         if (!isParty)
-            throw new ForbiddenException("Not a party to this booking");
+            throw new ForbiddenException({
+                code: "NOT_A_PARTY",
+                message: "Not a party to this booking",
+            });
 
         if (
             booking.status === BookingStatus.PENDING &&
@@ -276,7 +296,10 @@ export class BookingsService {
             { new: true },
         );
         if (!claimed) {
-            throw new BadRequestException("Booking cannot be cancelled");
+            throw new BadRequestException({
+                code: "BOOKING_NOT_CANCELLABLE",
+                message: "Booking cannot be cancelled",
+            });
         }
         if (claimed.contractId) {
             const contractId = claimed.contractId;

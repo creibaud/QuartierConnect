@@ -136,7 +136,7 @@ describe("DslService", () => {
         );
         mockDb.select.mockReturnValue({
             from: jest.fn().mockReturnValue({
-                where: jest.fn().mockResolvedValue([{ id: "1" }, { id: "2" }]),
+                where: jest.fn().mockResolvedValue([{ value: 2 }]),
             }),
         });
 
@@ -229,7 +229,7 @@ describe("DslService", () => {
         );
         mockDb.select.mockReturnValue({
             from: jest.fn().mockReturnValue({
-                where: jest.fn().mockResolvedValue([{ id: "u1" }]),
+                where: jest.fn().mockResolvedValue([{ value: 1 }]),
             }),
         });
 
@@ -365,7 +365,7 @@ describe("DslService", () => {
                 limit: null,
             }),
         );
-        const whereSpy = jest.fn().mockResolvedValue([{ id: "1" }]);
+        const whereSpy = jest.fn().mockResolvedValue([{ value: 1 }]);
         mockDb.select.mockReturnValue({
             from: jest.fn().mockReturnValue({ where: whereSpy }),
         });
