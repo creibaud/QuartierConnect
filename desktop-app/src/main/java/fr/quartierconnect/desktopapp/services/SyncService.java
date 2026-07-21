@@ -268,11 +268,13 @@ public class SyncService {
                 String updatedAt   = node.path("updatedAt").asText(null);
                 if (updatedAt == null) updatedAt = node.path("updated_at").asText("");
 
-                if (!justPushed.contains(remoteId)) {
-                    incidentRepo.upsertFromServer(remoteId, title, description, status, updatedAt);
-                    if (previousPullTs == null || updatedAt.compareTo(previousPullTs) > 0) {
-                        receivedCount++;
-                    }
+                // Reconcile every row, pushed ones included: the server may have clamped an
+                // invalid transition, so a just-pushed row still needs the merge to converge.
+                incidentRepo.upsertFromServer(remoteId, title, description, status, updatedAt);
+
+                boolean newToClient = previousPullTs == null || updatedAt.compareTo(previousPullTs) > 0;
+                if (newToClient && !justPushed.contains(remoteId)) {
+                    receivedCount++;
                 }
 
                 if (seenRemoteIds != null) seenRemoteIds.add(remoteId);

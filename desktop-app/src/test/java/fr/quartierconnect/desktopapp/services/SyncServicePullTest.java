@@ -124,6 +124,59 @@ class SyncServicePullTest {
     }
 
     @Test
+    void pull_reconcilesClampedStatusOnPushedRow() throws Exception {
+        String remoteId = "clamped-" + System.nanoTime();
+        IncidentRepository repo = new IncidentRepository();
+        // Post-push state: we pushed a reopen ("open"), marked it synced,
+        // and snapshotted the pushed values as the merge base.
+        int localId = repo.insertDirty("T", "d");
+        repo.assignRemoteId(localId, remoteId);
+        repo.updateBase(localId, "T", "d", "open", "2026-07-01T10:00:00Z");
+        repo.markSynced(localId);
+
+        // The server clamped the reopen and kept "resolved".
+        SyncService sync = new SyncService();
+        sync.setPageFetcher((path, token) ->
+                "[{\"id\":\"" + remoteId + "\",\"title\":\"T\",\"description\":\"d\","
+                + "\"status\":\"resolved\",\"updatedAt\":\"2026-07-02T10:00:00Z\"}]");
+
+        int received = sync.pullIncidents("tok", Set.of(remoteId));
+
+        IncidentRepository.Incident row = repo.listAll().stream()
+                .filter(i -> remoteId.equals(i.remoteId())).findFirst().orElseThrow();
+        assertEquals("resolved", row.status(), "a clamped status must reconcile onto the pushed row");
+        assertFalse(row.isDirty(), "the reconciled row must not stay dirty");
+        assertEquals(0, received, "a pushed row must not count toward the pull-received notification");
+    }
+
+    @Test
+    void pull_pushedRowRedirtiedOnStatus_conflictsInsteadOfClobbering() throws Exception {
+        String remoteId = "redirty-" + System.nanoTime();
+        IncidentRepository repo = new IncidentRepository();
+        // Pushed "open" and snapshotted the base, then the user re-edits the status
+        // locally before the pull runs.
+        int localId = repo.insertDirty("T", "d");
+        repo.assignRemoteId(localId, remoteId);
+        repo.updateBase(localId, "T", "d", "open", "2026-07-01T10:00:00Z");
+        repo.markSynced(localId);
+        repo.updateStatusLocally(localId, "in_progress");
+
+        // Meanwhile the server clamped the original push to "resolved".
+        SyncService sync = new SyncService();
+        sync.setPageFetcher((path, token) ->
+                "[{\"id\":\"" + remoteId + "\",\"title\":\"T\",\"description\":\"d\","
+                + "\"status\":\"resolved\",\"updatedAt\":\"2026-07-02T10:00:00Z\"}]");
+
+        sync.pullIncidents("tok", Set.of(remoteId));
+
+        IncidentRepository.Incident row = repo.listAll().stream()
+                .filter(i -> remoteId.equals(i.remoteId())).findFirst().orElseThrow();
+        assertTrue(row.isConflict(), "a re-dirtied field colliding with the server must raise a conflict");
+        assertEquals("in_progress", row.status(), "the local edit must not be clobbered");
+        assertEquals("resolved", row.remoteStatus(), "the server value is kept for the user to resolve");
+    }
+
+    @Test
     void deltaPull_neverTombstones() throws Exception {
         String local = "delta-kept-" + System.nanoTime();
         IncidentRepository repo = new IncidentRepository();

@@ -426,9 +426,7 @@ public class IncidentsView {
         return switch (item.status()) {
             case "open" -> List.of(
                 menuItem(I18n.get("incidents.menu.setInProgress"), FontAwesomeSolid.ARROW_RIGHT, false,
-                    () -> changeStatus(item, "in_progress")),
-                menuItem(I18n.get("incidents.menu.markResolved"), FontAwesomeSolid.CHECK, false,
-                    () -> changeStatus(item, "resolved")));
+                    () -> changeStatus(item, "in_progress")));
             case "in_progress" -> List.of(
                 menuItem(I18n.get("incidents.menu.markResolved"), FontAwesomeSolid.CHECK, false,
                     () -> changeStatus(item, "resolved")));
@@ -522,18 +520,19 @@ public class IncidentsView {
 
     private void changeStatus(IncidentRepository.Incident incident, String newStatus) {
         new Thread(() -> {
+            String statusChangeTs;
             try {
-                repo.updateStatusLocally(incident.localId(), newStatus);
+                statusChangeTs = repo.updateStatusLocally(incident.localId(), newStatus);
             } catch (Exception ex) {
                 Platform.runLater(() -> toast.showError(I18n.get("incidents.statusFailed", ex.getMessage())));
                 return;
             }
             Platform.runLater(this::refresh);
-            pushStatusChange(incident, newStatus);
+            pushStatusChange(incident, newStatus, statusChangeTs);
         }, "incident-status").start();
     }
 
-    private void pushStatusChange(IncidentRepository.Incident incident, String newStatus) {
+    private void pushStatusChange(IncidentRepository.Incident incident, String newStatus, String statusChangeTs) {
         if (incident.remoteId() == null || incident.remoteId().isBlank()) {
             Platform.runLater(() -> toast.showInfo(I18n.get("incidents.statusSavedLocally")));
             return;
@@ -541,7 +540,7 @@ public class IncidentsView {
         try {
             ApiService.patch("/incidents/" + incident.remoteId() + "/status",
                 "{\"status\": \"" + newStatus + "\"}", AuthService.getInstance().getAccessToken());
-            markStatusPushed(incident);
+            markStatusPushed(incident, statusChangeTs);
             Platform.runLater(() -> { refresh(); toast.showSuccess(I18n.get("incidents.statusUpdated")); });
         } catch (RuntimeException refusal) {
             revertStatus(incident);
@@ -552,11 +551,11 @@ public class IncidentsView {
         }
     }
 
-    /** The server accepted the transition; drop the dirty flag unless older edits still await a push. */
-    private void markStatusPushed(IncidentRepository.Incident incident) {
-        if (incident.isDirty()) return;
+    /** The server accepted the transition; clear the dirty flag only when no edit landed after our status write. */
+    private void markStatusPushed(IncidentRepository.Incident incident, String statusChangeTs) {
+        if (incident.isDirty()) return; // edits predating this push stay dirty for the next sync
         try {
-            repo.markSynced(incident.localId());
+            repo.clearDirtyIfUnchangedSince(incident.localId(), statusChangeTs);
         } catch (Exception e) {
             LOG.log(Level.FINE, "Could not clear dirty flag after status push", e);
         }

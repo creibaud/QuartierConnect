@@ -99,26 +99,53 @@ class IncidentRepositoryTest {
     }
 
     @Test
-    void updateLocally_changesValuesAndMarksDirty() throws SQLException {
+    void updateLocally_changesFieldsMarksDirtyAndLeavesStatus() throws SQLException {
         IncidentRepository repo = new IncidentRepository();
         int localId = repo.insertDirty("original title", "original desc");
         repo.markSynced(localId);
 
-        repo.updateLocally(localId, "updated title", "updated desc", "in_progress");
+        repo.updateLocally(localId, "updated title", "updated desc");
 
         IncidentRepository.Incident updated = repo.listAll().stream()
                 .filter(i -> i.localId() == localId).findFirst().orElseThrow();
 
         assertEquals("updated title", updated.title());
         assertEquals("updated desc", updated.description());
-        assertEquals("in_progress", updated.status());
+        assertEquals("open", updated.status()); // a detail-pane edit never touches status
         assertTrue(updated.isDirty());
     }
 
     @Test
     void updateLocally_nonExistentId_noException() {
         IncidentRepository repo = new IncidentRepository();
-        assertDoesNotThrow(() -> repo.updateLocally(Integer.MAX_VALUE, "t", "d", "open"));
+        assertDoesNotThrow(() -> repo.updateLocally(Integer.MAX_VALUE, "t", "d"));
+    }
+
+    @Test
+    void clearDirtyIfUnchangedSince_clearsDirty_whenTimestampMatches() throws SQLException {
+        IncidentRepository repo = new IncidentRepository();
+        int localId = repo.insertDirty("status test", "desc");
+        String statusTs = repo.updateStatusLocally(localId, "in_progress");
+
+        repo.clearDirtyIfUnchangedSince(localId, statusTs);
+
+        IncidentRepository.Incident row = repo.listAll().stream()
+                .filter(i -> i.localId() == localId).findFirst().orElseThrow();
+        assertFalse(row.isDirty());
+    }
+
+    @Test
+    void clearDirtyIfUnchangedSince_keepsDirty_whenTimestampDiffers() throws SQLException {
+        IncidentRepository repo = new IncidentRepository();
+        int localId = repo.insertDirty("status test", "desc");
+        repo.updateStatusLocally(localId, "in_progress");
+
+        // a stale timestamp stands in for an edit that bumped updated_at during the in-flight PATCH
+        repo.clearDirtyIfUnchangedSince(localId, "1970-01-01T00:00:00Z");
+
+        IncidentRepository.Incident row = repo.listAll().stream()
+                .filter(i -> i.localId() == localId).findFirst().orElseThrow();
+        assertTrue(row.isDirty(), "an edit made after the status write must survive the dirty-flag clear");
     }
 
     @Test

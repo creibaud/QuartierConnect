@@ -6,6 +6,7 @@ import fr.quartierconnect.desktopapp.ui.components.AppBadge;
 import fr.quartierconnect.desktopapp.ui.components.AppButton;
 import fr.quartierconnect.desktopapp.ui.components.AppModal;
 import fr.quartierconnect.desktopapp.ui.components.ToastManager;
+import fr.quartierconnect.desktopapp.services.AuthService;
 import fr.quartierconnect.desktopapp.util.UiHelper;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -51,17 +52,17 @@ public class IncidentDetailPane {
         AppBadge statusBadge = AppBadge.fromStatus(item.status());
         VBox.setMargin(statusBadge, new Insets(0, 0, 8, 0));
 
+        // Only the legal next step, and only for moderators; resolved is terminal.
         HBox statusActions = new HBox(6);
         statusActions.setAlignment(Pos.CENTER_LEFT);
-        switch (item.status()) {
-            case "open" -> statusActions.getChildren().addAll(
-                    statusBtn("incidents.detail.toInProgress", FontAwesomeSolid.CLOCK, item, "in_progress"),
-                    statusBtn("incidents.detail.toResolved", FontAwesomeSolid.CHECK, item, "resolved"));
-            case "in_progress" -> statusActions.getChildren().addAll(
-                    statusBtn("incidents.detail.toResolved", FontAwesomeSolid.CHECK, item, "resolved"),
-                    statusBtn("incidents.detail.reopen", FontAwesomeSolid.UNDO, item, "open"));
-            default -> statusActions.getChildren().add(
-                    statusBtn("incidents.detail.reopen", FontAwesomeSolid.UNDO, item, "open"));
+        if (canModerate()) {
+            switch (item.status()) {
+                case "open" -> statusActions.getChildren().add(
+                        statusBtn("incidents.detail.toInProgress", FontAwesomeSolid.CLOCK, item, "in_progress"));
+                case "in_progress" -> statusActions.getChildren().add(
+                        statusBtn("incidents.detail.toResolved", FontAwesomeSolid.CHECK, item, "resolved"));
+                default -> { }
+            }
         }
 
         Region divider = UiHelper.separator();
@@ -89,7 +90,7 @@ public class IncidentDetailPane {
             if (descField.getText().trim().length() > 2000) { toast.showError(I18n.get("incidents.detail.descTooLong")); return; }
             new Thread(() -> {
                 try {
-                    repo.updateLocally(item.localId(), t, descField.getText().trim(), item.status());
+                    repo.updateLocally(item.localId(), t, descField.getText().trim());
                     Platform.runLater(() -> {
                         onSaved.run();
                         toast.showSuccess(I18n.get("incidents.detail.saved")); appModal.hide();
@@ -112,6 +113,11 @@ public class IncidentDetailPane {
         );
         content.getStyleClass().add("edit-form-content");
         appModal.show(I18n.get("incidents.detail.modalTitle", item.title()), content);
+    }
+
+    private static boolean canModerate() {
+        String role = AuthService.getInstance().getCurrentUserRole();
+        return "moderator".equals(role) || "admin".equals(role);
     }
 
     private AppButton statusBtn(String labelKey, FontAwesomeSolid iconCode,

@@ -308,16 +308,16 @@ public class IncidentRepository {
         }
     }
 
-    public void updateLocally(int localId, String title, String description, String status) throws SQLException {
+    /** Applies an edit to the fields the detail pane owns; status is left untouched. */
+    public void updateLocally(int localId, String title, String description) throws SQLException {
         String now = Instant.now().toString();
-        String sql = "UPDATE incidents SET title = ?, description = ?, status = ?, updated_at = ?, is_dirty = 1 WHERE id = ?";
+        String sql = "UPDATE incidents SET title = ?, description = ?, updated_at = ?, is_dirty = 1 WHERE id = ?";
         try (Connection conn = SQLiteDatabase.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, title);
             stmt.setString(2, description);
-            stmt.setString(3, status);
-            stmt.setString(4, now);
-            stmt.setInt(5, localId);
+            stmt.setString(3, now);
+            stmt.setInt(4, localId);
             stmt.executeUpdate();
         }
     }
@@ -343,7 +343,8 @@ public class IncidentRepository {
         }
     }
 
-    public void updateStatusLocally(int localId, String newStatus) throws SQLException {
+    /** Applies a status change locally and returns the timestamp it stamped. */
+    public String updateStatusLocally(int localId, String newStatus) throws SQLException {
         String now = Instant.now().toString();
         String sql = "UPDATE incidents SET status = ?, updated_at = ?, is_dirty = 1 WHERE id = ?";
         try (Connection conn = SQLiteDatabase.getConnection();
@@ -351,6 +352,18 @@ public class IncidentRepository {
             stmt.setString(1, newStatus);
             stmt.setString(2, now);
             stmt.setInt(3, localId);
+            stmt.executeUpdate();
+        }
+        return now;
+    }
+
+    /** Clears the dirty flag only if no later edit bumped updated_at past the pushed change. */
+    public void clearDirtyIfUnchangedSince(int localId, String updatedAt) throws SQLException {
+        String sql = "UPDATE incidents SET is_dirty = 0 WHERE id = ? AND updated_at = ?";
+        try (Connection conn = SQLiteDatabase.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, localId);
+            stmt.setString(2, updatedAt);
             stmt.executeUpdate();
         }
     }

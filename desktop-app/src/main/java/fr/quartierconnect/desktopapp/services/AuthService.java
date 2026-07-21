@@ -28,20 +28,6 @@ public class AuthService {
 
     public record LoginResult(String accessToken, String refreshToken) {}
 
-    public LoginResult login(String email, String password, String totpCode) throws Exception {
-        String body = MAPPER.writeValueAsString(new java.util.HashMap<>() {{
-            put("email", email);
-            put("password", password);
-            put("totpCode", totpCode);
-        }});
-
-        String response = ApiService.post("/auth/login", body, null);
-        JsonNode node = MAPPER.readTree(response);
-
-        applyTokens(node.get("accessToken").asText(), node.get("refreshToken").asText());
-        return new LoginResult(accessToken, refreshToken);
-    }
-
     public LoginResult exchangeSsoToken(String ssoToken, String state) throws Exception {
         String body = MAPPER.writeValueAsString(new java.util.HashMap<>() {{
             put("ssoToken", ssoToken);
