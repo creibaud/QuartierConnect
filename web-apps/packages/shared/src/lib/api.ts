@@ -95,6 +95,16 @@ async function parseJsonSafely(res: Response): Promise<unknown> {
     return res.json();
 }
 
+// One place to shape a failed response into an Error carrying the machine code
+// and status the callers localize on.
+function apiError(res: Response, data: unknown): Error {
+    const err = data as ApiError | null;
+    return Object.assign(new Error(err?.message ?? "Request failed"), {
+        code: err?.code,
+        status: res.status,
+    });
+}
+
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
     const res = await apiFetch(path, {
         method: "POST",
@@ -103,13 +113,7 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
 
     const data = await parseJsonSafely(res);
 
-    if (!res.ok) {
-        const err = data as ApiError | null;
-        throw Object.assign(new Error(err?.message ?? "Request failed"), {
-            code: err?.code,
-            status: res.status,
-        });
-    }
+    if (!res.ok) throw apiError(res, data);
 
     return data as T;
 }
@@ -122,13 +126,7 @@ export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
 
     const data = await parseJsonSafely(res);
 
-    if (!res.ok) {
-        const err = data as ApiError | null;
-        throw Object.assign(new Error(err?.message ?? "Request failed"), {
-            code: err?.code,
-            status: res.status,
-        });
-    }
+    if (!res.ok) throw apiError(res, data);
 
     return data as T;
 }
@@ -136,13 +134,7 @@ export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
 export async function apiGet<T>(path: string): Promise<T> {
     const res = await apiFetch(path, { method: "GET" });
     const data = await parseJsonSafely(res);
-    if (!res.ok) {
-        const err = data as ApiError | null;
-        throw Object.assign(new Error(err?.message ?? "Request failed"), {
-            code: err?.code,
-            status: res.status,
-        });
-    }
+    if (!res.ok) throw apiError(res, data);
     return data as T;
 }
 
@@ -155,13 +147,7 @@ export interface Page<T> {
 export async function apiGetPage<T>(path: string): Promise<Page<T>> {
     const res = await apiFetch(path, { method: "GET" });
     const data = await parseJsonSafely(res);
-    if (!res.ok) {
-        const err = data as ApiError | null;
-        throw Object.assign(new Error(err?.message ?? "Request failed"), {
-            code: err?.code,
-            status: res.status,
-        });
-    }
+    if (!res.ok) throw apiError(res, data);
     const total = Number(
         res.headers.get("X-Total-Count") ??
             (Array.isArray(data) ? data.length : 0),
@@ -177,23 +163,13 @@ export async function apiDelete<T>(path: string, body?: unknown): Promise<T> {
     });
     if (res.status === 204) return undefined as T;
     const data = await parseJsonSafely(res);
-    if (!res.ok) {
-        const err = data as ApiError | null;
-        throw Object.assign(new Error(err?.message ?? "Request failed"), {
-            code: err?.code,
-            status: res.status,
-        });
-    }
+    if (!res.ok) throw apiError(res, data);
     return data as T;
 }
 
 export async function apiBlob(path: string): Promise<Blob> {
     const res = await apiFetch(path, { method: "GET" });
-    if (!res.ok) {
-        throw Object.assign(new Error("Request failed"), {
-            status: res.status,
-        });
-    }
+    if (!res.ok) throw apiError(res, null);
     return res.blob();
 }
 
@@ -214,13 +190,7 @@ export async function apiUpload<T>(
     const res = await apiFetch(path, { method: "POST", body: formData });
 
     const data = await parseJsonSafely(res);
-    if (!res.ok) {
-        const err = data as ApiError | null;
-        throw Object.assign(new Error(err?.message ?? "Request failed"), {
-            code: err?.code,
-            status: res.status,
-        });
-    }
+    if (!res.ok) throw apiError(res, data);
     return data as T;
 }
 
