@@ -55,7 +55,7 @@ Chaque `poll()` enchaîne :
 
 ### Push — `/incidents/sync`
 
-`pushDirtyIncidents` construit un tableau `{ id, title, description, status, createdBy, updatedAt }` pour chaque incident sale. L'`id` envoyé est le `remote_id` existant, ou un UUID fraîchement tiré si l'incident est purement local. Le corps `{ "incidents": [...] }` est posté sur `/incidents/sync`. La réponse peut contenir un tableau `skippedIds` (`parseSkippedIds`) : ces incidents-là **restent sales** pour une nouvelle tentative. Pour les autres, on affecte le `remote_id` (`assignRemoteId`), on retire le drapeau `is_dirty` (`markSynced`) et on met à jour le cliché de base ancêtre (`updateBase`) qui servira aux fusions ultérieures.
+`pushDirtyIncidents` construit un tableau `{ id, title, description, status, createdBy, updatedAt }` pour chaque incident sale. L'`id` envoyé est le `remote_id` existant, ou un UUID fraîchement tiré si l'incident est purement local. Le corps `{ "incidents": [...] }` est posté sur `/incidents/sync`. La réponse peut contenir un tableau `skippedIds` (`parseSkippedIds`) : le serveur a refusé ces modifications locales, on les **abandonne** (`markSynced`) et le prochain pull restaure la version serveur ; une notification récapitule les changements annulés. Pour les autres, on affecte le `remote_id` (`assignRemoteId`), on retire le drapeau `is_dirty` (`markSynced`) et on met à jour le cliché de base ancêtre (`updateBase`) qui servira aux fusions ultérieures.
 
 ### Pull — `/incidents?since=`
 

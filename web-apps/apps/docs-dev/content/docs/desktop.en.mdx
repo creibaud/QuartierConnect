@@ -55,7 +55,7 @@ Each `poll()` chains:
 
 ### Push — `/incidents/sync`
 
-`pushDirtyIncidents` builds a `{ id, title, description, status, createdBy, updatedAt }` array for each dirty incident. The `id` sent is the existing `remote_id`, or a freshly drawn UUID if the incident is purely local. The body `{ "incidents": [...] }` is posted to `/incidents/sync`. The response may contain a `skippedIds` array (`parseSkippedIds`): those incidents **stay dirty** for another attempt. For the others, the `remote_id` is assigned (`assignRemoteId`), the `is_dirty` flag is cleared (`markSynced`) and the ancestor base snapshot is updated (`updateBase`) for use by later merges.
+`pushDirtyIncidents` builds a `{ id, title, description, status, createdBy, updatedAt }` array for each dirty incident. The `id` sent is the existing `remote_id`, or a freshly drawn UUID if the incident is purely local. The body `{ "incidents": [...] }` is posted to `/incidents/sync`. The response may contain a `skippedIds` array (`parseSkippedIds`): the server refused those local changes, so they are **dropped** (`markSynced`) and the next pull restores the server version; a notification summarizes the reverted changes. For the others, the `remote_id` is assigned (`assignRemoteId`), the `is_dirty` flag is cleared (`markSynced`) and the ancestor base snapshot is updated (`updateBase`) for use by later merges.
 
 ### Pull — `/incidents?since=`
 
