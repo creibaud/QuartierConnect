@@ -30,6 +30,14 @@ export interface LastMessagePreview {
     createdAt: Date;
 }
 
+function isDuplicateKeyError(error: unknown): boolean {
+    return (
+        typeof error === "object" &&
+        error !== null &&
+        (error as { code?: number }).code === 11000
+    );
+}
+
 @Injectable()
 export class MessagingService {
     constructor(
@@ -219,13 +227,10 @@ export class MessagingService {
         }
 
         if (!dto.isGroup && participants.length === 2) {
-            const existing = await this.conversationModel
-                .findOne({
-                    isGroup: false,
-                    participants: { $all: participants, $size: 2 },
-                })
-                .exec();
-            if (existing) return existing;
+            return this.findOrCreateDirect(
+                participants,
+                dto.neighborhoodId ?? null,
+            );
         }
 
         const conversation = new this.conversationModel({
@@ -349,18 +354,44 @@ export class MessagingService {
         if (userId === otherUserId)
             throw new BadRequestException({ code: "SELF_CONVERSATION" });
         const participants = Array.from(new Set([userId, otherUserId]));
+        const conversation = await this.findOrCreateDirect(participants);
+        return { id: String(conversation._id) };
+    }
+
+    /** A deterministic key keyed on the sorted pair, so the same two users map
+     * to one thread whatever order they are named in. */
+    private directParticipantKey(participants: string[]): string {
+        return [...participants].sort().join(":");
+    }
+
+    /**
+     * Upserts the pair's single direct thread atomically: concurrent creates
+     * race on the unique participant key instead of both inserting. The loser
+     * of that race reads back the surviving thread rather than erroring.
+     */
+    private async findOrCreateDirect(
+        participants: string[],
+        neighborhoodId: string | null = null,
+    ): Promise<ConversationDocument> {
+        const participantKey = this.directParticipantKey(participants);
+        try {
+            const upserted = await this.conversationModel
+                .findOneAndUpdate(
+                    { participantKey, isGroup: false },
+                    { $setOnInsert: { participants, neighborhoodId } },
+                    { upsert: true, new: true },
+                )
+                .exec();
+            if (upserted) return upserted;
+        } catch (error) {
+            if (!isDuplicateKeyError(error)) throw error;
+        }
         const existing = await this.conversationModel
-            .findOne({
-                isGroup: false,
-                participants: { $all: participants, $size: 2 },
-            })
+            .findOne({ participantKey, isGroup: false })
             .exec();
-        if (existing) return { id: String(existing._id) };
-        const created = await new this.conversationModel({
-            participants,
-            isGroup: false,
-        }).save();
-        return { id: String(created._id) };
+        if (!existing)
+            throw new Error("Direct conversation upsert produced no document");
+        return existing;
     }
 
     async sendFileMessage(

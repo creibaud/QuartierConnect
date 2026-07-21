@@ -14,6 +14,11 @@ export class Conversation {
     @Prop({ default: false })
     isGroup: boolean;
 
+    /** Sorted, joined participant ids. Set on direct threads only; its unique
+     * index keeps a pair to a single thread even under concurrent creates. */
+    @Prop({ type: String })
+    participantKey?: string;
+
     @Prop({ type: String, default: null })
     groupName: string | null;
 
@@ -27,3 +32,11 @@ export class Conversation {
 
 export const ConversationSchema = SchemaFactory.createForClass(Conversation);
 ConversationSchema.index({ participants: 1 });
+// Group threads carry no key, so the partial filter leaves them out.
+ConversationSchema.index(
+    { participantKey: 1 },
+    {
+        unique: true,
+        partialFilterExpression: { participantKey: { $exists: true } },
+    },
+);

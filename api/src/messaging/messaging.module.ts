@@ -22,10 +22,11 @@ import { Message, MessageSchema } from "./schemas/message.schema";
         ]),
         JwtModule.registerAsync({
             inject: [ConfigService],
-            useFactory: (config: ConfigService) => ({
-                secret: config.get<string>("JWT_SECRET"),
-                signOptions: { expiresIn: "15m" },
-            }),
+            useFactory: (config: ConfigService) => {
+                const secret = config.get<string>("JWT_SECRET");
+                if (!secret) throw new Error("JWT_SECRET env var is required");
+                return { secret, signOptions: { expiresIn: "15m" } };
+            },
         }),
         AuthModule,
         DrizzleModule,

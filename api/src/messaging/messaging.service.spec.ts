@@ -34,6 +34,8 @@ function makeConvModel(overrides?: object) {
         find: jest.fn(),
         findById: jest.fn(),
         findByIdAndUpdate: jest.fn(),
+        findOne: jest.fn(),
+        findOneAndUpdate: jest.fn(),
         ...overrides,
     };
 }
@@ -192,21 +194,36 @@ describe("MessagingService", () => {
     });
 
     describe("createConversation", () => {
-        it("creates a conversation deduplicating creator from participants", async () => {
+        it("upserts a direct thread on the participant key", async () => {
+            convModel.findOneAndUpdate.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({
+                    _id: "conv-new",
+                    participants: ["user-1", "user-2"],
+                }),
+            });
+
+            const dto = { participants: ["user-1", "user-2"], isGroup: false };
+            const result = await service.createConversation(dto, "user-1");
+
+            expect(result.participants).toEqual(["user-1", "user-2"]);
+            const [filter] = convModel.findOneAndUpdate.mock.calls[0];
+            expect(filter).toEqual({
+                participantKey: "user-1:user-2",
+                isGroup: false,
+            });
+        });
+
+        it("creates a group thread without a participant key", async () => {
             const saved = {
-                _id: "conv-new",
-                participants: ["user-1", "user-2"],
+                _id: "grp-1",
+                participants: ["user-1", "user-2", "user-3"],
+                isGroup: true,
             };
             const convInstance = { save: jest.fn().mockResolvedValue(saved) };
-
             const ConvModelCtor = jest
                 .fn()
                 .mockImplementation(() => convInstance);
-            Object.assign(ConvModelCtor, convModel, {
-                findOne: jest.fn().mockReturnValue({
-                    exec: jest.fn().mockResolvedValue(null),
-                }),
-            });
+            Object.assign(ConvModelCtor, convModel);
 
             const module2: TestingModule = await Test.createTestingModule({
                 providers: [
@@ -224,9 +241,20 @@ describe("MessagingService", () => {
             }).compile();
             const svc2 = module2.get<MessagingService>(MessagingService);
 
-            const dto = { participants: ["user-1", "user-2"], isGroup: false };
+            const dto = {
+                participants: ["user-2", "user-3"],
+                isGroup: true,
+                groupName: "Rue des Lilas",
+            };
             const result = await svc2.createConversation(dto, "user-1");
-            expect(result.participants).toEqual(["user-1", "user-2"]);
+
+            expect(result.isGroup).toBe(true);
+            expect(ConvModelCtor.mock.calls[0][0]).not.toHaveProperty(
+                "participantKey",
+            );
+            expect(ConvModelCtor).toHaveBeenCalledWith(
+                expect.objectContaining({ isGroup: true }),
+            );
         });
 
         it("reports SELF_CONVERSATION when the only email given is the caller's", async () => {
@@ -344,73 +372,60 @@ describe("MessagingService", () => {
     });
 
     describe("findOrCreateDirectConversation", () => {
-        it("returns existing conversation id without calling save", async () => {
-            const findOneMock = jest.fn().mockReturnValue({
+        it("upserts on the sorted participant key and returns the id", async () => {
+            convModel.findOneAndUpdate.mockReturnValue({
                 exec: jest.fn().mockResolvedValue({ _id: "c1" }),
             });
-            const saveMock = jest.fn();
-            const ConvModelCtor = jest
-                .fn()
-                .mockImplementation(() => ({ save: saveMock }));
-            Object.assign(ConvModelCtor, convModel, { findOne: findOneMock });
 
-            const moduleA: TestingModule = await Test.createTestingModule({
-                providers: [
-                    MessagingService,
-                    {
-                        provide: getModelToken(Conversation.name),
-                        useValue: ConvModelCtor,
-                    },
-                    {
-                        provide: getModelToken(Message.name),
-                        useValue: msgModel,
-                    },
-                    { provide: DRIZZLE_TOKEN, useValue: mockDb },
-                ],
-            }).compile();
-            const svcA = moduleA.get<MessagingService>(MessagingService);
-
-            const result = await svcA.findOrCreateDirectConversation(
+            const result = await service.findOrCreateDirectConversation(
                 "me",
                 "other",
             );
+
             expect(result).toEqual({ id: "c1" });
-            expect(saveMock).not.toHaveBeenCalled();
+            const [filter, update, options] =
+                convModel.findOneAndUpdate.mock.calls[0];
+            expect(filter).toEqual({
+                participantKey: "me:other",
+                isGroup: false,
+            });
+            expect(update).toEqual({
+                $setOnInsert: {
+                    participants: ["me", "other"],
+                    neighborhoodId: null,
+                },
+            });
+            expect(options).toEqual({ upsert: true, new: true });
         });
 
-        it("creates and returns new conversation id when none exists", async () => {
-            const newId = "new-conv-1";
-            const saveMock = jest.fn().mockResolvedValue({ _id: newId });
-            const findOneMock = jest.fn().mockReturnValue({
-                exec: jest.fn().mockResolvedValue(null),
+        it("keys the pair the same whatever order the callers are named", async () => {
+            convModel.findOneAndUpdate.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ _id: "c1" }),
             });
-            const ConvModelCtor = jest
-                .fn()
-                .mockImplementation(() => ({ save: saveMock }));
-            Object.assign(ConvModelCtor, convModel, { findOne: findOneMock });
 
-            const moduleB: TestingModule = await Test.createTestingModule({
-                providers: [
-                    MessagingService,
-                    {
-                        provide: getModelToken(Conversation.name),
-                        useValue: ConvModelCtor,
-                    },
-                    {
-                        provide: getModelToken(Message.name),
-                        useValue: msgModel,
-                    },
-                    { provide: DRIZZLE_TOKEN, useValue: mockDb },
-                ],
-            }).compile();
-            const svcB = moduleB.get<MessagingService>(MessagingService);
+            await service.findOrCreateDirectConversation("other", "me");
 
-            const result = await svcB.findOrCreateDirectConversation(
+            const [filter] = convModel.findOneAndUpdate.mock.calls[0];
+            expect(filter.participantKey).toBe("me:other");
+        });
+
+        it("reads back the winning thread when the upsert loses the unique index", async () => {
+            const duplicateKey = Object.assign(new Error("dup"), {
+                code: 11000,
+            });
+            convModel.findOneAndUpdate.mockReturnValue({
+                exec: jest.fn().mockRejectedValue(duplicateKey),
+            });
+            convModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ _id: "winner" }),
+            });
+
+            const result = await service.findOrCreateDirectConversation(
                 "me",
                 "other",
             );
-            expect(result).toEqual({ id: newId });
-            expect(saveMock).toHaveBeenCalledTimes(1);
+
+            expect(result).toEqual({ id: "winner" });
         });
 
         it("throws BadRequestException with SELF_CONVERSATION when ids are equal", async () => {
