@@ -44,6 +44,10 @@ export class ContractDocumentsService {
         });
     }
 
+    private async deleteFromGridFs(fileId: string): Promise<void> {
+        await this.bucket.delete(new ObjectId(fileId));
+    }
+
     private readFromGridFs(fileId: string): Promise<Buffer> {
         return new Promise<Buffer>((resolve, reject) => {
             const chunks: Buffer[] = [];
@@ -61,6 +65,10 @@ export class ContractDocumentsService {
         action: ContractPdfStoreAction,
         userId: string,
     ): Promise<{ fileId: string; sha256: string }> {
+        const existing = await this.docModel.findOne({ contractId });
+        const supersededFileId = existing?.pdfFileId;
+        const originalFileId = existing?.auditLog?.[0]?.fileId;
+
         const fileId = await this.writeToGridFs(contractId, buffer);
         const sha256 = this.pdfService.sha256(buffer);
         const entry: ContractAuditEntry = {
@@ -78,7 +86,36 @@ export class ContractDocumentsService {
             },
             { upsert: true },
         );
+
+        // Reclaim the superseded intermediate file, but keep the original (its
+        // bytes may be legally required) and, of course, the current one. The
+        // audit log keeps every version's hash regardless.
+        if (
+            supersededFileId &&
+            supersededFileId !== fileId &&
+            supersededFileId !== originalFileId
+        ) {
+            await this.deleteFromGridFs(supersededFileId).catch(
+                () => undefined,
+            );
+        }
         return { fileId, sha256 };
+    }
+
+    // Remove a contract's PDF metadata and every GridFS file it references —
+    // used to roll back a half-written import.
+    async purgeContract(contractId: string): Promise<void> {
+        const doc = await this.docModel.findOne({ contractId });
+        if (!doc) return;
+        const fileIds = new Set<string>();
+        if (doc.pdfFileId) fileIds.add(doc.pdfFileId);
+        for (const entry of doc.auditLog ?? []) {
+            if (entry.fileId) fileIds.add(entry.fileId);
+        }
+        for (const fileId of fileIds) {
+            await this.deleteFromGridFs(fileId).catch(() => undefined);
+        }
+        await this.docModel.deleteOne({ contractId });
     }
 
     async getCurrentPdf(contractId: string): Promise<Buffer | null> {

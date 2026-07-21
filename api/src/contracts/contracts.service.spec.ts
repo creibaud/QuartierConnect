@@ -71,6 +71,7 @@ const mockDocs = {
     getCurrentPdf: jest.fn().mockResolvedValue(null),
     getPdfStream: jest.fn(),
     getAudit: jest.fn(),
+    purgeContract: jest.fn().mockResolvedValue(undefined),
 };
 
 const NAME_RESOLUTION_ROWS = [
@@ -141,7 +142,9 @@ describe("ContractsService", () => {
         it("returns contracts for user", async () => {
             mockContractModel.find.mockReturnValue({
                 sort: jest.fn().mockReturnValue({
-                    exec: jest.fn().mockResolvedValue([mockContractDoc]),
+                    limit: jest.fn().mockReturnValue({
+                        exec: jest.fn().mockResolvedValue([mockContractDoc]),
+                    }),
                 }),
             });
 
@@ -152,7 +155,9 @@ describe("ContractsService", () => {
         it("returns every contract without private fields to an admin", async () => {
             mockContractModel.find.mockReturnValue({
                 sort: jest.fn().mockReturnValue({
-                    exec: jest.fn().mockResolvedValue([mockContractDoc]),
+                    limit: jest.fn().mockReturnValue({
+                        exec: jest.fn().mockResolvedValue([mockContractDoc]),
+                    }),
                 }),
             });
 

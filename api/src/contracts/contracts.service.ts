@@ -53,6 +53,9 @@ const HEALABLE_CONTRACT_STATUSES = [
     ContractStatus.PARTIAL,
 ];
 
+// Upper bound on a single contracts listing response.
+const CONTRACTS_LIST_CAP = 500;
+
 // What admins may see of contracts they are not party to: metadata only.
 const ADMIN_OVERSIGHT_PROJECTION = {
     content: 0,
@@ -77,11 +80,14 @@ export class ContractsService {
     ) {}
 
     findAll(userId: string, role?: string) {
+        // Cap the list so it never serializes the whole collection as it grows;
+        // the newest CONTRACTS_LIST_CAP are returned.
         // Admins see every contract but never its private body or signature hashes.
         if (role === "admin") {
             return this.contractModel
                 .find({}, ADMIN_OVERSIGHT_PROJECTION)
                 .sort({ createdAt: -1 })
+                .limit(CONTRACTS_LIST_CAP)
                 .exec();
         }
         return this.contractModel
@@ -89,6 +95,7 @@ export class ContractsService {
                 $or: [{ createdBy: userId }, { signatories: userId }],
             })
             .sort({ createdAt: -1 })
+            .limit(CONTRACTS_LIST_CAP)
             .exec();
     }
 
@@ -191,6 +198,10 @@ export class ContractsService {
             contract.pdfFileId = fileId;
             return await contract.save();
         } catch (err) {
+            // Roll back both stores so a half-written import leaves nothing behind.
+            await this.contractDocs
+                .purgeContract(String(contract._id))
+                .catch(() => undefined);
             await this.contractModel
                 .deleteOne({ _id: contract._id })
                 .exec()

@@ -84,6 +84,12 @@ export class ContractsController {
             "Content-Type": "application/pdf",
             "Content-Disposition": `attachment; filename="${fileName}"`,
         });
+        // A missing or corrupt GridFS file emits 'error'; without a listener the
+        // unhandled event would crash the process, so fail this one request only.
+        stream.on("error", () => {
+            if (res.headersSent) res.destroy();
+            else res.status(500).end();
+        });
         stream.pipe(res);
     }
 
