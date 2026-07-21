@@ -14,7 +14,6 @@ export enum VoteTargetType {
     INCIDENT = "incident",
     SERVICE = "service",
     EVENT = "event",
-    COMMENT = "comment",
 }
 
 @Schema({ timestamps: true })

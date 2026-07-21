@@ -19,16 +19,16 @@ interface AuthRequest {
 @ApiTags("DSL")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles("moderator", "admin")
+@Roles("admin")
 @Controller("dsl")
 export class DslController {
     constructor(private readonly dslService: DslService) {}
 
     @Post("query")
     @ApiOperation({
-        summary: "Execute a DSL query (moderator/admin)",
+        summary: "Execute a DSL query (admin)",
         description:
-            "Compiles and executes a DSL query via the Python PLY engine (in-process via pythonia).",
+            "Compiles and executes a DSL query via the Python PLY engine (in-process via pythonia). The editor lives in the admin app, so the endpoint is administrators-only.",
     })
     @ApiResponse({ status: 201, type: DslQueryResultDto })
     @ApiResponse({
@@ -37,11 +37,9 @@ export class DslController {
     })
     @ApiResponse({
         status: 403,
-        description: "Insufficient role (moderator/admin required)",
+        description: "Insufficient role (admin required)",
     })
     execute(@Body() dto: DslQueryDto, @Request() req: AuthRequest) {
-        // The requester scopes the query: moderators stay inside their own
-        // neighborhood.
         return this.dslService.execute(dto.query, req.user);
     }
 }

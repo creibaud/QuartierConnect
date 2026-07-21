@@ -70,7 +70,7 @@ export class TokenService {
                 throw new UnauthorizedException({ code: "TOKEN_REVOKED" });
             }
 
-            if (user.role === "banned") {
+            if (user.role === "banned" || user.role === "deleted") {
                 throw new UnauthorizedException({ code: "ACCOUNT_BANNED" });
             }
 

@@ -97,6 +97,7 @@ describe("AuthController", () => {
                 "user-id-123",
                 SsoSurface.JAVA_DESKTOP,
                 undefined,
+                "resident",
             );
             expect(result).toBe(expected);
         });

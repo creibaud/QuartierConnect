@@ -121,9 +121,9 @@ export class VotesService {
                     dto.targetId,
                 );
             default:
-                // No comment collection exists; refuse rather than store orphans.
+                // Defensive: the DTO enum already rejects anything else.
                 throw new BadRequestException(
-                    `Votes on ${dto.targetType} targets are not supported`,
+                    `Votes on ${String(dto.targetType)} targets are not supported`,
                 );
         }
     }

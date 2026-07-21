@@ -1,4 +1,8 @@
-import { ConflictException, UnauthorizedException } from "@nestjs/common";
+import {
+    ConflictException,
+    ForbiddenException,
+    UnauthorizedException,
+} from "@nestjs/common";
 import { getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
 import * as argon2 from "argon2";
@@ -260,12 +264,38 @@ describe("AuthService", () => {
             const result = await service.generateSsoToken(
                 "550e8400-e29b-41d4-a716-446655440000",
                 SsoSurface.JAVA_DESKTOP,
+                undefined,
+                "admin",
             );
             expect(result.ssoToken).toBeTruthy();
             expect(result.expiresIn).toBe(300);
             expect(new Date(result.expiresAt).getTime()).toBeGreaterThan(
                 Date.now(),
             );
+        });
+
+        it("rejects a desktop token for a non-admin caller", async () => {
+            ssoTokenModel.create.mockResolvedValue({});
+            await expect(
+                service.generateSsoToken(
+                    "550e8400-e29b-41d4-a716-446655440000",
+                    SsoSurface.JAVA_DESKTOP,
+                    undefined,
+                    "resident",
+                ),
+            ).rejects.toThrow(ForbiddenException);
+            expect(ssoTokenModel.create).not.toHaveBeenCalled();
+        });
+
+        it("allows a non-admin caller for a non-desktop surface", async () => {
+            ssoTokenModel.create.mockResolvedValue({});
+            const result = await service.generateSsoToken(
+                "550e8400-e29b-41d4-a716-446655440000",
+                SsoSurface.WEB_ADMIN,
+                undefined,
+                "moderator",
+            );
+            expect(result.ssoToken).toBeTruthy();
         });
 
         it("stores state in document when provided", async () => {
@@ -275,6 +305,7 @@ describe("AuthService", () => {
                 "550e8400-e29b-41d4-a716-446655440000",
                 SsoSurface.JAVA_DESKTOP,
                 state,
+                "admin",
             );
             expect(ssoTokenModel.create).toHaveBeenCalledWith(
                 expect.objectContaining({ state }),
@@ -286,6 +317,8 @@ describe("AuthService", () => {
             await service.generateSsoToken(
                 "550e8400-e29b-41d4-a716-446655440000",
                 SsoSurface.JAVA_DESKTOP,
+                undefined,
+                "admin",
             );
             expect(ssoTokenModel.create).toHaveBeenCalledWith(
                 expect.objectContaining({ state: null }),
@@ -328,6 +361,28 @@ describe("AuthService", () => {
                 state: null,
             });
             mockDb.where.mockResolvedValue([]);
+            await expect(
+                service.exchangeSsoToken("valid-uuid"),
+            ).rejects.toThrow(UnauthorizedException);
+        });
+
+        it("refuses to mint a session for a banned account", async () => {
+            ssoTokenModel.findOneAndUpdate.mockResolvedValue({
+                userId: mockUser.id,
+                state: null,
+            });
+            mockDb.where.mockResolvedValue([{ ...mockUser, role: "banned" }]);
+            await expect(
+                service.exchangeSsoToken("valid-uuid"),
+            ).rejects.toThrow(UnauthorizedException);
+        });
+
+        it("refuses to mint a session for a deleted account", async () => {
+            ssoTokenModel.findOneAndUpdate.mockResolvedValue({
+                userId: mockUser.id,
+                state: null,
+            });
+            mockDb.where.mockResolvedValue([{ ...mockUser, role: "deleted" }]);
             await expect(
                 service.exchangeSsoToken("valid-uuid"),
             ).rejects.toThrow(UnauthorizedException);

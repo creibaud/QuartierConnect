@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import {
     ConflictException,
+    ForbiddenException,
     Inject,
     Injectable,
     UnauthorizedException,
@@ -166,11 +167,21 @@ export class AuthService {
         userId: string,
         surface: SsoSurface,
         state?: string,
+        requesterRole?: string,
     ): Promise<{
         ssoToken: string;
         expiresAt: string;
         expiresIn: number;
     }> {
+        // The desktop app is administrators-only; enforce it here, not just in
+        // the admin SPA that renders the authorization screen.
+        if (surface === SsoSurface.JAVA_DESKTOP && requesterRole !== "admin") {
+            throw new ForbiddenException({
+                code: "DESKTOP_ADMIN_ONLY",
+                message: "Desktop access is restricted to administrators",
+            });
+        }
+
         const token = randomUUID();
         const expiresAt = new Date(Date.now() + SSO_TTL_SECONDS * 1000);
 
@@ -226,6 +237,14 @@ export class AuthService {
             throw new UnauthorizedException({
                 code: "SSO_INVALID",
                 message: "User not found",
+            });
+        }
+
+        // A token minted while active must not survive a ban or account deletion.
+        if (user.role === "banned" || user.role === "deleted") {
+            throw new UnauthorizedException({
+                code: "ACCOUNT_BANNED",
+                message: "Account is no longer active",
             });
         }
 

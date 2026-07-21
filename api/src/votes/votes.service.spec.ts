@@ -218,12 +218,12 @@ describe("VotesService", () => {
             ).rejects.toThrow(NotFoundException);
         });
 
-        it("rejects comment votes: no comment collection exists", async () => {
+        it("rejects an unsupported target type outright", async () => {
             await expect(
                 service.cast(
                     {
                         targetId: SERVICE_OID,
-                        targetType: VoteTargetType.COMMENT,
+                        targetType: "comment" as any,
                         voteType: "up" as any,
                     },
                     voter(),

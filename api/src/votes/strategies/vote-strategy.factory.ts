@@ -8,7 +8,6 @@ const STRATEGIES: Record<VoteTargetType, VoteStrategy> = {
     [VoteTargetType.SERVICE]: new LikeDislikeStrategy(),
     [VoteTargetType.EVENT]: new LikeDislikeStrategy(),
     [VoteTargetType.INCIDENT]: new UpDownStrategy(),
-    [VoteTargetType.COMMENT]: new UpDownStrategy(),
 };
 
 export function getVoteStrategy(targetType: VoteTargetType): VoteStrategy {

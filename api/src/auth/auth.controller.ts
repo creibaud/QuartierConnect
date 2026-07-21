@@ -108,9 +108,13 @@ export class AuthController {
     @ApiOperation({
         summary: "Step 1/2: Generate one-time SSO token (TTL 5min, single use)",
         description:
-            'Requires active JWT session. Returns a UUID token to pass to POST /auth/sso/exchange on another surface. Pass surface: "java-desktop" for the desktop app.',
+            'Requires active JWT session. Returns a UUID token to pass to POST /auth/sso/exchange on another surface. Pass surface: "java-desktop" for the desktop app, which is restricted to administrators.',
     })
     @ApiResponse({ status: 201, type: SsoGenerateResponseDto })
+    @ApiResponse({
+        status: 403,
+        description: "DESKTOP_ADMIN_ONLY — desktop surface requires an admin",
+    })
     generateSsoToken(
         @Request() req: AuthenticatedRequest,
         @Body() dto: SsoGenerateDto,
@@ -119,6 +123,7 @@ export class AuthController {
             req.user.sub,
             dto.surface,
             dto.state,
+            req.user.role,
         );
     }
 
