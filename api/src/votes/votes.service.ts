@@ -17,6 +17,14 @@ import { CastVoteDto } from "./dto/cast-vote.dto";
 import { Vote, VoteDocument, VoteTargetType } from "./schemas/vote.schema";
 import { getVoteStrategy } from "./strategies/vote-strategy.factory";
 
+function isDuplicateKeyError(err: unknown): boolean {
+    return (
+        typeof err === "object" &&
+        err !== null &&
+        (err as { code?: number }).code === 11000
+    );
+}
+
 export interface VoteRequester {
     sub: string;
     role: string;
@@ -65,12 +73,18 @@ export class VotesService {
             return { action: "changed", voteType: dto.voteType };
         }
 
-        await this.voteModel.create({
-            userId,
-            targetId: dto.targetId,
-            targetType: dto.targetType,
-            voteType: dto.voteType,
-        });
+        try {
+            await this.voteModel.create({
+                userId,
+                targetId: dto.targetId,
+                targetType: dto.targetType,
+                voteType: dto.voteType,
+            });
+        } catch (err) {
+            // A concurrent first vote won the unique index; the vote now exists,
+            // so treat the double-submit as the same idempotent outcome.
+            if (!isDuplicateKeyError(err)) throw err;
+        }
         return { action: "added", voteType: dto.voteType };
     }
 
@@ -148,16 +162,24 @@ export class VotesService {
     }
 
     async getScore(targetId: string, targetType: VoteTargetType) {
-        const votes = await this.voteModel
-            .find({
-                targetId: String(targetId),
-                targetType: String(targetType),
-            })
-            .select("voteType")
-            .lean()
+        // Count per vote type in the database instead of streaming every
+        // matching document into Node.
+        const rows = await this.voteModel
+            .aggregate<{ _id: string; count: number }>([
+                {
+                    $match: {
+                        targetId: String(targetId),
+                        targetType: String(targetType),
+                    },
+                },
+                { $group: { _id: "$voteType", count: { $sum: 1 } } },
+            ])
             .exec();
 
+        const counts: Record<string, number> = {};
+        for (const row of rows) counts[row._id] = row.count;
+
         const strategy = getVoteStrategy(targetType);
-        return strategy.calculate(votes);
+        return strategy.calculate(counts);
     }
 }

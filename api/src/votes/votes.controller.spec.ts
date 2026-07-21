@@ -99,11 +99,7 @@ describe("VoteStrategy unit tests", () => {
             LikeDislikeStrategy,
         } = require("./strategies/like-dislike.strategy");
         const strategy = new LikeDislikeStrategy();
-        const result = strategy.calculate([
-            { voteType: "like" },
-            { voteType: "like" },
-            { voteType: "dislike" },
-        ]);
+        const result = strategy.calculate({ like: 2, dislike: 1 });
         expect(result.score).toBe(1);
         expect(result.breakdown.like).toBe(2);
         expect(result.breakdown.dislike).toBe(1);
@@ -112,11 +108,7 @@ describe("VoteStrategy unit tests", () => {
     it("UpDownStrategy calculates correctly", () => {
         const { UpDownStrategy } = require("./strategies/updown.strategy");
         const strategy = new UpDownStrategy();
-        const result = strategy.calculate([
-            { voteType: "up" },
-            { voteType: "down" },
-            { voteType: "down" },
-        ]);
+        const result = strategy.calculate({ up: 1, down: 2 });
         expect(result.score).toBe(-1);
         expect(result.breakdown.up).toBe(1);
         expect(result.breakdown.down).toBe(2);

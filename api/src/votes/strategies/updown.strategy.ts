@@ -5,12 +5,8 @@ export class UpDownStrategy implements VoteStrategy {
         return ["up", "down"];
     }
 
-    calculate(votes: Array<{ voteType: string }>): VoteResult {
-        const breakdown = { up: 0, down: 0 };
-        for (const v of votes) {
-            if (v.voteType === "up") breakdown.up++;
-            else if (v.voteType === "down") breakdown.down++;
-        }
+    calculate(counts: Record<string, number>): VoteResult {
+        const breakdown = { up: counts.up ?? 0, down: counts.down ?? 0 };
         return { score: breakdown.up - breakdown.down, breakdown };
     }
 }

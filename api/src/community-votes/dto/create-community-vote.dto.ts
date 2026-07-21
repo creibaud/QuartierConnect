@@ -10,7 +10,6 @@ import {
     IsNumber,
     IsOptional,
     IsString,
-    Max,
     Min,
     ValidateNested,
 } from "class-validator";
@@ -72,11 +71,11 @@ export class CreateCommunityVoteDto {
     @ApiProperty({
         required: false,
         default: 0,
-        description: "Quorum as % of required participants",
+        description:
+            "Minimum number of participants for the vote to be binding (0 = no quorum)",
     })
     @IsNumber()
     @Min(0)
-    @Max(100)
     @IsOptional()
     quorum?: number;
 }

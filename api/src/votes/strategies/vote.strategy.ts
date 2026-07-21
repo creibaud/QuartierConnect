@@ -4,6 +4,6 @@ export interface VoteResult {
 }
 
 export interface VoteStrategy {
-    calculate(votes: Array<{ voteType: string }>): VoteResult;
+    calculate(counts: Record<string, number>): VoteResult;
     allowedTypes(): string[];
 }

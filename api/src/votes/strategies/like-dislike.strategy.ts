@@ -5,12 +5,11 @@ export class LikeDislikeStrategy implements VoteStrategy {
         return ["like", "dislike"];
     }
 
-    calculate(votes: Array<{ voteType: string }>): VoteResult {
-        const breakdown = { like: 0, dislike: 0 };
-        for (const v of votes) {
-            if (v.voteType === "like") breakdown.like++;
-            else if (v.voteType === "dislike") breakdown.dislike++;
-        }
+    calculate(counts: Record<string, number>): VoteResult {
+        const breakdown = {
+            like: counts.like ?? 0,
+            dislike: counts.dislike ?? 0,
+        };
         return { score: breakdown.like - breakdown.dislike, breakdown };
     }
 }

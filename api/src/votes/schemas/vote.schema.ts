@@ -33,3 +33,5 @@ export class Vote {
 
 export const VoteSchema = SchemaFactory.createForClass(Vote);
 VoteSchema.index({ userId: 1, targetId: 1, targetType: 1 }, { unique: true });
+// Backs getScore's per-target aggregation so it never scans the whole collection.
+VoteSchema.index({ targetId: 1, targetType: 1 });

@@ -226,6 +226,80 @@ describe("CommunityVotesService", () => {
         expect(mockModel.findOneAndUpdate).not.toHaveBeenCalled();
     });
 
+    it("deduplicates repeated choices so a single voter cannot stuff a multiple-choice tally", async () => {
+        const multiVote = {
+            ...mockVote,
+            voteType: CommunityVoteType.MULTIPLE_CHOICE,
+        };
+        mockModel.findById.mockReturnValue({
+            exec: jest.fn().mockResolvedValue(multiVote),
+        });
+
+        await service.cast(
+            "vote1",
+            { choices: ["yes", "yes", "yes"] },
+            "user2",
+        );
+
+        const pushed = mockModel.findOneAndUpdate.mock.calls[0][1].$push.casts;
+        expect(pushed.choices).toEqual(["yes"]);
+    });
+
+    it("rejects a weighted ballot whose weights sum beyond the per-ballot budget", async () => {
+        const weightedVote = {
+            ...mockVote,
+            voteType: CommunityVoteType.WEIGHTED,
+        };
+        mockModel.findById.mockReturnValue({
+            exec: jest.fn().mockResolvedValue(weightedVote),
+        });
+
+        await expect(
+            service.cast(
+                "vote1",
+                { choices: ["yes"], weights: { yes: 1_000_000 } },
+                "user2",
+            ),
+        ).rejects.toThrow(BadRequestException);
+        expect(mockModel.findOneAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it("rejects a weighted ballot with a negative weight", async () => {
+        const weightedVote = {
+            ...mockVote,
+            voteType: CommunityVoteType.WEIGHTED,
+        };
+        mockModel.findById.mockReturnValue({
+            exec: jest.fn().mockResolvedValue(weightedVote),
+        });
+
+        await expect(
+            service.cast(
+                "vote1",
+                { choices: ["no"], weights: { no: -5 } },
+                "user2",
+            ),
+        ).rejects.toThrow(BadRequestException);
+        expect(mockModel.findOneAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it("accepts a weighted ballot within the budget", async () => {
+        const weightedVote = {
+            ...mockVote,
+            voteType: CommunityVoteType.WEIGHTED,
+        };
+        mockModel.findById.mockReturnValue({
+            exec: jest.fn().mockResolvedValue(weightedVote),
+        });
+
+        await service.cast(
+            "vote1",
+            { choices: ["yes"], weights: { yes: 3, no: 2 } },
+            "user2",
+        );
+        expect(mockModel.findOneAndUpdate).toHaveBeenCalled();
+    });
+
     it("throws ConflictException when a concurrent cast wins the atomic update", async () => {
         mockModel.findOneAndUpdate.mockReturnValue({
             exec: jest.fn().mockResolvedValue(null),
@@ -362,6 +436,28 @@ describe("CommunityVotesService", () => {
         expect(vote.casts.map((c) => c.userId)).toEqual([
             "user1",
             "other-user",
+        ]);
+    });
+
+    it("filters the open list on the status field, not just the deadline", async () => {
+        mockModel.find.mockReturnValue(queryResolving([mockVote]));
+
+        await service.findAllFor("user1", 1, 20, undefined, "open");
+
+        const filter = mockModel.find.mock.calls[0][0];
+        expect(filter.status).toBe("open");
+        expect(filter.endsAt).toEqual({ $gt: expect.any(Date) });
+    });
+
+    it("includes manually-closed votes in the closed list even before their deadline", async () => {
+        mockModel.find.mockReturnValue(queryResolving([mockVote]));
+
+        await service.findAllFor("user1", 1, 20, undefined, "closed");
+
+        const filter = mockModel.find.mock.calls[0][0];
+        expect(filter.$or).toEqual([
+            { status: "closed" },
+            { endsAt: { $lte: expect.any(Date) } },
         ]);
     });
 

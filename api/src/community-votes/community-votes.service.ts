@@ -16,6 +16,9 @@ import {
     CommunityVoteType,
 } from "./schemas/community-vote.schema";
 
+// A weighted ballot distributes at most this total across the options.
+const MAX_WEIGHT_BUDGET = 10;
+
 @Injectable()
 export class CommunityVotesService {
     constructor(
@@ -64,9 +67,16 @@ export class CommunityVotesService {
         if (search?.trim()) {
             filter.title = new RegExp(escapeRegex(search.trim()), "i");
         }
-        // "open" votes are still running; "closed" have passed their deadline.
-        if (status === "open") filter.endsAt = { $gt: new Date() };
-        if (status === "closed") filter.endsAt = { $lte: new Date() };
+        // A vote is open only while its status says so AND its deadline holds;
+        // it is closed once manually closed OR its deadline has passed.
+        const now = new Date();
+        if (status === "open") {
+            filter.status = "open";
+            filter.endsAt = { $gt: now };
+        }
+        if (status === "closed") {
+            filter.$or = [{ status: "closed" }, { endsAt: { $lte: now } }];
+        }
         const { field, direction } = resolveSort(
             sort,
             order,
@@ -114,6 +124,11 @@ export class CommunityVotesService {
             throw new ConflictException("You have already voted");
         }
 
+        // Collapse repeated choices so one voter can't inflate a tally by
+        // listing the same option several times.
+        const choices = [...new Set(dto.choices)];
+        dto = { ...dto, choices };
+
         this.validateChoices(vote.voteType, dto);
 
         const invalidChoices = dto.choices.filter(
@@ -133,6 +148,9 @@ export class CommunityVotesService {
             throw new BadRequestException(
                 `Invalid options: ${invalidWeightKeys.join(", ")}`,
             );
+        }
+        if (vote.voteType === CommunityVoteType.WEIGHTED && dto.weights) {
+            this.assertWeightsWithinBudget(dto.weights);
         }
 
         // Atomic push: the filter re-checks the open/deadline/duplicate guards.
@@ -210,6 +228,7 @@ export class CommunityVotesService {
             }
         }
 
+        // quorum is an absolute minimum participant count (0 = no quorum).
         const quorumReached =
             vote.quorum === 0 || vote.casts.length >= vote.quorum;
 
@@ -252,6 +271,26 @@ export class CommunityVotesService {
 
         if (voteType === CommunityVoteType.WEIGHTED && !dto.weights) {
             throw new BadRequestException("Weighted vote requires weights");
+        }
+    }
+
+    // Each ballot spends at most a fixed budget across options, so no single
+    // voter can dominate with a huge or negative weight.
+    private assertWeightsWithinBudget(weights: Record<string, number>): void {
+        let sum = 0;
+        for (const value of Object.values(weights)) {
+            const numeric = Number(value);
+            if (!Number.isFinite(numeric) || numeric < 0) {
+                throw new BadRequestException(
+                    "Weights must be finite, non-negative numbers",
+                );
+            }
+            sum += numeric;
+        }
+        if (sum <= 0 || sum > MAX_WEIGHT_BUDGET) {
+            throw new BadRequestException(
+                `Weights must sum to a value in (0, ${MAX_WEIGHT_BUDGET}]`,
+            );
         }
     }
 }

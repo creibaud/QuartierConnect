@@ -68,3 +68,5 @@ export class CommunityVote {
 }
 
 export const CommunityVoteSchema = SchemaFactory.createForClass(CommunityVote);
+// Backs the open/closed list filter and the default endsAt sort.
+CommunityVoteSchema.index({ status: 1, endsAt: 1 });

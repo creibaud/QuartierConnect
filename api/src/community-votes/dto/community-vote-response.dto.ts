@@ -59,7 +59,8 @@ export class CommunityVoteDto {
 
     @ApiProperty({
         example: 0,
-        description: "Quorum as % of required participants",
+        description:
+            "Minimum number of participants for the vote to be binding",
     })
     quorum: number;
 
@@ -115,7 +116,7 @@ export class CommunityVoteResultsDto {
 
     @ApiProperty({
         example: false,
-        description: "Quorum reached (totalVotes >= quorum% of members)",
+        description: "Quorum reached (totalParticipants >= quorum)",
     })
     quorumReached: boolean;
 }

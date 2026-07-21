@@ -25,6 +25,7 @@ const mockVoteModel = {
     findOne: jest.fn(),
     find: jest.fn(),
     create: jest.fn(),
+    aggregate: jest.fn(),
 };
 
 function targetLookup(target: { neighborhoodId?: string | null } | null) {
@@ -232,19 +233,18 @@ describe("VotesService", () => {
         });
     });
 
+    const aggregateResolving = <T>(rows: T) => ({
+        exec: jest.fn().mockResolvedValue(rows),
+    });
+
     describe("getScore", () => {
         it("returns LikeDislike score for SERVICE", async () => {
-            mockVoteModel.find.mockReturnValue({
-                select: jest.fn().mockReturnThis(),
-                lean: jest.fn().mockReturnThis(),
-                exec: jest
-                    .fn()
-                    .mockResolvedValue([
-                        { voteType: "like" },
-                        { voteType: "like" },
-                        { voteType: "dislike" },
-                    ]),
-            });
+            mockVoteModel.aggregate.mockReturnValue(
+                aggregateResolving([
+                    { _id: "like", count: 2 },
+                    { _id: "dislike", count: 1 },
+                ]),
+            );
 
             const result = await service.getScore(
                 "svc-1",
@@ -256,17 +256,12 @@ describe("VotesService", () => {
         });
 
         it("returns UpDown score for INCIDENT", async () => {
-            mockVoteModel.find.mockReturnValue({
-                select: jest.fn().mockReturnThis(),
-                lean: jest.fn().mockReturnThis(),
-                exec: jest
-                    .fn()
-                    .mockResolvedValue([
-                        { voteType: "up" },
-                        { voteType: "down" },
-                        { voteType: "down" },
-                    ]),
-            });
+            mockVoteModel.aggregate.mockReturnValue(
+                aggregateResolving([
+                    { _id: "up", count: 1 },
+                    { _id: "down", count: 2 },
+                ]),
+            );
 
             const result = await service.getScore(
                 "inc-1",
@@ -278,17 +273,42 @@ describe("VotesService", () => {
         });
 
         it("returns zero score for no votes", async () => {
-            mockVoteModel.find.mockReturnValue({
-                select: jest.fn().mockReturnThis(),
-                lean: jest.fn().mockReturnThis(),
-                exec: jest.fn().mockResolvedValue([]),
-            });
+            mockVoteModel.aggregate.mockReturnValue(aggregateResolving([]));
 
             const result = await service.getScore(
                 "svc-2",
                 VoteTargetType.SERVICE,
             );
             expect(result.score).toBe(0);
+        });
+    });
+
+    describe("cast double-submit", () => {
+        const castDto = {
+            targetId: SERVICE_OID,
+            targetType: VoteTargetType.SERVICE,
+            voteType: "like" as any,
+        };
+
+        it("treats a duplicate-key race as the same idempotent added result", async () => {
+            mockVoteModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+            mockVoteModel.create.mockRejectedValue({ code: 11000 });
+
+            const result = await service.cast(castDto, voter());
+            expect(result.action).toBe("added");
+        });
+
+        it("rethrows a non-duplicate create error", async () => {
+            mockVoteModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+            mockVoteModel.create.mockRejectedValue(new Error("db down"));
+
+            await expect(service.cast(castDto, voter())).rejects.toThrow(
+                "db down",
+            );
         });
     });
 });
