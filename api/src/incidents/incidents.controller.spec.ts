@@ -825,11 +825,7 @@ describe("IncidentsController", () => {
         expect(rendered.sql).toMatch(/case/i);
         expect(rendered.sql).toContain("excluded");
         expect(rendered.params).toEqual(
-            expect.arrayContaining([
-                "open",
-                "in_progress",
-                "resolved",
-            ]),
+            expect.arrayContaining(["open", "in_progress", "resolved"]),
         );
     });
 

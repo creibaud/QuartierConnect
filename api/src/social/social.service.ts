@@ -32,6 +32,10 @@ export interface HelpRendered {
 
 const MAX_RECOMMENDATIONS = 10;
 
+// Per-branch cap so a dense neighborhood can't make any UNION branch materialize
+// unbounded rows. Larger than the final cap so ranking/dedup still has headroom.
+const MAX_RECOMMENDATIONS_PER_SOURCE = MAX_RECOMMENDATIONS * 5;
+
 const RECOMMENDATIONS_QUERY = `
 MATCH (u:User {id: $userId})-[:LIVES_IN]->(n:Neighborhood)
 MATCH (n)<-[:LOCATED_IN]-(s:Service)
@@ -39,6 +43,7 @@ WHERE NOT (u)-[:USED]->(s)
   AND (s.createdBy IS NULL OR s.createdBy <> $userId)
 RETURN s.id AS id, s.name AS name, 'service' AS type, 3 AS score,
        'serviceInNeighborhood' AS reason
+ORDER BY score DESC LIMIT ${MAX_RECOMMENDATIONS_PER_SOURCE}
 UNION
 MATCH (u:User {id: $userId})-[:LIVES_IN]->(n:Neighborhood)
 MATCH (n)<-[:HELD_IN]-(e:Event)
@@ -47,6 +52,7 @@ WHERE NOT (u)-[:ATTENDING]->(e)
   AND (e.createdBy IS NULL OR e.createdBy <> $userId)
 RETURN e.id AS id, e.name AS name, 'event' AS type, 2 AS score,
        'upcomingEventNearby' AS reason
+ORDER BY score DESC LIMIT ${MAX_RECOMMENDATIONS_PER_SOURCE}
 UNION
 MATCH (u:User {id: $userId})-[:LIVES_IN]->(n:Neighborhood)
 MATCH (u)-[:INTERESTED_IN|ATTENDING]->(:Event)
@@ -60,6 +66,7 @@ WHERE NOT (u)-[:INTERESTED_IN|ATTENDING]->(e)
 WITH e, count(DISTINCT peer) AS peerCount
 RETURN e.id AS id, e.name AS name, 'event' AS type, 3 + peerCount AS score,
        'sharedInterests' AS reason
+ORDER BY score DESC LIMIT ${MAX_RECOMMENDATIONS_PER_SOURCE}
 UNION
 MATCH (u:User {id: $userId})-[:LIVES_IN]->(:Neighborhood)
       <-[:LIVES_IN]-(peer:User)
@@ -72,6 +79,7 @@ WITH peer, helpCount, count(DISTINCT shared) AS sharedEvents
 RETURN peer.id AS id, coalesce(peer.name, peer.id) AS name,
        'neighbor' AS type, 4 + helpCount + sharedEvents AS score,
        'reliableNeighbor' AS reason
+ORDER BY score DESC LIMIT ${MAX_RECOMMENDATIONS_PER_SOURCE}
 `;
 
 function resolveParticipationRelation(

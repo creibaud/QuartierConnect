@@ -8,6 +8,7 @@ import {
     IsOptional,
     IsString,
     Max,
+    MaxLength,
     Min,
     ValidateIf,
     ValidateNested,
@@ -31,6 +32,7 @@ export class CreateServiceDto {
     })
     @IsString()
     @IsNotEmpty()
+    @MaxLength(200)
     title: string;
 
     @ApiProperty({
@@ -40,6 +42,7 @@ export class CreateServiceDto {
     })
     @IsString()
     @IsNotEmpty()
+    @MaxLength(5000)
     description: string;
 
     @ApiProperty({
@@ -103,6 +106,7 @@ export class CreateServiceDto {
     })
     @IsString()
     @IsOptional()
+    @MaxLength(500)
     address?: string;
 
     @ApiPropertyOptional({

@@ -5,6 +5,7 @@ import {
     ForbiddenException,
     Get,
     HttpCode,
+    Logger,
     NotFoundException,
     Param,
     Patch,
@@ -35,6 +36,11 @@ import {
 } from "../common/pagination";
 import { GeocodingService } from "../geocoding/geocoding.service";
 import { SocialService } from "../social/social.service";
+import {
+    Vote,
+    VoteDocument,
+    VoteTargetType,
+} from "../votes/schemas/vote.schema";
 import { CreateEventDto } from "./dto/create-event.dto";
 import { EventInterestDto } from "./dto/event-interest.dto";
 import { EventDto, EventInterestResponseDto } from "./dto/event-response.dto";
@@ -51,9 +57,28 @@ export class EventsController {
     constructor(
         @InjectModel(Event.name)
         private readonly eventModel: Model<EventDocument>,
+        @InjectModel(Vote.name)
+        private readonly voteModel: Model<VoteDocument>,
         private readonly socialService: SocialService,
         private readonly geocoding: GeocodingService,
     ) {}
+
+    private readonly logger = new Logger(EventsController.name);
+
+    // Votes reference an event by id, so drop them when it goes. Best-effort:
+    // the event is already deleted, so a cleanup failure is only logged.
+    private async cascadeDeleteEventVotes(eventId: string): Promise<void> {
+        try {
+            await this.voteModel.deleteMany({
+                targetId: eventId,
+                targetType: VoteTargetType.EVENT,
+            });
+        } catch (err) {
+            this.logger.warn(
+                `Failed to clean up votes of event ${eventId}: ${err}`,
+            );
+        }
+    }
 
     // Non-admins are scoped to their own neighborhood; admins see all.
     private assertNeighborhoodScope(
@@ -356,5 +381,6 @@ export class EventsController {
             throw new ForbiddenException("You can only delete your own events");
         }
         await this.eventModel.findByIdAndDelete(id).exec();
+        await this.cascadeDeleteEventVotes(event._id.toString());
     }
 }

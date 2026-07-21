@@ -15,7 +15,7 @@ import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { TransferPointsDto } from "./dto/transfer-points.dto";
 
-const MIN_BALANCE = -10;
+const { MIN_BALANCE } = schema;
 
 type TransactionClient = Parameters<
     Parameters<PostgresJsDatabase<typeof schema>["transaction"]>[0]

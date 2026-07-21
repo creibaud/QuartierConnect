@@ -71,6 +71,13 @@
       "when": 1783071388437,
       "tag": "0009_add_previous_role",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784630260129,
+      "tag": "0010_add_filter_indexes",
+      "breakpoints": true
     }
   ]
 }

@@ -51,3 +51,7 @@ export class Service {
 
 export const ServiceSchema = SchemaFactory.createForClass(Service);
 ServiceSchema.index({ location: "2dsphere" }, { sparse: true });
+// Backs the neighborhood-scoped listing and its default createdAt sort.
+ServiceSchema.index({ neighborhoodId: 1, createdAt: -1 });
+// Backs the "my listings" lookup.
+ServiceSchema.index({ createdBy: 1 });

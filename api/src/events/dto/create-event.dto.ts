@@ -6,6 +6,7 @@ import {
     IsNotEmpty,
     IsOptional,
     IsString,
+    MaxLength,
     ValidateNested,
 } from "class-validator";
 import { GeoPointDto } from "../../common/dto/geo-point.dto";
@@ -25,6 +26,7 @@ export class CreateEventDto {
     })
     @IsString()
     @IsNotEmpty()
+    @MaxLength(200)
     title: string;
 
     @ApiPropertyOptional({
@@ -34,6 +36,7 @@ export class CreateEventDto {
     })
     @IsString()
     @IsOptional()
+    @MaxLength(5000)
     description?: string;
 
     @ApiProperty({
@@ -66,6 +69,7 @@ export class CreateEventDto {
     })
     @IsString()
     @IsOptional()
+    @MaxLength(500)
     address?: string;
 
     @ApiPropertyOptional({

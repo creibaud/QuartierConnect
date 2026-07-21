@@ -11,6 +11,11 @@ import {
     varchar,
 } from "drizzle-orm/pg-core";
 
+// Minimum points balance. Enforced in the DB by the points_balances CHECK
+// constraint below and read by PointsService for the pre-write guard, so the
+// floor lives in one place.
+export const MIN_BALANCE = -10;
+
 export const revokedTokens = pgTable(
     "revoked_tokens",
     {
@@ -20,25 +25,32 @@ export const revokedTokens = pgTable(
     (t) => [index("revoked_tokens_expires_at_idx").on(t.expiresAt)],
 );
 
-export const users = pgTable("users", {
-    id: uuid("id").defaultRandom().primaryKey(),
-    email: varchar("email", { length: 255 }).notNull().unique(),
-    passwordHash: varchar("password_hash", { length: 255 }).notNull(),
-    totpSecret: varchar("totp_secret", { length: 255 }).notNull(),
-    role: varchar("role", { length: 50 }).notNull().default("resident"),
-    previousRole: varchar("previous_role", { length: 50 }),
-    firstName: varchar("first_name", { length: 100 }),
-    lastName: varchar("last_name", { length: 100 }),
-    avatarUrl: text("avatar_url"),
-    neighborhoodId: varchar("neighborhood_id", { length: 255 }),
-    phone: text("phone"),
-    address: text("address"),
-    addressLat: real("address_lat"),
-    addressLng: real("address_lng"),
-    refreshTokenHash: text("refresh_token_hash"),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+export const users = pgTable(
+    "users",
+    {
+        id: uuid("id").defaultRandom().primaryKey(),
+        email: varchar("email", { length: 255 }).notNull().unique(),
+        passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+        totpSecret: varchar("totp_secret", { length: 255 }).notNull(),
+        role: varchar("role", { length: 50 }).notNull().default("resident"),
+        previousRole: varchar("previous_role", { length: 50 }),
+        firstName: varchar("first_name", { length: 100 }),
+        lastName: varchar("last_name", { length: 100 }),
+        avatarUrl: text("avatar_url"),
+        neighborhoodId: varchar("neighborhood_id", { length: 255 }),
+        phone: text("phone"),
+        address: text("address"),
+        addressLat: real("address_lat"),
+        addressLng: real("address_lng"),
+        refreshTokenHash: text("refresh_token_hash"),
+        createdAt: timestamp("created_at").notNull().defaultNow(),
+        updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    },
+    (t) => [
+        index("users_role_idx").on(t.role),
+        index("users_neighborhood_id_idx").on(t.neighborhoodId),
+    ],
+);
 
 export const incidents = pgTable(
     "incidents",
@@ -63,6 +75,7 @@ export const incidents = pgTable(
     (t) => [
         index("incidents_status_idx").on(t.status),
         index("incidents_deleted_at_idx").on(t.deletedAt),
+        index("incidents_neighborhood_id_idx").on(t.neighborhoodId),
     ],
 );
 
@@ -77,7 +90,12 @@ export const pointsBalances = pgTable(
         balance: integer("balance").notNull().default(0),
         updatedAt: timestamp("updated_at").notNull().defaultNow(),
     },
-    (t) => [check("points_balances_min_balance", sql`${t.balance} >= -10`)],
+    (t) => [
+        check(
+            "points_balances_min_balance",
+            sql`${t.balance} >= ${sql.raw(String(MIN_BALANCE))}`,
+        ),
+    ],
 );
 
 export const pointsTransactions = pgTable(

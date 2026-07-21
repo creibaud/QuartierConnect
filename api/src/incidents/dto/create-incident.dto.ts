@@ -6,6 +6,7 @@ import {
     IsOptional,
     IsString,
     Max,
+    MaxLength,
     Min,
 } from "class-validator";
 
@@ -16,6 +17,7 @@ export class CreateIncidentDto {
     })
     @IsString()
     @IsNotEmpty()
+    @MaxLength(200)
     title: string;
 
     @ApiProperty({
@@ -25,6 +27,7 @@ export class CreateIncidentDto {
     })
     @IsString()
     @IsNotEmpty()
+    @MaxLength(5000)
     description: string;
 
     @ApiProperty({

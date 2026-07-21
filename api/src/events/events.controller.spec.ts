@@ -4,6 +4,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import type { Response } from "express";
 import { GeocodingService } from "../geocoding/geocoding.service";
 import { SocialService } from "../social/social.service";
+import { Vote } from "../votes/schemas/vote.schema";
 import { EventsController } from "./events.controller";
 import { Event } from "./schemas/event.schema";
 
@@ -49,6 +50,7 @@ function listEvents(
 describe("EventsController", () => {
     let controller: EventsController;
     let model: any;
+    let voteModel: any;
     let geocoding: any;
     let socialService: any;
 
@@ -71,7 +73,14 @@ describe("EventsController", () => {
                     interestedUserIds: ["user-uuid-1"],
                 }),
             }),
+            findByIdAndDelete: jest.fn().mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockEvent),
+            }),
             countDocuments: jest.fn().mockResolvedValue(1),
+        };
+
+        voteModel = {
+            deleteMany: jest.fn().mockResolvedValue({ deletedCount: 0 }),
         };
 
         socialService = {
@@ -83,6 +92,7 @@ describe("EventsController", () => {
             controllers: [EventsController],
             providers: [
                 { provide: getModelToken(Event.name), useValue: model },
+                { provide: getModelToken(Vote.name), useValue: voteModel },
                 { provide: SocialService, useValue: socialService },
                 {
                     provide: GeocodingService,

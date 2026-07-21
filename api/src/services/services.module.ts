@@ -7,6 +7,7 @@ import {
 } from "../bookings/schemas/service-booking.schema";
 import { GeocodingModule } from "../geocoding/geocoding.module";
 import { SocialModule } from "../social/social.module";
+import { Vote, VoteSchema } from "../votes/schemas/vote.schema";
 import {
     ServiceResponse,
     ServiceResponseSchema,
@@ -20,6 +21,7 @@ import { ServicesController } from "./services.controller";
             { name: Service.name, schema: ServiceSchema },
             { name: ServiceResponse.name, schema: ServiceResponseSchema },
             { name: ServiceBooking.name, schema: ServiceBookingSchema },
+            { name: Vote.name, schema: VoteSchema },
         ]),
         AuthModule,
         GeocodingModule,

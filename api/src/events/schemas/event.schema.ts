@@ -39,3 +39,5 @@ export class Event {
 
 export const EventSchema = SchemaFactory.createForClass(Event);
 EventSchema.index({ location: "2dsphere" }, { sparse: true });
+// Backs the neighborhood-scoped listing and its default createdAt sort.
+EventSchema.index({ neighborhoodId: 1, createdAt: -1 });

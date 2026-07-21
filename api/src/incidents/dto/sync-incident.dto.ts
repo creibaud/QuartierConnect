@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
+    ArrayMaxSize,
     IsArray,
     IsDateString,
     IsIn,
@@ -10,6 +11,7 @@ import {
     IsString,
     IsUUID,
     Max,
+    MaxLength,
     Min,
     ValidateNested,
 } from "class-validator";
@@ -29,6 +31,7 @@ export class SyncIncidentItemDto {
     })
     @IsString()
     @IsNotEmpty()
+    @MaxLength(200)
     title: string;
 
     @ApiProperty({
@@ -37,6 +40,7 @@ export class SyncIncidentItemDto {
     })
     @IsString()
     @IsNotEmpty()
+    @MaxLength(5000)
     description: string;
 
     @ApiProperty({
@@ -110,6 +114,7 @@ export class SyncIncidentsDto {
         ],
     })
     @IsArray()
+    @ArrayMaxSize(500)
     @ValidateNested({ each: true })
     @Type(() => SyncIncidentItemDto)
     incidents: SyncIncidentItemDto[];

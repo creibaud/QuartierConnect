@@ -11,6 +11,7 @@ import { ServiceBooking } from "../bookings/schemas/service-booking.schema";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import { GeocodingService } from "../geocoding/geocoding.service";
 import { SocialService } from "../social/social.service";
+import { Vote } from "../votes/schemas/vote.schema";
 import { ServiceResponse } from "./schemas/service-response.schema";
 import { Service } from "./schemas/service.schema";
 import { ServicesController } from "./services.controller";
@@ -67,6 +68,7 @@ describe("ServicesController", () => {
     let model: any;
     let responseModel: any;
     let bookingModel: any;
+    let voteModel: any;
     let db: any;
     let geocoding: any;
 
@@ -100,10 +102,15 @@ describe("ServicesController", () => {
             }),
             updateOne: jest.fn().mockResolvedValue({ upsertedCount: 1 }),
             deleteOne: jest.fn().mockResolvedValue({ deletedCount: 1 }),
+            deleteMany: jest.fn().mockResolvedValue({ deletedCount: 0 }),
         };
 
         bookingModel = {
             countDocuments: jest.fn().mockResolvedValue(0),
+        };
+
+        voteModel = {
+            deleteMany: jest.fn().mockResolvedValue({ deletedCount: 0 }),
         };
 
         db = {
@@ -126,6 +133,7 @@ describe("ServicesController", () => {
                     provide: getModelToken(ServiceBooking.name),
                     useValue: bookingModel,
                 },
+                { provide: getModelToken(Vote.name), useValue: voteModel },
                 {
                     provide: SocialService,
                     useValue: {

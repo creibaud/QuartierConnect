@@ -6,6 +6,7 @@ import {
     IsObject,
     IsOptional,
     IsString,
+    MaxLength,
     ValidateNested,
 } from "class-validator";
 
@@ -34,11 +35,13 @@ export class CreateNeighborhoodDto {
     @ApiProperty({ description: "Neighborhood name", example: "Belleville" })
     @IsString()
     @IsNotEmpty()
+    @MaxLength(200)
     name: string;
 
     @ApiProperty({ description: "City", example: "Paris" })
     @IsString()
     @IsNotEmpty()
+    @MaxLength(120)
     city: string;
 
     @ApiProperty({
@@ -47,6 +50,7 @@ export class CreateNeighborhoodDto {
     })
     @IsString()
     @IsOptional()
+    @MaxLength(5000)
     description?: string;
 
     @ApiProperty({

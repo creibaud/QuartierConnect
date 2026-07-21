@@ -7,6 +7,7 @@ import {
     ForbiddenException,
     Get,
     Inject,
+    Logger,
     NotFoundException,
     Param,
     Patch,
@@ -45,6 +46,11 @@ import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { GeocodingService } from "../geocoding/geocoding.service";
 import { SocialService } from "../social/social.service";
+import {
+    Vote,
+    VoteDocument,
+    VoteTargetType,
+} from "../votes/schemas/vote.schema";
 import { CreateServiceDto } from "./dto/create-service.dto";
 import { ServiceDto } from "./dto/service-response.dto";
 import { UpdateServiceDto } from "./dto/update-service.dto";
@@ -68,11 +74,37 @@ export class ServicesController {
         private readonly responseModel: Model<ServiceResponseDocument>,
         @InjectModel(ServiceBooking.name)
         private readonly bookingModel: Model<ServiceBookingDocument>,
+        @InjectModel(Vote.name)
+        private readonly voteModel: Model<VoteDocument>,
         private readonly socialService: SocialService,
         @Inject(DRIZZLE_TOKEN)
         private readonly db: PostgresJsDatabase<typeof schema>,
         private readonly geocoding: GeocodingService,
     ) {}
+
+    private readonly logger = new Logger(ServicesController.name);
+
+    // Votes and responses reference a service by id, so drop them when it goes.
+    // Best-effort: the service is already deleted, so a cleanup failure is logged.
+    private async cascadeDeleteServiceDependents(
+        serviceId: string,
+    ): Promise<void> {
+        try {
+            await Promise.all([
+                this.responseModel.deleteMany({
+                    serviceId: new Types.ObjectId(serviceId),
+                }),
+                this.voteModel.deleteMany({
+                    targetId: serviceId,
+                    targetType: VoteTargetType.SERVICE,
+                }),
+            ]);
+        } catch (err) {
+            this.logger.warn(
+                `Failed to clean up dependents of service ${serviceId}: ${err}`,
+            );
+        }
+    }
 
     // Residents and moderators are scoped to their own neighborhood; admins moderate all.
     private assertNeighborhoodScope(
@@ -507,6 +539,7 @@ export class ServicesController {
             });
         }
         await this.serviceModel.findByIdAndDelete(id).exec();
+        await this.cascadeDeleteServiceDependents(service._id.toString());
         void this.socialService.deleteNode("Service", service._id.toString());
         return { success: true };
     }
