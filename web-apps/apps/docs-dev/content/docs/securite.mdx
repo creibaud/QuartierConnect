@@ -134,9 +134,9 @@ La visibilité des incidents ne se résume pas à un contrôle de propriété. U
 
 ### Périmètre et injection du DSL
 
-Le DSL de modération (`POST /dsl/query`) est ouvert aux rôles `moderator` et `admin`, mais l'accès n'est pas global pour autant :
+Le DSL (`POST /dsl/query`) est réservé au rôle `admin` (`@Roles('admin')`) : l'éditeur vit dans le panneau d'administration, et un administrateur interroge l'ensemble des données. Plusieurs garde-fous encadrent malgré tout l'exécution :
 
-- **Scoping quartier** — tout appelant non-admin est borné à son `neighborhoodId` sur les collections `incidents`, `services`, `events` et `users` ; seule `neighborhoods` reste publique. Un modérateur sans quartier reçoit un résultat vide. Le DSL ne peut donc pas servir de porte dérobée pour lire d'autres quartiers.
+- **Périmètre global, filtre défensif** — un administrateur n'est jamais cloisonné. `DslService` conserve néanmoins un filtre par `neighborhoodId` pour tout appelant non-admin (`incidents`, `services`, `events`, `users` ; `neighborhoods` reste publique), défense en profondeur sans effet puisque aucun non-admin n'atteint la route.
 - **Plafond de résultats** — toute requête `FIND` est plafonnée à **100 résultats**, avec ou sans `LIMIT` explicite.
 - **`LIKE` échappé** — l'opérateur `LIKE` compile vers une recherche de **sous-chaîne littérale échappée** (la valeur passe par `re.escape`), et non vers un motif regex actif : les métacaractères sont traités littéralement, ce qui neutralise l'injection regex et le ReDoS.
 

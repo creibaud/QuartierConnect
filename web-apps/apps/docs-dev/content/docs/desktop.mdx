@@ -3,13 +3,13 @@ title: Application desktop
 description: Client JavaFX d'administration, mode hors ligne et synchronisation
 ---
 
-L'application desktop `fr.quartierconnect.desktopapp` est un client **JavaFX 21** natif destiné aux **administrateurs et modérateurs**. Elle donne accès à l'administration des incidents du quartier même sans connexion : les données sont mises en cache localement dans SQLite et un `SyncService` réconcilie les modifications avec l'API par une fusion à trois voies inspirée de Git.
+L'application desktop `fr.quartierconnect.desktopapp` est un client **JavaFX 21** natif **réservé aux administrateurs** (la seule voie de connexion, le SSO, est restreinte aux admins côté serveur). Elle donne accès à l'administration des incidents du quartier même sans connexion : les données sont mises en cache localement dans SQLite et un `SyncService` réconcilie les modifications avec l'API par une fusion à trois voies inspirée de Git.
 
 Le module Maven `fr.quartierconnect:desktop-app` cible Java 21. Il s'appuie sur JavaFX (`javafx-controls`, `javafx-fxml`), le thème [AtlantaFX](https://mvnrepository.com/artifact/io.github.mkpaz/atlantafx-base), les icônes Ikonli/FontAwesome, le pilote `sqlite-jdbc` (org.xerial), Jackson pour le JSON et `java-keyring` pour le trousseau système. La classe d'amorçage est `fr.quartierconnect.desktopapp.Launcher`, qui délègue à `MainApp` (une `javafx.application.Application`).
 
 ## À quoi sert l'application
 
-Au démarrage, `MainApp.start()` initialise la base SQLite (`SQLiteDatabase.initialize()`) puis affiche `LoginView`. La connexion se fait **via le navigateur** : le bouton principal lance un flux SSO PKCE (`startSsoPkceFlow`) dont le retour est capté par un petit serveur de boucle locale `SsoCallbackServer`, puis échangé contre une paire de jetons par `AuthService.exchangeSsoToken` (endpoint `/auth/sso/exchange`). Une connexion directe e-mail / mot de passe / TOTP existe aussi (`AuthService.login` → `/auth/login`). Le rôle (`admin` / `moderator`) est lu dans la charge utile du JWT par `AuthService.getCurrentUserRole()`.
+Au démarrage, `MainApp.start()` initialise la base SQLite (`SQLiteDatabase.initialize()`) puis affiche `LoginView`. La connexion se fait **via le navigateur** : le bouton principal lance un flux SSO PKCE (`startSsoPkceFlow`) dont le retour est capté par un petit serveur de boucle locale `SsoCallbackServer`, puis échangé contre une paire de jetons par `AuthService.exchangeSsoToken` (endpoint `/auth/sso/exchange`). Ce flux SSO est **la seule voie de connexion** et il est **réservé aux administrateurs côté serveur** : générer un jeton pour la surface `java-desktop` renvoie `403 DESKTOP_ADMIN_ONLY` si le demandeur n'est pas administrateur. Le rôle est lu dans la charge utile du JWT par `AuthService.getCurrentUserRole()`.
 
 Une fois authentifié, l'utilisateur travaille sur les incidents (`IncidentsView`, `IncidentDetailPane`, `IncidentCreateForm`) : création, changement de statut, résolution de conflits (`ConflictResolutionForm`). Toutes ces actions écrivent d'abord **en local**, puis remontent vers l'API au cycle de synchronisation suivant.
 

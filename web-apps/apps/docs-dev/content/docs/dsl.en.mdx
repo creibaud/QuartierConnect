@@ -5,7 +5,7 @@ description: Query language syntax and execution
 
 ## What the DSL is for
 
-The QuartierConnect DSL is a **micro query language** that lets moderators and administrators query the application's collections without writing code. It is exposed through `POST /dsl/query` and consumed from the React admin back office. A **moderator** only reaches the data of their own neighborhood; only the **administrator** queries the whole dataset.
+The QuartierConnect DSL is a **micro query language** that lets administrators query the application's collections without writing code. It is exposed through `POST /dsl/query`, guarded by `@Roles('admin')`, and consumed from the React admin back office editor. Because the endpoint is administrators-only, a query runs against the **whole dataset**, with no neighborhood partitioning.
 
 Choosing a DSL over raw MongoDB serves three goals:
 
@@ -83,12 +83,12 @@ FIND events WHERE maxAttendees >= 50 LIMIT 10
 
 The pipeline is linear, from text to JSON result:
 
-1. **HTTP request** — `DslController` receives the `POST /dsl/query`, protected by `JwtAuthGuard` + `RolesGuard` with `@Roles('moderator', 'admin')`. The `DslQueryDto` DTO caps the **query length at 500 characters** (`@MaxLength(500)`). The `req.user` (role + `neighborhoodId`) is passed to the service, which uses it for neighborhood scoping.
+1. **HTTP request** — `DslController` receives the `POST /dsl/query`, protected by `JwtAuthGuard` + `RolesGuard` with `@Roles('admin')`. The `DslQueryDto` DTO caps the **query length at 500 characters** (`@MaxLength(500)`). The `req.user` is passed to the service; since only an administrator reaches the route, the query stays global.
 2. **Lexer** (`dsl/lexer.py`) — splits the text into tokens (`FIND`, `IDENTIFIER`, `WHERE`, `STRING`…).
 3. **Parser** (`dsl/parser.py`) — **LALR(1)** grammar producing an AST as a Python `dict` (`type`, `collection`, `filter`, `limit`).
 4. **Compiler** (`dsl/compiler.py`) — validates the collection against an **allowlist** and returns the AST.
 5. **AST serialization** (`dsl/main.py`) — `main.py` returns the compiled AST **as JSON** through pythonia; the Python code no longer reaches any database (Motor is gone).
-6. **Execution** (NestJS `DslService`) — the Node service is the one running the query: **Mongoose** for `neighborhoods`, `services` and `events`, **Drizzle/PostgreSQL** for `incidents` and `users`. This is where the service applies **neighborhood scoping** (for every non-admin caller) and **caps results at 100** (`MAX_DSL_RESULTS`).
+6. **Execution** (NestJS `DslService`) — the Node service is the one running the query: **Mongoose** for `neighborhoods`, `services` and `events`, **Drizzle/PostgreSQL** for `incidents` and `users`. The service **caps results at 100** (`MAX_DSL_RESULTS`); it also keeps a neighborhood filter for any non-admin caller, a defensive guard that never fires since only administrators (global) reach the route.
 7. **Return** — the result goes back up to NestJS: an array of documents for a `find`, `{ count: N }` for a `count`.
 
 The diagram below sums up this pipeline: access control and execution live in NestJS, while the Python gateway does nothing but turn text into a validated AST. No database is touched on the Python side.
@@ -103,7 +103,7 @@ The diagram below sums up this pipeline: access control and execution live in Ne
     compiler["compiler.py<br/>collection allowlist"]
   end
   ast["AST serialized as JSON<br/>returned via pythonia"]
-  service["DslService (NestJS)<br/>neighborhood scoping + cap of 100"]
+  service["DslService (NestJS)<br/>execution + cap of 100"]
   mongo[("Mongoose<br/>neighborhoods, services, events")]
   pg[("Drizzle / PostgreSQL<br/>incidents, users")]
   result["JSON result<br/>documents or count"]
@@ -158,7 +158,7 @@ const MAX_DSL_RESULTS = 100; // actual cap, enforced by clampLimit
 // A non-admin without a neighborhoodId gets an empty result (except neighborhoods).
 ```
 
-> Scoping is enforced here, in NestJS — not in the Python. A moderator therefore cannot bypass neighborhood partitioning through the DSL.
+> The endpoint is administrators-only (`@Roles('admin')`), so no non-admin ever reaches it. The neighborhood filter survives in `DslService` as defense in depth.
 
 ## Security and safeguards
 
@@ -168,8 +168,8 @@ const MAX_DSL_RESULTS = 100; // actual cap, enforced by clampLimit
 | Destructive operations | `FIND` and `COUNT` only — no `DELETE`/`UPDATE`/`INSERT` |
 | Injections (Mongo / SQL) | Values go through the engine (Mongoose or parameterized Drizzle queries) — no concatenation |
 | ReDoS via `LIKE` | The value is escaped with `re.escape`: `LIKE` is a literal substring, never a live regex pattern |
-| Unauthorized access | Route protected by `@Roles('moderator', 'admin')` |
-| Cross-neighborhood leak | A moderator is scoped to their `neighborhoodId` (services, events, incidents, users); only the administrator is global, `neighborhoods` stays public |
+| Unauthorized access | Route protected by `@Roles('admin')` — administrators only |
+| Cross-neighborhood leak | The endpoint is administrators-only, and admins query the whole dataset; a neighborhood filter stays in `DslService` as a defensive guard for any non-admin caller |
 | Excessive resources | 100 results maximum per query (`MAX_DSL_RESULTS`, enforced on the NestJS side) |
 
 These safeguards form a chain: every stage can reject the query, and only those clearing all the checks reach a parameterized read. The role is checked by the `RolesGuard` (403), the verb and the collection by the grammar then the compiler (400), while scoping, `LIKE` escaping and the cap are transformations applied on the NestJS side before the engine is reached.
@@ -177,7 +177,7 @@ These safeguards form a chain: every stage can reject the query, and only those 
 <Mermaid
   chart={`flowchart TB
   req["Incoming DSL query"]
-  role{"Role allowed?<br/>moderator or admin"}
+  role{"Role allowed?<br/>admin"}
   verb{"Verb FIND or COUNT?"}
   wl{"Collection in<br/>the allowlist?"}
   scope["Neighborhood scoping<br/>if non-admin"]

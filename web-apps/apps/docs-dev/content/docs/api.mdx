@@ -177,14 +177,14 @@ La hiérarchie des rôles est `resident` → `moderator` → `admin`, à laquell
 |---------------|-----------|
 | Public | Aucune authentification requise |
 | Authentifié | Tout compte connecté (résident, modérateur ou administrateur) |
-| moderator / admin | Modération : statut d'incident, suppression logique, exécution DSL |
-| admin | Administration complète : utilisateurs, quartiers, statistiques |
+| moderator / admin | Modération : statut d'incident, suppression logique |
+| admin | Administration complète : utilisateurs, quartiers, statistiques, exécution DSL |
 
 Points saillants du modèle d'autorisation :
 
 - **resident** — accès authentifié standard, cloisonné au quartier. Un résident voit les services de son quartier et les incidents de catégorie `neighborhood` de son quartier (même s'il n'en est pas l'auteur), plus **ses propres** signalements de modération (`reporting`, `bug`). Les signalements de modération d'autrui sont masqués de la liste, et `GET /incidents/:id` renvoie **404** (et non 403) sur un tel signalement, afin de ne jamais en révéler l'existence.
-- **moderator** — mêmes limites de quartier qu'un résident (borné à son propre quartier), mais **toutes catégories d'incidents comprises**, plus la modération : `PATCH /incidents/:id/status`, `DELETE /incidents/:id` et l'exécution de requêtes `POST /dsl/query` (elles aussi scopées à son quartier).
-- **admin** — périmètre global (liste l'ensemble des quartiers, services et incidents) et accès à l'administration : `GET /users`, `PATCH /users/:id/role`, gestion des quartiers, `GET /stats`.
+- **moderator** — mêmes limites de quartier qu'un résident (borné à son propre quartier), mais **toutes catégories d'incidents comprises**, plus la modération : `PATCH /incidents/:id/status` et `DELETE /incidents/:id`.
+- **admin** — périmètre global (liste l'ensemble des quartiers, services et incidents) et accès à l'administration : `GET /users`, `PATCH /users/:id/role`, gestion des quartiers, `GET /stats`, et l'exécution de requêtes DSL (`POST /dsl/query`).
 - **banned** — état de compte bloquant. Le bannissement mémorise le rôle courant (`previousRole`) afin de le restaurer lors d'une réactivation.
 
 > La colonne « Rôle requis » de la référence Scalar reflète les gardes réellement appliqués sur chaque route.
@@ -204,8 +204,8 @@ Les familles d'endpoints se répartissent selon la garde appliquée. Chaque nive
   mod --> adm
   pub --> p1["register, login, refresh, sso/exchange"]
   auth --> a1["users/me, incidents, messages,<br/>contracts, votes, sso/generate, logout"]
-  mod --> m1["PATCH incidents/:id/status,<br/>DELETE incidents/:id, POST dsl/query"]
-  adm --> d1["GET users, PATCH users/:id/role,<br/>quartiers, GET stats"]`}
+  mod --> m1["PATCH incidents/:id/status,<br/>DELETE incidents/:id"]
+  adm --> d1["GET users, PATCH users/:id/role,<br/>quartiers, GET stats, POST dsl/query"]`}
 />
 
 ## Conventions

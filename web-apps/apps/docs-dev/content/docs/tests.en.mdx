@@ -10,22 +10,22 @@ The QuartierConnect test strategy follows the **test pyramid** model: a broad ba
 <Mermaid
   chart={`flowchart TB
   subgraph sommet["Top — e2e on real interfaces (slow, few)"]
-    pw["Playwright<br/>127 tests (browser)"]
-    tfx["JUnit 5 + TestFX<br/>163 tests (JavaFX toolkit)"]
+    pw["Playwright<br/>130 tests (browser)"]
+    tfx["JUnit 5 + TestFX<br/>167 tests (JavaFX toolkit)"]
   end
   subgraph milieu["Middle — integration and API e2e"]
-    st["Jest + Supertest<br/>199 tests (HTTP + real databases)"]
+    st["Jest + Supertest<br/>223 tests (HTTP + real databases)"]
   end
   subgraph base["Base — fast unit tests (in memory, test doubles)"]
-    jest["Jest<br/>678 tests (API)"]
-    vitest["Vitest<br/>127 tests (Web)"]
+    jest["Jest<br/>769 tests (API)"]
+    vitest["Vitest<br/>246 tests (Web)"]
     pytest["pytest<br/>22 tests (DSL)"]
   end
   sommet -.->|"builds on"| milieu
   milieu -.->|"builds on"| base`}
 />
 
-The base holds **827 fast unit tests** (678 API + 127 Web + 22 DSL), the middle layer **199** API end-to-end tests, and the top **290 tests** driving real interfaces (127 Playwright + 163 TestFX), for **1316 tests** in total.
+The base holds **1037 fast unit tests** (769 API + 246 Web + 22 DSL), the middle layer **223** API end-to-end tests, and the top **297 tests** driving real interfaces (130 Playwright + 167 TestFX), for **1557 tests** in total.
 
 Every test follows the **F.I.R.S.T.** principles:
 
@@ -39,19 +39,19 @@ Every test follows the **F.I.R.S.T.** principles:
 
 | Suite | Tool | Tests | make target |
 |-------|------|-------|-------------|
-| API — unit | Jest | 678 (49 `.spec.ts`) | `make test-api` |
-| API — end-to-end | Jest + Supertest | 199 (13 `.e2e-spec.ts`) | `make test-e2e` |
-| Web — unit | Vitest | 127 (25 files) | `make test-web` |
-| Web — end-to-end | Playwright | 127 (27 files) | `make test-e2e-web` |
-| Desktop — unit/integration | JUnit 5 + TestFX | 163 (23 classes) | `make test-desktop` |
+| API — unit | Jest | 769 (52 `.spec.ts`) | `make test-api` |
+| API — end-to-end | Jest + Supertest | 223 (20 `.e2e-spec.ts`) | `make test-e2e` |
+| Web — unit | Vitest | 246 (51 files) | `make test-web` |
+| Web — end-to-end | Playwright | 130 (27 files) | `make test-e2e-web` |
+| Desktop — unit/integration | JUnit 5 + TestFX | 167 (24 classes) | `make test-desktop` |
 | DSL — unit | pytest | 22 (2 files) | `make test-dsl` |
-| **Total** | | **1316** | `make test` |
+| **Total** | | **1557** | `make test` |
 
 The `make test` target chains the unit tests of the four components (API, Web, Desktop, DSL). The end-to-end tests, which need running services, have dedicated targets. The `make validate` target runs everything in sequence: lint, typecheck, unit tests + coverage, API e2e, Web e2e, desktop, DSL, then the production build.
 
 ## Unit tests — API (Jest)
 
-The 678 unit tests cover the business logic of the 16 NestJS modules, with external dependencies (databases, gateways) replaced by test doubles. They are split between controllers (input validation, guards, response mapping) and services (business rules), and cover the invariants tightened recently: atomicity of contract signature and settlement, the booking saga (accept/decline/cancel), ordered locking of point balances, neighborhood scoping of incidents and votes, and service/event DTO validation.
+The 769 unit tests cover the business logic of the 16 NestJS modules, with external dependencies (databases, gateways) replaced by test doubles. They are split between controllers (input validation, guards, response mapping) and services (business rules), and cover the invariants tightened recently: atomicity of contract signature and settlement, the booking saga (accept/decline/cancel), ordered locking of point balances, neighborhood scoping of incidents and votes, and service/event DTO validation.
 
 Areas covered, among others:
 
@@ -69,7 +69,7 @@ The coverage report is generated in `api/coverage/lcov-report/index.html`.
 
 ## End-to-end tests — API (Supertest)
 
-The 199 end-to-end tests boot the full NestJS application and issue real HTTP requests through Supertest, against real databases (MongoDB and PostgreSQL). They validate the integration end to end: routing, validation, persistence and response serialization.
+The 223 end-to-end tests boot the full NestJS application and issue real HTTP requests through Supertest, against real databases (MongoDB and PostgreSQL). They validate the integration end to end: routing, validation, persistence and response serialization.
 
 The critical authentication flow is verified in `auth.e2e-spec.ts`, which covers: registration returning the `otpauthUrl` (the TOTP secret is never exposed directly), rejection without GDPR consent (`400`) and on an email already taken (`409`), a valid login returning the JWT token pair (`200`), rejection of a wrong password or TOTP code (`401`), rate limiting after 5 failures (`429`), token refresh and revocation, the desktop client SSO flow, and rejection of an expired token.
 
@@ -80,11 +80,12 @@ make test-e2e
 
 ## Unit tests — Web (Vitest)
 
-The 127 Vitest tests (25 files) target the code shared across the monorepo, in the `@workspace/shared` (112 tests) and `@workspace/ui` (15 tests) packages, used by both the client and the admin:
+The 246 Vitest tests (51 files) span three packages: the code shared across the monorepo, `@workspace/shared` (121 tests) and `@workspace/ui` (17 tests), used by both the client and the admin, plus the `client` package itself (108 tests):
 
 - **Pure functions** (`packages/shared/src/lib`): `geo.test.ts`, `phone.test.ts`, `pricing.test.ts`, `contract-import.test.ts`.
 - **Data hooks** (`packages/shared/src/lib/hooks/__tests__`): React Query hooks for incidents, services, bookings, events, points, votes, messaging, neighborhoods, statistics, contracts, profile and user administration.
 - **UI components** (`packages/ui/src/components`): `map.test.tsx` and `map-legend.test.tsx`.
+- **Client logic** (`apps/client/src`): per-domain utilities and components — dashboard role and KPIs, vote filters and totals, incident next status, event participation, contract signature zones and pad, user picker and address autocomplete.
 
 ```bash
 make test-web
@@ -92,7 +93,7 @@ make test-web
 
 ## End-to-end tests — Web (Playwright)
 
-The 127 Playwright tests drive the client (`:3000`) and the admin (`:3001`) in a real browser, against the API (`:5000`). They are split between `web-apps/e2e/client` (16 files) and `web-apps/e2e/admin` (10 files), plus a redesign baseline (`redesign-baseline.spec.ts`, whose assertions lock down the appearance). Coverage was widened by the recent audit waves, which added 27 end-to-end flows (incident detail, bookings, contracts, votes, recommendations, accounts, and more).
+The 130 Playwright tests drive the client (`:3000`) and the admin (`:3001`) in a real browser, against the API (`:5000`). They are split between `web-apps/e2e/client` (16 files) and `web-apps/e2e/admin` (10 files), plus a redesign baseline (`redesign-baseline.spec.ts`, whose assertions lock down the appearance). Coverage was widened by the recent audit waves, which added 27 end-to-end flows (incident detail, bookings, contracts, votes, recommendations, accounts, and more).
 
 The critical **login + TOTP** flow is covered on the client side in `login.spec.ts`: redirection of an unauthenticated user to `/login`, display of the TOTP step after valid credentials, error message on a wrong password, and a full login (password then a 6-digit TOTP code generated dynamically) leading to address onboarding.
 
@@ -107,7 +108,7 @@ make test-e2e-web # terminal 2
 
 ## Tests — Desktop (JUnit 5 / TestFX)
 
-The 163 tests of the JavaFX desktop client are spread over 23 classes run by Maven Surefire: offline services, SQLite repository, the sync three-way merge, token vault (`TokenVault`), the plugin system, and paginated incident pull (`SyncServicePullTest`, which checks that the pull no longer deletes anything past 100 items).
+The 167 tests of the JavaFX desktop client are spread over 24 classes run by Maven Surefire: offline services, SQLite repository, the sync three-way merge, token vault (`TokenVault`), the plugin system, and paginated incident pull (`SyncServicePullTest`, which checks that the pull no longer deletes anything past 100 items).
 
 The `LoginViewSmokeTest` class relies on **TestFX** (`testfx-core`, `testfx-junit5`): it instantiates the real JavaFX toolkit and drives the login screen (3 smoke tests). Since it starts a graphical interface, it requires a display server — on a headless runner, `make test-desktop` and the CI job therefore wrap the run in `xvfb-run` (Xvfb virtual display):
 

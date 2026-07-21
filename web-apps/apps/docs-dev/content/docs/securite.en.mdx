@@ -134,9 +134,9 @@ Incident visibility is not just an ownership check. A resident sees **all** `nei
 
 ### DSL scope and injection
 
-The moderation DSL (`POST /dsl/query`) is open to the `moderator` and `admin` roles, but access is not global for all that:
+The DSL (`POST /dsl/query`) is restricted to the `admin` role (`@Roles('admin')`): the editor lives in the admin panel, and an administrator queries the whole dataset. Several safeguards still frame the execution:
 
-- **Neighborhood scoping** — every non-admin caller is bounded to their `neighborhoodId` on the `incidents`, `services`, `events` and `users` collections; only `neighborhoods` stays public. A moderator with no neighborhood gets an empty result. The DSL therefore cannot serve as a back door to read other neighborhoods.
+- **Global scope, defensive filter** — an administrator is never partitioned. `DslService` nonetheless keeps a `neighborhoodId` filter for any non-admin caller (`incidents`, `services`, `events`, `users`; `neighborhoods` stays public), defense in depth that never fires since no non-admin reaches the route.
 - **Result cap** — every `FIND` query is capped at **100 results**, with or without an explicit `LIMIT`.
 - **Escaped `LIKE`** — the `LIKE` operator compiles to an **escaped literal substring** search (the value goes through `re.escape`), not to an active regex pattern: metacharacters are treated literally, which neutralises regex injection and ReDoS.
 

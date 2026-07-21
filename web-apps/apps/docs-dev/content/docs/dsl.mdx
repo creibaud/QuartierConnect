@@ -5,7 +5,7 @@ description: Syntaxe et exécution du langage de requêtes
 
 ## À quoi sert le DSL
 
-Le DSL de QuartierConnect est un **micro-langage de requête** qui permet aux modérateurs et aux administrateurs d'interroger les collections de l'application sans écrire de code. Il est exposé via `POST /dsl/query` et consommé depuis le panneau d'administration React. Un **modérateur** n'accède qu'aux données de son propre quartier ; seul l'**administrateur** interroge l'ensemble des données.
+Le DSL de QuartierConnect est un **micro-langage de requête** qui permet aux administrateurs d'interroger les collections de l'application sans écrire de code. Il est exposé via `POST /dsl/query`, gardé par `@Roles('admin')`, et consommé depuis l'éditeur du panneau d'administration React. L'endpoint étant réservé aux administrateurs, une requête porte sur l'**ensemble des données**, sans cloisonnement par quartier.
 
 Le choix d'un DSL plutôt que de MongoDB brut répond à trois objectifs :
 
@@ -83,12 +83,12 @@ FIND events WHERE maxAttendees >= 50 LIMIT 10
 
 Le pipeline est linéaire, du texte au résultat JSON :
 
-1. **Requête HTTP** — `DslController` reçoit le `POST /dsl/query`, protégé par `JwtAuthGuard` + `RolesGuard` avec `@Roles('moderator', 'admin')`. Le DTO `DslQueryDto` borne la **longueur de la requête à 500 caractères** (`@MaxLength(500)`). Le `req.user` (rôle + `neighborhoodId`) est transmis au service, qui s'en sert pour le scoping par quartier.
+1. **Requête HTTP** — `DslController` reçoit le `POST /dsl/query`, protégé par `JwtAuthGuard` + `RolesGuard` avec `@Roles('admin')`. Le DTO `DslQueryDto` borne la **longueur de la requête à 500 caractères** (`@MaxLength(500)`). Le `req.user` est transmis au service ; comme seul un administrateur atteint la route, la requête reste globale.
 2. **Lexer** (`dsl/lexer.py`) — découpe le texte en tokens (`FIND`, `IDENTIFIER`, `WHERE`, `STRING`…).
 3. **Parser** (`dsl/parser.py`) — grammaire **LALR(1)** produisant un AST sous forme de `dict` Python (`type`, `collection`, `filter`, `limit`).
 4. **Compilateur** (`dsl/compiler.py`) — valide la collection contre une **liste blanche** et renvoie l'AST.
 5. **Sérialisation de l'AST** (`dsl/main.py`) — `main.py` renvoie l'AST compilé **en JSON** via pythonia ; le code Python n'accède plus à aucune base (il n'y a plus de Motor).
-6. **Exécution** (NestJS `DslService`) — c'est le service Node qui exécute la requête : **Mongoose** pour `neighborhoods`, `services` et `events`, **Drizzle/PostgreSQL** pour `incidents` et `users`. Le service applique ici le **scoping par quartier** (pour tout demandeur non-admin) et **plafonne à 100 résultats** (`MAX_DSL_RESULTS`).
+6. **Exécution** (NestJS `DslService`) — c'est le service Node qui exécute la requête : **Mongoose** pour `neighborhoods`, `services` et `events`, **Drizzle/PostgreSQL** pour `incidents` et `users`. Le service **plafonne à 100 résultats** (`MAX_DSL_RESULTS`) ; il conserve par ailleurs un filtre par quartier pour tout demandeur non-admin, garde défensive sans effet puisque seuls des administrateurs (globaux) atteignent la route.
 7. **Retour** — le résultat remonte à NestJS : un tableau de documents pour un `find`, `{ count: N }` pour un `count`.
 
 Le schéma ci-dessous résume ce pipeline : le contrôle d'accès et l'exécution vivent dans NestJS, tandis que la passerelle Python se limite à transformer le texte en AST validé. Aucune base n'est touchée côté Python.
@@ -103,7 +103,7 @@ Le schéma ci-dessous résume ce pipeline : le contrôle d'accès et l'exécutio
     compiler["compiler.py<br/>liste blanche collections"]
   end
   ast["AST serialise en JSON<br/>renvoye via pythonia"]
-  service["DslService (NestJS)<br/>scoping quartier + plafond 100"]
+  service["DslService (NestJS)<br/>execution + plafond 100"]
   mongo[("Mongoose<br/>neighborhoods, services, events")]
   pg[("Drizzle / PostgreSQL<br/>incidents, users")]
   result["Resultat JSON<br/>documents ou count"]
@@ -158,7 +158,7 @@ const MAX_DSL_RESULTS = 100; // plafond réel, appliqué par clampLimit
 // Un non-admin sans neighborhoodId reçoit un résultat vide (sauf neighborhoods).
 ```
 
-> Le point d'application du scoping est ici, dans NestJS — pas dans le Python. Un modérateur ne peut donc pas contourner le cloisonnement par quartier via le DSL.
+> L'endpoint est réservé aux administrateurs (`@Roles('admin')`), donc aucun non-admin ne l'atteint. Le filtre par quartier subsiste dans `DslService` à titre de défense en profondeur.
 
 ## Sécurité et garde-fous
 
@@ -168,8 +168,8 @@ const MAX_DSL_RESULTS = 100; // plafond réel, appliqué par clampLimit
 | Opérations destructives | `FIND` et `COUNT` uniquement — aucun `DELETE`/`UPDATE`/`INSERT` |
 | Injections (Mongo / SQL) | Les valeurs passent par le moteur (Mongoose ou requêtes Drizzle paramétrées) — aucune concaténation |
 | ReDoS via `LIKE` | La valeur est échappée par `re.escape` : `LIKE` est une sous-chaîne littérale, jamais un motif regex actif |
-| Accès non autorisé | Route protégée par `@Roles('moderator', 'admin')` |
-| Fuite inter-quartiers | Un modérateur est scopé à son `neighborhoodId` (services, events, incidents, users) ; seul l'admin est global, `neighborhoods` reste public |
+| Accès non autorisé | Route protégée par `@Roles('admin')` — administrateurs uniquement |
+| Fuite inter-quartiers | L'endpoint est réservé aux administrateurs, qui interrogent l'ensemble des données ; un filtre par quartier reste dans `DslService` comme garde défensive pour tout demandeur non-admin |
 | Ressources excessives | 100 résultats maximum par requête (`MAX_DSL_RESULTS`, appliqué côté NestJS) |
 
 Ces garde-fous forment une chaîne : chaque étape peut rejeter la requête, et seules celles qui franchissent tous les contrôles atteignent une lecture paramétrée. Le rôle est vérifié par le `RolesGuard` (403), le verbe et la collection par la grammaire puis le compilateur (400), tandis que le scoping, l'échappement de `LIKE` et le plafond sont des transformations appliquées côté NestJS avant l'accès au moteur.
@@ -177,7 +177,7 @@ Ces garde-fous forment une chaîne : chaque étape peut rejeter la requête, et 
 <Mermaid
   chart={`flowchart TB
   req["Requete DSL entrante"]
-  role{"Role autorise?<br/>moderator ou admin"}
+  role{"Role autorise?<br/>admin"}
   verb{"Verbe FIND ou COUNT?"}
   wl{"Collection dans<br/>la liste blanche?"}
   scope["Scoping par quartier<br/>si non-admin"]

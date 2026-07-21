@@ -3,13 +3,13 @@ title: Desktop application
 description: JavaFX administration client, offline mode and synchronization
 ---
 
-The `fr.quartierconnect.desktopapp` desktop application is a native **JavaFX 21** client aimed at **administrators and moderators**. It gives access to neighborhood incident administration even without a connection: data is cached locally in SQLite and a `SyncService` reconciles changes with the API through a Git-inspired three-way merge.
+The `fr.quartierconnect.desktopapp` desktop application is a native **JavaFX 21** client **restricted to administrators** (its only sign-in path, SSO, is admin-gated server-side). It gives access to neighborhood incident administration even without a connection: data is cached locally in SQLite and a `SyncService` reconciles changes with the API through a Git-inspired three-way merge.
 
 The `fr.quartierconnect:desktop-app` Maven module targets Java 21. It relies on JavaFX (`javafx-controls`, `javafx-fxml`), the [AtlantaFX](https://mvnrepository.com/artifact/io.github.mkpaz/atlantafx-base) theme, the Ikonli/FontAwesome icons, the `sqlite-jdbc` driver (org.xerial), Jackson for JSON and `java-keyring` for the system keyring. The bootstrap class is `fr.quartierconnect.desktopapp.Launcher`, which delegates to `MainApp` (a `javafx.application.Application`).
 
 ## What the application is for
 
-On startup, `MainApp.start()` initializes the SQLite database (`SQLiteDatabase.initialize()`) then shows `LoginView`. Signing in happens **through the browser**: the main button launches an SSO PKCE flow (`startSsoPkceFlow`) whose return is captured by a small local loopback server `SsoCallbackServer`, then exchanged for a token pair by `AuthService.exchangeSsoToken` (endpoint `/auth/sso/exchange`). A direct email / password / TOTP sign-in also exists (`AuthService.login` → `/auth/login`). The role (`admin` / `moderator`) is read from the JWT payload by `AuthService.getCurrentUserRole()`.
+On startup, `MainApp.start()` initializes the SQLite database (`SQLiteDatabase.initialize()`) then shows `LoginView`. Signing in happens **through the browser**: the main button launches an SSO PKCE flow (`startSsoPkceFlow`) whose return is captured by a small local loopback server `SsoCallbackServer`, then exchanged for a token pair by `AuthService.exchangeSsoToken` (endpoint `/auth/sso/exchange`). This SSO flow is **the only sign-in path** and is **administrators-only server-side**: generating a token for the `java-desktop` surface returns `403 DESKTOP_ADMIN_ONLY` when the requester is not an administrator. The role is read from the JWT payload by `AuthService.getCurrentUserRole()`.
 
 Once authenticated, the user works on incidents (`IncidentsView`, `IncidentDetailPane`, `IncidentCreateForm`): creation, status change, conflict resolution (`ConflictResolutionForm`). All these actions write **locally** first, then flow up to the API on the next synchronization cycle.
 

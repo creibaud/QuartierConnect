@@ -177,14 +177,14 @@ The role hierarchy is `resident` → `moderator` → `admin`, plus the `banned` 
 |--------------|-------|
 | Public | No authentication required |
 | Authenticated | Any signed-in account (resident, moderator or administrator) |
-| moderator / admin | Moderation: incident status, soft delete, DSL execution |
-| admin | Full administration: users, neighborhoods, statistics |
+| moderator / admin | Moderation: incident status, soft delete |
+| admin | Full administration: users, neighborhoods, statistics, DSL execution |
 
 Key points of the permission model:
 
 - **resident** — standard authenticated access, scoped to the neighborhood. A resident sees the services of their neighborhood and the `neighborhood`-category incidents of their neighborhood (even those they did not author), plus **their own** moderation reports (`reporting`, `bug`). Other people's moderation reports are hidden from the list, and `GET /incidents/:id` returns **404** (not 403) on such a report, so its existence is never revealed.
-- **moderator** — same neighborhood limits as a resident (bounded to their own neighborhood), but **all incident categories included**, plus moderation: `PATCH /incidents/:id/status`, `DELETE /incidents/:id` and running `POST /dsl/query` queries (also scoped to their neighborhood).
-- **admin** — global scope (lists all neighborhoods, services and incidents) and access to administration: `GET /users`, `PATCH /users/:id/role`, neighborhood management, `GET /stats`.
+- **moderator** — same neighborhood limits as a resident (bounded to their own neighborhood), but **all incident categories included**, plus moderation: `PATCH /incidents/:id/status` and `DELETE /incidents/:id`.
+- **admin** — global scope (lists all neighborhoods, services and incidents) and access to administration: `GET /users`, `PATCH /users/:id/role`, neighborhood management, `GET /stats`, and running DSL queries (`POST /dsl/query`).
 - **banned** — blocking account state. Banning records the current role (`previousRole`) so it can be restored on reactivation.
 
 > The "Required role" column of the Scalar reference reflects the guards actually applied on each route.
@@ -204,8 +204,8 @@ Endpoint families split by the guard applied. Each level inherits the access of 
   mod --> adm
   pub --> p1["register, login, refresh, sso/exchange"]
   auth --> a1["users/me, incidents, messages,<br/>contracts, votes, sso/generate, logout"]
-  mod --> m1["PATCH incidents/:id/status,<br/>DELETE incidents/:id, POST dsl/query"]
-  adm --> d1["GET users, PATCH users/:id/role,<br/>neighborhoods, GET stats"]`}
+  mod --> m1["PATCH incidents/:id/status,<br/>DELETE incidents/:id"]
+  adm --> d1["GET users, PATCH users/:id/role,<br/>neighborhoods, GET stats, POST dsl/query"]`}
 />
 
 ## Conventions
