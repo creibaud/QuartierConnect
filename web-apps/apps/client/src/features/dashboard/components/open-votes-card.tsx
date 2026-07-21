@@ -37,7 +37,8 @@ export function OpenVotesCard() {
                 <ItemGroup>
                     {openVotes.map((v) => {
                         const voted = !!user && (v.casts ?? []).some((c) => c.userId === user.sub);
-                        const participants = v.casts?.length ?? 0;
+                        const participants =
+                            v.participantCount ?? v.casts?.length ?? 0;
                         return (
                             <Item key={v._id} variant="outline" size="sm">
                                 <ItemContent>

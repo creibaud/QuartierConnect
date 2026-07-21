@@ -95,6 +95,7 @@ function AdminLoginPage() {
                 const messages: Record<string, string> = {
                     INVALID_PASSWORD: t("adminPages.auth.invalidPassword"),
                     INVALID_TOTP: t("adminPages.auth.invalidTotp"),
+                    ACCOUNT_BANNED: t("adminPages.auth.accountBanned"),
                 };
                 setServerError(
                     resolveAuthErrorMessage(

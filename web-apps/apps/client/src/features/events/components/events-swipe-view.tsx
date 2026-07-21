@@ -49,10 +49,10 @@ export function EventsSwipeView({ events }: { events: Event[] }) {
         interest.mutate(
             { eventId: current._id, source: "swipe" },
             {
+                onSuccess: () => toast.success(t("pages.events.interested")),
                 onError: () => toast.error(t("pages.events.participateError")),
             },
         );
-        toast.success(t("pages.events.interested"));
         advance("right");
     }
 

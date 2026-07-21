@@ -49,6 +49,7 @@ export default {
         errors: {
             invalidCredentials: "Incorrect email or password",
             invalidTotp: "Invalid TOTP code",
+            accountBanned: "This account has been suspended.",
             loginFailed: "Login error",
             tooManyAttempts:
                 "Too many login attempts. Try again in a few minutes.",
@@ -628,6 +629,7 @@ export default {
                 notPaid: "This service is not paid.",
                 closed: "This service is no longer available.",
                 ownService: "You cannot book your own service.",
+                outOfScope: "This service is not in your neighborhood.",
             },
             mine: {
                 title: "My services",
@@ -713,6 +715,12 @@ export default {
             updating: "Updating…",
             statusUpdated: "Status updated",
             statusUpdateError: "Unable to change the status",
+            delete: "Delete incident",
+            deleteConfirmTitle: "Delete this incident?",
+            deleteConfirmDescription:
+                "This action is permanent and cannot be undone.",
+            deleteSuccess: "Incident deleted",
+            deleteError: "Unable to delete the incident",
         },
         contracts: {
             description: "Sign and track your neighborhood contracts.",
@@ -932,6 +940,7 @@ export default {
             loginSuccess: "Admin login successful",
             invalidPassword: "Incorrect email or password",
             invalidTotp: "Invalid TOTP code",
+            accountBanned: "This account has been suspended.",
             loginError: "Login error",
             continue: "Continue",
             totpForLabel: "TOTP code for",

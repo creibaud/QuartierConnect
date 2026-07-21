@@ -6,6 +6,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@workspace/ui/components/card";
+import { IncidentDeleteButton } from "./incident-delete-button";
 import { IncidentStatusTransition } from "./incident-status-transition";
 import { IncidentVoteButtons } from "./incident-vote-buttons";
 
@@ -34,6 +35,8 @@ export function IncidentDescriptionCard({ incident }: { incident: Incident }) {
                     id={incident.id}
                     status={incident.status}
                 />
+
+                <IncidentDeleteButton id={incident.id} />
             </CardContent>
         </Card>
     );

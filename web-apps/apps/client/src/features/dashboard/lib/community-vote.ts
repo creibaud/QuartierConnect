@@ -7,5 +7,6 @@ export interface CommunityVote {
     title: string;
     status: "open" | "closed";
     endsAt?: string;
+    participantCount?: number;
     casts?: CommunityVoteCast[];
 }

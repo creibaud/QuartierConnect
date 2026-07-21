@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { apiPost } from "@workspace/shared/lib/api";
+import { clearTokens } from "@workspace/shared/lib/auth";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent } from "@workspace/ui/components/card";
 import { Label } from "@workspace/ui/components/label";
@@ -13,10 +16,18 @@ import { useSubmitAddress } from "../hooks/address.hooks";
 export function AddressGatePage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [addressInput, setAddressInput] = useState("");
     const [confirmedName, setConfirmedName] = useState<string | null>(null);
 
     const { mutate: submitAddress, isPending } = useSubmitAddress();
+
+    async function handleLogout() {
+        await apiPost("/auth/logout", {}).catch(() => undefined);
+        clearTokens();
+        queryClient.clear();
+        void navigate({ to: "/login" });
+    }
 
     function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -56,30 +67,42 @@ export function AddressGatePage() {
                             <Spinner className="mx-auto mt-2" />
                         </div>
                     ) : (
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="address">
-                                    {t("pages.onboarding.address.label")}
-                                </Label>
-                                <AddressAutocomplete
-                                    id="address"
-                                    value={addressInput}
-                                    onChange={setAddressInput}
-                                    onSelect={(s) => setAddressInput(s.label)}
-                                    placeholder="12 rue de Reuilly, 75012 Paris"
-                                />
-                            </div>
+                        <>
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="address">
+                                        {t("pages.onboarding.address.label")}
+                                    </Label>
+                                    <AddressAutocomplete
+                                        id="address"
+                                        value={addressInput}
+                                        onChange={setAddressInput}
+                                        onSelect={(s) =>
+                                            setAddressInput(s.label)
+                                        }
+                                        placeholder="12 rue de Reuilly, 75012 Paris"
+                                    />
+                                </div>
+                                <Button
+                                    type="submit"
+                                    className="w-full"
+                                    disabled={isPending || !addressInput.trim()}
+                                >
+                                    {isPending ? (
+                                        <Spinner className="mr-2" />
+                                    ) : null}
+                                    {t("pages.onboarding.address.confirm")}
+                                </Button>
+                            </form>
                             <Button
-                                type="submit"
+                                type="button"
+                                variant="ghost"
                                 className="w-full"
-                                disabled={isPending || !addressInput.trim()}
+                                onClick={() => void handleLogout()}
                             >
-                                {isPending ? (
-                                    <Spinner className="mr-2" />
-                                ) : null}
-                                {t("pages.onboarding.address.confirm")}
+                                {t("auth.logout")}
                             </Button>
-                        </form>
+                        </>
                     )}
                 </CardContent>
             </Card>

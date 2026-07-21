@@ -39,6 +39,21 @@ import {
 } from "@/features/onboarding/lib/address-state";
 import { RealtimeProvider } from "@/features/realtime/realtime-provider";
 
+// Routes that need no neighborhood stay reachable while coverage is pending.
+const PENDING_ALLOWED_PREFIXES = [
+    "/contracts",
+    "/points",
+    "/messages",
+    "/bookings",
+    "/settings",
+];
+
+function isReachableWhilePending(pathname: string): boolean {
+    return PENDING_ALLOWED_PREFIXES.some(
+        (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    );
+}
+
 export const Route = createFileRoute("/_app")({
     beforeLoad: async ({ location }) => {
         const user = await ensureAuthenticated();
@@ -61,7 +76,10 @@ export const Route = createFileRoute("/_app")({
                 if (state === "needs-address") {
                     throw redirect({ to: "/onboarding/address" });
                 }
-                if (state === "pending")
+                if (
+                    state === "pending" &&
+                    !isReachableWhilePending(location.pathname)
+                )
                     throw redirect({ to: "/onboarding/pending" });
             }
         }

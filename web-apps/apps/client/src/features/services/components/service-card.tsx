@@ -229,6 +229,9 @@ function ReserveButton({
                         CANNOT_BOOK_OWN: t(
                             "pages.services.bookingErrors.ownService",
                         ),
+                        SERVICE_OUT_OF_SCOPE: t(
+                            "pages.services.bookingErrors.outOfScope",
+                        ),
                     };
                     toast.error(
                         (code && messages[code]) ??

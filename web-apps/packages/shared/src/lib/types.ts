@@ -195,7 +195,7 @@ export interface VoteScore {
     breakdown: Record<string, number>;
 }
 
-export type VoteTargetType = "incident" | "service" | "event" | "comment";
+export type VoteTargetType = "incident" | "service" | "event";
 export type VoteType = "like" | "dislike" | "up" | "down";
 
 export interface MyProfile {

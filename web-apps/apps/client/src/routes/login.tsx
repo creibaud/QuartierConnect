@@ -93,6 +93,7 @@ function LoginPage() {
                 const messages: Record<string, string> = {
                     INVALID_PASSWORD: t("auth.errors.invalidCredentials"),
                     INVALID_TOTP: t("auth.errors.invalidTotp"),
+                    ACCOUNT_BANNED: t("auth.errors.accountBanned"),
                 };
                 setServerError(
                     resolveAuthErrorMessage(

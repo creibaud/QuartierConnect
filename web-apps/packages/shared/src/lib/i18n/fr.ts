@@ -50,6 +50,7 @@ export default {
         errors: {
             invalidCredentials: "Email ou mot de passe incorrect",
             invalidTotp: "Code TOTP invalide",
+            accountBanned: "Ce compte a été suspendu.",
             loginFailed: "Erreur de connexion",
             tooManyAttempts:
                 "Trop de tentatives de connexion. Réessayez dans quelques minutes.",
@@ -635,6 +636,7 @@ export default {
                 notPaid: "Ce service n'est pas payant.",
                 closed: "Ce service n'est plus disponible.",
                 ownService: "Vous ne pouvez pas réserver votre propre service.",
+                outOfScope: "Ce service n'est pas dans votre quartier.",
             },
             mine: {
                 title: "Mes services",
@@ -721,6 +723,12 @@ export default {
             updating: "Mise à jour…",
             statusUpdated: "Statut mis à jour",
             statusUpdateError: "Impossible de changer le statut",
+            delete: "Supprimer l'incident",
+            deleteConfirmTitle: "Supprimer cet incident ?",
+            deleteConfirmDescription:
+                "Cette action est définitive et ne peut pas être annulée.",
+            deleteSuccess: "Incident supprimé",
+            deleteError: "Impossible de supprimer l'incident",
         },
         contracts: {
             description: "Signez et suivez vos contrats de quartier.",
@@ -942,6 +950,7 @@ export default {
             loginSuccess: "Connexion admin réussie",
             invalidPassword: "Email ou mot de passe incorrect",
             invalidTotp: "Code TOTP invalide",
+            accountBanned: "Ce compte a été suspendu.",
             loginError: "Erreur de connexion",
             continue: "Continuer",
             totpForLabel: "Code TOTP pour",
