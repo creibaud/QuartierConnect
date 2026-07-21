@@ -437,7 +437,7 @@ export class IncidentsController {
     @ApiOperation({
         summary: "Sync incidents from the Java Desktop client",
         description:
-            "Bulk upsert of incidents. Residents can only upsert incidents whose `createdBy` matches the JWT's UUID; their items are forced into their own neighborhood with status `open` and cannot change the status of existing rows (the state machine is moderator-only, as with PATCH /incidents/:id/status). Moderators and admins can upsert incidents owned by anyone (the original owner is preserved on update). Items not upserted are reported in `skippedIds` so the client keeps them pending.",
+            "Bulk upsert of incidents. Residents can only upsert incidents whose `createdBy` matches the JWT's UUID; their items are forced into their own neighborhood with status `open` and cannot change the status of existing rows (the state machine is moderator-only, as with PATCH /incidents/:id/status). Moderators and admins can upsert incidents owned by anyone (the original owner is preserved on update); their status updates follow the same transition rules as PATCH — an invalid transition keeps the stored status. Items without a `neighborhoodId` land in the pusher's own neighborhood, and payloads without coordinates keep the stored `lat`/`lng`. Items not upserted are reported in `skippedIds` so the client keeps them pending.",
     })
     @ApiResponse({ status: 201, type: SyncResultDto })
     @ApiResponse({ status: 401, description: "Not authenticated" })
@@ -445,12 +445,15 @@ export class IncidentsController {
         const isAdmin = req.user.role === "admin";
         const isModerator = req.user.role === "moderator";
         const canModerate = isAdmin || isModerator;
-        // Scope items by role; out-of-scope items go to skippedIds.
+        // Scope items by role; out-of-scope items go to skippedIds. Items
+        // without a neighborhood (the desktop payload) count as the pusher's own.
         const allowedItems = isAdmin
             ? dto.incidents
             : isModerator
               ? dto.incidents.filter(
-                    (item) => item.neighborhoodId === req.user.neighborhoodId,
+                    (item) =>
+                        (item.neighborhoodId ?? req.user.neighborhoodId) ===
+                        req.user.neighborhoodId,
                 )
               : dto.incidents.filter((item) => item.createdBy === req.user.sub);
 
@@ -462,7 +465,8 @@ export class IncidentsController {
             };
 
         // Residents can't choose status or neighborhood: forced to their own,
-        // status open.
+        // status open. Missing neighborhoods fall back to the pusher's quartier
+        // so desktop-created incidents stay visible to the neighborhood.
         const upsert = this.db.insert(schema.incidents).values(
             allowedItems.map((item) => ({
                 id: item.id,
@@ -471,23 +475,42 @@ export class IncidentsController {
                 status: canModerate ? (item.status ?? "open") : "open",
                 createdBy: canModerate ? item.createdBy : req.user.sub,
                 neighborhoodId: canModerate
-                    ? item.neighborhoodId
+                    ? (item.neighborhoodId ?? req.user.neighborhoodId ?? null)
                     : (req.user.neighborhoodId ?? null),
                 lat: item.lat,
                 lng: item.lng,
             })),
         );
 
+        // Payloads without coordinates (the desktop never sends any) must not
+        // wipe the pins stored by the web clients.
         const baseConflictUpdateSet = {
             title: sql`excluded.title`,
             description: sql`excluded.description`,
-            lat: sql`excluded.lat`,
-            lng: sql`excluded.lng`,
+            lat: sql`coalesce(excluded.lat, ${schema.incidents.lat})`,
+            lng: sql`coalesce(excluded.lng, ${schema.incidents.lng})`,
             updatedAt: new Date(),
         };
-        // Residents must not overwrite the status of an existing row either.
+        // Residents must not overwrite the status of an existing row, and
+        // moderation follows the same state machine as PATCH: an invalid
+        // transition keeps the stored status instead of applying a backdoor.
+        const transitionArms = Object.entries(VALID_TRANSITIONS).flatMap(
+            ([from, targets]) =>
+                targets.map(
+                    (target) =>
+                        sql`when ${schema.incidents.status} = ${from} and excluded.status = ${target} then excluded.status`,
+                ),
+        );
+        const clampedStatus = sql.join(
+            [
+                sql`case`,
+                ...transitionArms,
+                sql`else ${schema.incidents.status} end`,
+            ],
+            sql` `,
+        );
         const conflictUpdateSet = canModerate
-            ? { ...baseConflictUpdateSet, status: sql`excluded.status` }
+            ? { ...baseConflictUpdateSet, status: clampedStatus }
             : baseConflictUpdateSet;
 
         // Restrict which existing rows each role may update.

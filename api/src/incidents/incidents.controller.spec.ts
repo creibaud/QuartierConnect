@@ -695,6 +695,144 @@ describe("IncidentsController", () => {
         expect(result.skippedIds).toEqual(["inc-hijack"]);
     });
 
+    it("POST /incidents/sync accepts a moderator item without neighborhoodId (desktop payload) into their own quartier", async () => {
+        const sync = buildSyncMockDb(["inc-desktop-1"]);
+        controller = await compileWithDb(sync.db);
+
+        const result = await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-desktop-1",
+                        title: "Desktop",
+                        description: "D",
+                        createdBy: "other-user",
+                        status: "in_progress",
+                    },
+                ],
+            },
+            authReq("mod-uuid-1", "moderator") as any,
+        );
+
+        expect(result.upserted).toBe(1);
+        const insertedValues = sync.valuesSpy.mock.calls[0][0];
+        expect(insertedValues[0].neighborhoodId).toBe("n1");
+    });
+
+    it("POST /incidents/sync still skips moderator items aimed at another quartier", async () => {
+        const sync = buildSyncMockDb([]);
+        controller = await compileWithDb(sync.db);
+
+        const result = await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-elsewhere",
+                        title: "T",
+                        description: "D",
+                        createdBy: "other-user",
+                        neighborhoodId: "n2",
+                    },
+                ],
+            },
+            authReq("mod-uuid-1", "moderator") as any,
+        );
+
+        expect(result.upserted).toBe(0);
+        expect(result.skippedIds).toEqual(["inc-elsewhere"]);
+        expect(sync.db.insert).not.toHaveBeenCalled();
+    });
+
+    it("POST /incidents/sync defaults a missing neighborhoodId to the admin's own quartier", async () => {
+        const sync = buildSyncMockDb(["inc-a1", "inc-a2"]);
+        controller = await compileWithDb(sync.db);
+
+        await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-a1",
+                        title: "No quartier",
+                        description: "D",
+                        createdBy: "admin-uuid-1",
+                    },
+                    {
+                        id: "inc-a2",
+                        title: "Explicit quartier",
+                        description: "D",
+                        createdBy: "admin-uuid-1",
+                        neighborhoodId: "n2",
+                    },
+                ],
+            },
+            authReq("admin-uuid-1", "admin") as any,
+        );
+
+        const insertedValues = sync.valuesSpy.mock.calls[0][0];
+        expect(insertedValues[0].neighborhoodId).toBe("n1");
+        expect(insertedValues[1].neighborhoodId).toBe("n2");
+    });
+
+    it("POST /incidents/sync keeps stored coordinates when the payload carries none", async () => {
+        const sync = buildSyncMockDb(["inc-1"]);
+        controller = await compileWithDb(sync.db);
+
+        await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-1",
+                        title: "Mine",
+                        description: "D",
+                        createdBy: "user-uuid-1",
+                    },
+                ],
+            },
+            authReq() as any,
+        );
+
+        const conflictConfig = sync.onConflictSpy.mock.calls[0][0];
+        expect(renderSql(conflictConfig.set.lat).sql).toMatch(
+            /coalesce\(excluded\.lat, .*"lat"/i,
+        );
+        expect(renderSql(conflictConfig.set.lng).sql).toMatch(
+            /coalesce\(excluded\.lng, .*"lng"/i,
+        );
+    });
+
+    it("POST /incidents/sync clamps moderator status updates to the state machine (no reopen backdoor)", async () => {
+        const sync = buildSyncMockDb(["inc-1"]);
+        controller = await compileWithDb(sync.db);
+
+        await controller.sync(
+            {
+                incidents: [
+                    {
+                        id: "inc-1",
+                        title: "T",
+                        description: "D",
+                        createdBy: "other-user",
+                        neighborhoodId: "n1",
+                        status: "open",
+                    },
+                ],
+            },
+            authReq("admin-uuid-1", "admin") as any,
+        );
+
+        const conflictConfig = sync.onConflictSpy.mock.calls[0][0];
+        const rendered = renderSql(conflictConfig.set.status);
+        expect(rendered.sql).toMatch(/case/i);
+        expect(rendered.sql).toContain("excluded");
+        expect(rendered.params).toEqual(
+            expect.arrayContaining([
+                "open",
+                "in_progress",
+                "resolved",
+            ]),
+        );
+    });
+
     it("POST /incidents/sync returns all ids as skipped for an all-foreign resident payload", async () => {
         const sync = buildSyncMockDb([]);
         controller = await compileWithDb(sync.db);
