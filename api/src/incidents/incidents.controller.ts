@@ -1,12 +1,8 @@
 import {
-    BadRequestException,
     Body,
     Controller,
     Delete,
-    ForbiddenException,
     Get,
-    Inject,
-    NotFoundException,
     Param,
     Patch,
     Post,
@@ -23,43 +19,15 @@ import {
     ApiResponse,
     ApiTags,
 } from "@nestjs/swagger";
-import {
-    and,
-    asc,
-    count,
-    desc,
-    eq,
-    gt,
-    ilike,
-    isNull,
-    or,
-    sql,
-} from "drizzle-orm";
-import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { Response } from "express";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
-import {
-    escapeLike,
-    parsePagination,
-    resolveSort,
-    setPageHeaders,
-} from "../common/pagination";
-import { DRIZZLE_TOKEN } from "../database/drizzle.module";
-import * as schema from "../database/schema";
 import { CreateIncidentDto } from "./dto/create-incident.dto";
 import { IncidentDto, SyncResultDto } from "./dto/incident-response.dto";
 import { SyncIncidentsDto } from "./dto/sync-incident.dto";
 import { UpdateIncidentStatusDto } from "./dto/update-incident-status.dto";
-
-const VALID_TRANSITIONS: Record<string, string[]> = {
-    open: ["in_progress"],
-    in_progress: ["resolved"],
-    resolved: [],
-};
-
-const VALID_STATUSES = ["open", "in_progress", "resolved"] as const;
+import { IncidentsService } from "./incidents.service";
 
 interface AuthRequest {
     user: { sub: string; role: string; neighborhoodId?: string | null };
@@ -70,38 +38,7 @@ interface AuthRequest {
 @Controller("incidents")
 @UseGuards(JwtAuthGuard)
 export class IncidentsController {
-    constructor(
-        @Inject(DRIZZLE_TOKEN)
-        private readonly db: PostgresJsDatabase<typeof schema>,
-    ) {}
-
-    // Non-admins are scoped to their own neighborhood; admins see all.
-    private assertNeighborhoodScope(
-        incident: { neighborhoodId: string | null },
-        req: AuthRequest,
-    ): void {
-        if (
-            req.user.role !== "admin" &&
-            incident.neighborhoodId !== req.user.neighborhoodId
-        ) {
-            throw new ForbiddenException("Incident outside your neighborhood");
-        }
-    }
-
-    private canModerate(req: AuthRequest): boolean {
-        return req.user.role === "admin" || req.user.role === "moderator";
-    }
-
-    // Moderation categories are confidential; 404 (not 403) hides their existence.
-    private assertCategoryVisibility(
-        incident: { category: string; createdBy: string },
-        req: AuthRequest,
-    ): void {
-        if (this.canModerate(req)) return;
-        if (incident.category === "neighborhood") return;
-        if (incident.createdBy === req.user.sub) return;
-        throw new NotFoundException("Incident not found");
-    }
+    constructor(private readonly incidentsService: IncidentsService) {}
 
     @Get()
     @ApiOperation({
@@ -178,88 +115,11 @@ export class IncidentsController {
         @Query("since") since?: string,
         @Request() req: AuthRequest = { user: { sub: "", role: "" } },
     ) {
-        const { limitNum, skip } = parsePagination(page, limit);
-
-        // Non-admins see only their own neighborhood's incidents.
-        const isAdmin = req.user.role === "admin";
-        if (!isAdmin && !req.user.neighborhoodId) return [];
-
-        const conditions = [isNull(schema.incidents.deletedAt)];
-        if (!isAdmin) {
-            conditions.push(
-                eq(
-                    schema.incidents.neighborhoodId,
-                    req.user.neighborhoodId as string,
-                ),
-            );
-        }
-        if (!this.canModerate(req)) {
-            // Residents see neighborhood incidents plus their own submissions.
-            const visible = or(
-                eq(schema.incidents.category, "neighborhood"),
-                eq(schema.incidents.createdBy, req.user.sub),
-            );
-            if (visible) conditions.push(visible);
-        }
-        if (status) {
-            if (
-                !VALID_STATUSES.includes(
-                    status as (typeof VALID_STATUSES)[number],
-                )
-            ) {
-                throw new BadRequestException(`Invalid status: ${status}`);
-            }
-            conditions.push(eq(schema.incidents.status, status));
-        }
-        if (typeof category === "string" && category) {
-            conditions.push(eq(schema.incidents.category, category));
-        }
-        if (typeof search === "string" && search.trim()) {
-            const term = `%${escapeLike(search.trim())}%`;
-            const bySearch = or(
-                ilike(schema.incidents.title, term),
-                ilike(schema.incidents.description, term),
-            );
-            if (bySearch) conditions.push(bySearch);
-        }
-        if (since) {
-            // Delta sync for the desktop client; a full pull omits this parameter.
-            const sinceDate = new Date(since);
-            if (Number.isNaN(sinceDate.getTime())) {
-                throw new BadRequestException(`Invalid since: ${since}`);
-            }
-            conditions.push(gt(schema.incidents.updatedAt, sinceDate));
-        }
-
-        const where = and(...conditions);
-        const sortMap = {
-            createdAt: schema.incidents.createdAt,
-            updatedAt: schema.incidents.updatedAt,
-            status: schema.incidents.status,
-        } as const;
-        const { field, direction } = resolveSort(
-            sort,
-            order,
-            ["createdAt", "updatedAt", "status"] as const,
-            "createdAt",
+        return this.incidentsService.findAll(
+            req.user,
+            { status, category, search, sort, order, page, limit, since },
+            res,
         );
-        const col = sortMap[field];
-
-        const [rows, [{ value: total }]] = await Promise.all([
-            this.db
-                .select()
-                .from(schema.incidents)
-                .where(where)
-                .orderBy(direction === "asc" ? asc(col) : desc(col))
-                .offset(skip)
-                .limit(limitNum),
-            this.db
-                .select({ value: count() })
-                .from(schema.incidents)
-                .where(where),
-        ]);
-        setPageHeaders(res, Number(total), limitNum);
-        return rows;
     }
 
     @Get(":id")
@@ -274,21 +134,8 @@ export class IncidentsController {
         status: 404,
         description: "Incident not found or deleted",
     })
-    async findOne(@Param("id") id: string, @Request() req: AuthRequest) {
-        const [incident] = await this.db
-            .select()
-            .from(schema.incidents)
-            .where(
-                and(
-                    eq(schema.incidents.id, id),
-                    isNull(schema.incidents.deletedAt),
-                ),
-            );
-
-        if (!incident) throw new NotFoundException("Incident not found");
-        this.assertNeighborhoodScope(incident, req);
-        this.assertCategoryVisibility(incident, req);
-        return incident;
+    findOne(@Param("id") id: string, @Request() req: AuthRequest) {
+        return this.incidentsService.findOne(id, req.user);
     }
 
     @Post()
@@ -304,24 +151,7 @@ export class IncidentsController {
     })
     @ApiResponse({ status: 401, description: "Not authenticated" })
     create(@Body() dto: CreateIncidentDto, @Request() req: AuthRequest) {
-        // Anti-spoofing: only admins may target another neighborhood.
-        const neighborhoodId =
-            req.user.role === "admin"
-                ? (dto.neighborhoodId ?? req.user.neighborhoodId ?? null)
-                : (req.user.neighborhoodId ?? null);
-        return this.db
-            .insert(schema.incidents)
-            .values({
-                title: dto.title,
-                description: dto.description,
-                neighborhoodId,
-                lat: dto.lat,
-                lng: dto.lng,
-                createdBy: req.user.sub,
-                status: "open",
-                category: dto.category ?? "neighborhood",
-            })
-            .returning();
+        return this.incidentsService.create(dto, req.user);
     }
 
     @Patch(":id/status")
@@ -348,48 +178,12 @@ export class IncidentsController {
         description: "Insufficient role (moderator/admin required)",
     })
     @ApiResponse({ status: 404, description: "Incident not found" })
-    async updateStatus(
+    updateStatus(
         @Param("id") id: string,
         @Body() dto: UpdateIncidentStatusDto,
         @Request() req: AuthRequest,
     ) {
-        const [incident] = await this.db
-            .select()
-            .from(schema.incidents)
-            .where(
-                and(
-                    eq(schema.incidents.id, id),
-                    isNull(schema.incidents.deletedAt),
-                ),
-            );
-
-        if (!incident) throw new NotFoundException("Incident not found");
-        this.assertNeighborhoodScope(incident, req);
-
-        const allowed = VALID_TRANSITIONS[incident.status] ?? [];
-        if (!allowed.includes(dto.status)) {
-            throw new BadRequestException(
-                `Invalid transition: ${incident.status} → ${dto.status}`,
-            );
-        }
-
-        const [updated] = await this.db
-            .update(schema.incidents)
-            .set({ status: dto.status, updatedAt: new Date() })
-            .where(
-                and(
-                    eq(schema.incidents.id, id),
-                    eq(schema.incidents.status, incident.status),
-                    isNull(schema.incidents.deletedAt),
-                ),
-            )
-            .returning();
-
-        if (!updated)
-            throw new BadRequestException(
-                "Concurrent update detected, please retry",
-            );
-        return updated;
+        return this.incidentsService.updateStatus(id, dto, req.user);
     }
 
     @Delete(":id")
@@ -411,26 +205,8 @@ export class IncidentsController {
         description: "Insufficient role (moderator/admin required)",
     })
     @ApiResponse({ status: 404, description: "Incident not found" })
-    async remove(@Param("id") id: string, @Request() req: AuthRequest) {
-        const [incident] = await this.db
-            .select()
-            .from(schema.incidents)
-            .where(
-                and(
-                    eq(schema.incidents.id, id),
-                    isNull(schema.incidents.deletedAt),
-                ),
-            );
-
-        if (!incident) throw new NotFoundException("Incident not found");
-        this.assertNeighborhoodScope(incident, req);
-
-        await this.db
-            .update(schema.incidents)
-            .set({ deletedAt: new Date(), updatedAt: new Date() })
-            .where(eq(schema.incidents.id, id));
-
-        return { success: true };
+    remove(@Param("id") id: string, @Request() req: AuthRequest) {
+        return this.incidentsService.remove(id, req.user);
     }
 
     @Post("sync")
@@ -441,103 +217,7 @@ export class IncidentsController {
     })
     @ApiResponse({ status: 201, type: SyncResultDto })
     @ApiResponse({ status: 401, description: "Not authenticated" })
-    async sync(@Body() dto: SyncIncidentsDto, @Request() req: AuthRequest) {
-        const isAdmin = req.user.role === "admin";
-        const isModerator = req.user.role === "moderator";
-        const canModerate = isAdmin || isModerator;
-        // Scope items by role; out-of-scope items go to skippedIds. Items
-        // without a neighborhood (the desktop payload) count as the pusher's own.
-        const allowedItems = isAdmin
-            ? dto.incidents
-            : isModerator
-              ? dto.incidents.filter(
-                    (item) =>
-                        (item.neighborhoodId ?? req.user.neighborhoodId) ===
-                        req.user.neighborhoodId,
-                )
-              : dto.incidents.filter((item) => item.createdBy === req.user.sub);
-
-        if (allowedItems.length === 0)
-            return {
-                upserted: 0,
-                skipped: dto.incidents.length,
-                skippedIds: dto.incidents.map((item) => item.id),
-            };
-
-        // Residents can't choose status or neighborhood: forced to their own,
-        // status open. Missing neighborhoods fall back to the pusher's quartier
-        // so desktop-created incidents stay visible to the neighborhood.
-        const upsert = this.db.insert(schema.incidents).values(
-            allowedItems.map((item) => ({
-                id: item.id,
-                title: item.title,
-                description: item.description,
-                status: canModerate ? (item.status ?? "open") : "open",
-                createdBy: canModerate ? item.createdBy : req.user.sub,
-                neighborhoodId: canModerate
-                    ? (item.neighborhoodId ?? req.user.neighborhoodId ?? null)
-                    : (req.user.neighborhoodId ?? null),
-                lat: item.lat,
-                lng: item.lng,
-            })),
-        );
-
-        // Payloads without coordinates (the desktop never sends any) must not
-        // wipe the pins stored by the web clients.
-        const baseConflictUpdateSet = {
-            title: sql`excluded.title`,
-            description: sql`excluded.description`,
-            lat: sql`coalesce(excluded.lat, ${schema.incidents.lat})`,
-            lng: sql`coalesce(excluded.lng, ${schema.incidents.lng})`,
-            updatedAt: new Date(),
-        };
-        // Residents must not overwrite the status of an existing row, and
-        // moderation follows the same state machine as PATCH: an invalid
-        // transition keeps the stored status instead of applying a backdoor.
-        const transitionArms = Object.entries(VALID_TRANSITIONS).flatMap(
-            ([from, targets]) =>
-                targets.map(
-                    (target) =>
-                        sql`when ${schema.incidents.status} = ${from} and excluded.status = ${target} then excluded.status`,
-                ),
-        );
-        const clampedStatus = sql.join(
-            [
-                sql`case`,
-                ...transitionArms,
-                sql`else ${schema.incidents.status} end`,
-            ],
-            sql` `,
-        );
-        const conflictUpdateSet = canModerate
-            ? { ...baseConflictUpdateSet, status: clampedStatus }
-            : baseConflictUpdateSet;
-
-        // Restrict which existing rows each role may update.
-        const conflictWhere = isAdmin
-            ? undefined
-            : isModerator
-              ? eq(
-                    schema.incidents.neighborhoodId,
-                    req.user.neighborhoodId as string,
-                )
-              : eq(schema.incidents.createdBy, req.user.sub);
-
-        const upsertedRows: { id: string }[] = await upsert
-            .onConflictDoUpdate({
-                target: schema.incidents.id,
-                set: conflictUpdateSet,
-                ...(conflictWhere ? { where: conflictWhere } : {}),
-            })
-            .returning({ id: schema.incidents.id });
-
-        const upsertedIds = new Set(upsertedRows.map((row) => row.id));
-        return {
-            upserted: upsertedRows.length,
-            skipped: dto.incidents.length - upsertedRows.length,
-            skippedIds: dto.incidents
-                .map((item) => item.id)
-                .filter((id) => !upsertedIds.has(id)),
-        };
+    sync(@Body() dto: SyncIncidentsDto, @Request() req: AuthRequest) {
+        return this.incidentsService.sync(dto, req.user);
     }
 }

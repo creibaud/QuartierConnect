@@ -14,6 +14,7 @@ import {
 } from "./schemas/service-response.schema";
 import { Service, ServiceSchema } from "./schemas/service.schema";
 import { ServicesController } from "./services.controller";
+import { ServicesService } from "./services.service";
 
 @Module({
     imports: [
@@ -28,5 +29,7 @@ import { ServicesController } from "./services.controller";
         SocialModule,
     ],
     controllers: [ServicesController],
+    providers: [ServicesService],
+    exports: [ServicesService],
 })
 export class ServicesModule {}

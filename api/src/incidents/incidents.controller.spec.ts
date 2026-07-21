@@ -6,6 +6,7 @@ import type { Response } from "express";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { IncidentsController } from "./incidents.controller";
+import { IncidentsService } from "./incidents.service";
 
 const mockIncident = {
     id: "inc-uuid-1",
@@ -103,7 +104,10 @@ describe("IncidentsController", () => {
 
         const module: TestingModule = await Test.createTestingModule({
             controllers: [IncidentsController],
-            providers: [{ provide: DRIZZLE_TOKEN, useValue: mockDb }],
+            providers: [
+                IncidentsService,
+                { provide: DRIZZLE_TOKEN, useValue: mockDb },
+            ],
         }).compile();
 
         controller = module.get<IncidentsController>(IncidentsController);
@@ -236,7 +240,10 @@ describe("IncidentsController", () => {
         mockDb = buildMockDb([]);
         const module: TestingModule = await Test.createTestingModule({
             controllers: [IncidentsController],
-            providers: [{ provide: DRIZZLE_TOKEN, useValue: mockDb }],
+            providers: [
+                IncidentsService,
+                { provide: DRIZZLE_TOKEN, useValue: mockDb },
+            ],
         }).compile();
         controller = module.get<IncidentsController>(IncidentsController);
         await expect(
@@ -343,7 +350,10 @@ describe("IncidentsController", () => {
         mockDb = buildMockDb([{ ...mockIncident, status: "unknown_status" }]);
         const module: TestingModule = await Test.createTestingModule({
             controllers: [IncidentsController],
-            providers: [{ provide: DRIZZLE_TOKEN, useValue: mockDb }],
+            providers: [
+                IncidentsService,
+                { provide: DRIZZLE_TOKEN, useValue: mockDb },
+            ],
         }).compile();
         controller = module.get<IncidentsController>(IncidentsController);
         await expect(
@@ -359,7 +369,10 @@ describe("IncidentsController", () => {
         mockDb = buildMockDb([{ ...mockIncident, status: "resolved" }]);
         const module: TestingModule = await Test.createTestingModule({
             controllers: [IncidentsController],
-            providers: [{ provide: DRIZZLE_TOKEN, useValue: mockDb }],
+            providers: [
+                IncidentsService,
+                { provide: DRIZZLE_TOKEN, useValue: mockDb },
+            ],
         }).compile();
         controller = module.get<IncidentsController>(IncidentsController);
         await expect(
@@ -386,7 +399,10 @@ describe("IncidentsController", () => {
         mockDb = buildMockDb([]);
         const module: TestingModule = await Test.createTestingModule({
             controllers: [IncidentsController],
-            providers: [{ provide: DRIZZLE_TOKEN, useValue: mockDb }],
+            providers: [
+                IncidentsService,
+                { provide: DRIZZLE_TOKEN, useValue: mockDb },
+            ],
         }).compile();
         controller = module.get<IncidentsController>(IncidentsController);
         await expect(
@@ -447,7 +463,10 @@ describe("IncidentsController", () => {
         } as any;
         const module = await Test.createTestingModule({
             controllers: [IncidentsController],
-            providers: [{ provide: DRIZZLE_TOKEN, useValue: mockDb }],
+            providers: [
+                IncidentsService,
+                { provide: DRIZZLE_TOKEN, useValue: mockDb },
+            ],
         }).compile();
         controller = module.get<IncidentsController>(IncidentsController);
 
@@ -496,7 +515,10 @@ describe("IncidentsController", () => {
     async function compileWithDb(db: any): Promise<IncidentsController> {
         const module = await Test.createTestingModule({
             controllers: [IncidentsController],
-            providers: [{ provide: DRIZZLE_TOKEN, useValue: db }],
+            providers: [
+                IncidentsService,
+                { provide: DRIZZLE_TOKEN, useValue: db },
+            ],
         }).compile();
         return module.get<IncidentsController>(IncidentsController);
     }

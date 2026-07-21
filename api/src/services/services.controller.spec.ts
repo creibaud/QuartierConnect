@@ -15,6 +15,7 @@ import { Vote } from "../votes/schemas/vote.schema";
 import { ServiceResponse } from "./schemas/service-response.schema";
 import { Service } from "./schemas/service.schema";
 import { ServicesController } from "./services.controller";
+import { ServicesService } from "./services.service";
 
 const mockService = {
     _id: "svc-id-1",
@@ -124,6 +125,7 @@ describe("ServicesController", () => {
         const module: TestingModule = await Test.createTestingModule({
             controllers: [ServicesController],
             providers: [
+                ServicesService,
                 { provide: getModelToken(Service.name), useValue: model },
                 {
                     provide: getModelToken(ServiceResponse.name),
