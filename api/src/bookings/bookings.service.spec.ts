@@ -37,6 +37,10 @@ function makeEmitter() {
     return { emit: jest.fn() };
 }
 
+function requester(over: Record<string, unknown> = {}) {
+    return { sub: "initiator", role: "resident", neighborhoodId: null, ...over };
+}
+
 function pendingBooking(over: Record<string, unknown> = {}) {
     return {
         _id: "b1",
@@ -64,7 +68,7 @@ describe("BookingsService.request", () => {
             emitter as any,
         );
         await expect(
-            svc.request(SERVICE_ID, "initiator"),
+            svc.request(SERVICE_ID, requester()),
         ).rejects.toBeInstanceOf(BadRequestException);
         expect(emitter.emit).not.toHaveBeenCalled();
     });
@@ -81,10 +85,76 @@ describe("BookingsService.request", () => {
             {} as any,
             emitter as any,
         );
-        await expect(svc.request(SERVICE_ID, "owner")).rejects.toBeInstanceOf(
+        await expect(svc.request(SERVICE_ID, requester({ sub: "owner" }))).rejects.toBeInstanceOf(
             ForbiddenException,
         );
         expect(emitter.emit).not.toHaveBeenCalled();
+    });
+
+    it("rejects booking a service from another quartier", async () => {
+        const bookingModel: any = {
+            findOne: jest.fn().mockResolvedValue(null),
+        };
+        const emitter = makeEmitter();
+        const svc = new BookingsService(
+            bookingModel,
+            makeService(paidService({ neighborhoodId: "nB" })) as any,
+            {} as any,
+            {} as any,
+            emitter as any,
+        );
+        await expect(
+            svc.request(SERVICE_ID, requester({ neighborhoodId: "nA" })),
+        ).rejects.toBeInstanceOf(ForbiddenException);
+        expect(emitter.emit).not.toHaveBeenCalled();
+    });
+
+    it("books a service in the caller's own quartier", async () => {
+        const bookingModel: any = {
+            findOne: jest.fn().mockResolvedValue(null),
+            create: jest
+                .fn()
+                .mockImplementation((doc: Record<string, unknown>) => ({
+                    ...doc,
+                    _id: "b1",
+                })),
+        };
+        const svc = new BookingsService(
+            bookingModel,
+            makeService(paidService({ neighborhoodId: "nA" })) as any,
+            {} as any,
+            {} as any,
+            makeEmitter() as any,
+        );
+        const booking = await svc.request(
+            SERVICE_ID,
+            requester({ neighborhoodId: "nA" }),
+        );
+        expect(booking.status).toBe(BookingStatus.PENDING);
+    });
+
+    it("lets an admin book a service outside their quartier", async () => {
+        const bookingModel: any = {
+            findOne: jest.fn().mockResolvedValue(null),
+            create: jest
+                .fn()
+                .mockImplementation((doc: Record<string, unknown>) => ({
+                    ...doc,
+                    _id: "b1",
+                })),
+        };
+        const svc = new BookingsService(
+            bookingModel,
+            makeService(paidService({ neighborhoodId: "nB" })) as any,
+            {} as any,
+            {} as any,
+            makeEmitter() as any,
+        );
+        const booking = await svc.request(
+            SERVICE_ID,
+            requester({ sub: "adm", role: "admin", neighborhoodId: "nA" }),
+        );
+        expect(booking.status).toBe(BookingStatus.PENDING);
     });
 
     it("freezes the derived price and payer=initiator for an offer", async () => {
@@ -105,7 +175,7 @@ describe("BookingsService.request", () => {
             {} as any,
             makeEmitter() as any,
         );
-        await svc.request(SERVICE_ID, "initiator");
+        await svc.request(SERVICE_ID, requester());
         expect(created.payerId).toBe("initiator");
         expect(created.payeeId).toBe("owner");
         expect(created.pointsAmount).toBe(3); // ceil(base(60)=2 * 1.5)
@@ -130,7 +200,7 @@ describe("BookingsService.request", () => {
             {} as any,
             emitter as any,
         );
-        await svc.request(SERVICE_ID, "initiator");
+        await svc.request(SERVICE_ID, requester());
         expect(emitter.emit).toHaveBeenCalledWith("booking.created", {
             bookingId: "b1",
             ownerId: "owner",

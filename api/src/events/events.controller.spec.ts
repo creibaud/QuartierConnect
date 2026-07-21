@@ -314,13 +314,34 @@ describe("EventsController", () => {
     });
 
     it("POST /events/:id/interest throws 404 when event not found", async () => {
-        model.findByIdAndUpdate.mockReturnValue({
+        model.findById.mockReturnValue({
             exec: jest.fn().mockResolvedValue(null),
         });
         await expect(
             controller.markInterest("bad-id", authReq() as any),
         ).rejects.toThrow(NotFoundException);
+        expect(model.findByIdAndUpdate).not.toHaveBeenCalled();
         expect(socialService.recordEventInterest).not.toHaveBeenCalled();
+    });
+
+    it("POST /events/:id/interest denies a resident from another quartier", async () => {
+        await expect(
+            controller.markInterest(
+                "evt-id-1",
+                authReq("user-uuid-2", "resident", "n2") as any,
+            ),
+        ).rejects.toThrow(ForbiddenException);
+        expect(model.findByIdAndUpdate).not.toHaveBeenCalled();
+        expect(socialService.recordEventInterest).not.toHaveBeenCalled();
+    });
+
+    it("POST /events/:id/interest lets an admin mark interest outside their quartier", async () => {
+        const result = await controller.markInterest(
+            "evt-id-1",
+            authReq("admin1", "admin", "n2") as any,
+        );
+        expect(result).toEqual({ interested: 1 });
+        expect(socialService.recordEventInterest).toHaveBeenCalled();
     });
 
     it("POST /events geocodes the address into location", async () => {

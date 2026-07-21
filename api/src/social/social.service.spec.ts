@@ -226,6 +226,20 @@ describe("SocialService", () => {
             expect(query).toContain("'reliableNeighbor' AS reason");
             expect(query).toContain("[h:HELPED]");
         });
+
+        it("keeps shared-interest suggestions inside the user's quartier (no unreadable 403 events)", async () => {
+            mockSession.run.mockResolvedValue({ records: [] });
+
+            await service.getRecommendations("user-1");
+
+            const query = mockSession.run.mock.calls[0][0] as string;
+            const sharedBranch = query
+                .split("UNION")
+                .find((part) => part.includes("'sharedInterests' AS reason"));
+            expect(sharedBranch).toBeDefined();
+            expect(sharedBranch).toContain("(e:Event)-[:HELD_IN]->(n)");
+            expect(sharedBranch).toContain("[:LIVES_IN]->(n:Neighborhood)");
+        });
     });
 
     describe("syncUser", () => {

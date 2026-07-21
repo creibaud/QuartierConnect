@@ -48,10 +48,11 @@ WHERE NOT (u)-[:ATTENDING]->(e)
 RETURN e.id AS id, e.name AS name, 'event' AS type, 2 AS score,
        'upcomingEventNearby' AS reason
 UNION
-MATCH (u:User {id: $userId})-[:INTERESTED_IN|ATTENDING]->(:Event)
+MATCH (u:User {id: $userId})-[:LIVES_IN]->(n:Neighborhood)
+MATCH (u)-[:INTERESTED_IN|ATTENDING]->(:Event)
       <-[:INTERESTED_IN|ATTENDING]-(peer:User)
 WHERE peer.id <> $userId
-MATCH (peer)-[:INTERESTED_IN|ATTENDING]->(e:Event)
+MATCH (peer)-[:INTERESTED_IN|ATTENDING]->(e:Event)-[:HELD_IN]->(n)
 WHERE NOT (u)-[:INTERESTED_IN|ATTENDING]->(e)
   AND NOT (u)-[:NOT_INTERESTED_IN]->(e)
   AND e.date > datetime()

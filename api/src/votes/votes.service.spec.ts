@@ -1,8 +1,18 @@
-import { BadRequestException } from "@nestjs/common";
+import {
+    BadRequestException,
+    ForbiddenException,
+    NotFoundException,
+} from "@nestjs/common";
 import { getModelToken } from "@nestjs/mongoose";
 import { Test, TestingModule } from "@nestjs/testing";
+import { DRIZZLE_TOKEN } from "../database/drizzle.module";
+import { Event } from "../events/schemas/event.schema";
+import { Service } from "../services/schemas/service.schema";
 import { Vote, VoteTargetType } from "./schemas/vote.schema";
 import { VotesService } from "./votes.service";
+
+const SERVICE_OID = "664f1a2b3c4d5e6f7a8b9c0d";
+const INCIDENT_ID = "inc-uuid-1";
 
 const mockVote = {
     deleteOne: jest.fn(),
@@ -17,24 +27,72 @@ const mockVoteModel = {
     create: jest.fn(),
 };
 
+function targetLookup(target: { neighborhoodId?: string | null } | null) {
+    return {
+        findById: jest.fn().mockReturnValue({
+            select: jest.fn().mockReturnValue({
+                lean: jest.fn().mockResolvedValue(target),
+            }),
+        }),
+    };
+}
+
+function incidentLookup(rows: { neighborhoodId: string | null }[]) {
+    return {
+        select: jest.fn().mockReturnValue({
+            from: jest.fn().mockReturnValue({
+                where: jest.fn().mockReturnValue({
+                    limit: jest.fn().mockResolvedValue(rows),
+                }),
+            }),
+        }),
+    };
+}
+
+const voter = (over: Record<string, unknown> = {}) => ({
+    sub: "user-1",
+    role: "resident",
+    neighborhoodId: null,
+    ...over,
+});
+
 describe("VotesService", () => {
     let service: VotesService;
+    let mockServiceModel: ReturnType<typeof targetLookup>;
+    let mockEventModel: ReturnType<typeof targetLookup>;
+    let mockDb: ReturnType<typeof incidentLookup>;
 
-    beforeEach(async () => {
-        jest.clearAllMocks();
+    async function compile() {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 VotesService,
                 { provide: getModelToken(Vote.name), useValue: mockVoteModel },
+                {
+                    provide: getModelToken(Service.name),
+                    useValue: mockServiceModel,
+                },
+                {
+                    provide: getModelToken(Event.name),
+                    useValue: mockEventModel,
+                },
+                { provide: DRIZZLE_TOKEN, useValue: mockDb },
             ],
         }).compile();
 
         service = module.get<VotesService>(VotesService);
+    }
+
+    beforeEach(async () => {
+        jest.clearAllMocks();
+        mockServiceModel = targetLookup({ neighborhoodId: null });
+        mockEventModel = targetLookup({ neighborhoodId: null });
+        mockDb = incidentLookup([{ neighborhoodId: null }]);
+        await compile();
     });
 
     describe("cast", () => {
         const dto = {
-            targetId: "svc-1",
+            targetId: SERVICE_OID,
             targetType: VoteTargetType.SERVICE,
             voteType: "like" as any,
         };
@@ -45,13 +103,13 @@ describe("VotesService", () => {
             });
             mockVoteModel.create.mockResolvedValue({});
 
-            const result = await service.cast(dto, "user-1");
+            const result = await service.cast(dto, voter());
             expect(result.action).toBe("added");
             expect(result.voteType).toBe("like");
             expect(mockVoteModel.create).toHaveBeenCalledWith(
                 expect.objectContaining({
                     userId: "user-1",
-                    targetId: "svc-1",
+                    targetId: SERVICE_OID,
                     voteType: "like",
                 }),
             );
@@ -67,7 +125,7 @@ describe("VotesService", () => {
                 exec: jest.fn().mockResolvedValue(existing),
             });
 
-            const result = await service.cast(dto, "user-1");
+            const result = await service.cast(dto, voter());
             expect(result.action).toBe("removed");
             expect(existing.deleteOne).toHaveBeenCalled();
         });
@@ -84,7 +142,7 @@ describe("VotesService", () => {
 
             const result = await service.cast(
                 { ...dto, voteType: "dislike" as any },
-                "user-1",
+                voter(),
             );
             expect(result.action).toBe("changed");
             expect(result.voteType).toBe("dislike");
@@ -98,9 +156,79 @@ describe("VotesService", () => {
                 targetType: VoteTargetType.INCIDENT,
                 voteType: "like" as any,
             };
-            await expect(service.cast(incidentDto, "user-1")).rejects.toThrow(
+            await expect(service.cast(incidentDto, voter())).rejects.toThrow(
                 BadRequestException,
             );
+        });
+
+        it("throws 404 when the target service does not exist", async () => {
+            mockServiceModel = targetLookup(null);
+            await compile();
+
+            await expect(service.cast(dto, voter())).rejects.toThrow(
+                NotFoundException,
+            );
+            expect(mockVoteModel.create).not.toHaveBeenCalled();
+        });
+
+        it("throws 404 for a malformed Mongo target id", async () => {
+            await expect(
+                service.cast({ ...dto, targetId: "svc-1" }, voter()),
+            ).rejects.toThrow(NotFoundException);
+        });
+
+        it("denies voting on a service from another quartier", async () => {
+            mockServiceModel = targetLookup({ neighborhoodId: "nB" });
+            await compile();
+
+            await expect(
+                service.cast(dto, voter({ neighborhoodId: "nA" })),
+            ).rejects.toThrow(ForbiddenException);
+            expect(mockVoteModel.create).not.toHaveBeenCalled();
+        });
+
+        it("lets an admin vote on a target outside their quartier", async () => {
+            mockServiceModel = targetLookup({ neighborhoodId: "nB" });
+            await compile();
+            mockVoteModel.findOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+            mockVoteModel.create.mockResolvedValue({});
+
+            const result = await service.cast(
+                dto,
+                voter({ sub: "adm", role: "admin", neighborhoodId: "nA" }),
+            );
+            expect(result.action).toBe("added");
+        });
+
+        it("throws 404 when the target incident does not exist", async () => {
+            mockDb = incidentLookup([]);
+            await compile();
+
+            await expect(
+                service.cast(
+                    {
+                        targetId: INCIDENT_ID,
+                        targetType: VoteTargetType.INCIDENT,
+                        voteType: "up" as any,
+                    },
+                    voter(),
+                ),
+            ).rejects.toThrow(NotFoundException);
+        });
+
+        it("rejects comment votes: no comment collection exists", async () => {
+            await expect(
+                service.cast(
+                    {
+                        targetId: SERVICE_OID,
+                        targetType: VoteTargetType.COMMENT,
+                        voteType: "up" as any,
+                    },
+                    voter(),
+                ),
+            ).rejects.toThrow(BadRequestException);
         });
     });
 

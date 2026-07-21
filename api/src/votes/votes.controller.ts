@@ -25,7 +25,7 @@ import { VoteTargetType } from "./schemas/vote.schema";
 import { VotesService } from "./votes.service";
 
 interface AuthRequest {
-    user: { sub: string };
+    user: { sub: string; role: string; neighborhoodId?: string | null };
 }
 
 @ApiTags("Votes")
@@ -39,7 +39,7 @@ export class VotesController {
     @ApiOperation({
         summary: "Vote (cast/toggle/change)",
         description:
-            "Cast or remove a vote. Voting again with the same type removes the vote (toggle). Voting with a different type updates it. LikeDislike strategy for services/events, UpDown for incidents/comments.",
+            "Cast or remove a vote. Voting again with the same type removes the vote (toggle). Voting with a different type updates it. LikeDislike strategy for services/events, UpDown for incidents. The target must exist and, for non-admins, sit in the voter's own neighborhood.",
     })
     @ApiResponse({ status: 201, type: VoteActionResponseDto })
     @ApiResponse({
@@ -47,8 +47,13 @@ export class VotesController {
         description:
             "Vote type not allowed for this target (e.g. UP on a service)",
     })
+    @ApiResponse({
+        status: 403,
+        description: "Target outside the voter's neighborhood",
+    })
+    @ApiResponse({ status: 404, description: "Target not found" })
     cast(@Body() dto: CastVoteDto, @Request() req: AuthRequest) {
-        return this.votesService.cast(dto, req.user.sub);
+        return this.votesService.cast(dto, req.user);
     }
 
     @Get("score")

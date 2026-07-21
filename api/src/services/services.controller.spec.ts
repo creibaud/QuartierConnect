@@ -556,6 +556,34 @@ describe("ServicesController", () => {
         ).rejects.toThrow();
     });
 
+    it("respond denies a resident from another quartier", async () => {
+        model.findById.mockResolvedValue({
+            _id: "aaaaaaaaaaaaaaaaaaaaaaaa",
+            createdBy: "owner",
+            neighborhoodId: "n1",
+        });
+        await expect(
+            controller.respond(
+                "aaaaaaaaaaaaaaaaaaaaaaaa",
+                authReq("resident", "me", "n2") as any,
+            ),
+        ).rejects.toThrow(ForbiddenException);
+        expect(responseModel.updateOne).not.toHaveBeenCalled();
+    });
+
+    it("respond lets an admin answer a listing outside their quartier", async () => {
+        model.findById.mockResolvedValue({
+            _id: "aaaaaaaaaaaaaaaaaaaaaaaa",
+            createdBy: "owner",
+            neighborhoodId: "n1",
+        });
+        const result = await controller.respond(
+            "aaaaaaaaaaaaaaaaaaaaaaaa",
+            authReq("admin", "adm", "n2") as any,
+        );
+        expect(result).toEqual({ status: "ok" });
+    });
+
     it("respond throws 404 when service not found", async () => {
         model.findById.mockResolvedValue(null);
         await expect(

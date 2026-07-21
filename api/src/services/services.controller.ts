@@ -437,6 +437,7 @@ export class ServicesController {
         const service = await this.serviceModel.findById(id);
         if (!service)
             throw new NotFoundException({ code: "SERVICE_NOT_FOUND" });
+        this.assertNeighborhoodScope(service, req);
         if (service.createdBy === req.user.sub)
             throw new ForbiddenException({ code: "OWN_SERVICE" });
         const serviceId = new Types.ObjectId(id);

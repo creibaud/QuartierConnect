@@ -246,21 +246,25 @@ export class EventsController {
         @Request() req: AuthRequest,
         @Body() body?: EventInterestDto,
     ) {
+        const event = await this.eventModel.findById(id).exec();
+        if (!event) throw new NotFoundException("Event not found");
+        this.assertNeighborhoodScope(event, req);
+
         const interested = body?.interested ?? true;
         const source = body?.source ?? "swipe";
         const membershipUpdate = interested
             ? { $addToSet: { interestedUserIds: req.user.sub } }
             : { $pull: { interestedUserIds: req.user.sub } };
-        const event = await this.eventModel
+        const updated = await this.eventModel
             .findByIdAndUpdate(id, membershipUpdate, { new: true })
             .exec();
 
-        if (!event) throw new NotFoundException("Event not found");
+        if (!updated) throw new NotFoundException("Event not found");
         void this.socialService.recordEventInterest(req.user.sub, id, {
             interested,
             source,
         });
-        return { interested: event.interestedUserIds.length };
+        return { interested: updated.interestedUserIds.length };
     }
 
     @Patch(":id")

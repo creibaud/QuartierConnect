@@ -18,7 +18,7 @@ import { BookingsService } from "./bookings.service";
 import { CreateBookingDto } from "./dto/create-booking.dto";
 
 interface AuthRequest {
-    user: { sub: string; role: string };
+    user: { sub: string; role: string; neighborhoodId?: string | null };
 }
 
 @ApiTags("Bookings")
@@ -41,7 +41,7 @@ export class BookingsController {
             "Service is not bookable (free service or your own listing)",
     })
     request(@Body() dto: CreateBookingDto, @Request() req: AuthRequest) {
-        return this.bookings.request(dto.serviceId, req.user.sub);
+        return this.bookings.request(dto.serviceId, req.user);
     }
 
     @Get()

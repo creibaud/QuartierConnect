@@ -27,6 +27,12 @@ import {
     ServiceBookingDocument,
 } from "./schemas/service-booking.schema";
 
+export interface BookingRequester {
+    sub: string;
+    role: string;
+    neighborhoodId?: string | null;
+}
+
 @Injectable()
 export class BookingsService {
     constructor(
@@ -39,13 +45,25 @@ export class BookingsService {
         private readonly eventEmitter: EventEmitter2,
     ) {}
 
-    async request(serviceId: string, initiatorId: string) {
+    async request(serviceId: string, requester: BookingRequester) {
+        const initiatorId = requester.sub;
         // Reject non-ObjectId input before it reaches a Mongo query.
         if (!isValidObjectId(serviceId)) {
             throw new NotFoundException("Service not found");
         }
         const service = await this.serviceModel.findById(serviceId);
         if (!service) throw new NotFoundException("Service not found");
+        // Same scope as reading the listing: no cross-quartier bookings.
+        if (
+            requester.role !== "admin" &&
+            (service.neighborhoodId?.toString() ?? null) !==
+                (requester.neighborhoodId ?? null)
+        ) {
+            throw new ForbiddenException({
+                code: "SERVICE_OUT_OF_SCOPE",
+                message: "Service outside your neighborhood",
+            });
+        }
         if (service.type !== "paid") {
             throw new BadRequestException({
                 code: "SERVICE_NOT_PAID",
