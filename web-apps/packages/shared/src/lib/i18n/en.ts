@@ -77,6 +77,7 @@ export default {
         bookings: "Bookings",
         administration: "Administration",
         downloadDesktop: "Download desktop client",
+        help: "Help",
         groups: {
             home: "Home",
             neighborhood: "Neighborhood",

@@ -1,6 +1,8 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
+import { HelpCircleIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { getCurrentUser } from "@workspace/shared/lib/auth";
 import {
     Sidebar,
@@ -56,6 +58,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <NavMain groups={clientNavGroups} role={role} />
             </SidebarContent>
             <SidebarFooter className={warmAccentTint}>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild tooltip={t("nav.help")}>
+                            {/* Plain anchor: /aide is the help site served by Caddy, outside the SPA router. */}
+                            <a href="/aide" target="_blank" rel="noreferrer">
+                                <HugeiconsIcon icon={HelpCircleIcon} />
+                                <span>{t("nav.help")}</span>
+                            </a>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
                 <NavUser />
             </SidebarFooter>
             <SidebarRail />

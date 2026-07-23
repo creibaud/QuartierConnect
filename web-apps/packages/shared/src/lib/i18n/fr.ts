@@ -78,6 +78,7 @@ export default {
         bookings: "Réservations",
         administration: "Administration",
         downloadDesktop: "Télécharger le client lourd",
+        help: "Aide",
         groups: {
             home: "Accueil",
             neighborhood: "Quartier",
