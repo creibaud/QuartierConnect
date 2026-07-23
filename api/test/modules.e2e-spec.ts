@@ -553,20 +553,18 @@ describe("New modules (e2e)", () => {
                 .expect(403);
         });
 
-        it("POST /dsl/query compiles a valid DSL query (moderator)", async () => {
-            const res = await request(app.getHttpServer())
+        it("POST /dsl/query returns 403 for moderator (admin only)", async () => {
+            await request(app.getHttpServer())
                 .post("/dsl/query")
                 .set("Authorization", `Bearer ${moderatorToken}`)
                 .send({ query: "FIND incidents LIMIT 5" })
-                .expect(201);
-
-            expect(Array.isArray(res.body)).toBe(true);
+                .expect(403);
         });
 
         it("POST /dsl/query compiles a DSL query with WHERE clause", async () => {
             const res = await request(app.getHttpServer())
                 .post("/dsl/query")
-                .set("Authorization", `Bearer ${moderatorToken}`)
+                .set("Authorization", `Bearer ${adminToken}`)
                 .send({
                     query: 'FIND incidents WHERE status = "open" LIMIT 10',
                 })
@@ -578,7 +576,7 @@ describe("New modules (e2e)", () => {
         it("POST /dsl/query returns 400 for unknown collection", async () => {
             await request(app.getHttpServer())
                 .post("/dsl/query")
-                .set("Authorization", `Bearer ${moderatorToken}`)
+                .set("Authorization", `Bearer ${adminToken}`)
                 .send({ query: "FIND passwords LIMIT 5" })
                 .expect(400);
         });
@@ -586,12 +584,12 @@ describe("New modules (e2e)", () => {
         it("POST /dsl/query returns 400 for invalid syntax", async () => {
             await request(app.getHttpServer())
                 .post("/dsl/query")
-                .set("Authorization", `Bearer ${moderatorToken}`)
+                .set("Authorization", `Bearer ${adminToken}`)
                 .send({ query: "INVALID QUERY !!!" })
                 .expect(400);
         });
 
-        it("POST /dsl/query works for admin role too", async () => {
+        it("POST /dsl/query compiles a valid DSL query (admin)", async () => {
             const res = await request(app.getHttpServer())
                 .post("/dsl/query")
                 .set("Authorization", `Bearer ${adminToken}`)
