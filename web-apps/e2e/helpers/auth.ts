@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import * as crypto from "crypto";
 
 const API = "http://localhost:5000";
@@ -8,12 +8,20 @@ const PG_CONTAINER = process.env.PG_CONTAINER ?? "docker-postgres-1";
 const PG_USER = process.env.POSTGRES_USER ?? "qc";
 const PG_DB = process.env.POSTGRES_DB ?? "quartierconnect";
 
+/** Run a SQL statement in the compose Postgres. Argument array, no shell. */
+function runPsql(sql: string): void {
+    execFileSync(
+        "docker",
+        ["exec", PG_CONTAINER, "psql", "-U", PG_USER, "-d", PG_DB, "-c", sql],
+        { stdio: "pipe" },
+    );
+}
+
 /** Set a user's address + neighborhood in Postgres so they pass the address gate. */
 export function assignAddress(email: string): void {
     try {
-        execSync(
-            `docker exec ${PG_CONTAINER} psql -U "${PG_USER}" -d "${PG_DB}" -c "UPDATE users SET address='1 rue de la Demo, 75001 Paris', address_lat=48.8566, address_lng=2.3522, neighborhood_id='e2e-neighborhood' WHERE email='${email}'"`,
-            { stdio: "pipe" },
+        runPsql(
+            `UPDATE users SET address='1 rue de la Demo, 75001 Paris', address_lat=48.8566, address_lng=2.3522, neighborhood_id='e2e-neighborhood' WHERE email='${email}'`,
         );
     } catch {
         // docker/psql unavailable — gate-dependent tests will fail visibly
@@ -37,9 +45,8 @@ export async function assignNeighborhoodWithGeometry(
     const match = (list as { _id?: string; name?: string; geometry?: unknown }[])
         .find((n) => n.geometry && n._id);
     if (!match?._id) return null;
-    execSync(
-        `docker exec ${PG_CONTAINER} psql -U "${PG_USER}" -d "${PG_DB}" -c "UPDATE users SET address='1 rue de la Demo, 75018 Paris', address_lat=48.8867, address_lng=2.3431, neighborhood_id='${match._id}' WHERE email='${email}'"`,
-        { stdio: "pipe" },
+    runPsql(
+        `UPDATE users SET address='1 rue de la Demo, 75018 Paris', address_lat=48.8867, address_lng=2.3431, neighborhood_id='${match._id}' WHERE email='${email}'`,
     );
     return match.name ?? null;
 }
@@ -47,9 +54,8 @@ export async function assignNeighborhoodWithGeometry(
 /** Set an address no neighborhood covers, so the gate routes to /onboarding/pending. */
 export function assignUncoveredAddress(email: string): void {
     try {
-        execSync(
-            `docker exec ${PG_CONTAINER} psql -U "${PG_USER}" -d "${PG_DB}" -c "UPDATE users SET address='1 rue Isolee, 99999 Nullepart', address_lat=45.0, address_lng=5.0, neighborhood_id=NULL WHERE email='${email}'"`,
-            { stdio: "pipe" },
+        runPsql(
+            `UPDATE users SET address='1 rue Isolee, 99999 Nullepart', address_lat=45.0, address_lng=5.0, neighborhood_id=NULL WHERE email='${email}'`,
         );
     } catch {
         // docker/psql unavailable — gate-dependent tests will fail visibly

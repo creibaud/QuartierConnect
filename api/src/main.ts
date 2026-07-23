@@ -248,12 +248,13 @@ Endpoints that return lists accept \`?page=1&limit=20\` (max 100).
         }),
     );
 
-    // Caddy owns the edge security headers; avoid duplicating them here.
+    // CSP and frameguard are enforced here too so direct API access (dev,
+    // loopback) gets them; Caddy keeps HSTS/referrer/nosniff at the edge.
+    // /docs is registered above helmet on purpose: Scalar needs its own CSP.
     app.use(
         helmet({
-            contentSecurityPolicy: false,
+            xFrameOptions: { action: "deny" },
             strictTransportSecurity: false,
-            xFrameOptions: false,
             referrerPolicy: false,
             xContentTypeOptions: false,
         }),

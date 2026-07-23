@@ -8,7 +8,7 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import { and, eq, isNull } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { isValidObjectId, Model } from "mongoose";
+import { isValidObjectId, Model, Types } from "mongoose";
 import { DRIZZLE_TOKEN } from "../database/drizzle.module";
 import * as schema from "../database/schema";
 import { Event } from "../events/schemas/event.schema";
@@ -150,7 +150,7 @@ export class VotesService {
             throw new NotFoundException("Vote target not found");
         }
         const target = await (model as Model<Service>)
-            .findById(targetId)
+            .findById(new Types.ObjectId(targetId))
             .select("neighborhoodId")
             .lean();
         if (!target) throw new NotFoundException("Vote target not found");
