@@ -17,7 +17,7 @@ import {
 } from "./schemas/community-vote.schema";
 
 // A weighted ballot distributes at most this total across the options.
-const MAX_WEIGHT_BUDGET = 10;
+export const MAX_WEIGHT_BUDGET = 10;
 
 @Injectable()
 export class CommunityVotesService {

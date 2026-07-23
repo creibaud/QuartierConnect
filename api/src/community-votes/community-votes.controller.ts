@@ -22,7 +22,10 @@ import {
 import type { Response } from "express";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { setPageHeaders } from "../common/pagination";
-import { CommunityVotesService } from "./community-votes.service";
+import {
+    CommunityVotesService,
+    MAX_WEIGHT_BUDGET,
+} from "./community-votes.service";
 import { CastCommunityVoteDto } from "./dto/cast-community-vote.dto";
 import {
     CommunityVoteDto,
@@ -46,8 +49,7 @@ export class CommunityVotesController {
     @Post()
     @ApiOperation({
         summary: "Create a community vote",
-        description:
-            "For BINARY, pass options: [{id:'yes',label:'Yes'},{id:'no',label:'No'}]. For SINGLE_CHOICE/MULTIPLE_CHOICE, options are free-form. For WEIGHTED, the weights must add up to 1.0.",
+        description: `For BINARY, pass options: [{id:'yes',label:'Yes'},{id:'no',label:'No'}]. For SINGLE_CHOICE/MULTIPLE_CHOICE, options are free-form. For WEIGHTED, each voter spreads a budget of up to ${MAX_WEIGHT_BUDGET} points across the options when casting.`,
     })
     @ApiResponse({ status: 201, type: CommunityVoteDto })
     create(@Body() dto: CreateCommunityVoteDto, @Request() req: AuthRequest) {
@@ -120,7 +122,7 @@ export class CommunityVotesController {
     @ApiOperation({
         summary: "Cast a vote",
         description:
-            "The body must contain `choices` (array of option ids) and optionally `weights` for WEIGHTED.",
+            "The body must contain `choices` (array of option ids), plus `weights` when the vote is WEIGHTED.",
     })
     @ApiParam({ name: "id", description: "MongoDB ObjectId of the vote" })
     @ApiResponse({
@@ -130,7 +132,7 @@ export class CommunityVotesController {
     })
     @ApiResponse({
         status: 400,
-        description: "Vote closed, invalid choice, or quorum already reached",
+        description: `Vote closed, invalid choice, or weights outside the (0, ${MAX_WEIGHT_BUDGET}] budget`,
     })
     @ApiResponse({ status: 409, description: "User has already voted" })
     cast(

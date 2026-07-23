@@ -180,7 +180,7 @@ test: ## All unit tests (API + Web + Desktop + DSL)
 	@echo ""
 	@echo "$(OK) $(BOLD)All unit tests pass$(RESET)"
 
-test-api: ## NestJS API unit tests (Jest, 529 tests)
+test-api: ## NestJS API unit tests (Jest)
 	@echo "$(RUN) API tests (Jest)..."
 	@cd api && pnpm run test
 	@echo "$(OK) API tests OK"
