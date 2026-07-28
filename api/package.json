@@ -43,7 +43,7 @@
         "drizzle-orm": "^0.45.2",
         "helmet": "^8.1.0",
         "mongodb": "^7.1.1",
-        "mongoose": "^9.4.1",
+        "mongoose": "^9.7.2",
         "multer": "^2.2.0",
         "neo4j-driver": "^6.0.1",
         "nestjs-i18n": "^10.6.0",
